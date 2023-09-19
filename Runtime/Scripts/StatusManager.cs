@@ -48,7 +48,7 @@ namespace StatusEffects
             // Use reflection to get all the status variables on the monobehaviour
             // And add the effect as a reference to each of the fields
             foreach (var field in monoBehaviour.GetType().GetFields(bindingFlags).Where(f => f.FieldType.IsSubclassOf(typeof(StatusVariable))))
-                ((StatusVariable)field.GetValue(monoBehaviour)).AddEffectReference(statusEffect);
+                ((StatusVariable)field.GetValue(monoBehaviour)).UpdateReferences(monoBehaviour);
             // If a custom effect exists it will be started
             statusEffect.StartCustomEffect(monoBehaviour);
             // Call the method on the inherited interface
@@ -68,7 +68,7 @@ namespace StatusEffects
             // Use reflection to get all the status variables on the monobehaviour
             // And remove the effect reference from each of the fields
             foreach (var field in monoBehaviour.GetType().GetFields(bindingFlags).Where(f => f.FieldType.IsSubclassOf(typeof(StatusVariable))))
-                ((StatusVariable)field.GetValue(monoBehaviour)).RemoveEffectReference(statusEffect);
+                ((StatusVariable)field.GetValue(monoBehaviour)).UpdateReferences(monoBehaviour);
             // If a custom effect exists it will be stopped
             statusEffect.StopCustomEffect(monoBehaviour);
             // Call the method on the inherited interface

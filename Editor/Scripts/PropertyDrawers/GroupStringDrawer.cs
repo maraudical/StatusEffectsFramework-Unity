@@ -9,7 +9,7 @@ namespace StatusEffects.Editor
     {
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            var list = Resources.Load<StatusEffectSettings>("StatusEffectsFramework/StatusEffectSettings").groups;
+            var list = StatusEffectSettings.GetOrCreateSettings().groups;
             if (property.propertyType == SerializedPropertyType.String)
             {
                 int index = Mathf.Max(0, Array.IndexOf(list, property.stringValue));

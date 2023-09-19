@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Stunned
   m_EditorClassIdentifier: 
-  name: Stunned
   group: Negative
+  name: Stunned
   description: 
   effects:
   - statusName: Stunned

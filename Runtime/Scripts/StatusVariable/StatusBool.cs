@@ -24,15 +24,15 @@ namespace StatusEffects
             this.baseValue = baseValue;
         }
 
-        public bool GetValue()
+        protected bool GetValue()
         {
-            if (statusEffectReferences == null)
-                statusEffectReferences = new HashSet<StatusEffect>();
+            if (monoBehaviour == null)
+                return baseValue;
 
             bool value = baseValue;
             int priority = -1;
 
-            foreach (StatusEffect statusEffect in statusEffectReferences)
+            foreach (StatusEffect statusEffect in monoBehaviour.effects)
             {
                 foreach (Effect effect in statusEffect.data.effects)
                 {

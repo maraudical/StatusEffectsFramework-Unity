@@ -22,16 +22,16 @@ namespace StatusEffects
             this.baseValue = baseValue;
         }
 
-        public float GetValue()
+        protected float GetValue()
         {
-            if (statusEffectReferences == null)
-                statusEffectReferences = new HashSet<StatusEffect>();
+            if (monoBehaviour == null)
+                return baseValue;
 
             float additiveValue = 0;
             float multiplicativeValue = 1;
             float postAdditiveValue = 0;
 
-            foreach (StatusEffect statusEffect in statusEffectReferences)
+            foreach (StatusEffect statusEffect in monoBehaviour.effects)
             {
                 foreach (Effect effect in statusEffect.data.effects)
                 {

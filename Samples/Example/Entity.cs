@@ -8,29 +8,35 @@ public class Entity : MonoBehaviour, IStatus
     [SerializeField] private StatusFloat _speed;
     [SerializeField] private StatusBool _stunned;
     public float health;
-
     public float maxHealth => _maxHealth.value;
-
-    public List<StatusEffect> effects { get; set; }
+    [Header("Debug")]
+    [SerializeField] private StatusEffectData _statusEffectData;
+    [SerializeField] private float time;
+    [SerializeField, GroupString] private string group;
+    [field: Space]
+    [field: ContextMenuItem("Add Effect", "DebugAddStatusEffect")]
+    [field: ContextMenuItem("Remove Effect", "DebugRemoveStatusEffect")]
+    [field: ContextMenuItem("Remove Effect Group", "DebugRemoveStatusEffectGroup")]
+    [field: SerializeField] public List<StatusEffect> effects { get; set; }
 
     private void Start()
     {
-        health = _maxHealth.GetValue();
+        health = _maxHealth.value;
     }
 
     public void OnStatusEffect(StatusEffect statusEffect, bool active) { }
-    
-    public void DebugAddStatusEffect(StatusEffectData data, float time)
+
+    void DebugAddStatusEffect()
     {
-        this.AddStatusEffect(data, time);
+        this.AddStatusEffect(_statusEffectData, time);
     }
     
-    public void DebugRemoveStatusEffect(StatusEffectData data)
+    public void DebugRemoveStatusEffect()
     {
-        this.RemoveStatusEffect(data);
+        this.RemoveStatusEffect(_statusEffectData);
     }
     
-    public void DebugRemoveStatusEffectGroup([GroupString] string group)
+    public void DebugRemoveStatusEffectGroup()
     {
         this.RemoveStatusEffects(group);
     }

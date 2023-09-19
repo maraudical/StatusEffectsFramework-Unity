@@ -7,22 +7,11 @@ namespace StatusEffects
     public abstract class StatusVariable
     {
         [StatusString] public string statusName;
-        public HashSet<StatusEffect> statusEffectReferences { get; protected set; }
+        protected IStatus monoBehaviour;
 
-        public void AddEffectReference(StatusEffect statusEffect)
+        public void UpdateReferences(IStatus monoBehaviour)
         {
-            if (statusEffectReferences == null)
-                statusEffectReferences = new HashSet<StatusEffect>();
-            statusEffectReferences.Add(statusEffect);
-            
-            OnReferencesChanged();
-        }
-
-        public void RemoveEffectReference(StatusEffect statusEffect)
-        {
-            if (statusEffectReferences == null)
-                statusEffectReferences = new HashSet<StatusEffect>();
-            statusEffectReferences.Remove(statusEffect);
+            this.monoBehaviour = monoBehaviour;
             
             OnReferencesChanged();
         }

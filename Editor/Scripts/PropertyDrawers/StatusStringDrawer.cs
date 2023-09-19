@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace StatusEffects.Editor
 {
@@ -18,14 +20,19 @@ namespace StatusEffects.Editor
                 Rect offset = new Rect(position.x, position.y, _toggleSize, position.height);
 
                 StatusStringAttribute stringAttribute = (attribute as StatusStringAttribute);
+
+                var list = StatusEffectSettings.GetOrCreateSettings().statuses;
+
+                if (!stringAttribute.initialized && list.Contains(property.stringValue))
+                    stringAttribute.useDropdown = true;
+
+                stringAttribute.initialized = true;
                 stringAttribute.useDropdown = EditorGUI.Toggle(offset, stringAttribute.useDropdown);
 
                 offset = new Rect(position.x + _toggleSize, position.y, position.width - _toggleSize, position.height);
 
                 if (stringAttribute.useDropdown)
                 {
-                    var list = Resources.Load<StatusEffectSettings>("StatusEffectsFramework/StatusEffectSettings").statuses;
-
                     int index = Mathf.Max(0, Array.IndexOf(list, property.stringValue));
                     index = EditorGUI.Popup(offset, string.Empty, index, list);
 
