@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://drive.google.com/uc?id=1UYbBluu119xenikC8iY13CaT8lcp4J_G" alt="logo"><br>
+  <img src="https://drive.google.com/uc?id=1UYbBluu119xenikC8iY13CaT8lcp4J_G" height="200" alt="logo"><br>
   <a href="https://unity3d.com/en/get-unity/download/archive"><img src="https://img.shields.io/badge/unity-2022.3%20or%20later-green.svg" alt=""></a>
   <a href="https://github.com/maraudical/StatusEffectsFramework/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
   <a href="https://github.com/maraudical/StatusEffectsFramework/releases"><img src="https://img.shields.io/badge/version-1.0.0-blue" alt="version"></a>
@@ -29,7 +29,7 @@
 1. Implement any **StatusFloat/StatusInt/StatusBools** that will be affected
 1. Use the extension methods on the **IStatus Monobehaviour** to add or remove effects
 
-Check the [documentation](https://) for more information.
+Check the [documentation](https://) for more information (in-progress).
 
 # Author
 **Grady Milligan** - *Student at Drexel University*
