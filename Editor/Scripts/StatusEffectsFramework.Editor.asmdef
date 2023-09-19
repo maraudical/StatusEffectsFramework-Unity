@@ -1,0 +1,19 @@
+{
+    "name": "StatusEffectsFramework.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:54cb1906aeb4e4264bc1d2aa3818a43f",
+        "GUID:c1d753aaef5f86c4488844bae8cb6730"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
