@@ -6,7 +6,7 @@
   "license": "MIT",
   "repository": {
 	"type": "git",
-	"url": "https://github.com/maraudical/StatusEffectsFramework.git"
+	"url": "https://github.com/maraudical/StatusEffectsFramework-Unity.git"
   },
   "unity": "2022.3",
   "unityRelease": "4f1",
@@ -24,7 +24,7 @@
   {
 	"displayName": "Effects Example",
 	"description": "Contains simple examples of a few effects as well as how to implement them into your own classes.",
-	"path": "Samples~/Example"
+	"path": "Samples/Example"
   }
   ],
   "type": "tool"
