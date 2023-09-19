@@ -9,7 +9,7 @@ namespace StatusEffects
     // Create a new type of Settings Asset.
     public class StatusEffectSettings : ScriptableObject
     {
-        public const string k_MyCustomSettingsPath = "Assets/Plugins/Status Effects Framework/Resources/Settings/StatusEffectSettings.asset";
+        public const string k_MyCustomSettingsPath = "Assets/Resources/StatusEffectSettings.asset";
 
         [Tooltip("If you want effects to be applied multiple times on the same MonoBehaviour enable this.")]
         public bool allowEffectStacking;
@@ -24,7 +24,7 @@ namespace StatusEffects
 
         public static StatusEffectSettings GetOrCreateSettings()
         {
-            var settings = Resources.Load<StatusEffectSettings>("Settings/StatusEffectSettings");
+            var settings = Resources.Load<StatusEffectSettings>("StatusEffectSettings");
 #if UNITY_EDITOR
             if (settings == null)
             {
