@@ -33,6 +33,8 @@ namespace StatusEffects
             int multiplicativeValue = 1;
             int postAdditiveValue = 0;
 
+            int effectValue;
+
             foreach (StatusEffect statusEffect in monoBehaviour.effects)
             {
                 foreach (Effect effect in statusEffect.data.effects)
@@ -40,16 +42,18 @@ namespace StatusEffects
                     if (effect.statusName != statusName)
                         continue;
 
+                    effectValue = effect.useBaseValue ? (int)statusEffect.data.baseValue : effect.intValue;
+
                     switch (effect.valueModifier)
                     {
                         case ValueModifier.Additive:
-                            additiveValue += effect.intValue;
+                            additiveValue += effectValue;
                             break;
                         case ValueModifier.Multiplicative:
-                            multiplicativeValue += effect.intValue;
+                            multiplicativeValue += effectValue;
                             break;
                         case ValueModifier.PostAdditive:
-                            postAdditiveValue += effect.intValue;
+                            postAdditiveValue += effectValue;
                             break;
 
                     }

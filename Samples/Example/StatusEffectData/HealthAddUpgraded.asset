@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
-  m_Name: HealthAdd
+  m_Name: HealthAddUpgraded
   m_EditorClassIdentifier: 
   group: Positive
   name: Health Add
   description: 
-  baseValue: 10
+  baseValue: 20
   allowEffectStacking: 0
   nonStackingBehaviour: 0
   effects:

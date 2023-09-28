@@ -6,21 +6,26 @@ namespace StatusEffects
     [Serializable]
     public class StatusEffect : IEquatable<StatusEffect>
     {
+        public Action started;
+        public Action stopped;
+
         public StatusEffectData data;
-        public float time;
+        public float duration;
 
         public Coroutine _effectCoroutine;
 
         public StatusEffect(StatusEffectData data, float time)
         {
             this.data = data;
-            this.time = time;
+            this.duration = time;
         }
 
         public void StartCustomEffect<T>(T monoBehaviour) where T : MonoBehaviour, IStatus
         {
             if (data.customEffect != null)
                 _effectCoroutine = monoBehaviour.StartCoroutine(data.customEffect.Effect(monoBehaviour, this));
+
+            started?.Invoke();
         }
 
         public void StopCustomEffect<T>(T monoBehaviour) where T : MonoBehaviour, IStatus
@@ -30,6 +35,8 @@ namespace StatusEffects
 
             if (data.customEffect != null)
                 data.customEffect.EffectEnd(monoBehaviour, this);
+
+            stopped?.Invoke();
         }
 
         public bool Equals(StatusEffect other)

@@ -9,7 +9,7 @@ namespace StatusEffects.Editor
     [CustomPropertyDrawer(typeof(StatusStringAttribute))]
     public class StatusStringDrawer : PropertyDrawer
     {
-        private const int _toggleSize = 18;
+        private const int _toggleSize = 30;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {

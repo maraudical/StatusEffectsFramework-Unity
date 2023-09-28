@@ -32,6 +32,8 @@ namespace StatusEffects
             bool value = baseValue;
             int priority = -1;
 
+            bool effectValue;
+
             foreach (StatusEffect statusEffect in monoBehaviour.effects)
             {
                 foreach (Effect effect in statusEffect.data.effects)
@@ -39,10 +41,12 @@ namespace StatusEffects
                     if (effect.statusName != statusName)
                         continue;
 
+                    effectValue = effect.useBaseValue ? Convert.ToBoolean(statusEffect.data.baseValue) : effect.boolValue;
+
                     if (priority < effect.priority)
                     {
                         priority = effect.priority;
-                        value = effect.boolValue;
+                        value = effectValue;
                     }
                 }
             }

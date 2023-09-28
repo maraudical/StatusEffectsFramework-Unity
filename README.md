@@ -17,7 +17,8 @@
 - Status effect grouping to easilly manage multiple effects
 
 # Supported versions
-- (Tested on) Unity 2022.x
+- (Tested on)Unity 2022.x
+- (Tested on)Unity 2021.x
 
 # Getting started with the Status Effect Framework
 

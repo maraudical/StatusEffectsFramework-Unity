@@ -12,13 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: HealthPercent
   m_EditorClassIdentifier: 
-  name: Health Percentage
   group: Positive
+  name: Health Percentage
   description: 
+  baseValue: 0
+  allowEffectStacking: 0
+  nonStackingBehaviour: 0
   effects:
   - statusName: Max Health
     valueType: 0
     valueModifier: 1
+    useBaseValue: 0
     floatValue: 0.3
     intValue: 0
     boolValue: 0

@@ -6,13 +6,11 @@ namespace StatusEffects.Custom
     [CreateAssetMenu(fileName = "Heal Effect", menuName = "Custom Effects/Heal", order = 1)]
     public class HealEffect : CustomEffect
     {
-        [SerializeField] private float heal = 10f;
-
         public override IEnumerator Effect<T>(T monoBehaviour, StatusEffect statusEffect)
         {
             Entity entity = monoBehaviour.GetComponent<Entity>();
 
-            entity.health += heal;
+            entity.health += statusEffect.data.baseValue;
 
             yield return null;
         }

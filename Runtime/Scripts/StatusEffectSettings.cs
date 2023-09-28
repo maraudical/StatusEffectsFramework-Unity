@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -10,9 +11,6 @@ namespace StatusEffects
     public class StatusEffectSettings : ScriptableObject
     {
         public const string k_MyCustomSettingsPath = "Assets/Resources/StatusEffectSettings.asset";
-
-        [Tooltip("If you want effects to be applied multiple times on the same MonoBehaviour enable this.")]
-        public bool allowEffectStacking;
 #if LOCALIZATION_SUPPORT
         public bool disableUnityLocalizationSupport;
 #endif
@@ -29,12 +27,12 @@ namespace StatusEffects
             if (settings == null)
             {
                 settings = CreateInstance<StatusEffectSettings>();
-                settings.allowEffectStacking = false;
 #if LOCALIZATION_SUPPORT
                 settings.disableUnityLocalizationSupport = false;
 #endif
                 settings.groups = new string[] { "Static", "Negative", "Positive" };
                 settings.statuses = new string[] { "Max Health", "Speed", "Damage" };
+                Directory.CreateDirectory($"{Application.dataPath}/Resources");
                 AssetDatabase.CreateAsset(settings, k_MyCustomSettingsPath);
                 AssetDatabase.SaveAssets();
             }

@@ -19,6 +19,12 @@ namespace StatusEffects
         [TextArea] public string description;
 #endif
         [Space]
+        public float baseValue;
+        [Space]
+        [Tooltip("If you want effects to be applied multiple times on the same MonoBehaviour enable this.")]
+        public bool allowEffectStacking;
+        public NonStackingBehaviour nonStackingBehaviour;
+        [Space]
         public List<Effect> effects;
         [Space]
         public CustomEffect customEffect;
@@ -30,6 +36,7 @@ namespace StatusEffects
         [StatusString] public string statusName;
         public ValueType valueType;
         public ValueModifier valueModifier;
+        public bool useBaseValue;
         public float floatValue;
         public int intValue;
         public bool boolValue;
