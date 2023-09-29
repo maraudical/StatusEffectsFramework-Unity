@@ -1,6 +1,6 @@
 {
   "name": "com.maraudical.sef",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "displayName": "Status Effects Framework",
   "description": "A framework for implementing status effects into any game.",
   "license": "MIT",
@@ -20,11 +20,12 @@
 	"email": "gradymilligan@icloud.com",
 	"url": "https://gradymilligan.com/"
   },
+  "documentationUrl": "https://maraudical.gitbook.io/status-effect-framework",
   "samples": [
   {
 	"displayName": "Effects Example",
 	"description": "Contains simple examples of a few effects as well as how to implement them into your own classes.",
-	"path": "Samples/Example"
+	"path": "Samples~/Example"
   }
   ],
   "type": "tool"

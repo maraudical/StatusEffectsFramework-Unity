@@ -1,0 +1,1 @@
+https://maraudical.gitbook.io/status-effect-framework
