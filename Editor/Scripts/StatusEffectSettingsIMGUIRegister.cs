@@ -24,8 +24,7 @@ namespace StatusEffects.Editor
                     EditorGUIUtility.labelWidth = 215;
                     int defaultIndent = EditorGUI.indentLevel;
                     EditorGUI.indentLevel = 1;
-                    SerializedProperty property = settings.FindProperty("allowEffectStacking");
-                    EditorGUILayout.PropertyField(property, new GUIContent(property.displayName));
+                    SerializedProperty property;
 #if LOCALIZATION_SUPPORT
                     property = settings.FindProperty("disableUnityLocalizationSupport");
                     EditorGUILayout.PropertyField(property, new GUIContent(property.displayName));

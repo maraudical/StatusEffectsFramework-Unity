@@ -15,10 +15,14 @@ MonoBehaviour:
   group: Negative
   name: Stunned
   description: 
+  baseValue: 1
+  allowEffectStacking: 0
+  nonStackingBehaviour: 0
   effects:
   - statusName: Stunned
     valueType: 2
     valueModifier: 0
+    useBaseValue: 1
     floatValue: 0
     intValue: 0
     boolValue: 1

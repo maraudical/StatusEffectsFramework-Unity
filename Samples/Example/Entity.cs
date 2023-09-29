@@ -24,7 +24,7 @@ public class Entity : MonoBehaviour, IStatus
         health = _maxHealth.value;
     }
 
-    public void OnStatusEffect(StatusEffect statusEffect, bool active) { }
+    public void OnStatusEffect(StatusEffect statusEffect, bool started) { }
 
     void DebugAddStatusEffect()
     {
@@ -38,6 +38,6 @@ public class Entity : MonoBehaviour, IStatus
     
     public void DebugRemoveStatusEffectGroup()
     {
-        this.RemoveStatusEffects(group);
+        this.RemoveAllStatusEffects(group);
     }
 }

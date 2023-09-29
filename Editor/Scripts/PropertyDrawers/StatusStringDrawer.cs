@@ -16,9 +16,10 @@ namespace StatusEffects.Editor
             if (property.propertyType == SerializedPropertyType.String)
             {
                 EditorGUI.BeginProperty(position, label, property);
+                position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(property.displayName));
 
                 Rect offset = new Rect(position.x, position.y, _toggleSize, position.height);
-
+                
                 StatusStringAttribute stringAttribute = (attribute as StatusStringAttribute);
 
                 var list = StatusEffectSettings.GetOrCreateSettings().statuses;

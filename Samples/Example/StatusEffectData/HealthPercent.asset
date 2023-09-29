@@ -15,14 +15,14 @@ MonoBehaviour:
   group: Positive
   name: Health Percentage
   description: 
-  baseValue: 0
+  baseValue: 0.3
   allowEffectStacking: 0
   nonStackingBehaviour: 0
   effects:
   - statusName: Max Health
     valueType: 0
     valueModifier: 1
-    useBaseValue: 0
+    useBaseValue: 1
     floatValue: 0.3
     intValue: 0
     boolValue: 0

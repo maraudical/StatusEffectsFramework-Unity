@@ -12,26 +12,26 @@ namespace StatusEffects
         public StatusEffectData data;
         public float duration;
 
-        public Coroutine _effectCoroutine;
+        public Coroutine effectCoroutine;
 
-        public StatusEffect(StatusEffectData data, float time)
+        public StatusEffect(StatusEffectData data, float duration)
         {
             this.data = data;
-            this.duration = time;
+            this.duration = duration;
         }
 
         public void StartCustomEffect<T>(T monoBehaviour) where T : MonoBehaviour, IStatus
         {
             if (data.customEffect != null)
-                _effectCoroutine = monoBehaviour.StartCoroutine(data.customEffect.Effect(monoBehaviour, this));
+                effectCoroutine = monoBehaviour.StartCoroutine(data.customEffect.Effect(monoBehaviour, this));
 
             started?.Invoke();
         }
 
         public void StopCustomEffect<T>(T monoBehaviour) where T : MonoBehaviour, IStatus
         {
-            if (_effectCoroutine != null)
-                monoBehaviour.StopCoroutine(_effectCoroutine);
+            if (effectCoroutine != null)
+                monoBehaviour.StopCoroutine(effectCoroutine);
 
             if (data.customEffect != null)
                 data.customEffect.EffectEnd(monoBehaviour, this);

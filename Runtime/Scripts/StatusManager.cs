@@ -127,22 +127,14 @@ namespace StatusEffects
         /// <summary>
         /// Removes a <see cref="StatusEffect"/> from a <see cref="MonoBehaviour"/>.
         /// </summary>
-        public static void RemoveStatusEffect<T>(this T monoBehaviour, StatusEffectData statusEffectData, bool removeStack = true) where T : MonoBehaviour, IStatus
+        public static void RemoveStatusEffect<T>(this T monoBehaviour, StatusEffectData statusEffectData) where T : MonoBehaviour, IStatus
         {
             if (!monoBehaviour || statusEffectData == null || monoBehaviour.effects == null)
                 return;
-            // Attempt to find the effects for a given monobehaviour
-            try
-            {
-                if (removeStack)
-                    // From the end of the list iterate through and if the given group is tagged remove the effect
-                    for (int i = monoBehaviour.effects.Count - 1; i >= 0; i--)
-                        if (monoBehaviour.effects.ElementAt(i).data == statusEffectData)
-                            RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.ElementAt(i));
-                else
-                    RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.First(e => e.data == statusEffectData));
-            }
-            catch { }
+            // From the end of the list iterate through and if the given group is tagged remove the effect
+            for (int i = monoBehaviour.effects.Count - 1; i >= 0; i--)
+                if (monoBehaviour.effects.ElementAt(i).data == statusEffectData)
+                    RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.ElementAt(i));
         }
         /// <summary>
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
@@ -158,19 +150,6 @@ namespace StatusEffects
                     RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.ElementAt(i));
         }
         /// <summary>
-        /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
-        /// are part of the given <see cref="string"/> group. See <see cref="GroupStringAttribute"/>.
-        /// </summary>
-        public static void RemoveStatusEffects<T>(this T monoBehaviour, string group) where T : MonoBehaviour, IStatus
-        {
-            if (!monoBehaviour || monoBehaviour.effects == null)
-                return;
-            // From the end of the list iterate through and if the given group is tagged remove the effect
-            for (int i = monoBehaviour.effects.Count - 1; i >= 0; i--)
-                if (monoBehaviour.effects.ElementAt(i).data.group == group)
-                    RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.ElementAt(i));
-        }
-        /// <summary>
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/>.
         /// </summary>
         public static void RemoveAllStatusEffects<T>(this T monoBehaviour) where T : MonoBehaviour, IStatus
@@ -180,6 +159,19 @@ namespace StatusEffects
             // From the end of the list iterate through and if the given group is tagged remove the effect
             for (int i = monoBehaviour.effects.Count - 1; i >= 0; i--)
                 RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.ElementAt(i));
+        }
+        /// <summary>
+        /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
+        /// are part of the given <see cref="string"/> group. See <see cref="GroupStringAttribute"/>.
+        /// </summary>
+        public static void RemoveAllStatusEffects<T>(this T monoBehaviour, string group) where T : MonoBehaviour, IStatus
+        {
+            if (!monoBehaviour || monoBehaviour.effects == null)
+                return;
+            // From the end of the list iterate through and if the given group is tagged remove the effect
+            for (int i = monoBehaviour.effects.Count - 1; i >= 0; i--)
+                if (monoBehaviour.effects.ElementAt(i).data.group == group)
+                    RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.ElementAt(i));
         }
 
         private static IEnumerator TimedEffect<T>(T monoBehaviour, StatusEffect statusEffect) where T : MonoBehaviour, IStatus

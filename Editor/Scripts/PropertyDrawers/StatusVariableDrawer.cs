@@ -35,11 +35,10 @@ namespace StatusEffects.Editor
 
             if (foldout)
             {
-                EditorGUI.indentLevel = 1;
+                EditorGUI.indentLevel = 2;
+                position.x = 0;
                 position.y += fieldSize + padding;
-
-                propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(statusName.displayName));
-                EditorGUI.PropertyField(propertyPosition, statusName, GUIContent.none);
+                EditorGUI.PropertyField(position, statusName, GUIContent.none);
                 position.y += fieldSize + padding;
 
                 propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(baseValue.displayName));
@@ -59,9 +58,8 @@ namespace StatusEffects.Editor
                 GUI.enabled = true;
             }
 
-            EditorGUI.indentLevel = indent;
-
             EditorGUI.EndProperty();
+            EditorGUI.indentLevel = indent;
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
