@@ -59,7 +59,6 @@ namespace StatusEffects.Editor
             }
 
             EditorGUI.EndProperty();
-            EditorGUI.indentLevel = indent;
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)

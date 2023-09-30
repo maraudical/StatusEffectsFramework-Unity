@@ -35,8 +35,7 @@ namespace StatusEffects.Editor
             position.y += _padding;
             Rect propertyPosition;
 
-            propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(statusName.displayName));
-            EditorGUI.PropertyField(propertyPosition, statusName, GUIContent.none);
+            EditorGUI.PropertyField(position, statusName, GUIContent.none);
             position.y += _fieldSize + _padding;
 
             propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(valueType.displayName));

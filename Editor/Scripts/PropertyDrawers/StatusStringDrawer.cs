@@ -9,7 +9,7 @@ namespace StatusEffects.Editor
     [CustomPropertyDrawer(typeof(StatusStringAttribute))]
     public class StatusStringDrawer : PropertyDrawer
     {
-        private const int _toggleSize = 30;
+        private const int _toggleSize = 18;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -18,15 +18,15 @@ namespace StatusEffects.Editor
                 EditorGUI.BeginProperty(position, label, property);
                 position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(property.displayName));
 
-                Rect offset = new Rect(position.x, position.y, _toggleSize, position.height);
+                Rect offset = new Rect(position.x, position.y, _toggleSize * (EditorGUI.indentLevel + 1), position.height);
                 
                 StatusStringAttribute stringAttribute = (attribute as StatusStringAttribute);
 
                 var list = StatusEffectSettings.GetOrCreateSettings().statuses;
 
-                if (!stringAttribute.initialized && list.Contains(property.stringValue))
+                if (!stringAttribute.initialized && (list.Contains(property.stringValue) || property.stringValue == string.Empty))
                     stringAttribute.useDropdown = true;
-
+                
                 stringAttribute.initialized = true;
                 stringAttribute.useDropdown = EditorGUI.Toggle(offset, stringAttribute.useDropdown);
 

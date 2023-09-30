@@ -1,1 +1,1 @@
-https://maraudical.gitbook.io/status-effect-framework
+https://maraudical.gitbook.io/status-effect-framework/
