@@ -30,7 +30,7 @@
 1. Implement any **StatusFloat/StatusInt/StatusBools** that will be affected
 1. Use the extension methods on the **IStatus Monobehaviour** to add or remove effects
 
-Check the [documentation](https://maraudical.gitbook.io/status-effect-framework) for more information.
+Check the [documentation](https://maraudical.gitbook.io/status-effect-framework/) for more information.
 
 # Author
 **Grady Milligan** - *Student at Drexel University*
