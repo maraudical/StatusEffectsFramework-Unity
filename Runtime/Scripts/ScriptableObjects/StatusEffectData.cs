@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-#if LOCALIZATION_SUPPORT && !disableUnityLocalizationSupport
-using UnityEngine.Localization;
-#endif
 
 namespace StatusEffects
 {
@@ -12,12 +9,6 @@ namespace StatusEffects
     {
         [GroupString] public string group;
         public new string name;
-#if LOCALIZATION_SUPPORT && !disableUnityLocalizationSupport
-        public LocalizedString localizedName;
-        public LocalizedString localizedDescription;
-#else
-        [TextArea] public string description;
-#endif
         [Space]
         public float baseValue;
         [Space]

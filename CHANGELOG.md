@@ -1,5 +1,12 @@
 # Change Log:
 
+## 1.2.0
+
+- Feature: Updated the samples
+- Feature: Adding status effects has more options to set duration/removal conditions
+- Enhancement: Updated inspector view of multiple property drawers
+- Change: Removed localization support/description
+
 ## 1.1.0
 
 - Feature: Added documentation

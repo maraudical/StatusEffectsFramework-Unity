@@ -1,9 +1,7 @@
 {
     "name": "StatusEffectsFramework.Runtime",
     "rootNamespace": "",
-    "references": [
-        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
@@ -11,12 +9,6 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [
-        {
-            "name": "com.unity.localization",
-            "expression": "",
-            "define": "LOCALIZATION_SUPPORT"
-        }
-    ],
+    "versionDefines": [],
     "noEngineReferences": false
 }

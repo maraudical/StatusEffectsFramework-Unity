@@ -11,9 +11,6 @@ namespace StatusEffects
     public class StatusEffectSettings : ScriptableObject
     {
         public const string k_MyCustomSettingsPath = "Assets/Resources/StatusEffectSettings.asset";
-#if LOCALIZATION_SUPPORT
-        public bool disableUnityLocalizationSupport;
-#endif
         [Space]
         public string[] groups;
         [Space]
@@ -27,9 +24,6 @@ namespace StatusEffects
             if (settings == null)
             {
                 settings = CreateInstance<StatusEffectSettings>();
-#if LOCALIZATION_SUPPORT
-                settings.disableUnityLocalizationSupport = false;
-#endif
                 settings.groups = new string[] { "Static", "Negative", "Positive" };
                 settings.statuses = new string[] { "Max Health", "Speed", "Damage" };
                 Directory.CreateDirectory($"{Application.dataPath}/Resources");
