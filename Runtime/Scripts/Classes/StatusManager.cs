@@ -18,7 +18,7 @@ namespace StatusEffects
         /// Returns the listed <see cref="StatusEffect"/>s in a <see cref="HashSet{}"/> for a given <see cref="MonoBehaviour"/>.
         /// </summary>
 #nullable enable
-        public static List<StatusEffect> GetStatusEffects<T>(this T monoBehaviour, string? group = null, string? name = null) where T : MonoBehaviour, IStatus
+        public static List<StatusEffect> GetStatusEffects<T>(this T monoBehaviour, StatusEffectGroup? group = null, string? name = null) where T : MonoBehaviour, IStatus
         {
 #nullable disable
             if (!monoBehaviour)
@@ -26,7 +26,7 @@ namespace StatusEffects
             // Return the effects for a given monobehaviour, if given a group
             // or name to match only return effects within those categories.
             return monoBehaviour.effects.Where(e => (name  == null || e.data.name  == name) 
-                                                 && (group == null || e.data.group == group))
+                                                 && (group == null || (e.data.group & group) != 0))
                                         .ToList();
         }
         /// <summary>
@@ -130,7 +130,7 @@ namespace StatusEffects
         {
             if (!monoBehaviour || statusEffectData == null || monoBehaviour.effects == null)
                 return;
-            // From the end of the list iterate through and if the given group is tagged remove the effect.
+            // From the end of the list iterate through and if the given data is tagged remove the effect.
             for (int i = monoBehaviour.effects.Count - 1; i >= 0; i--)
                 if (monoBehaviour.effects.ElementAt(i).data == statusEffectData)
                     RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.ElementAt(i));
@@ -143,7 +143,7 @@ namespace StatusEffects
         {
             if (!monoBehaviour || monoBehaviour.effects == null)
                 return;
-            // From the end of the list iterate through and if the given group is tagged remove the effect.
+            // From the end of the list iterate through and if the given name is tagged remove the effect.
             for (int i = monoBehaviour.effects.Count - 1; i >= 0; i--)
                 if (monoBehaviour.effects.ElementAt(i).data.name == name)
                     RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.ElementAt(i));
@@ -155,7 +155,7 @@ namespace StatusEffects
         {
             if (!monoBehaviour || monoBehaviour.effects == null)
                 return;
-            // From the end of the list iterate through and if the given group is tagged remove the effect.
+            // From the end of the list iterate through and remove all.
             for (int i = monoBehaviour.effects.Count - 1; i >= 0; i--)
                 RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.ElementAt(i));
         }
@@ -163,13 +163,13 @@ namespace StatusEffects
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
         /// are part of the given <see cref="string"/> group. See <see cref="GroupStringAttribute"/>.
         /// </summary>
-        public static void RemoveAllStatusEffects<T>(this T monoBehaviour, string group) where T : MonoBehaviour, IStatus
+        public static void RemoveAllStatusEffects<T>(this T monoBehaviour, StatusEffectGroup group) where T : MonoBehaviour, IStatus
         {
             if (!monoBehaviour || monoBehaviour.effects == null)
                 return;
             // From the end of the list iterate through and if the given group is tagged remove the effect.
             for (int i = monoBehaviour.effects.Count - 1; i >= 0; i--)
-                if (monoBehaviour.effects.ElementAt(i).data.group == group)
+                if ((monoBehaviour.effects.ElementAt(i).data.group & group) != 0)
                     RemoveStatusEffect(monoBehaviour, monoBehaviour.effects.ElementAt(i));
         }
 

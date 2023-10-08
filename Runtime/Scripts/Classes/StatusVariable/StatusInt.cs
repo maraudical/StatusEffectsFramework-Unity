@@ -39,7 +39,7 @@ namespace StatusEffects
             {
                 foreach (Effect effect in statusEffect.data.effects)
                 {
-                    if (effect.statusName != statusName)
+                    if (effect.statusName != statusName || effect.valueType != ValueType.Int)
                         continue;
 
                     effectValue = effect.useBaseValue ? (int)statusEffect.data.baseValue : effect.intValue;
@@ -62,6 +62,8 @@ namespace StatusEffects
             
             return (baseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
         }
+
+        public static implicit operator int(StatusInt statusInt) => statusInt.value;
 
         protected override void OnReferencesChanged()
         {

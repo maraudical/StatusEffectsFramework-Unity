@@ -2,12 +2,14 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Editor
+namespace StatusEffects.Inspector
 {
 
     // Register a SettingsProvider using IMGUI for the drawing framework:
     static class StatusEffectSettingsIMGUIRegister
     {
+        static bool groupFoldout = true;
+
         [SettingsProvider]
         public static SettingsProvider CreateStatusEffectSettingsProvider()
         {
@@ -23,22 +25,28 @@ namespace StatusEffects.Editor
                     var settings = StatusEffectSettings.GetSerializedSettings();
                     EditorGUIUtility.labelWidth = 215;
                     int defaultIndent = EditorGUI.indentLevel;
-                    EditorGUI.indentLevel = 1;
+                    EditorGUI.indentLevel = 0;
                     SerializedProperty property;
-#if LOCALIZATION_SUPPORT
-                    property = settings.FindProperty("disableUnityLocalizationSupport");
-                    EditorGUILayout.PropertyField(property, new GUIContent(property.displayName));
-#endif
                     EditorGUIUtility.labelWidth = 0;
-                    EditorGUI.indentLevel = defaultIndent;
                     EditorGUILayout.Space();
                     EditorGUILayout.BeginVertical("groupbox");
-                    property = settings.FindProperty("groups");
-                    EditorGUILayout.PropertyField(property, new GUIContent(property.displayName));
-                    EditorGUILayout.Space();
                     property = settings.FindProperty("statuses");
                     EditorGUILayout.PropertyField(property, new GUIContent(property.displayName));
+                    EditorGUILayout.Space();
+                    groupFoldout = EditorGUILayout.Foldout(groupFoldout, "Groups");
+                    if (groupFoldout)
+                    {
+                        EditorGUI.indentLevel++;
+                        property = settings.FindProperty("groups");
+                        for (int i = 0; i < property.arraySize; i++)
+                        {
+                            // draw every element of the array
+                            EditorGUILayout.PropertyField(property.GetArrayElementAtIndex(i));
+                        }
+                        EditorGUI.indentLevel--;
+                    }
                     GUILayout.EndVertical();
+                    EditorGUI.indentLevel = defaultIndent;
                     settings.ApplyModifiedPropertiesWithoutUndo();
                 },
 

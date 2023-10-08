@@ -2,9 +2,8 @@ using System;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.UIElements;
 
-namespace StatusEffects.Editor
+namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(StatusStringAttribute))]
     public class StatusStringDrawer : PropertyDrawer

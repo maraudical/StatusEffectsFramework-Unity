@@ -1,8 +1,7 @@
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Editor
+namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(Effect))]
     public class EffectDrawer : PropertyDrawer

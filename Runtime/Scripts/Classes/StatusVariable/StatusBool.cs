@@ -38,7 +38,7 @@ namespace StatusEffects
             {
                 foreach (Effect effect in statusEffect.data.effects)
                 {
-                    if (effect.statusName != statusName)
+                    if (effect.statusName != statusName || effect.valueType != ValueType.Bool)
                         continue;
 
                     effectValue = effect.useBaseValue ? Convert.ToBoolean(statusEffect.data.baseValue) : effect.boolValue;
@@ -53,6 +53,8 @@ namespace StatusEffects
 
             return value;
         }
+
+        public static implicit operator bool(StatusBool statusBool) => statusBool.value;
 
         protected override void OnReferencesChanged()
         {

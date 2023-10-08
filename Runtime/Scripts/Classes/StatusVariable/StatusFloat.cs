@@ -37,7 +37,7 @@ namespace StatusEffects
             {
                 foreach (Effect effect in statusEffect.data.effects)
                 {
-                    if (effect.statusName != statusName)
+                    if (effect.statusName != statusName || effect.valueType != ValueType.Float)
                         continue;
 
                     effectValue = effect.useBaseValue ? statusEffect.data.baseValue : effect.floatValue;
@@ -60,6 +60,8 @@ namespace StatusEffects
             
             return (baseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
         }
+
+        public static implicit operator float(StatusFloat statusFloat) => statusFloat.value;
 
         protected override void OnReferencesChanged()
         {

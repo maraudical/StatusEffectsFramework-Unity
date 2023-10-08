@@ -2,7 +2,7 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Editor
+namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(StatusFloat))]
     [CustomPropertyDrawer(typeof(StatusInt))]

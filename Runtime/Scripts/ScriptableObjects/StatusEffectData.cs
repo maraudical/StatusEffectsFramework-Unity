@@ -7,7 +7,7 @@ namespace StatusEffects
     [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effect Data", order = 1)]
     public class StatusEffectData : ScriptableObject
     {
-        [GroupString] public string group;
+        public StatusEffectGroup group;
         public new string name;
         [Space]
         public float baseValue;

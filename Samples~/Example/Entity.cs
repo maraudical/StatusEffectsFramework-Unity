@@ -18,7 +18,7 @@ public class Entity : MonoBehaviour, IStatus
     [Header("Debug")]
     [SerializeField] private StatusEffectData _statusEffectData;
     [SerializeField] private float duration;
-    [SerializeField, GroupString] private string group;
+    [SerializeField] private StatusEffectGroup group;
     [field: Space]
     // Right click the "effect" list from the inspector to access the
     // context menu methods.
