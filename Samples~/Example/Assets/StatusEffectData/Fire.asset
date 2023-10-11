@@ -42,9 +42,3 @@ MonoBehaviour:
     configurable: {fileID: 11400000}
     timed: 0
     duration: 0
-  - searchable: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
-    exists: 1
-    add: 1
-    configurable: {fileID: 11400000, guid: 591a04ae4706a484db079a6920cb0c77, type: 2}
-    timed: 1
-    duration: 20
