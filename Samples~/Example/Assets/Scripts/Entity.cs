@@ -8,6 +8,7 @@ public class Entity : MonoBehaviour, IStatus
     [SerializeField] private StatusFloat _maxHealth;
     [SerializeField] private StatusFloat _speed;
     [SerializeField] private StatusBool _stunned;
+    [SerializeField] private StatusBool _onFire;
     // Note that health would not be a StatusVariable because its
     // value shouldn't dynamically update with effects.
     public float health;

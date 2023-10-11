@@ -6,9 +6,9 @@ namespace StatusEffects.Inspector
     [CustomPropertyDrawer(typeof(Effect))]
     public class EffectDrawer : PropertyDrawer
     {
-        private const int _fieldCount = 4;
         private float _fieldSize = EditorGUIUtility.singleLineHeight;
-        private const int _padding = 2;
+        private float _padding = EditorGUIUtility.standardVerticalSpacing;
+        private const int _fieldCount = 4;
         private const int _toggleSize = 30;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)

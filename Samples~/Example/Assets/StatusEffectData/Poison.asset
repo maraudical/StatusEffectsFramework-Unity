@@ -10,21 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
-  m_Name: HealthPercent
+  m_Name: Poison
   m_EditorClassIdentifier: 
   group:
-    value: 4
-  name: Health Percentage
-  baseValue: 0.3
+    value: 2
+  name: Poison
+  baseValue: 2
   allowEffectStacking: 0
   nonStackingBehaviour: 0
   effects:
-  - statusName: Max Health
+  - statusName: Poison
     valueType: 0
     valueModifier: 1
-    useBaseValue: 1
-    floatValue: 0.3
+    useBaseValue: 0
+    floatValue: -0.3
     intValue: 0
     boolValue: 0
     priority: 0
-  customEffect: {fileID: 0}
+  customEffect: {fileID: 11400000, guid: 953f3e2a50b26cf4c8c47c3e819094c8, type: 2}
+  conditions: []

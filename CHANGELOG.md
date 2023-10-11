@@ -1,5 +1,13 @@
 # Change Log:
 
+## 1.3.0
+
+- Feature: Conditional adding/removing when effects are applied with/without other effects
+- Feature: Int based grouping system
+- Enhancement: Slightly reorganized file structure
+- Bug Fix: Now checks for effect value type when adding to statuses
+- Bug Fix: Project Settings tab now properly updates
+
 ## 1.2.0
 
 - Feature: Updated the samples

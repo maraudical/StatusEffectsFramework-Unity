@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
+  m_Name: Ice
+  m_EditorClassIdentifier: 
+  group:
+    value: 2
+  name: Ice
+  baseValue: -0.3
+  allowEffectStacking: 0
+  nonStackingBehaviour: 0
+  effects:
+  - statusName: Speed
+    valueType: 0
+    valueModifier: 1
+    useBaseValue: 1
+    floatValue: -0.3
+    intValue: 0
+    boolValue: 0
+    priority: 0
+  customEffect: {fileID: 0}
+  warning: 
+  conditions:
+  - searchable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    exists: 1
+    add: 0
+    configurable: {fileID: 11400000}
+    timed: 1
+    duration: 12
+  - searchable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    exists: 1
+    add: 0
+    configurable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    timed: 0
+    duration: 0
+  - searchable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    exists: 1
+    add: 1
+    configurable: {fileID: 11400000, guid: 56d927ea90df83d498e37cfd7daba43b, type: 2}
+    timed: 0
+    duration: 0

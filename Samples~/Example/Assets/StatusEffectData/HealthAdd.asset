@@ -28,3 +28,5 @@ MonoBehaviour:
     boolValue: 0
     priority: 0
   customEffect: {fileID: 11400000, guid: fc369abdd5ca5574b92d2962ebfd5d96, type: 2}
+  warning: 
+  conditions: []

@@ -179,9 +179,36 @@ namespace StatusEffects
         {
 #nullable disable
             if (!monoBehaviour)
-                throw new System.Exception($"Attempted to add a {typeof(StatusEffect).Name} to a null {typeof(MonoBehaviour).Name}. This is not allowed.");
+                throw new System.Exception($"Attempted to add a {typeof(StatusEffect).Name} to a " +
+                                           $"null {typeof(MonoBehaviour).Name}. This is not allowed.");
             if (!statusEffectData)
-                throw new System.Exception($"Attempted to add a null {typeof(StatusEffect).Name} to a {typeof(MonoBehaviour).Name}. This is not allowed.");
+                throw new System.Exception($"Attempted to add a null {typeof(StatusEffect).Name} " +
+                                           $"to a {typeof(MonoBehaviour).Name}. This is not allowed.");
+            // Check for conditions
+            List<StatusEffectData> removeEffects = new List<StatusEffectData>();
+            bool preventStatusEffect = false;
+            foreach (Condition condition in statusEffectData.conditions)
+            {
+                bool exists = monoBehaviour.GetStatusEffects(name: condition.searchable.name).Count > 0;
+                // I am so sorry :(
+                if ((condition.exists && (condition.searchable == statusEffectData || exists))
+                || (!condition.exists && !exists))
+                    if (condition.add)
+                        if (condition.timed)
+                            monoBehaviour.AddStatusEffect(condition.configurable, condition.duration);
+                        else
+                            monoBehaviour.AddStatusEffect(condition.configurable);
+                    // Special case where the configurable which is the
+                    // current data to be added is tagged for removal.
+                    else if (condition.configurable == statusEffectData)
+                        preventStatusEffect = true;
+                    else
+                        removeEffects.Add(condition.configurable);
+            }
+            foreach (var data in removeEffects)
+                monoBehaviour.RemoveStatusEffect(data.name);
+            if (preventStatusEffect)
+                return null;
 
             float durationValue = duration.HasValue ? duration.Value : 0;
             // Create a new status effect instance.

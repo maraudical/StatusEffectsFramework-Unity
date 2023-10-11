@@ -2,7 +2,7 @@
   <img src="https://drive.google.com/uc?id=1UYbBluu119xenikC8iY13CaT8lcp4J_G" height="200" alt="logo"><br>
   <a href="https://unity3d.com/en/get-unity/download/archive"><img src="https://img.shields.io/badge/unity-2021%20or%20later-green.svg" alt=""></a>
   <a href="https://github.com/maraudical/StatusEffectsFramework/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="https://github.com/maraudical/StatusEffectsFramework/releases"><img src="https://img.shields.io/badge/version-1.2.0-blue" alt="version"></a>
+  <a href="https://github.com/maraudical/StatusEffectsFramework/releases"><img src="https://img.shields.io/badge/version-1.3.0-blue" alt="version"></a>
   <a href="https://github.com/maraudical/StatusEffectsFramework/pulls"><img src="https://img.shields.io/github/issues-pr-raw/maraudical/StatusEffectsFramework" alt=""></a>
 </p><br>
 
@@ -15,6 +15,7 @@
 - **Unlimited** customizability with each effect
 - Float, int, and bool variables that **dynamically** update with effects
 - Status effect grouping to easilly manage multiple effects
+- Conditional adding/removing when effects are applied in tandem to other effects
 
 # Supported versions
 - (Tested on)Unity 2022.x
@@ -33,7 +34,7 @@
 Check the [documentation](https://maraudical.gitbook.io/status-effect-framework/) for more information.
 
 # Author
-**Grady Milligan** - *Student at Drexel University*
+**Grady Milligan** - *Game Designer*
 
 [LinkTree](https://linktr.ee/gradymilligan) - [GitHub](https://github.com/maraudical)
 
