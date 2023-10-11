@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Entity : MonoBehaviour, IStatus
 {
+    [StatusEffects.Inspector.InfoBox(hexCode = "#FFFF00"), SerializeField] 
+    private string info = "Please view the code in this script for example implementation!";
     // Example variables
     [SerializeField] private StatusFloat _maxHealth;
     [SerializeField] private StatusFloat _speed;

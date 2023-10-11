@@ -34,11 +34,11 @@ MonoBehaviour:
     exists: 1
     add: 0
     configurable: {fileID: 11400000}
-    timed: 1
+    timing: 0
     duration: 12
   - searchable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
     exists: 1
     add: 0
     configurable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    timed: 0
+    timing: 0
     duration: 0

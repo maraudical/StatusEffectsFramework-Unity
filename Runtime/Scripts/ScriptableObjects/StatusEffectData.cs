@@ -63,7 +63,7 @@ namespace StatusEffects
         public bool exists = true;
         public bool add = true;
         public StatusEffectData configurable;
-        public bool timed;
+        public Timing timing;
         public float duration;
     }
 }

@@ -1,5 +1,11 @@
 # Change Log:
 
+## 1.3.1
+
+- Feature: Added a global time override to tie duration to a specified action for all effects
+- Enhancement: Add an inherited option to conditional timing
+- Bug Fix: Fixed logic for non-stacking behaviour
+
 ## 1.3.0
 
 - Feature: Conditional adding/removing when effects are applied with/without other effects

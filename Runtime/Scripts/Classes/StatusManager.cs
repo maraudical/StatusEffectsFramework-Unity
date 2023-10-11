@@ -10,10 +10,29 @@ namespace StatusEffects
     {
         public static StatusEffectSettings settings => StatusEffectSettings.GetOrCreateSettings();
 
-        private const BindingFlags bindingFlags = BindingFlags.Public |
+        private static System.Action<float> s_globalTimeEvent;
+        private static bool _overrideGlobalTime = false;
+
+        private const BindingFlags _bindingFlags = BindingFlags.Public |
                                                   BindingFlags.NonPublic |
                                                   BindingFlags.Instance |
                                                   BindingFlags.Static;
+        /// <summary>
+        /// This is only necessary for games that don't have realtime <see cref="StatusEffect"/>s. 
+        /// As a warning, this can (and should) only be set once, ideally at the beginning of the game. 
+        /// It CANNOT be unset once it has be set during runtime.
+        /// </summary>
+        public static void SetGlobalTimeOverride(ref System.Action action, float inteval = 1)
+        {
+            action += InvokeEvent;
+
+            _overrideGlobalTime = true;
+
+            void InvokeEvent()
+            {
+                s_globalTimeEvent?.Invoke(inteval);
+            }
+        }
         /// <summary>
         /// Returns the listed <see cref="StatusEffect"/>s in a <see cref="HashSet{}"/> for a given <see cref="MonoBehaviour"/>.
         /// </summary>
@@ -30,7 +49,7 @@ namespace StatusEffects
                                         .ToList();
         }
         /// <summary>
-        /// Adds a <see cref="StatusEffect"/> to a <see cref="MonoBehaviour"/>.
+        /// Adds a <see cref="StatusEffect"/> to a <see cref="MonoBehaviour"/>. Returns null if no <see cref="StatusEffect"/> was added.
         /// </summary>
         public static StatusEffect AddStatusEffect<T>(this T monoBehaviour, StatusEffectData statusEffectData) where T : MonoBehaviour, IStatus
         {
@@ -39,11 +58,14 @@ namespace StatusEffects
         /// <summary>
         /// Adds a <see cref="StatusEffect"/> to a <see cref="MonoBehaviour"/>. 
         /// The given <see cref="float"/> time will limit the duration of the 
-        /// effect in seconds.
+        /// effect in seconds. Returns null if no <see cref="StatusEffect"/> was added.
         /// </summary>
         public static StatusEffect AddStatusEffect<T>(this T monoBehaviour, StatusEffectData statusEffectData, float duration) where T : MonoBehaviour, IStatus
         {
             StatusEffect statusEffect = AddStatusEffect(monoBehaviour, statusEffectData, (float?)duration);
+
+            if (statusEffect == null)
+                return null;
             // Begin a coroutine on the monobehaviour.
             monoBehaviour.StartCoroutine(TimedEffect(monoBehaviour, statusEffect));
 
@@ -52,10 +74,21 @@ namespace StatusEffects
             static IEnumerator TimedEffect(T monoBehaviour, StatusEffect statusEffect)
             {
                 // Basic decreasing timer.
-                while (statusEffect.duration > 0)
+                while (statusEffect.duration > 0 && !_overrideGlobalTime)
                 {
                     yield return null;
                     statusEffect.duration -= Time.deltaTime;
+                }
+                // If a global time override is set
+                if (statusEffect.duration > 0 && _overrideGlobalTime)
+                {
+                    s_globalTimeEvent += SubtractInterval;
+                    // Wait until duration has reached 0 due to action event calls.
+                    yield return new WaitUntil(() => statusEffect.duration <= 0);
+
+                    s_globalTimeEvent -= SubtractInterval;
+
+                    void SubtractInterval(float interval) { statusEffect.duration -= interval; }
                 }
                 // Once it has ended remove the given effect.
                 RemoveStatusEffect(monoBehaviour, statusEffect);
@@ -65,13 +98,17 @@ namespace StatusEffects
         /// Adds a <see cref="StatusEffect"/> to a <see cref="MonoBehaviour"/>. 
         /// The given <see cref="float"/> time will limit the duration of the 
         /// effect where each invocation of the <see cref="System.Action"/> 
-        /// will reduce the duration by 1.
+        /// will reduce the duration by 1. Returns null if no 
+        /// <see cref="StatusEffect"/> was added.
         /// </summary>
-        public static StatusEffect AddStatusEffect<T>(this T monoBehaviour, StatusEffectData statusEffectData, float duration, ref System.Action action) where T : MonoBehaviour, IStatus
+        public static StatusEffect AddStatusEffect<T>(this T monoBehaviour, StatusEffectData statusEffectData, float duration, ref System.Action action, int interval = 1) where T : MonoBehaviour, IStatus
         {
             StatusEffect statusEffect = AddStatusEffect(monoBehaviour, statusEffectData, (float?)duration);
+
+            if (statusEffect == null)
+                return null;
             // Begin a coroutine on the monobehaviour.
-            action += () => { statusEffect.duration -= 1; };
+            action += () => { statusEffect.duration -= interval; };
             monoBehaviour.StartCoroutine(TimedEffect());
             
             return statusEffect;
@@ -87,11 +124,15 @@ namespace StatusEffects
         /// <summary>
         /// Adds a <see cref="StatusEffect"/> to a <see cref="MonoBehaviour"/>. 
         /// The StatusEffect will be removed when the given 
-        /// <see cref="System.Func{bool}"/> is true.
+        /// <see cref="System.Func{bool}"/> is true. Returns null if no 
+        /// <see cref="StatusEffect"/> was added.
         /// </summary>
         public static StatusEffect AddStatusEffect<T>(this T monoBehaviour, StatusEffectData statusEffectData, System.Func<bool> predicate) where T : MonoBehaviour, IStatus
         {
             StatusEffect statusEffect = AddStatusEffect(monoBehaviour, statusEffectData, duration: null);
+
+            if (statusEffect == null)
+                return null;
             // Begin a coroutine on the monobehaviour.
             monoBehaviour.StartCoroutine(TimedEffect());
 
@@ -116,7 +157,7 @@ namespace StatusEffects
             monoBehaviour.effects.Remove(statusEffect);
             // Use reflection to get all the status variables on the monobehaviour
             // And remove the effect reference from each of the fields.
-            foreach (var field in monoBehaviour.GetType().GetFields(bindingFlags).Where(f => f.FieldType.IsSubclassOf(typeof(StatusVariable))))
+            foreach (var field in monoBehaviour.GetType().GetFields(_bindingFlags).Where(f => f.FieldType.IsSubclassOf(typeof(StatusVariable))))
                 ((StatusVariable)field.GetValue(monoBehaviour)).UpdateReferences(monoBehaviour);
             // If a custom effect exists it will be stopped.
             statusEffect.StopCustomEffect(monoBehaviour);
@@ -184,7 +225,12 @@ namespace StatusEffects
             if (!statusEffectData)
                 throw new System.Exception($"Attempted to add a null {typeof(StatusEffect).Name} " +
                                            $"to a {typeof(MonoBehaviour).Name}. This is not allowed.");
-            // Check for conditions
+            // First determine correct duration.
+            float durationValue = duration.HasValue ? duration.Value : -1;
+            // If the duration given is less than or equal to zero it won't be applied.
+            if (duration.HasValue && duration.Value <= 0)
+                return null;
+            // Check for conditions.
             List<StatusEffectData> removeEffects = new List<StatusEffectData>();
             bool preventStatusEffect = false;
             foreach (Condition condition in statusEffectData.conditions)
@@ -194,10 +240,21 @@ namespace StatusEffects
                 if ((condition.exists && (condition.searchable == statusEffectData || exists))
                 || (!condition.exists && !exists))
                     if (condition.add)
-                        if (condition.timed)
-                            monoBehaviour.AddStatusEffect(condition.configurable, condition.duration);
-                        else
-                            monoBehaviour.AddStatusEffect(condition.configurable);
+                        switch (condition.timing)
+                        {
+                            case Timing.Duration:
+                                monoBehaviour.AddStatusEffect(condition.configurable, condition.duration);
+                                break;
+                            case Timing.Inherited:
+                                if (duration.HasValue)
+                                    monoBehaviour.AddStatusEffect(condition.configurable, durationValue);
+                                else
+                                    goto default;
+                                break;
+                            default:
+                                monoBehaviour.AddStatusEffect(condition.configurable);
+                                break;
+                        }
                     // Special case where the configurable which is the
                     // current data to be added is tagged for removal.
                     else if (condition.configurable == statusEffectData)
@@ -209,8 +266,6 @@ namespace StatusEffects
                 monoBehaviour.RemoveStatusEffect(data.name);
             if (preventStatusEffect)
                 return null;
-
-            float durationValue = duration.HasValue ? duration.Value : 0;
             // Create a new status effect instance.
             StatusEffect statusEffect = new StatusEffect(statusEffectData, durationValue);
             // Check to delete the effect if it already exists to prevent duplicates.
@@ -224,18 +279,18 @@ namespace StatusEffects
                         case NonStackingBehaviour.MatchHighestValue:
                             // WARNING: There is an extremely special case here where
                             // a player may either have or try to apply an effect which
-                            // has an infinite duration (0). In this situation, attempt
+                            // has an infinite duration (-1). In this situation, attempt
                             // to take the higest value, and if they are the same take
                             // the infinite duration effect.
-                            if (statusEffect.duration <= 0 || oldStatusEffect.duration <= 0)
+                            if (statusEffect.duration < 0 || oldStatusEffect.duration < 0)
                             {
-                                if (statusEffect.data.baseValue < oldStatusEffect.data.baseValue) { return oldStatusEffect; }
-                                else if (statusEffect.data.baseValue > oldStatusEffect.data.baseValue || statusEffect.duration <= 0)
+                                if (statusEffect.data.baseValue < oldStatusEffect.data.baseValue) { return null; }
+                                else if (statusEffect.data.baseValue > oldStatusEffect.data.baseValue || statusEffect.duration < 0)
                                 {
                                     RemoveStatusEffect(monoBehaviour, statusEffectData.name);
                                     break;
                                 }
-                                else { return oldStatusEffect; }
+                                else { return null; }
                             }
                             // Find which effect is highest value.
                             StatusEffect higestValue = statusEffect.data.baseValue < oldStatusEffect.data.baseValue ? oldStatusEffect : statusEffect;
@@ -248,19 +303,19 @@ namespace StatusEffects
                         case NonStackingBehaviour.TakeHighestDuration:
                             // If the old status effect duration is 0 it means that it is an infinite duration so keep that.
                             if (statusEffect.duration < oldStatusEffect.duration || oldStatusEffect.duration <= 0)
-                                return oldStatusEffect;
+                                return null;
                             RemoveStatusEffect(monoBehaviour, statusEffectData.name);
                             break;
                         case NonStackingBehaviour.TakeHighestValue:
                             if (statusEffect.data.baseValue < oldStatusEffect.data.baseValue)
-                                return oldStatusEffect;
+                                return null;
                             RemoveStatusEffect(monoBehaviour, statusEffectData.name);
                             break;
                         case NonStackingBehaviour.TakeNewest:
                             RemoveStatusEffect(monoBehaviour, statusEffectData.name);
                             break;
                         case NonStackingBehaviour.TakeOldest:
-                            return oldStatusEffect;
+                            return null;
                     }
             }
             // Add the effect for a given monobehaviour.
@@ -270,7 +325,7 @@ namespace StatusEffects
                 monoBehaviour.effects.Add(statusEffect);
             // Use reflection to get all the status variables on the monobehaviour
             // And add the effect as a reference to each of the fields.
-            foreach (var field in monoBehaviour.GetType().GetFields(bindingFlags).Where(f => f.FieldType.IsSubclassOf(typeof(StatusVariable))))
+            foreach (var field in monoBehaviour.GetType().GetFields(_bindingFlags).Where(f => f.FieldType.IsSubclassOf(typeof(StatusVariable))))
                 ((StatusVariable)field.GetValue(monoBehaviour)).UpdateReferences(monoBehaviour);
             // If a custom effect exists it will be started.
             statusEffect.StartCustomEffect(monoBehaviour);
@@ -289,8 +344,8 @@ namespace StatusEffects
         {
             // Use reflection to get all the status floats on the monobehaviour
             // And return the one that matches the given status name.
-            return monoBehaviour.GetType().GetField(memberName, bindingFlags) as MemberInfo ??
-                   monoBehaviour.GetType().GetProperty(memberName, bindingFlags);
+            return monoBehaviour.GetType().GetField(memberName, _bindingFlags) as MemberInfo ??
+                   monoBehaviour.GetType().GetProperty(memberName, _bindingFlags);
         }
         /// <summary>
         /// Returns a <see cref="MethodInfo"/> from a <see cref="MonoBehaviour"/> given the <see cref="string"/> method name.
@@ -299,7 +354,7 @@ namespace StatusEffects
         {
             // Use reflection to get all the status floats on the monobehaviour
             // And return the one that matches the given status name.
-            return monoBehaviour.GetType().GetMethod(methodName, bindingFlags);
+            return monoBehaviour.GetType().GetMethod(methodName, _bindingFlags);
         }
         #endregion
     }
