@@ -8,7 +8,7 @@ namespace StatusEffects.Custom
     {
         public override IEnumerator Effect<T>(T monoBehaviour, StatusEffect statusEffect)
         {
-            Entity entity = monoBehaviour.GetComponent<Entity>();
+            ExampleEntity entity = monoBehaviour.GetComponent<ExampleEntity>();
 
             entity.health += statusEffect.data.baseValue;
 
@@ -17,7 +17,7 @@ namespace StatusEffects.Custom
 
         public override void EffectEnd<T>(T monoBehaviour, StatusEffect statusEffect)
         {
-            Entity entity = monoBehaviour.GetComponent<Entity>();
+            ExampleEntity entity = monoBehaviour.GetComponent<ExampleEntity>();
 
             entity.health = Mathf.Min(entity.health, entity.maxHealth);                         
         }

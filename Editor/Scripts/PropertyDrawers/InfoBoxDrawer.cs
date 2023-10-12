@@ -17,18 +17,14 @@ namespace StatusEffects.Inspector
                 InfoBoxAttribute infoBox = (attribute as InfoBoxAttribute);
                 content = new GUIContent(property.stringValue);
                 style = new GUIStyle();
-                style.fontStyle = FontStyle.Normal;
-                if (ColorUtility.TryParseHtmlString(infoBox.hexCode, out Color color))
-                    style.normal.textColor = color;
-                style.fontStyle = infoBox.style;
                 style.wordWrap = true;
-                style.alignment = TextAnchor.MiddleCenter;
                 style.stretchHeight = true;
                 style.fixedWidth = position.width;
 
-                EditorGUI.DrawRect(position, new Color(0, 0, 0, 0.15f));
+                EditorGUIUtility.SetIconSize(new Vector2(20, 20));
 
-                EditorGUI.LabelField(position, content, style);
+                if (!string.IsNullOrWhiteSpace(property.stringValue))
+                    EditorGUI.HelpBox(position, property.stringValue, (MessageType)infoBox.messageType);
             }
             else
             {
@@ -39,7 +35,7 @@ namespace StatusEffects.Inspector
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             if (property.propertyType == SerializedPropertyType.String && style != null && content != null)
-                return string.IsNullOrEmpty(content.text) ? 0 : style.CalcHeight(content, style.fixedWidth);
+                return string.IsNullOrWhiteSpace(content.text) ? 0 : Mathf.Max(style.CalcHeight(content, style.fixedWidth - 20), 30);
             else
                 return base.GetPropertyHeight(property, label);
         }

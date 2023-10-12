@@ -227,8 +227,8 @@ namespace StatusEffects
                                            $"to a {typeof(MonoBehaviour).Name}. This is not allowed.");
             // First determine correct duration.
             float durationValue = duration.HasValue ? duration.Value : -1;
-            // If the duration given is less than or equal to zero it won't be applied.
-            if (duration.HasValue && duration.Value <= 0)
+            // If the duration given is less than zero it won't be applied.
+            if (duration.HasValue && duration.Value < 0)
                 return null;
             // Check for conditions.
             List<StatusEffectData> removeEffects = new List<StatusEffectData>();
@@ -236,7 +236,7 @@ namespace StatusEffects
             foreach (Condition condition in statusEffectData.conditions)
             {
                 bool exists = monoBehaviour.GetStatusEffects(name: condition.searchable.name).Count > 0;
-                // I am so sorry :(
+                
                 if ((condition.exists && (condition.searchable == statusEffectData || exists))
                 || (!condition.exists && !exists))
                     if (condition.add)

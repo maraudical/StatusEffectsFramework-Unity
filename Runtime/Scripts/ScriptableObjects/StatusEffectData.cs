@@ -26,7 +26,7 @@ namespace StatusEffects
         private string warningDefault = $"Do not recursively add status datas! " +
                                         $"Avoid adding a status data to itself! " +
                                         $"Make sure there aren't two that add eachother!";
-        [InfoBox(hexCode = "#FF0000", style = FontStyle.Bold), SerializeField] 
+        [InfoBox(messageType = 3), SerializeField] 
         private string warning;
         private void OnValidate()
         {

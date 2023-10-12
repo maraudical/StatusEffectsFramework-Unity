@@ -24,7 +24,7 @@
 # Getting started with the Status Effect Framework
 
 1. Add the **Status Effect Framework** through the package manager
-1. Import the **Examples** (if wanted)
+1. Import the **Examples** (highly recommended)
 1. Change any settings, group names, and preset statuses in **ProjectSettings**
 1. **Create** any status effects from the create menu
 1. Implement the **IStatus** interface on any classes inheriting Monobehaviour

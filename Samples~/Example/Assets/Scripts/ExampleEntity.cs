@@ -2,10 +2,12 @@ using StatusEffects;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Entity : MonoBehaviour, IStatus
+public class ExampleEntity : MonoBehaviour, IStatus
 {
-    [StatusEffects.Inspector.InfoBox(hexCode = "#FFFF00"), SerializeField] 
+    [StatusEffects.Inspector.InfoBox(messageType = 1), SerializeField]
+#pragma warning disable CS0414
     private string info = "Please view the code in this script for example implementation!";
+#pragma warning restore CS0414
     // Example variables
     [SerializeField] private StatusFloat _maxHealth;
     [SerializeField] private StatusFloat _speed;

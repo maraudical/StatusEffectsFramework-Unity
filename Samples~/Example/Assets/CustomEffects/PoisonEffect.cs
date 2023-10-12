@@ -10,7 +10,7 @@ namespace StatusEffects.Custom
 
         public override IEnumerator Effect<T>(T monoBehaviour, StatusEffect statusEffect)
         {
-            Entity entity = monoBehaviour.GetComponent<Entity>();
+            ExampleEntity entity = monoBehaviour.GetComponent<ExampleEntity>();
 
             for (; ; )
             {
