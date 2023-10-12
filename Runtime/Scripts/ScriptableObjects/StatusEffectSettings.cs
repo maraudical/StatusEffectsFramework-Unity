@@ -34,9 +34,10 @@ namespace StatusEffects
                 AssetDatabase.CreateAsset(settings, k_MyCustomSettingsPath);
                 AssetDatabase.SaveAssets();
             }
+#endif
             return settings;
         }
-
+#if UNITY_EDITOR
         public static SerializedObject GetSerializedSettings()
         {
             return new SerializedObject(GetOrCreateSettings());
