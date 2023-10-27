@@ -58,6 +58,8 @@ namespace StatusEffects.Inspector
                 GUI.enabled = true;
             }
 
+            EditorGUI.indentLevel = indent;
+
             EditorGUI.EndProperty();
         }
 
