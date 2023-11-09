@@ -105,11 +105,14 @@ namespace StatusEffects
         {
             StatusEffect statusEffect = AddStatusEffect(monoBehaviour, statusEffectData, (float?)duration);
 
-            if (statusEffect == null)
+            if (statusEffect == null || statusEffect.duration <= 0)
+            {
+                RemoveStatusEffect(monoBehaviour, statusEffect);
                 return null;
+            }
             // Begin a coroutine on the monobehaviour.
             action += () => { statusEffect.duration -= interval; if (statusEffect.duration <= 0) RemoveStatusEffect(monoBehaviour, statusEffect); };
-            
+
             return statusEffect;
         }
         /// <summary>
