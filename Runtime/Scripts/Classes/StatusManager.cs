@@ -108,18 +108,9 @@ namespace StatusEffects
             if (statusEffect == null)
                 return null;
             // Begin a coroutine on the monobehaviour.
-            action += () => { statusEffect.duration -= interval; };
-            monoBehaviour.StartCoroutine(TimedEffect());
+            action += () => { statusEffect.duration -= interval; if (statusEffect.duration <= 0) RemoveStatusEffect(monoBehaviour, statusEffect); };
             
             return statusEffect;
-
-            IEnumerator TimedEffect()
-            {
-                // Wait until duration has reached 0 due to action event calls.
-                yield return new WaitUntil(() => statusEffect.duration <= 0);
-                // Once it has ended remove the given effect.
-                RemoveStatusEffect(monoBehaviour, statusEffect);
-            }
         }
         /// <summary>
         /// Adds a <see cref="StatusEffect"/> to a <see cref="MonoBehaviour"/>. 
