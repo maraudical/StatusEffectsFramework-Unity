@@ -40,7 +40,7 @@ namespace StatusEffects
         public static List<StatusEffect> GetStatusEffects<T>(this T monoBehaviour, StatusEffectGroup? group = null, string? name = null) where T : MonoBehaviour, IStatus
         {
 #nullable disable
-            if (!monoBehaviour)
+            if (!monoBehaviour || monoBehaviour.effects == null)
                 return null;
             // Return the effects for a given monobehaviour, if given a group
             // or name to match only return effects within those categories.
@@ -265,7 +265,7 @@ namespace StatusEffects
             // Check to delete the effect if it already exists to prevent duplicates.
             if (!statusEffectData.allowEffectStacking)
             {
-                StatusEffect oldStatusEffect = monoBehaviour.GetStatusEffects(name: statusEffectData.name).FirstOrDefault();
+                StatusEffect oldStatusEffect = monoBehaviour.GetStatusEffects(name: statusEffectData.name)?.FirstOrDefault();
 
                 if (oldStatusEffect != null)
                     switch (statusEffect.data.nonStackingBehaviour)
