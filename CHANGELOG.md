@@ -1,5 +1,20 @@
 # Change Log:
 
+## 1.4.0
+
+- Feature: Property drawer for Status Effects
+- Feature: UniTask support to replace timer and custom effect coroutines if in project
+- Feature: Can now create status name and comparable name scriptable objects
+- Enhancement: Status Effect Data inspector overhaul
+- Enhancement: Global time override can now be set and unset easily
+- Enhancement: Updated the samples to have more options and show how an Effect UI can be set up
+- Enhancement: Can now remove specific amounts of a stack
+- Bug Fix: Custom property drawers now properly undo
+- Bug Fix: Fixed timer and custom effect coroutines not stopping from specific cases
+- Bug Fix: Fixed non-stacking behaviour not evaluating properly with negative values
+- Change: Changed event based effects to use Unity Events instead of Actions
+- Change: Returned the name and description as well as an icon option to Status Effect Data with localization support
+
 ## 1.3.1
 
 - Feature: Added a global time override to tie duration to a specified action for all effects

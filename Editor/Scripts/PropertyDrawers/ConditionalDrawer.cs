@@ -1,6 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -17,12 +15,12 @@ namespace StatusEffects.Inspector
         private const float _thenSize = 27;
         private const float _secondsPropertySize = 28;
 
-        SerializedProperty searchable;
-        SerializedProperty exists;
-        SerializedProperty add;
-        SerializedProperty configurable;
-        SerializedProperty duration;
-        SerializedProperty timing;
+        private SerializedProperty searchable;
+        private SerializedProperty exists;
+        private SerializedProperty add;
+        private SerializedProperty configurable;
+        private SerializedProperty duration;
+        private SerializedProperty timing;
 
         private Existence existence;
         private Configurability configurability;

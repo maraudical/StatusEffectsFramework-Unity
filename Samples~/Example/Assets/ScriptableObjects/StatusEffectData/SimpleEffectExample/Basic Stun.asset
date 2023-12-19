@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
+  m_Name: Basic Stun
+  m_EditorClassIdentifier: 
+  group:
+    value: 4
+  comparableName: {fileID: 11400000, guid: 8c74b3058c236354f90585c4159af69e, type: 2}
+  baseValue: 1
+  icon: {fileID: 21300000, guid: 34613bedb05a8f647a5a377e5a3ff0e4, type: 3}
+  statusEffectName: Basic Stun
+  description: The basic stun will prevent movement and actions.
+  allowEffectStacking: 0
+  nonStackingBehaviour: 0
+  effects:
+  - statusName: {fileID: 11400000, guid: f7273fbb099977747b3d7284bf74e0c8, type: 2}
+    valueModifier: 0
+    useBaseValue: 1
+    floatValue: 0
+    intValue: 0
+    boolValue: 1
+    priority: 0
+  conditions: []
+  customEffect: {fileID: 0}
+  enableIcon: 1
+  enableName: 1
+  enableDescription: 1

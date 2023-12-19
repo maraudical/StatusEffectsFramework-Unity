@@ -1,7 +1,4 @@
-using StatusEffects;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace StatusEffects
@@ -9,16 +6,16 @@ namespace StatusEffects
     [Serializable]
     public class StatusInt : StatusVariable
     {
+        public StatusNameInt statusName;
         public int baseValue;
 #if UNITY_EDITOR
 #pragma warning disable CS0414 // Remove unread private members
         [SerializeField] private int _value;
-        [SerializeField] private bool _initialized;
 #pragma warning restore CS0414 // Remove unread private members
 #endif
         public int value => GetValue();
 
-        public StatusInt(string statusName, int baseValue)
+        public StatusInt(int baseValue, StatusNameInt statusName)
         {
             this.statusName = statusName;
             this.baseValue = baseValue;
@@ -39,7 +36,7 @@ namespace StatusEffects
             {
                 foreach (Effect effect in statusEffect.data.effects)
                 {
-                    if (effect.statusName != statusName || effect.valueType != ValueType.Int)
+                    if (effect.statusName != statusName)
                         continue;
 
                     effectValue = effect.useBaseValue ? (int)statusEffect.data.baseValue : effect.intValue;
@@ -64,13 +61,11 @@ namespace StatusEffects
         }
 
         public static implicit operator int(StatusInt statusInt) => statusInt.value;
-
+#if UNITY_EDITOR
         protected override void OnReferencesChanged()
         {
-#if UNITY_EDITOR
             _value = GetValue();
-            _initialized = true;
-#endif
         }
+#endif
     }
 }

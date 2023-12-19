@@ -1,14 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-
 namespace StatusEffects
 {
     public abstract class StatusVariable
     {
-        [StatusString] public string statusName;
         protected IStatus monoBehaviour;
-
+#if UNITY_EDITOR
         public void UpdateReferences(IStatus monoBehaviour)
         {
             this.monoBehaviour = monoBehaviour;
@@ -17,5 +12,6 @@ namespace StatusEffects
         }
 
         protected abstract void OnReferencesChanged();
+#endif
     }
 }

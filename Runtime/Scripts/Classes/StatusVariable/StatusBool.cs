@@ -1,7 +1,4 @@
-using StatusEffects;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace StatusEffects
@@ -9,16 +6,16 @@ namespace StatusEffects
     [Serializable]
     public class StatusBool : StatusVariable
     {
+        public StatusNameBool statusName;
         public bool baseValue;
 #if UNITY_EDITOR
 #pragma warning disable CS0414 // Remove unread private members
         [SerializeField] private bool _value;
-        [SerializeField] private bool _initialized;
 #pragma warning restore CS0414 // Remove unread private members
 #endif
         public bool value => GetValue();
 
-        public StatusBool(string statusName, bool baseValue)
+        public StatusBool(bool baseValue, StatusNameBool statusName)
         {
             this.statusName = statusName;
             this.baseValue = baseValue;
@@ -38,7 +35,7 @@ namespace StatusEffects
             {
                 foreach (Effect effect in statusEffect.data.effects)
                 {
-                    if (effect.statusName != statusName || effect.valueType != ValueType.Bool)
+                    if (effect.statusName != statusName)
                         continue;
 
                     effectValue = effect.useBaseValue ? Convert.ToBoolean(statusEffect.data.baseValue) : effect.boolValue;
@@ -55,13 +52,11 @@ namespace StatusEffects
         }
 
         public static implicit operator bool(StatusBool statusBool) => statusBool.value;
-
+#if UNITY_EDITOR
         protected override void OnReferencesChanged()
         {
-#if UNITY_EDITOR
             _value = GetValue();
-            _initialized = true;
-#endif
         }
+#endif
     }
 }

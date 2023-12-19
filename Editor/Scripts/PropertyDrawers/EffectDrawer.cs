@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,34 +9,46 @@ namespace StatusEffects.Inspector
     {
         private float _fieldSize = EditorGUIUtility.singleLineHeight;
         private float _padding = EditorGUIUtility.standardVerticalSpacing;
-        private const int _fieldCount = 4;
+        private const int _fieldCount = 3;
         private const int _toggleSize = 30;
 
+        SerializedProperty statusName;
+        SerializedProperty useBaseValue;
+        SerializedProperty primary;
+        SerializedProperty secondary;
+
+        Rect propertyPosition;
+
+        StatusName statusNameReference;
+        
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            SerializedProperty statusName = property.FindPropertyRelative("statusName");
-            SerializedProperty valueType = property.FindPropertyRelative("valueType");
-            SerializedProperty useBaseValue = property.FindPropertyRelative("useBaseValue");
+            if (property.serializedObject.isEditingMultipleObjects)
+            {
+                EditorGUI.LabelField(position, "Cannot multi-edit Effects.");
+                return;
+            }
 
-            SerializedProperty primary = valueType.enumValueIndex == (int)ValueType.Bool ?  property.FindPropertyRelative("boolValue") 
-                                       : valueType.enumValueIndex == (int)ValueType.Int ? property.FindPropertyRelative("intValue") 
-                                       : property.FindPropertyRelative("floatValue");
+            statusNameReference = (property.GetUnderlyingValue() as Effect).statusName;
 
-            SerializedProperty secondary = valueType.enumValueIndex == (int)ValueType.Bool ? property.FindPropertyRelative("priority")
-                                         : property.FindPropertyRelative("valueModifier");
+            statusName = property.FindPropertyRelative("statusName");
+            useBaseValue = property.FindPropertyRelative("useBaseValue");
+
+            primary   = statusNameReference is StatusNameBool ? property.FindPropertyRelative("boolValue") 
+                      : statusNameReference is StatusNameInt  ? property.FindPropertyRelative("intValue") 
+                                                              : property.FindPropertyRelative("floatValue");
+
+            secondary = statusNameReference is StatusNameBool ? property.FindPropertyRelative("priority")
+                                                              : property.FindPropertyRelative("valueModifier");
 
             EditorGUI.BeginProperty(position, label, property);
 
             position.height /= _fieldCount;
             position.height -= _padding;
             position.y += _padding;
-            Rect propertyPosition;
 
-            EditorGUI.PropertyField(position, statusName, GUIContent.none);
-            position.y += _fieldSize + _padding;
-
-            propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(valueType.displayName));
-            EditorGUI.PropertyField(propertyPosition, valueType, GUIContent.none);
+            propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(statusName.displayName));
+            EditorGUI.PropertyField(propertyPosition, statusName, GUIContent.none);
             position.y += _fieldSize + _padding;
 
             propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(secondary.displayName));

@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
+  m_Name: Advanced Health Boost
+  m_EditorClassIdentifier: 
+  group:
+    value: 4
+  comparableName: {fileID: 11400000, guid: 5d59c617e9e27c645b4a95c856dc345e, type: 2}
+  baseValue: 20
+  icon: {fileID: 21300000, guid: 723d90c4f8c3a154c8a11b4e45fc5e7c, type: 3}
+  statusEffectName: Advanced Health Boost
+  description: The advanced health boost will increase health by 20.
+  allowEffectStacking: 1
+  nonStackingBehaviour: 0
+  effects:
+  - statusName: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
+    valueModifier: 0
+    useBaseValue: 1
+    floatValue: 10
+    intValue: 0
+    boolValue: 0
+    priority: 0
+  conditions: []
+  customEffect: {fileID: 11400000, guid: fc369abdd5ca5574b92d2962ebfd5d96, type: 2}
+  enableIcon: 1
+  enableName: 1
+  enableDescription: 1

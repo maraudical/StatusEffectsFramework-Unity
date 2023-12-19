@@ -12,10 +12,6 @@ namespace StatusEffects
         public const string k_MyCustomSettingsPath = "Assets/Resources/StatusEffectSettings.asset";
         [Space]
         [NonReorderable]
-        [Tooltip("These are predefined statuses availiable for your effects to effect.")]
-        public string[] statuses;
-        [Space]
-        [NonReorderable]
         public string[] groups;
 
         public static StatusEffectSettings GetOrCreateSettings()
@@ -25,7 +21,6 @@ namespace StatusEffects
             if (settings == null)
             {
                 settings = CreateInstance<StatusEffectSettings>();
-                settings.statuses = new string[] { "Max Health", "Speed", "Damage" };
                 settings.groups = new string[32];
                 settings.groups[0] = "Static";
                 settings.groups[1] = "Negative";
