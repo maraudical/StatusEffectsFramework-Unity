@@ -14,6 +14,6 @@ namespace StatusEffects
         /// <summary>
         /// Use this callback to monitor changes on a specific <see cref="StatusEffect"/> when they become active or removed.
         /// </summary>
-        void OnStatusEffect(StatusEffect statusEffect, bool started);
+        void OnStatusEffect(StatusEffect statusEffect, bool added, int stacks);
     }
 }

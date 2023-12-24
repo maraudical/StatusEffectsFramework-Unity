@@ -22,6 +22,7 @@ MonoBehaviour:
     the fire effect.
   allowEffectStacking: 0
   nonStackingBehaviour: 0
+  maxStack: -1
   effects:
   - statusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
     valueModifier: 1
@@ -34,13 +35,21 @@ MonoBehaviour:
   - searchable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
     exists: 1
     add: 0
-    configurable: {fileID: 11400000}
+    configurable: 0
+    data: {fileID: 0}
+    comparableName: {fileID: 0}
+    group:
+      value: 0
     timing: 0
     duration: 12
   - searchable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
     exists: 1
     add: 0
-    configurable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    configurable: 0
+    data: {fileID: 0}
+    comparableName: {fileID: 0}
+    group:
+      value: 0
     timing: 0
     duration: 0
   customEffect: {fileID: 0}

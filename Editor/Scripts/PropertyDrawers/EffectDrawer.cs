@@ -9,8 +9,9 @@ namespace StatusEffects.Inspector
     {
         private float _fieldSize = EditorGUIUtility.singleLineHeight;
         private float _padding = EditorGUIUtility.standardVerticalSpacing;
+        private const float _horizontalPadding = 3;
         private const int _fieldCount = 3;
-        private const int _toggleSize = 30;
+        private const int _toggleSize = 15;
 
         SerializedProperty statusName;
         SerializedProperty useBaseValue;
@@ -59,7 +60,7 @@ namespace StatusEffects.Inspector
             Rect offset = new Rect(propertyPosition.x, propertyPosition.y, _toggleSize, propertyPosition.height);
             EditorGUI.PropertyField(offset, useBaseValue, GUIContent.none);
 
-            offset = new Rect(propertyPosition.x + _toggleSize, propertyPosition.y, propertyPosition.width - _toggleSize, propertyPosition.height);
+            offset = new Rect(propertyPosition.x + _toggleSize + _horizontalPadding, propertyPosition.y, propertyPosition.width - _toggleSize - _horizontalPadding, propertyPosition.height);
             if (!useBaseValue.boolValue)
                 EditorGUI.PropertyField(offset, primary, GUIContent.none);
             else

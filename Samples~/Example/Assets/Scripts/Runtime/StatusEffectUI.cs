@@ -12,11 +12,11 @@ namespace StatusEffects.UI
 
         public int stack;
 
-        public void Initialize(Sprite sprite)
+        public void Initialize(Sprite sprite, int stacks)
         {
             _image.sprite = sprite;
-            stack = 0;
-            UpdateStack(1);
+            stack = stacks;
+            UpdateStack(0);
         }
 
         public void UpdateStack(int value)

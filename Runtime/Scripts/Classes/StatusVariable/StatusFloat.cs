@@ -39,7 +39,7 @@ namespace StatusEffects
                     if (effect.statusName != statusName)
                         continue;
 
-                    effectValue = effect.useBaseValue ? statusEffect.data.baseValue : effect.floatValue;
+                    effectValue = statusEffect.stack * (effect.useBaseValue ? statusEffect.data.baseValue : effect.floatValue);
 
                     switch (effect.valueModifier)
                     {

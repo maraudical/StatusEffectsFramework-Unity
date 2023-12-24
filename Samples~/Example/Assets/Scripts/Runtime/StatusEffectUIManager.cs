@@ -28,14 +28,14 @@ namespace StatusEffects.UI
             _exampleEntity.onStatusEffect -= OnStatusEffect;
         }
 
-        private void OnStatusEffect(StatusEffect statusEffect, bool started)
+        private void OnStatusEffect(StatusEffect statusEffect, bool added, int stacks)
         {
             if (!statusEffect.data.icon)
                 return;
 
             if (_statusEffectUIs.TryGetValue(statusEffect.data, out StatusEffectUI ui))
             {
-                ui.UpdateStack(started ? 1 : -1);
+                ui.UpdateStack(added ? stacks : -stacks);
 
                 if (ui.stack <= 0)
                     RemoveUI(ui);
@@ -43,13 +43,14 @@ namespace StatusEffects.UI
                 return;
             }
 
-            AddUI();
+            if (added)
+                AddUI(stacks);
 
-            void AddUI()
+            void AddUI(int stacks)
             {
                 GameObject effectUIObject = Instantiate(_effectPrefab, _effectParent);
                 StatusEffectUI effectUI = effectUIObject.GetComponent<StatusEffectUI>();
-                effectUI.Initialize(statusEffect.data.icon);
+                effectUI.Initialize(statusEffect.data.icon, stacks);
                 _statusEffectUIs.Add(statusEffect.data, effectUI);
             }
 

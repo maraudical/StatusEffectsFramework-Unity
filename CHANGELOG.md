@@ -1,5 +1,11 @@
 # Change Log:
 
+## 1.4.1
+
+- Feature: Stackability full support
+- Enhancement: Conditionals now can remove comparable names and groups
+- Bug Fix: Various critical bug fixes
+
 ## 1.4.0
 
 - Feature: Property drawer for Status Effects

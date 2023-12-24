@@ -8,8 +8,11 @@ namespace StatusEffects
         public StatusEffectData searchable;
         public bool exists = true;
         public bool add = true;
-        public StatusEffectData configurable;
-        public Timing timing;
+        public ConditionalConfigurable configurable;
+        public StatusEffectData data;
+        public ComparableName comparableName;
+        public StatusEffectGroup group;
+        public ConditionalTiming timing;
         public float duration;
     }
 }

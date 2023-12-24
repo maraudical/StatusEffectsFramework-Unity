@@ -27,6 +27,7 @@ namespace StatusEffects
         public bool allowEffectStacking;
         [Tooltip("Depending on the Non-Stacking Behaviour, the value and/or the duration may be adjusted when the effect already exists. See the documentation for more information.")]
         public NonStackingBehaviour nonStackingBehaviour;
+        public int maxStack = -1;
         [Tooltip("The effect list will apply value adjustments to the given Status.")]
         public List<Effect> effects;
         [Tooltip("Conditionals will be checked when a Status Effect is added. This way you can automatically add or remove other effects with ease.")]

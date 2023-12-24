@@ -16,6 +16,7 @@ namespace StatusEffects.Inspector
         SerializedProperty description;
         SerializedProperty allowEffectStacking;
         SerializedProperty nonStackingBehaviour;
+        SerializedProperty maxStack;
         SerializedProperty effects;
         SerializedProperty conditions;
         SerializedProperty customEffect;
@@ -46,6 +47,7 @@ namespace StatusEffects.Inspector
 
             allowEffectStacking = serializedObject.FindProperty("allowEffectStacking");
             nonStackingBehaviour = serializedObject.FindProperty("nonStackingBehaviour");
+            maxStack = serializedObject.FindProperty("maxStack");
 
             effects = serializedObject.FindProperty("effects");
             conditions = serializedObject.FindProperty("conditions");
@@ -93,6 +95,8 @@ namespace StatusEffects.Inspector
             EditorGUILayout.PropertyField(allowEffectStacking);
             if (!allowEffectStacking.boolValue)
                 EditorGUILayout.PropertyField(nonStackingBehaviour);
+            if (allowEffectStacking.boolValue)
+                EditorGUILayout.PropertyField(maxStack);
             EditorGUILayout.EndVertical();
 
             EditorGUILayout.PropertyField(effects);
@@ -104,7 +108,7 @@ namespace StatusEffects.Inspector
             {
                 condition = (target as StatusEffectData).conditions.ElementAt(i);
 
-                if (!condition.add || condition.configurable != target)
+                if (!condition.add || condition.data != target)
                     continue;
 
                 displayConditionsWarning = true;

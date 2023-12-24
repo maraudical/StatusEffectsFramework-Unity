@@ -2,82 +2,100 @@
 using Cysharp.Threading.Tasks;
 #endif
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 
 namespace StatusEffects
 {
     [Serializable]
-    public class StatusEffect : IEquatable<StatusEffect>
+    public class StatusEffect
     {
         [HideInInspector] public Action started;
         [HideInInspector] public Action stopped;
 
         public StatusEffectData data;
+        public StatusEffectTiming timing;
         public float duration;
+        public int stack;
 
 #if UNITASK
-        [HideInInspector] public UniTask effectTask;
-        [HideInInspector] public CancellationTokenSource effectTokenSource;
-        [HideInInspector] public UniTask timedTask;
+        [HideInInspector] public List<CancellationTokenSource> effectTokenSources;
         [HideInInspector] public CancellationTokenSource timedTokenSource;
 #else
-        [HideInInspector] public Coroutine effectCoroutine;
+        [HideInInspector] public List<Coroutine> effectCoroutines;
         [HideInInspector] public Coroutine timedCoroutine;
 #endif
 
-        public StatusEffect(StatusEffectData data, float duration)
+        public StatusEffect(StatusEffectData data, StatusEffectTiming timing, float duration, int stack)
         {
             this.data = data;
+            this.timing = timing;
             this.duration = duration;
+            this.stack = stack;
         }
 
-        public void StartCustomEffect<T>(T monoBehaviour) where T : MonoBehaviour, IStatus
+        public void StartCustomEffect<T>(T monoBehaviour, int stack) where T : MonoBehaviour, IStatus
         {
             if (data.customEffect != null)
 #if UNITASK
             {
-                effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(monoBehaviour.GetCancellationTokenOnDestroy());
-                effectTask = data.customEffect.Effect(monoBehaviour, this, effectTokenSource.Token);
+                CancellationTokenSource effectTokenSource;
+
+                for (int i = 0; i < stack; i++) 
+                {
+                    effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(monoBehaviour.GetCancellationTokenOnDestroy());
+                    data.customEffect.Effect(monoBehaviour, this, effectTokenSource.Token);
+
+                    if (effectTokenSources == null)
+                        effectTokenSources = new();
+                    effectTokenSources.Add(effectTokenSource);
+                }
             }
 #else
-                effectCoroutine = monoBehaviour.StartCoroutine(data.customEffect.Effect(monoBehaviour, this));
+            {
+                for (int i = 0; i < stack; i++)
+                {
+                    if (effectCoroutines == null)
+                        effectCoroutines = new();
+                    effectCoroutines.Add(monoBehaviour.StartCoroutine(data.customEffect.Effect(monoBehaviour, this)));
+                }
+            }
 #endif
-
+            
             started?.Invoke();
         }
 
-        public void StopCustomEffect<T>(T monoBehaviour) where T : MonoBehaviour, IStatus
+#nullable enable
+        public void StopCustomEffect<T>(T monoBehaviour, int? stack = null) where T : MonoBehaviour, IStatus
+#nullable disable
         {
             if (data.customEffect != null)
 #if UNITASK
-                effectTokenSource?.Cancel();
-#else
-                data.customEffect.EffectEnd(monoBehaviour, this);
+            {
+                int origionalCount = effectTokenSources.Count;
 
-            if (effectCoroutine != null)
-                monoBehaviour.StopCoroutine(effectCoroutine);
+                for (int i = 0; (stack == null || i < stack) && i < origionalCount; i++)
+                {
+                    effectTokenSources[effectTokenSources.Count - 1].Cancel();
+                    effectTokenSources.RemoveAt(effectTokenSources.Count - 1);
+                }
+            }
+#else
+            {
+                int origionalCount = effectCoroutines.Count;
+
+                for (int i = 0; (stack == null || i < stack) && i < origionalCount; i++)
+                {
+                    data.customEffect.EffectEnd(monoBehaviour, this);
+
+                    monoBehaviour.StopCoroutine(effectCoroutines[effectCoroutines.Count - 1]);
+                    effectCoroutines.RemoveAt(effectCoroutines.Count - 1);
+                }
+            }
 #endif
 
-                stopped?.Invoke();
-        }
-
-        public bool Equals(StatusEffect other)
-        {
-            if (other == null)
-                return false;
-
-            return (data == other.data);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return base.Equals(obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return data.GetHashCode();
+            stopped?.Invoke();
         }
     }
 }
