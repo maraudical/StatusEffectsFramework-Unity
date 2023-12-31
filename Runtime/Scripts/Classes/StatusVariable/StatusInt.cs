@@ -15,7 +15,7 @@ namespace StatusEffects
 #endif
         public int value => GetValue();
 
-        public StatusInt(int baseValue, StatusNameInt statusName)
+        public StatusInt(int baseValue, StatusNameInt statusName = null)
         {
             this.statusName = statusName;
             this.baseValue = baseValue;
