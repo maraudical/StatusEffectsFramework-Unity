@@ -15,7 +15,7 @@ namespace StatusEffects
 #endif
         public bool value => GetValue();
 
-        public StatusBool(bool baseValue, StatusNameBool statusName)
+        public StatusBool(bool baseValue, StatusNameBool statusName = null)
         {
             this.statusName = statusName;
             this.baseValue = baseValue;
