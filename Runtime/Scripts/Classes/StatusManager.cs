@@ -572,6 +572,7 @@ namespace StatusEffects
             return statusEffect;
         }
 
+#if UNITY_EDITOR
         private static void UpdateReferences<T>(T monoBehaviour) where T : MonoBehaviour, IStatus
         {
             // Use reflection to get all the status variables on the monobehaviour
@@ -580,6 +581,7 @@ namespace StatusEffects
             foreach (var field in monoBehaviour.GetType().GetFields(_bindingFlags).Where(f => f.FieldType.IsSubclassOf(typeof(StatusVariable))))
                 ((StatusVariable)field.GetValue(monoBehaviour)).UpdateReferences(monoBehaviour);
         }
+#endif
         #endregion
     }
 }
