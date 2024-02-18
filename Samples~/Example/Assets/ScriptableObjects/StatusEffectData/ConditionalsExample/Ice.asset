@@ -36,7 +36,7 @@ MonoBehaviour:
     exists: 1
     add: 0
     configurable: 0
-    data: {fileID: 0}
+    data: {fileID: 11400000}
     comparableName: {fileID: 0}
     group:
       value: 0
@@ -46,7 +46,7 @@ MonoBehaviour:
     exists: 1
     add: 0
     configurable: 0
-    data: {fileID: 0}
+    data: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
     comparableName: {fileID: 0}
     group:
       value: 0

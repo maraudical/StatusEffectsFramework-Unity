@@ -1,5 +1,12 @@
 # Change Log:
 
+## 1.5.0
+
+- Enhancement: Updated the sample scene to have more info and examples
+- Bug Fix: Multi-editing fixed for conditional and group drawers
+- Bug Fix: Removed extra using statements and the one causing a build error
+- Change: Removed the info box drawer
+
 ## 1.4.1
 
 - Feature: Stackability full support

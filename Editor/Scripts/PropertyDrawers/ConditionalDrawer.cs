@@ -33,6 +33,9 @@ namespace StatusEffects.Inspector
 
         private float _positionWidth;
 
+        private bool _restoreShowMixedValue;
+        private bool _value;
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             searchable = property.FindPropertyRelative("searchable");
@@ -82,7 +85,12 @@ namespace StatusEffects.Inspector
             if (!CheckForSpace(_existsPropertySize + _expandWindowSize))
                 return;
             existence = (Existence)Convert.ToInt32(exists.boolValue);
-            exists.boolValue = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(_existsPropertySize, offset.height)), existence));
+            _restoreShowMixedValue = EditorGUI.showMixedValue;
+            EditorGUI.showMixedValue = exists.hasMultipleDifferentValues;
+            _value = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(_existsPropertySize, offset.height)), existence));
+            if (_value != exists.boolValue)
+                exists.boolValue = _value;
+            EditorGUI.showMixedValue = _restoreShowMixedValue;
             offset.x += _existsPropertySize + _padding;
             currentWidth += _existsPropertySize + _padding;
 
@@ -95,9 +103,23 @@ namespace StatusEffects.Inspector
             if (!CheckForSpace(_addRemoveSize + _expandWindowSize))
                 return;
             configurability = (Configurability)Convert.ToInt32(add.boolValue);
-            add.boolValue = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(_addRemoveSize, offset.height)), configurability));
+            _restoreShowMixedValue = EditorGUI.showMixedValue;
+            EditorGUI.showMixedValue = add.hasMultipleDifferentValues;
+            _value = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(_addRemoveSize, offset.height)), configurability));
+            if (_value != add.boolValue)
+                add.boolValue = _value;
+            EditorGUI.showMixedValue = _restoreShowMixedValue;
             offset.x += _addRemoveSize + _padding;
             currentWidth += _addRemoveSize + _padding;
+
+            if (add.hasMultipleDifferentValues)
+            {
+                if (!CheckForSpace(_expandWindowSize + 5))
+                    return;
+
+                EditorGUI.LabelField(new Rect(offset.position, new Vector2(_positionWidth - currentWidth, offset.height)), "(Different add/remove)");
+                return;
+            }
 
             if (!add.boolValue)
             {
@@ -105,7 +127,6 @@ namespace StatusEffects.Inspector
                     return;
                 EditorGUI.PropertyField(new Rect(offset.position, new Vector2(_configurableSize, offset.height)), configurable, GUIContent.none);
                 offset.x += _configurableSize + _padding;
-                currentWidth += _configurableSize + _padding;
             }
             else if (!CheckForSpace(_expandWindowSize + 20))
                 return;

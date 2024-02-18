@@ -1,6 +1,5 @@
 using StatusEffects;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -9,11 +8,6 @@ public class ExampleEntity : MonoBehaviour, IStatus
 {
     // This is an action to subscribe an effect UI to.
     [HideInInspector] public event Action<StatusEffect, bool, int> onStatusEffect;
-
-    [StatusEffects.Inspector.InfoBox(messageType = 1), SerializeField]
-#pragma warning disable CS0414
-    private string _info = "Please view the code in this script for example implementation!";
-#pragma warning restore CS0414
     // Example variables
     [SerializeField] private StatusFloat _maxHealth;
     [SerializeField] private StatusFloat _speed;
@@ -34,7 +28,7 @@ public class ExampleEntity : MonoBehaviour, IStatus
     [field: SerializeField] public List<StatusEffect> effects { get; set; }
     // The following is for debugging how effects are added/removed.
     [Header("Debug Variables")]
-    [SerializeField] private StatusEffectData _statusEffectData;
+    public StatusEffectData statusEffectData;
     [SerializeField] private float _duration;
     [SerializeField] private StatusEffectGroup _group;
     [SerializeField] private int _stack;
@@ -59,22 +53,22 @@ public class ExampleEntity : MonoBehaviour, IStatus
         onStatusEffect?.Invoke(statusEffect, added, stacks);
     }
     // Default adding of status effect is infinite.
-    public void DebugAddStatusEffect() { this.AddStatusEffect(_statusEffectData, _stack); }
+    public void DebugAddStatusEffect() { this.AddStatusEffect(statusEffectData, _stack); }
     // But you can set an effect duration.
-    public void DebugAddStatusEffectTimed() { this.AddStatusEffect(_statusEffectData, _duration, _stack); }
+    public void DebugAddStatusEffectTimed() { this.AddStatusEffect(statusEffectData, _duration, _stack); }
     // Additionally you can have the duration update of System.Action
     // events where each invoke reduces duration by 1. This could be used
     // for games that are more round based or don't work in realtime.
-    public void DebugAddStatusEffectTimedEvent() { this.AddStatusEffect(_statusEffectData, _duration, _event, _stack); }
+    public void DebugAddStatusEffectTimedEvent() { this.AddStatusEffect(statusEffectData, _duration, _event, _stack); }
     // Just calls the example action.
     public void InvokeEvent() { _event?.Invoke(); }
     // Set a predicate that when true disables the effect. In this example
     // if _predicateBool is set to true the effect is removed.
-    public void DebugAddStatusEffectPredicate() { this.AddStatusEffect(_statusEffectData, () => _predicateBool, _stack); }
+    public void DebugAddStatusEffectPredicate() { this.AddStatusEffect(statusEffectData, () => _predicateBool, _stack); }
     // Default removing of a status effect. There are multiple overrides
     // such as using status effect string names or the StatusEffect
     // reference itself instead.
-    public void DebugRemoveStatusEffect() { this.RemoveStatusEffect(_statusEffectData, _stack); }
+    public void DebugRemoveStatusEffect() { this.RemoveStatusEffect(statusEffectData, _stack); }
     // Removes all effects that fall under a specific group. Additionally
     // you can remove the group parameter and just remove all effects.
     public void DebugRemoveStatusEffectGroup() { this.RemoveAllStatusEffects(_group); }
