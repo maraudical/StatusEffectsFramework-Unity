@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace StatusEffects.UI
+namespace StatusEffects.Example.UI
 {
     public class StatusEffectUIManager : MonoBehaviour
     {

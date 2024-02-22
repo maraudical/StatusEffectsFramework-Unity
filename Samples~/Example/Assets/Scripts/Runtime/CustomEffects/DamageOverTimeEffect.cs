@@ -5,6 +5,7 @@ using System.Threading;
 using System.Collections;
 #endif
 using UnityEngine;
+using StatusEffects.Example;
 
 namespace StatusEffects.Custom
 {

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace StatusEffects.UI
+namespace StatusEffects.Example.UI
 {
     public class StatusEffectUI : MonoBehaviour
     {

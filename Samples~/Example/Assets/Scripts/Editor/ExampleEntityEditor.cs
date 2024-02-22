@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using StatusEffects.Example;
 
 namespace StatusEffects.Inspector
 {
