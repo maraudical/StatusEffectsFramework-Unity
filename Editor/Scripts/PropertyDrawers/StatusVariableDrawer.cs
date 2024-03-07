@@ -9,75 +9,75 @@ namespace StatusEffects.Inspector
     [CustomPropertyDrawer(typeof(StatusBool))]
     public class StatusVariableDrawer : PropertyDrawer
     {
-        private const int fieldCount = 4;
-        private float fieldSize = EditorGUIUtility.singleLineHeight;
-        private const int padding = 2;
-        private bool foldout = false;
+        private const int _fieldCount = 4;
+        private const int _padding = 2;
+        private float _fieldSize = EditorGUIUtility.singleLineHeight;
+        private bool _foldout = false;
 
-        SerializedProperty statusName;
-        SerializedProperty baseValue;
-        SerializedProperty value;
+        private SerializedProperty _statusName;
+        private SerializedProperty _baseValue;
+        private SerializedProperty _value;
 
-        Rect propertyPosition;
+        private Rect _propertyPosition;
+        private object _baseValueObject;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (property.serializedObject.isEditingMultipleObjects)
+            _statusName = property.FindPropertyRelative("statusName");
+            _baseValue = property.FindPropertyRelative("baseValue");
+            _value = property.FindPropertyRelative("_value");
+
+            if (!Application.isPlaying &&  !_baseValue.serializedObject.isEditingMultipleObjects)
             {
-                EditorGUI.LabelField(position, "Cannot multi-edit Status Variables.");
-                return;
+                _baseValueObject = _baseValue.GetUnderlyingValue();
+
+                if (_value.GetUnderlyingValue() != _baseValueObject)
+                    _value.SetUnderlyingValue(_baseValueObject);
             }
 
-            statusName = property.FindPropertyRelative("statusName");
-            baseValue = property.FindPropertyRelative("baseValue");
-            value = property.FindPropertyRelative("_value");
-            
-            if (!Application.isPlaying)
-                value.SetUnderlyingValue(baseValue.GetUnderlyingValue());
+            _statusName.serializedObject.Update();
+            _baseValue.serializedObject.Update();
 
-            EditorGUI.BeginProperty(position, label, property);
+            position.height /= (_foldout ? _fieldCount : 1);
 
-            statusName.serializedObject.Update();
-            baseValue.serializedObject.Update();
-
-            position.height /= (foldout ? fieldCount : 1);
-
-            GUI.color = !statusName.objectReferenceValue && !foldout ? Color.red : Color.white;
-            foldout = EditorGUI.Foldout(position, foldout, label);
+            GUI.color = !_statusName.objectReferenceValue && !_foldout ? Color.red : Color.white;
+            _foldout = EditorGUI.Foldout(position, _foldout, label);
             GUI.color = Color.white;
 
             int indent = EditorGUI.indentLevel;
 
-            if (foldout)
+            EditorGUI.BeginProperty(position, label, property);
+
+            if (_foldout)
             {
                 EditorGUI.indentLevel = 2;
                 position.x = 0;
-                position.y += fieldSize + padding;
-                GUI.color = !statusName.objectReferenceValue ? Color.red : Color.white;
-                propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(statusName.displayName));
+                position.y += _fieldSize + _padding;
+                GUI.color = !_statusName.objectReferenceValue ? Color.red : Color.white;
+                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_statusName.displayName));
                 GUI.color = Color.white;
-                EditorGUI.PropertyField(propertyPosition, statusName, GUIContent.none);
-                position.y += fieldSize + padding;
+                EditorGUI.PropertyField(_propertyPosition, _statusName, GUIContent.none);
+                position.y += _fieldSize + _padding;
 
-                propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(baseValue.displayName));
-                EditorGUI.PropertyField(propertyPosition, baseValue, GUIContent.none);
-                position.y += fieldSize + padding;
+                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_baseValue.displayName));
+                EditorGUI.PropertyField(_propertyPosition, _baseValue, GUIContent.none);
+                position.y += _fieldSize + _padding;
 
                 GUI.enabled = false;
-                propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(value.displayName));
-                EditorGUI.PropertyField(propertyPosition, value, GUIContent.none);
+                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_value.displayName));
+                EditorGUI.PropertyField(_propertyPosition, _value, GUIContent.none);
                 GUI.enabled = true;
             }
             else
             {
                 GUI.enabled = false;
-                propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(" "));
-                EditorGUI.PropertyField(propertyPosition, value, GUIContent.none);
+                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(" "));
+                EditorGUI.PropertyField(_propertyPosition, _value, GUIContent.none);
                 GUI.enabled = true;
             }
 
-            statusName.serializedObject.ApplyModifiedProperties();
-            baseValue.serializedObject.ApplyModifiedProperties();
+            _statusName.serializedObject.ApplyModifiedProperties();
+            _baseValue.serializedObject.ApplyModifiedProperties();
 
             EditorGUI.indentLevel = indent;
 
@@ -86,7 +86,7 @@ namespace StatusEffects.Inspector
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return (fieldSize + padding) * (foldout && !property.serializedObject.isEditingMultipleObjects ? fieldCount : 1);
+            return (_fieldSize + _padding) * (_foldout ? _fieldCount : 1);
         }
     }
 }

@@ -8,7 +8,7 @@ namespace StatusEffects.Inspector
     // Register a SettingsProvider using IMGUI for the drawing framework:
     static class StatusEffectSettingsIMGUIRegister
     {
-        static bool groupFoldout = true;
+        private static bool s_groupFoldout = true;
 
         [SettingsProvider]
         public static SettingsProvider CreateStatusEffectSettingsProvider()
@@ -31,8 +31,8 @@ namespace StatusEffects.Inspector
                     EditorGUIUtility.labelWidth = 0;
                     EditorGUILayout.Space();
                     EditorGUILayout.BeginVertical("groupbox");
-                    groupFoldout = EditorGUILayout.Foldout(groupFoldout, "Groups");
-                    if (groupFoldout)
+                    s_groupFoldout = EditorGUILayout.Foldout(s_groupFoldout, "Groups");
+                    if (s_groupFoldout)
                     {
                         EditorGUI.indentLevel++;
                         property = settings.FindProperty("groups");

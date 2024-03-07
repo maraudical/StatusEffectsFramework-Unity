@@ -1,3 +1,4 @@
+using System;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
@@ -13,34 +14,56 @@ namespace StatusEffects.Inspector
         private const int _fieldCount = 3;
         private const int _toggleSize = 15;
 
-        SerializedProperty statusName;
-        SerializedProperty useBaseValue;
-        SerializedProperty primary;
-        SerializedProperty secondary;
+        private SerializedProperty _statusName;
+        private SerializedProperty _useBaseValue;
+        private SerializedProperty _primary;
+        private SerializedProperty _secondary;
 
-        Rect propertyPosition;
+        Rect _propertyPosition;
 
-        StatusName statusNameReference;
-        
+        private StatusName _statusNameReference;
+        private Type _statusNameType;
+        private Type _statusNameTypeDummy;
+        private SerializedObject _serializedObject;
+        private int _multiObjectCount;
+        private bool _typeDifference;
+        private GUIStyle style;
+        private Color _color;
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            if (property.serializedObject.isEditingMultipleObjects)
+            style = GUI.skin.label;
+            style.alignment = TextAnchor.MiddleCenter;
+
+            _multiObjectCount = property.serializedObject.targetObjects.Length;
+            _typeDifference = false;
+
+            for (int i = 0; i < _multiObjectCount; i++)
             {
-                EditorGUI.LabelField(position, "Cannot multi-edit Effects.");
-                return;
+                _serializedObject = new SerializedObject(property.serializedObject.targetObjects[i]);
+                _statusNameReference = (_serializedObject.FindProperty(property.propertyPath).GetUnderlyingValue() as Effect).statusName;
+                _statusNameTypeDummy = _statusNameReference is StatusNameBool ? typeof(StatusNameBool)
+                                     : _statusNameReference is StatusNameInt  ? typeof(StatusNameInt)
+                                                                              : typeof(StatusNameFloat);
+
+                if (i > 0 && _statusNameTypeDummy != _statusNameType)
+                {
+                    _typeDifference = true;
+                    break;
+                }
+                
+                _statusNameType = _statusNameTypeDummy;
             }
 
-            statusNameReference = (property.GetUnderlyingValue() as Effect).statusName;
+            _statusName = property.FindPropertyRelative("statusName");
+            _useBaseValue = property.FindPropertyRelative("useBaseValue");
 
-            statusName = property.FindPropertyRelative("statusName");
-            useBaseValue = property.FindPropertyRelative("useBaseValue");
+            _primary = _statusNameType == typeof(StatusNameBool)   ? property.FindPropertyRelative("boolValue")
+                      : _statusNameType == typeof(StatusNameInt)   ? property.FindPropertyRelative("intValue")
+                                                                   : property.FindPropertyRelative("floatValue");
 
-            primary   = statusNameReference is StatusNameBool ? property.FindPropertyRelative("boolValue") 
-                      : statusNameReference is StatusNameInt  ? property.FindPropertyRelative("intValue") 
-                                                              : property.FindPropertyRelative("floatValue");
-
-            secondary = statusNameReference is StatusNameBool ? property.FindPropertyRelative("priority")
-                                                              : property.FindPropertyRelative("valueModifier");
+            _secondary = _statusNameType == typeof(StatusNameBool) ? property.FindPropertyRelative("priority")
+                                                                   : property.FindPropertyRelative("valueModifier");
 
             EditorGUI.BeginProperty(position, label, property);
 
@@ -48,24 +71,40 @@ namespace StatusEffects.Inspector
             position.height -= _padding;
             position.y += _padding;
 
-            propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(statusName.displayName));
-            EditorGUI.PropertyField(propertyPosition, statusName, GUIContent.none);
+            _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_statusName.displayName));
+            EditorGUI.PropertyField(_propertyPosition, _statusName, GUIContent.none);
             position.y += _fieldSize + _padding;
 
-            propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(secondary.displayName));
-            EditorGUI.PropertyField(propertyPosition, secondary, GUIContent.none);
-            position.y += _fieldSize + _padding;
-
-            propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(primary.displayName));
-            Rect offset = new Rect(propertyPosition.x, propertyPosition.y, _toggleSize, propertyPosition.height);
-            EditorGUI.PropertyField(offset, useBaseValue, GUIContent.none);
-
-            offset = new Rect(propertyPosition.x + _toggleSize + _horizontalPadding, propertyPosition.y, propertyPosition.width - _toggleSize - _horizontalPadding, propertyPosition.height);
-            if (!useBaseValue.boolValue)
-                EditorGUI.PropertyField(offset, primary, GUIContent.none);
+            if (_typeDifference)
+            {
+                _color = GUI.color;
+                GUI.color = Color.yellow;
+                EditorGUI.LabelField(position, "Cannot display information due", style);
+            }
             else
-                EditorGUI.LabelField(offset, "Using Base Value");
+            {
+                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_secondary.displayName));
+                EditorGUI.PropertyField(_propertyPosition, _secondary, GUIContent.none);
+            }
             position.y += _fieldSize + _padding;
+
+            if (_typeDifference)
+            {
+                EditorGUI.LabelField(position, "to Status Name type difference.", style);
+                GUI.color = _color;
+            }
+            else
+            {
+                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_primary.displayName));
+                Rect offset = new Rect(_propertyPosition.x, _propertyPosition.y, _toggleSize, _propertyPosition.height);
+                EditorGUI.PropertyField(offset, _useBaseValue, GUIContent.none);
+
+                offset = new Rect(_propertyPosition.x + _toggleSize + _horizontalPadding, _propertyPosition.y, _propertyPosition.width - _toggleSize - _horizontalPadding, _propertyPosition.height);
+                if (!_useBaseValue.boolValue)
+                    EditorGUI.PropertyField(offset, _primary, GUIContent.none);
+                else
+                    EditorGUI.LabelField(offset, "Using Base Value");
+            }
 
             EditorGUI.EndProperty();
         }

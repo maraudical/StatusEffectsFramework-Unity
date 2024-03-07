@@ -13,33 +13,33 @@ namespace StatusEffects.Inspector
         private const float _stackSize = 40;
         private const int _fieldCount = 5;
 
-        private SerializedProperty data;
-        private SerializedProperty timing;
-        private SerializedProperty duration;
-        private SerializedProperty stack;
+        private SerializedProperty _data;
+        private SerializedProperty _timing;
+        private SerializedProperty _duration;
+        private SerializedProperty _stack;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            data = property.FindPropertyRelative("data");
-            timing = property.FindPropertyRelative("timing");
-            duration = property.FindPropertyRelative("duration");
-            stack = property.FindPropertyRelative("stack");
+            _data = property.FindPropertyRelative("data");
+            _timing = property.FindPropertyRelative("timing");
+            _duration = property.FindPropertyRelative("duration");
+            _stack = property.FindPropertyRelative("stack");
             
             EditorGUI.BeginProperty(position, label, property);
 
             position.width -= _timingSize + _durationSize + _stackLabelSize + _stackSize + (_fieldCount - 1) * _padding;
 
-            EditorGUI.PropertyField(position, data, GUIContent.none);
+            EditorGUI.PropertyField(position, _data, GUIContent.none);
 
             position.x += position.width + _padding;
             position.width = _timingSize;
 
-            EditorGUI.LabelField(position, $"{timing.enumDisplayNames[timing.enumValueIndex]}:");
+            EditorGUI.LabelField(position, $"{_timing.enumDisplayNames[_timing.enumValueIndex]}:");
 
             position.x += position.width + _padding;
             position.width = _durationSize;
 
-            EditorGUI.PropertyField(position, duration, GUIContent.none);
+            EditorGUI.PropertyField(position, _duration, GUIContent.none);
 
             position.x += position.width + _padding;
             position.width = _stackLabelSize;
@@ -49,7 +49,7 @@ namespace StatusEffects.Inspector
             position.x += position.width + _padding;
             position.width = _stackSize;
 
-            EditorGUI.PropertyField(position, stack, GUIContent.none);
+            EditorGUI.PropertyField(position, _stack, GUIContent.none);
 
             EditorGUI.EndProperty();
         }

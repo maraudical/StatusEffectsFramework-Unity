@@ -5,9 +5,10 @@ using StatusEffects.Example;
 namespace StatusEffects.Inspector
 {
     [CustomEditor(typeof(ExampleEntity))]
+    [CanEditMultipleObjects]
     public class ExampleEntityEditor : Editor
     {
-        ExampleEntity exampleEntity;
+        private ExampleEntity _exampleEntity;
 
         public override void OnInspectorGUI()
         {
@@ -15,7 +16,7 @@ namespace StatusEffects.Inspector
 
             base.OnInspectorGUI();
 
-            exampleEntity = (ExampleEntity)target;
+            _exampleEntity = (ExampleEntity)target;
 
             GUIStyle style = new GUIStyle(EditorStyles.largeLabel);
             style.alignment = TextAnchor.MiddleCenter;
@@ -27,23 +28,23 @@ namespace StatusEffects.Inspector
             EditorGUILayout.LabelField("Debug Buttons", style);
             EditorGUILayout.BeginVertical("groupbox");
             if (GUILayout.Button("Add Effect"))
-                exampleEntity.DebugAddStatusEffect();
+                _exampleEntity.DebugAddStatusEffect();
             if (GUILayout.Button("Add Effect Timed"))
-                exampleEntity.DebugAddStatusEffectTimed();
+                _exampleEntity.DebugAddStatusEffectTimed();
             EditorGUILayout.Space(10);
             if (GUILayout.Button("Add Effect Timed Event"))
-                exampleEntity.DebugAddStatusEffectTimedEvent();
+                _exampleEntity.DebugAddStatusEffectTimedEvent();
             if (GUILayout.Button("Invoke Event"))
-                exampleEntity.InvokeEvent();
+                _exampleEntity.InvokeEvent();
             EditorGUILayout.Space(10);
             if (GUILayout.Button("Add Effect Predicate"))
-                exampleEntity.DebugAddStatusEffectPredicate();
+                _exampleEntity.DebugAddStatusEffectPredicate();
             EditorGUILayout.EndVertical();
             EditorGUILayout.BeginVertical("groupbox");
             if (GUILayout.Button("Remove Effect"))
-                exampleEntity.DebugRemoveStatusEffect();
+                _exampleEntity.DebugRemoveStatusEffect();
             if (GUILayout.Button("Remove Effect Group"))
-                exampleEntity.DebugRemoveStatusEffectGroup();
+                _exampleEntity.DebugRemoveStatusEffectGroup();
             EditorGUILayout.EndVertical();
         }
     }
