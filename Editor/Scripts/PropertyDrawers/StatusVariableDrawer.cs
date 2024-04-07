@@ -41,7 +41,7 @@ namespace StatusEffects.Inspector
             position.height /= (_foldout ? _fieldCount : 1);
 
             GUI.color = !_statusName.objectReferenceValue && !_foldout ? Color.red : Color.white;
-            _foldout = EditorGUI.Foldout(position, _foldout, label);
+            _foldout = EditorGUI.Foldout(position, _foldout, label, true);
             GUI.color = Color.white;
 
             int indent = EditorGUI.indentLevel;
@@ -54,18 +54,15 @@ namespace StatusEffects.Inspector
                 position.x = 0;
                 position.y += _fieldSize + _padding;
                 GUI.color = !_statusName.objectReferenceValue ? Color.red : Color.white;
-                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_statusName.displayName));
+                EditorGUI.PropertyField(position, _statusName, new GUIContent(_statusName.displayName));
                 GUI.color = Color.white;
-                EditorGUI.PropertyField(_propertyPosition, _statusName, GUIContent.none);
                 position.y += _fieldSize + _padding;
 
-                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_baseValue.displayName));
-                EditorGUI.PropertyField(_propertyPosition, _baseValue, GUIContent.none);
+                EditorGUI.PropertyField(position, _baseValue, new GUIContent(_baseValue.displayName));
                 position.y += _fieldSize + _padding;
 
                 GUI.enabled = false;
-                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_value.displayName));
-                EditorGUI.PropertyField(_propertyPosition, _value, GUIContent.none);
+                EditorGUI.PropertyField(position, _value, new GUIContent(_value.displayName));
                 GUI.enabled = true;
             }
             else

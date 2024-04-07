@@ -7,7 +7,7 @@ namespace StatusEffects.Inspector
     public class StatusEffectDrawer : PropertyDrawer
     {
         private const float _padding = 3;
-        private const float _timingSize = 54;
+        private const float _timingSize = 60;
         private const float _durationSize = 40;
         private const float _stackLabelSize = 38;
         private const float _stackSize = 40;

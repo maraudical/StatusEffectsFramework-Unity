@@ -20,6 +20,7 @@ namespace StatusEffects.Inspector
         private SerializedProperty _secondary;
 
         Rect _propertyPosition;
+        Rect _offset;
 
         private StatusName _statusNameReference;
         private Type _statusNameType;
@@ -71,8 +72,7 @@ namespace StatusEffects.Inspector
             position.height -= _padding;
             position.y += _padding;
 
-            _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_statusName.displayName));
-            EditorGUI.PropertyField(_propertyPosition, _statusName, GUIContent.none);
+            EditorGUI.PropertyField(position, _statusName, new GUIContent(_statusName.displayName));
             position.y += _fieldSize + _padding;
 
             if (_typeDifference)
@@ -83,8 +83,7 @@ namespace StatusEffects.Inspector
             }
             else
             {
-                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_secondary.displayName));
-                EditorGUI.PropertyField(_propertyPosition, _secondary, GUIContent.none);
+                EditorGUI.PropertyField(position, _secondary, new GUIContent(_secondary.displayName));
             }
             position.y += _fieldSize + _padding;
 
@@ -96,14 +95,14 @@ namespace StatusEffects.Inspector
             else
             {
                 _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_primary.displayName));
-                Rect offset = new Rect(_propertyPosition.x, _propertyPosition.y, _toggleSize, _propertyPosition.height);
-                EditorGUI.PropertyField(offset, _useBaseValue, GUIContent.none);
+                _offset = new Rect(_propertyPosition.x, _propertyPosition.y, _toggleSize, _propertyPosition.height);
+                EditorGUI.PropertyField(_offset, _useBaseValue, GUIContent.none);
 
-                offset = new Rect(_propertyPosition.x + _toggleSize + _horizontalPadding, _propertyPosition.y, _propertyPosition.width - _toggleSize - _horizontalPadding, _propertyPosition.height);
+                _offset = new Rect(_propertyPosition.x + _toggleSize + _horizontalPadding, _propertyPosition.y, _propertyPosition.width - _toggleSize - _horizontalPadding, _propertyPosition.height);
                 if (!_useBaseValue.boolValue)
-                    EditorGUI.PropertyField(offset, _primary, GUIContent.none);
+                    EditorGUI.PropertyField(_offset, _primary, GUIContent.none);
                 else
-                    EditorGUI.LabelField(offset, "Using Base Value");
+                    EditorGUI.LabelField(_offset, "Using Base Value");
             }
 
             EditorGUI.EndProperty();

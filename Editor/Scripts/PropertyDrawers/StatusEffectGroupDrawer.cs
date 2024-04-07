@@ -16,10 +16,9 @@ namespace StatusEffects.Inspector
         {
             _property = property.FindPropertyRelative("value");
             EditorGUI.BeginProperty(position, label, property);
-            position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
             _restoreShowMixedValue = EditorGUI.showMixedValue;
             EditorGUI.showMixedValue = _property.hasMultipleDifferentValues;
-            _value = EditorGUI.MaskField(position, _property.intValue, StatusEffectSettings.GetOrCreateSettings().groups.Where(g => !string.IsNullOrEmpty(g)).ToArray());
+            _value = EditorGUI.MaskField(position, label, _property.intValue, StatusEffectSettings.GetOrCreateSettings().groups.Where(g => !string.IsNullOrEmpty(g)).ToArray());
             if (_value != _property.intValue)
                 _property.intValue = _value;
             EditorGUI.showMixedValue = _restoreShowMixedValue;

@@ -1,5 +1,9 @@
 # Change Log:
 
+## 1.5.1
+
+- Enhancement: Cleaned up some editor property drawers
+
 ## 1.5.0
 
 - Enhancement: Updated the sample scene to have more info and examples
