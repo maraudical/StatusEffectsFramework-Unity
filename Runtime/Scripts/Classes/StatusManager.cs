@@ -1,5 +1,6 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
+using System.Collections;
 #else
 using System.Collections;
 #endif
@@ -280,6 +281,8 @@ namespace StatusEffects
         {
             if (!monoBehaviour || statusEffectData == null || monoBehaviour.effects == null)
                 return;
+            if (stack <= 0)
+                return;
 
             int removedCount = 0;
             int currentRemoveCount;
@@ -315,6 +318,8 @@ namespace StatusEffects
         public static void RemoveStatusEffect<T>(this T monoBehaviour, ComparableName name, int? stack = null) where T : MonoBehaviour, IStatus
         {
             if (!monoBehaviour || monoBehaviour.effects == null)
+                return;
+            if (stack <= 0)
                 return;
 
             int removedCount = 0;
@@ -381,6 +386,8 @@ namespace StatusEffects
                 return null;
             }
 #endif
+            if (stack <= 0)
+                return null;
             if (!monoBehaviour)
                 throw new System.Exception($"Attempted to add a {typeof(StatusEffect).Name} to a " +
                                            $"null {typeof(MonoBehaviour).Name}. This is not allowed.");

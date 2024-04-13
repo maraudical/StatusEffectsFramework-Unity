@@ -7,6 +7,8 @@ namespace StatusEffects.Inspector
     [CustomPropertyDrawer(typeof(Condition))]
     public class ConditionalDrawer : PropertyDrawer
     {
+        private float _fieldSize = EditorGUIUtility.singleLineHeight;
+
         private SerializedProperty _searchable;
         private SerializedProperty _exists;
         private SerializedProperty _add;
@@ -49,6 +51,8 @@ namespace StatusEffects.Inspector
 
             if (position.width > 0)
                 _positionWidth = position.width;
+
+            position.height = _fieldSize;
 
             float width = (position.width - _ifSize 
                                           - _searchablePropertySize 

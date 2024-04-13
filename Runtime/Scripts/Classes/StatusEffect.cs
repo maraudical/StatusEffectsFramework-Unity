@@ -20,7 +20,7 @@ namespace StatusEffects
         public int stack;
 
 #if UNITASK
-        [HideInInspector] public List<CancellationTokenSource> effectTokenSources;
+        [HideInInspector] public List<CancellationTokenSource> moduleTokenSources;
         [HideInInspector] public CancellationTokenSource timedTokenSource;
 #else
         [HideInInspector] public List<Coroutine> effectCoroutines;
@@ -37,31 +37,35 @@ namespace StatusEffects
 
         public void StartCustomEffect<T>(T monoBehaviour, int stack) where T : MonoBehaviour, IStatus
         {
-            if (data.customEffect != null)
+            if (stack <= 0)
+                return;
+
+            if (data.modules != null)
+            {
+                foreach (var container in data.modules)
+                {
 #if UNITASK
-            {
-                CancellationTokenSource effectTokenSource;
+                    CancellationTokenSource effectTokenSource;
 
-                for (int i = 0; i < stack; i++) 
-                {
-                    effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(monoBehaviour.GetCancellationTokenOnDestroy());
-                    data.customEffect.Effect(monoBehaviour, this, effectTokenSource.Token);
+                    for (int i = 0; i < stack; i++)
+                    {
+                        effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(monoBehaviour.GetCancellationTokenOnDestroy());
+                        container.module.EnableModule(monoBehaviour, this, container.moduleInstance, effectTokenSource.Token);
 
-                    if (effectTokenSources == null)
-                        effectTokenSources = new();
-                    effectTokenSources.Add(effectTokenSource);
-                }
-            }
+                        if (moduleTokenSources == null)
+                            moduleTokenSources = new();
+                        moduleTokenSources.Add(effectTokenSource);
+                    }
 #else
-            {
-                for (int i = 0; i < stack; i++)
-                {
-                    if (effectCoroutines == null)
-                        effectCoroutines = new();
-                    effectCoroutines.Add(monoBehaviour.StartCoroutine(data.customEffect.Effect(monoBehaviour, this)));
+                    for (int i = 0; i < stack; i++)
+                    {
+                        if (effectCoroutines == null)
+                            effectCoroutines = new();
+                        effectCoroutines.Add(monoBehaviour.StartCoroutine(data.customEffect.Effect(monoBehaviour, this)));
+                    }
+#endif
                 }
             }
-#endif
             
             started?.Invoke();
         }
@@ -70,30 +74,36 @@ namespace StatusEffects
         public void StopCustomEffect<T>(T monoBehaviour, int? stack = null) where T : MonoBehaviour, IStatus
 #nullable disable
         {
-            if (data.customEffect != null)
+            if (stack <= 0)
+                return;
+
+            if (data.modules != null)
+            {
+                foreach (var container in data.modules)
+                {
 #if UNITASK
-            {
-                int origionalCount = effectTokenSources.Count;
+                    if (moduleTokenSources == null)
+                        moduleTokenSources = new();
+                    int origionalCount = moduleTokenSources.Count;
 
-                for (int i = 0; (stack == null || i < stack) && i < origionalCount; i++)
-                {
-                    effectTokenSources[effectTokenSources.Count - 1].Cancel();
-                    effectTokenSources.RemoveAt(effectTokenSources.Count - 1);
-                }
-            }
+                    for (int i = 0; (stack == null || i < stack) && i < origionalCount; i++)
+                    {
+                        moduleTokenSources[moduleTokenSources.Count - 1].Cancel();
+                        moduleTokenSources.RemoveAt(moduleTokenSources.Count - 1);
+                    }
 #else
-            {
-                int origionalCount = effectCoroutines.Count;
+                    int origionalCount = effectCoroutines.Count;
 
-                for (int i = 0; (stack == null || i < stack) && i < origionalCount; i++)
-                {
-                    data.customEffect.EffectEnd(monoBehaviour, this);
+                    for (int i = 0; (stack == null || i < stack) && i < origionalCount; i++)
+                    {
+                        data.customEffect.EffectEnd(monoBehaviour, this);
 
-                    monoBehaviour.StopCoroutine(effectCoroutines[effectCoroutines.Count - 1]);
-                    effectCoroutines.RemoveAt(effectCoroutines.Count - 1);
+                        monoBehaviour.StopCoroutine(effectCoroutines[effectCoroutines.Count - 1]);
+                        effectCoroutines.RemoveAt(effectCoroutines.Count - 1);
+                    }
+#endif
                 }
             }
-#endif
 
             stopped?.Invoke();
         }

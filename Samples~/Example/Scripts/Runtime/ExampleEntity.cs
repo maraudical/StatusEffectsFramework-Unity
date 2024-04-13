@@ -30,9 +30,9 @@ namespace StatusEffects.Example
         // The following is for debugging how effects are added/removed.
         [Header("Debug Variables")]
         public StatusEffectData statusEffectData;
-        [SerializeField] private float _duration;
+        [SerializeField] private float _duration = 10;
         [SerializeField] private StatusEffectGroup _group;
-        [SerializeField] private int _stack;
+        [SerializeField] private int _stack = 1;
         // See the DebugAddStatusEffectPredicate method for how a predicate
         // can be used to stop an effect.
         [SerializeField] private bool _predicateBool;

@@ -68,8 +68,7 @@ namespace StatusEffects.Inspector
 
             EditorGUI.BeginProperty(position, label, property);
 
-            position.height /= _fieldCount;
-            position.height -= _padding;
+            position.height = _fieldSize;
             position.y += _padding;
 
             EditorGUI.PropertyField(position, _statusName, new GUIContent(_statusName.displayName));
@@ -110,7 +109,7 @@ namespace StatusEffects.Inspector
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return (_fieldSize + _padding) * _fieldCount + (_padding * 2);
+            return (_fieldSize + _padding) * _fieldCount + _padding;
         }
     }
 }

@@ -1994,10 +1994,10 @@ MonoBehaviour:
   health: 0
   <effects>k__BackingField: []
   statusEffectData: {fileID: 0}
-  _duration: 0
+  _duration: 10
   _group:
     value: 0
-  _stack: 0
+  _stack: 1
   _predicateBool: 0
 --- !u!4 &1944042327
 Transform:

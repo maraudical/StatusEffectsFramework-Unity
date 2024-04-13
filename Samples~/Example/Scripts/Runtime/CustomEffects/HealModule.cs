@@ -6,18 +6,19 @@ using System.Collections;
 #endif
 using UnityEngine;
 using StatusEffects.Example;
+using StatusEffects.Modules;
 
 namespace StatusEffects.Custom
 {
-    [CreateAssetMenu(fileName = "Heal Effect", menuName = "Status Effect Framework/Custom Effects/Heal", order = 1)]
-    public class HealEffect : CustomEffect
+    [CreateAssetMenu(fileName = "Heal Module", menuName = "Status Effect Framework/Modules/Heal", order = 1)]
+    public class HealModule : Module
     {
 #if UNITASK
-        public override async UniTask Effect<T>(T monoBehaviour, StatusEffect statusEffect, CancellationToken token)
+        public override async UniTask EnableModule<T>(T monoBehaviour, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
             if (!monoBehaviour.TryGetComponent(out ExampleEntity entity))
                 return;
-
+            // Add health according to status effect
             entity.health += statusEffect.data.baseValue;
             entity.health = Mathf.Min(entity.health, entity.maxHealth);
 
@@ -26,7 +27,7 @@ namespace StatusEffects.Custom
             // cancellation was invoked from the destruction of the MonoBehaviour
             if (!entity)
                 return;
-
+            // Clamp health after status effect ends
             entity.health = Mathf.Min(entity.health, entity.maxHealth);
         }
 #else

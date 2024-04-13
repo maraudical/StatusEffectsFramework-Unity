@@ -21,6 +21,7 @@ MonoBehaviour:
   description: The basic health boost will increase health by 10.
   allowEffectStacking: 1
   nonStackingBehaviour: 0
+  maxStack: -1
   effects:
   - statusName: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
     valueModifier: 0
@@ -30,7 +31,9 @@ MonoBehaviour:
     boolValue: 0
     priority: 0
   conditions: []
-  customEffect: {fileID: 11400000, guid: fc369abdd5ca5574b92d2962ebfd5d96, type: 2}
+  modules:
+  - module: {fileID: 11400000, guid: fc369abdd5ca5574b92d2962ebfd5d96, type: 2}
+    moduleInstance: {fileID: 0}
   enableIcon: 1
   enableName: 1
   enableDescription: 1

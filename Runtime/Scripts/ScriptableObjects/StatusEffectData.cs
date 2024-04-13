@@ -31,8 +31,8 @@ namespace StatusEffects
         public List<Effect> effects;
         [Tooltip("Conditionals will be checked when a Status Effect is added. This way you can automatically add or remove other effects with ease.")]
         public List<Condition> conditions;
-        [Tooltip("Custom Effects will apply additional functionality to a Status Effect. This is not required.")]
-        public CustomEffect customEffect;
+        [Tooltip("Modules will apply additional functionality to a Status Effect. This is not required.")]
+        public List<ModuleContainer> modules;
 #if UNITY_EDITOR
 #pragma warning disable 0414
         [SerializeField] private bool enableIcon = true;

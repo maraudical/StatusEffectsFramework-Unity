@@ -1,5 +1,7 @@
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 
 namespace StatusEffects.Inspector
@@ -19,11 +21,13 @@ namespace StatusEffects.Inspector
         private SerializedProperty _maxStack;
         private SerializedProperty _effects;
         private SerializedProperty _conditions;
-        private SerializedProperty _customEffect;
+        private SerializedProperty _modules;
 
         private SerializedProperty _enableIcon;
         private SerializedProperty _enableName;
         private SerializedProperty _enableDescription;
+
+        private ReorderableList _modulesList;
         
         private Condition _condition;
 
@@ -33,7 +37,71 @@ namespace StatusEffects.Inspector
         private const string _conditionsWarningMessage = "Do not recursively add status datas! " +
                                                          "Avoid adding a status data to itself! " +
                                                          "Make sure there aren't two that add each other!";
-        
+
+        private void OnEnable()
+        {
+            _modules = serializedObject.FindProperty("modules");
+
+            _modulesList = new ReorderableList(serializedObject, _modules, true, true, true, true);
+
+            _modulesList.drawHeaderCallback = rect => {
+                EditorGUI.LabelField(rect, "Modules");
+            };
+            _modulesList.onAddCallback = list =>
+            {
+                var index = list.serializedProperty.arraySize;
+                // Add one element
+                list.serializedProperty.arraySize++;
+                // Get that element
+                var element = list.serializedProperty.GetArrayElementAtIndex(index);
+                // Reset all properties
+                element.FindPropertyRelative("module").SetUnderlyingValue(null);
+                element.FindPropertyRelative("moduleInstance").SetUnderlyingValue(null);
+            };
+            _modulesList.onRemoveCallback = list =>
+            {
+                // Remove selected or default to the last element
+                if (list.selectedIndices.Count > 0)
+                    foreach (int index in list.selectedIndices.OrderByDescending(x => x))
+                    {
+                        RemoveElementAt(index);
+                    }
+                else
+                    RemoveElementAt(list.serializedProperty.arraySize - 1);
+
+                EditorUtility.SetDirty(serializedObject.targetObject);
+                AssetDatabase.SaveAssetIfDirty(serializedObject.targetObject);
+
+                void RemoveElementAt(int index)
+                {
+                    // Get the element to remove
+                    var element = _modulesList.serializedProperty.GetArrayElementAtIndex(index);
+                    // Remove the scriptable object from nested assets
+                    var moduleInstance = element.FindPropertyRelative("moduleInstance");
+                    if (moduleInstance.objectReferenceValue != null)
+                    {
+                        ScriptableObject instance = moduleInstance.objectReferenceValue as ScriptableObject;
+                        AssetDatabase.RemoveObjectFromAsset(instance);
+                        DestroyImmediate(instance);
+                    }
+                    // Remove one element
+                    _modulesList.serializedProperty.DeleteArrayElementAtIndex(index);
+                }
+            };
+            _modulesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
+            {
+                var element = _modulesList.serializedProperty.GetArrayElementAtIndex(index);
+                rect.y += EditorGUIUtility.standardVerticalSpacing / 1.515f;
+                rect.height = EditorGUI.GetPropertyHeight(element);
+                EditorGUI.PropertyField(rect, element, GUIContent.none);
+            };
+            _modulesList.elementHeightCallback = index => 
+            {
+                var element = _modulesList.serializedProperty.GetArrayElementAtIndex(index);
+                return EditorGUI.GetPropertyHeight(element);
+            };
+        }
+
         public override void OnInspectorGUI()
         {
             // Retrieve properties
@@ -51,7 +119,7 @@ namespace StatusEffects.Inspector
 
             _effects = serializedObject.FindProperty("effects");
             _conditions = serializedObject.FindProperty("conditions");
-            _customEffect = serializedObject.FindProperty("customEffect");
+            _modules = serializedObject.FindProperty("modules");
 
             _enableIcon = serializedObject.FindProperty("enableIcon");
             _enableName = serializedObject.FindProperty("enableName");
@@ -100,6 +168,7 @@ namespace StatusEffects.Inspector
             EditorGUILayout.EndVertical();
 
             EditorGUILayout.PropertyField(_effects);
+
             EditorGUILayout.Space(5);
 
             _displayConditionsWarning = false;
@@ -119,8 +188,10 @@ namespace StatusEffects.Inspector
                 EditorGUILayout.HelpBox(_conditionsWarningMessage, MessageType.Warning);
 
             EditorGUILayout.PropertyField(_conditions);
+
             EditorGUILayout.Space(5);
-            EditorGUILayout.PropertyField(_customEffect);
+
+            _modulesList.DoLayoutList();
 
             serializedObject.ApplyModifiedProperties();
         }

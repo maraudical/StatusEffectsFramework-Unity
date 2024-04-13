@@ -9,9 +9,9 @@ namespace StatusEffects.Inspector
     [CustomPropertyDrawer(typeof(StatusBool))]
     public class StatusVariableDrawer : PropertyDrawer
     {
-        private const int _fieldCount = 4;
-        private const int _padding = 2;
         private float _fieldSize = EditorGUIUtility.singleLineHeight;
+        private float _padding = EditorGUIUtility.standardVerticalSpacing;
+        private const int _fieldCount = 4;
         private bool _foldout = false;
 
         private SerializedProperty _statusName;
@@ -38,7 +38,8 @@ namespace StatusEffects.Inspector
             _statusName.serializedObject.Update();
             _baseValue.serializedObject.Update();
 
-            position.height /= (_foldout ? _fieldCount : 1);
+            position.height = _fieldSize;
+            position.y += _padding;
 
             GUI.color = !_statusName.objectReferenceValue && !_foldout ? Color.red : Color.white;
             _foldout = EditorGUI.Foldout(position, _foldout, label, true);
@@ -83,7 +84,7 @@ namespace StatusEffects.Inspector
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return (_fieldSize + _padding) * (_foldout ? _fieldCount : 1);
+            return (_fieldSize + _padding) * (_foldout ? _fieldCount : 1) + _padding;
         }
     }
 }

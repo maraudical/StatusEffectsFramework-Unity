@@ -1,14 +1,10 @@
-#if UNITASK
 using Cysharp.Threading.Tasks;
-#else
-using System.Collections;
-#endif
 using System.Threading;
 using UnityEngine;
 
-namespace StatusEffects
+namespace StatusEffects.Modules
 {
-    public abstract class CustomEffect : ScriptableObject
+    public abstract class Module : ScriptableObject
     {
 #if UNITASK
         /// <summary>
@@ -20,16 +16,16 @@ namespace StatusEffects
         /// <see cref="MonoBehaviour"/> after the cancellation you need to 
         /// check if it is null.
         /// </summary>
-        public abstract UniTask Effect<T>(T monoBehaviour, StatusEffect statusEffect, CancellationToken token) where T : MonoBehaviour, IStatus;
+        public abstract UniTask EnableModule<T>(T monoBehaviour, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token) where T : MonoBehaviour, IStatus;
 #else
         /// <summary>
         /// This will run as an <see cref="IEnumerator"/> coroutine when the effect starts.
         /// </summary>
-        public abstract IEnumerator Effect<T>(T monoBehaviour, StatusEffect statusEffect) where T : MonoBehaviour, IStatus;
+        public abstract IEnumerator EnableModule<T>(T monoBehaviour, StatusEffect statusEffect, ModuleInstance moduleInstance) where T : MonoBehaviour, IStatus;
         /// <summary>
         /// Use this callback to do something when the effect ends.
         /// </summary>
-        public abstract void EffectEnd<T>(T monoBehaviour, StatusEffect statusEffect) where T : MonoBehaviour, IStatus;
+        public abstract void DisableModule<T>(T monoBehaviour, StatusEffect statusEffect, ModuleInstance moduleInstance) where T : MonoBehaviour, IStatus;
 #endif
     }
 }

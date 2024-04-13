@@ -9,7 +9,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c88b8e59fbec6934baac4813bd95881b, type: 3}
-  m_Name: Heal Effect
+  m_Script: {fileID: 11500000, guid: 3b2a130c7ca22f74294aefadefa9fc4c, type: 3}
+  m_Name: Damage Over Time Module
   m_EditorClassIdentifier: 
-  heal: 10
+  damage: 5
+  intervalSeconds: 1
