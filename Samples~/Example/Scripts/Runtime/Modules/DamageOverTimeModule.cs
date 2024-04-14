@@ -1,7 +1,6 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
 using System.Threading;
-using System;
 #else
 using System.Collections;
 #endif
@@ -36,7 +35,9 @@ namespace StatusEffects.Modules
             if (monoBehaviour.TryGetComponent(out ExampleEntity entity))
                 for (; ; )
                 {
+                    // Reduce health based on the Statu Effect base value
                     entity.health -= statusEffect.data.baseValue;
+                    // Wait for the interval before applying the damage again
                     yield return new WaitForSeconds(damageOverTimeInstance.intervalSeconds);
                 }
         }

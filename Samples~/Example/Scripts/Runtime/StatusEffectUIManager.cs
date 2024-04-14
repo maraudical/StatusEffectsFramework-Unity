@@ -55,9 +55,7 @@ namespace StatusEffects.Example.UI
             if (_statusEffectUIs.TryGetValue(statusEffect.data, out StatusEffectUI ui))
             {
                 // Add or remove the given stack count.
-                Debug.Log(stacks);
                 ui.UpdateStack(added ? stacks : -stacks);
-                Debug.Log("total now: " + ui.stack);
                 // If the stack count after removing is below or equal to 0 then remove it.
                 if (ui.stack <= 0)
                     RemoveUI(ui);
