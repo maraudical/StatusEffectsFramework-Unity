@@ -1,5 +1,14 @@
 # Change Log:
 
+## 1.6.0
+
+- Feature: Modules are now a more intuitive replacement for custom effects
+- Enhancement: Updated/cleaned up many property drawers
+- Enhancement: Added example status effects for the coin multiplier
+- Enhancement: Updated samples with new modules and VFX
+- Bug Fix: Trying to add 0 or negative stack count would throw errors
+- Bug Fix: Fixed critical error where status variables would not update in builds
+
 ## 1.5.1
 
 - Enhancement: Cleaned up some editor property drawers

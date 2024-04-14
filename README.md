@@ -2,7 +2,7 @@
   <img src="https://drive.google.com/uc?id=1UYbBluu119xenikC8iY13CaT8lcp4J_G" height="200" alt="logo"><br>
   <a href="https://unity3d.com/en/get-unity/download/archive"><img src="https://img.shields.io/badge/unity-2021%20or%20later-green.svg" alt=""></a>
   <a href="https://github.com/maraudical/StatusEffectsFramework/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="https://github.com/maraudical/StatusEffectsFramework/releases"><img src="https://img.shields.io/badge/version-1.5.1-blue" alt="version"></a>
+  <a href="https://github.com/maraudical/StatusEffectsFramework/releases"><img src="https://img.shields.io/badge/version-1.6.0-blue" alt="version"></a>
   <a href="https://github.com/maraudical/StatusEffectsFramework/pulls"><img src="https://img.shields.io/github/issues-pr-raw/maraudical/StatusEffectsFramework" alt=""></a>
 </p><br>
 
@@ -16,6 +16,7 @@
 - Float, int, and bool variables that **dynamically** update with effects
 - Status effect grouping to easilly manage multiple effects
 - Conditional adding/removing when effects are applied in tandem to other effects
+- Create modules to add additional functionality as required
 
 # Supported versions
 - (Tested on)Unity 2022.x
@@ -24,6 +25,7 @@
 # Getting started with the Status Effect Framework
 
 1. Add the **Status Effect Framework** through the package manager
+> Note: [Install via git](https://maraudical.gitbook.io/status-effect-framework/setup) with this URL: `https://github.com/maraudical/StatusEffectsFramework-Unity.git`
 1. Import the **Examples** (highly recommended)
 1. Change any settings, group names, and preset statuses in **ProjectSettings**
 1. **Create** any status effects from the create menu
