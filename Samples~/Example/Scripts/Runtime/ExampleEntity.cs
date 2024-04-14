@@ -20,6 +20,10 @@ namespace StatusEffects.Example
         // To make it easier for other scripts to access StatusVariables
         // you can publicize them like this.
         public float maxHealth => _maxHealth.value;
+        public float speed => _speed.value;
+        public int coinMultiplier => _coinMultiplier.value;
+        public bool stunned => _stunned.value;
+
         [field: Space]
         // This is apart of the IStatus interface which is required by all
         // MonoBehaviours which will interact with status effects. It will
@@ -45,6 +49,11 @@ namespace StatusEffects.Example
             health = _maxHealth.value;
             _event = new();
             _predicateBool = false;
+            // IMPORTANT: these need to be called to setup the StatusVariables
+            /*_maxHealth.SetMonoBehaviour(this);
+            _speed.SetMonoBehaviour(this);
+            _coinMultiplier.SetMonoBehaviour(this);
+            _stunned.SetMonoBehaviour(this);*/
         }
         // This is also apart of the IStatus interface. It will be invoked
         // whenever status effects are started or ended.
@@ -60,7 +69,7 @@ namespace StatusEffects.Example
         // Additionally you can have the duration update of System.Action
         // events where each invoke reduces duration by 1. This could be used
         // for games that are more round based or don't work in realtime.
-        public void DebugAddStatusEffectTimedEvent() { this.AddStatusEffect(statusEffectData, _duration, _event, _stack); }
+        public void DebugAddStatusEffectTimedEvent() { this.AddStatusEffect(statusEffectData, _duration, _event, 1, _stack); }
         // Just calls the example action.
         public void InvokeEvent() { _event?.Invoke(); }
         // Set a predicate that when true disables the effect. In this example

@@ -28,11 +28,11 @@ namespace StatusEffects
         public NonStackingBehaviour nonStackingBehaviour;
         public int maxStack = -1;
         [Tooltip("The effect list will apply value adjustments to the given Status.")]
-        public List<Effect> effects;
+        public List<Effect> effects = new();
         [Tooltip("Conditionals will be checked when a Status Effect is added. This way you can automatically add or remove other effects with ease.")]
-        public List<Condition> conditions;
+        public List<Condition> conditions = new();
         [Tooltip("Modules will apply additional functionality to a Status Effect. This is not required.")]
-        public List<ModuleContainer> modules;
+        public List<ModuleContainer> modules = new();
 #if UNITY_EDITOR
 #pragma warning disable 0414
         [SerializeField] private bool enableIcon = true;

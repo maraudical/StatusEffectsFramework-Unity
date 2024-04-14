@@ -1,6 +1,4 @@
-using StatusEffects.Modules;
-
-namespace StatusEffects.Custom
+namespace StatusEffects.Modules
 {
     public class DamageOverTimeInstance : ModuleInstance
     {

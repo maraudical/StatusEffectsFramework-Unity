@@ -34,6 +34,21 @@ MonoBehaviour:
   modules:
   - module: {fileID: 11400000, guid: fc369abdd5ca5574b92d2962ebfd5d96, type: 2}
     moduleInstance: {fileID: 0}
+  - module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
+    moduleInstance: {fileID: 8132361027308747352}
   enableIcon: 1
   enableName: 1
   enableDescription: 1
+--- !u!114 &8132361027308747352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 3165632045659492785, guid: 596723451463a6443aff5842e68ee3c3, type: 3}

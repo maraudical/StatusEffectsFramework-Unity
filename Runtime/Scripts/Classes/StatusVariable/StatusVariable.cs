@@ -1,17 +1,14 @@
+using UnityEngine;
+
 namespace StatusEffects
 {
     public abstract class StatusVariable
     {
-        protected IStatus monoBehaviour;
+        [SerializeField] protected MonoBehaviour monoBehaviour;
+        protected IStatus iStatus;
 #if UNITY_EDITOR
-        public void UpdateReferences(IStatus monoBehaviour)
-        {
-            this.monoBehaviour = monoBehaviour;
-            
-            OnReferencesChanged();
-        }
 
-        protected abstract void OnReferencesChanged();
+        public abstract void OnStatusEffect(MonoBehaviour monoBehaviour);
 #endif
     }
 }

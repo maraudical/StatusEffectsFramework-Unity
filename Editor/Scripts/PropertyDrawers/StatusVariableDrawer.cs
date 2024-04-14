@@ -14,6 +14,7 @@ namespace StatusEffects.Inspector
         private const int _fieldCount = 4;
         private bool _foldout = false;
 
+        private SerializedProperty _monoBehaviour;
         private SerializedProperty _statusName;
         private SerializedProperty _baseValue;
         private SerializedProperty _value;
@@ -23,6 +24,7 @@ namespace StatusEffects.Inspector
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
+            _monoBehaviour = property.FindPropertyRelative("monoBehaviour");
             _statusName = property.FindPropertyRelative("statusName");
             _baseValue = property.FindPropertyRelative("baseValue");
             _value = property.FindPropertyRelative("_value");
@@ -33,6 +35,12 @@ namespace StatusEffects.Inspector
 
                 if (_value.GetUnderlyingValue() != _baseValueObject)
                     _value.SetUnderlyingValue(_baseValueObject);
+            }
+
+            if (_monoBehaviour.objectReferenceValue == null || _monoBehaviour.objectReferenceValue != property.serializedObject.targetObject && !_monoBehaviour.hasMultipleDifferentValues)
+            {
+                _monoBehaviour.SetUnderlyingValue(property.serializedObject.targetObject);
+                EditorUtility.SetDirty(property.serializedObject.targetObject);
             }
 
             _statusName.serializedObject.Update();

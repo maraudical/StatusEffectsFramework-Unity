@@ -1,3 +1,5 @@
+using StatusEffects.Modules;
+using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEditor;
@@ -42,6 +44,21 @@ namespace StatusEffects.Inspector
         {
             _modules = serializedObject.FindProperty("modules");
 
+            IEnumerable<ModuleInstance> modules = (_modules.GetUnderlyingValue() as List<ModuleContainer>).Select(m => m.moduleInstance);
+
+            foreach(ModuleInstance nestedModule in AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(serializedObject.targetObject)))
+            {
+                // If there is somehow a loose module we need to clean it up
+                if (!modules.Contains(nestedModule))
+                {
+                    AssetDatabase.RemoveObjectFromAsset(nestedModule);
+                    DestroyImmediate(nestedModule);
+                    EditorUtility.SetDirty(serializedObject.targetObject);
+                }
+            }
+            
+            AssetDatabase.SaveAssetIfDirty(serializedObject.targetObject);
+            // Setup the reorderable module list
             _modulesList = new ReorderableList(serializedObject, _modules, true, true, true, true);
 
             _modulesList.drawHeaderCallback = rect => {
@@ -189,9 +206,12 @@ namespace StatusEffects.Inspector
 
             EditorGUILayout.PropertyField(_conditions);
 
-            EditorGUILayout.Space(5);
+            EditorGUILayout.Space(7.5f);
 
+            if (Application.isPlaying)
+                GUI.enabled = false;
             _modulesList.DoLayoutList();
+            GUI.enabled = true;
 
             serializedObject.ApplyModifiedProperties();
         }

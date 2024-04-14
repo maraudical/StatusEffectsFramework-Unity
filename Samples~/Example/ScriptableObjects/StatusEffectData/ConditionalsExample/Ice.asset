@@ -52,7 +52,22 @@ MonoBehaviour:
       value: 0
     timing: 0
     duration: 0
-  customEffect: {fileID: 0}
+  modules:
+  - module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
+    moduleInstance: {fileID: 3798898187394050518}
   enableIcon: 1
   enableName: 1
   enableDescription: 1
+--- !u!114 &3798898187394050518
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prefab: {fileID: 6782311843903724714, guid: ff4c2e5985a52234a9a42c642800f49c, type: 3}

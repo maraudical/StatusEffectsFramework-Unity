@@ -1,5 +1,9 @@
-using Cysharp.Threading.Tasks;
+#if UNITASK
 using System.Threading;
+using Cysharp.Threading.Tasks;
+#else
+using System.Collections;
+#endif
 using UnityEngine;
 
 namespace StatusEffects.Modules

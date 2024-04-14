@@ -1,13 +1,13 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
 using System.Collections;
+using System.Threading;
 #else
 using System.Collections;
 #endif
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -152,6 +152,9 @@ namespace StatusEffects
 
                     void SubtractInterval(float interval) { statusEffect.duration -= interval; }
                 }
+#if UNITASK
+                if (!token.IsCancellationRequested)
+#endif
                 // Once it has ended remove the given effect.
                 RemoveStatusEffect(monoBehaviour, statusEffect);
             }
@@ -265,7 +268,7 @@ namespace StatusEffects
             // Remove the effects for a given monobehaviour.
             monoBehaviour.effects.Remove(statusEffect);
             // If a custom effect exists it will be stopped.
-            statusEffect.StopCustomEffect(monoBehaviour);
+            statusEffect.DisableModules(monoBehaviour);
             // Call the method on the inherited interface.
             monoBehaviour.OnStatusEffect(statusEffect, false, statusEffect.stack);
 #if UNITY_EDITOR
@@ -299,7 +302,7 @@ namespace StatusEffects
                         {
                             currentRemoveCount = (int)(currentStackCount - (removedCount + currentStackCount - stack));
                             monoBehaviour.effects.ElementAt(i).stack -= currentRemoveCount;
-                            monoBehaviour.effects.ElementAt(i).StopCustomEffect(monoBehaviour, stack);
+                            monoBehaviour.effects.ElementAt(i).DisableModules(monoBehaviour, stack);
                             monoBehaviour.OnStatusEffect(monoBehaviour.effects.ElementAt(i), false, currentRemoveCount);
 #if UNITY_EDITOR
                             UpdateReferences(monoBehaviour);
@@ -337,7 +340,7 @@ namespace StatusEffects
                         {
                             currentRemoveCount = (int)(currentStackCount - (removedCount + currentStackCount - stack));
                             monoBehaviour.effects.ElementAt(i).stack -= currentRemoveCount;
-                            monoBehaviour.effects.ElementAt(i).StopCustomEffect(monoBehaviour, stack);
+                            monoBehaviour.effects.ElementAt(i).DisableModules(monoBehaviour, stack);
                             monoBehaviour.OnStatusEffect(monoBehaviour.effects.ElementAt(i), false, currentRemoveCount);
 #if UNITY_EDITOR
                             UpdateReferences(monoBehaviour);
@@ -501,6 +504,8 @@ namespace StatusEffects
             // Check to delete the effect if it already exists to prevent duplicates.
             else
             {
+                stack = 1;
+
                 StatusEffect oldStatusEffect = monoBehaviour.GetStatusEffects(name: statusEffectData.comparableName)?.FirstOrDefault();
 
                 if (oldStatusEffect == null)
@@ -538,13 +543,17 @@ namespace StatusEffects
                         RemoveStatusEffect(monoBehaviour, statusEffectData.comparableName);
                         break;
                     case NonStackingBehaviour.TakeHighestDuration:
-                        if (durationValue < oldStatusEffect.duration)
+                        if (!(durationValue < 0) && (durationValue < oldStatusEffect.duration || oldStatusEffect.duration < 0))
                             return null;
                         else
                             RemoveStatusEffect(monoBehaviour, statusEffectData.comparableName);
                         break;
                     case NonStackingBehaviour.TakeHighestValue:
-                        if (Mathf.Abs(statusEffectData.baseValue) < Mathf.Abs(oldStatusEffect.data.baseValue))
+                        float oldValue = Mathf.Abs(oldStatusEffect.data.baseValue);
+                        float newValue = Mathf.Abs(statusEffectData.baseValue);
+                        if (newValue == oldValue)
+                            goto case NonStackingBehaviour.TakeHighestDuration;
+                        if (newValue < oldValue)
                             return null;
                         else
                             RemoveStatusEffect(monoBehaviour, statusEffectData.comparableName);
@@ -560,7 +569,8 @@ namespace StatusEffects
             NothingToStack:
             // Create a new status effect instance.
             statusEffect = new StatusEffect(statusEffectData, timing, durationValue, stack);
-            // Add the effect for a given monobehaviour.
+            // Add the effect for a given monobehaviour. This also is the first time
+            // initializing so we need to initialize all of the Status Variables
             if (monoBehaviour.effects == null)
                 monoBehaviour.effects = new List<StatusEffect> { statusEffect };
             else
@@ -571,7 +581,7 @@ namespace StatusEffects
             UpdateReferences(monoBehaviour);
 #endif
             // If a custom effect exists it will be started.
-            statusEffect.StartCustomEffect(monoBehaviour, stack);
+            statusEffect.EnableModules(monoBehaviour, stack);
             // Call the method on the inherited interface.
             monoBehaviour.OnStatusEffect(statusEffect, true, stack);
             // Return the effect in case it is wanted for other reference.
@@ -585,7 +595,9 @@ namespace StatusEffects
             // And remove the effect reference from each of the fields. Note this
             // is just to update the inspector value.
             foreach (var field in monoBehaviour.GetType().GetFields(_bindingFlags).Where(f => f.FieldType.IsSubclassOf(typeof(StatusVariable))))
-                ((StatusVariable)field.GetValue(monoBehaviour)).UpdateReferences(monoBehaviour);
+            {
+                ((StatusVariable)field.GetValue(monoBehaviour)).OnStatusEffect(monoBehaviour);
+            }
         }
 #endif
         #endregion

@@ -10,23 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
-  m_Name: Ultimate Health Boost
+  m_Name: Add Coin Multiplier
   m_EditorClassIdentifier: 
   group:
     value: 4
-  comparableName: {fileID: 11400000, guid: e368dafc221f5f747b79ba4f5224fbbc, type: 2}
-  baseValue: 0.3
-  icon: {fileID: 21300000, guid: 7f42b93c2e803aa46a1788d0dc7e553c, type: 3}
-  statusEffectName: Ultimate Health Boost
-  description: Final tier of health boost that increases health by 30%.
-  allowEffectStacking: 0
-  nonStackingBehaviour: 2
+  comparableName: {fileID: 11400000, guid: b962d893a3a667d4480d17ac12f7c54c, type: 2}
+  baseValue: 1
+  icon: {fileID: 21300000, guid: 7c5e5f5e82bc3ee4e97adfe8bf6e8cd8, type: 3}
+  statusEffectName: Add Coin Multiplier
+  description: Increases the coin multiplier by 1.
+  allowEffectStacking: 1
+  nonStackingBehaviour: 0
   maxStack: -1
   effects:
-  - statusName: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
-    valueModifier: 1
+  - statusName: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
+    valueModifier: 0
     useBaseValue: 1
-    floatValue: 0.3
+    floatValue: 0
     intValue: 0
     boolValue: 0
     priority: 0

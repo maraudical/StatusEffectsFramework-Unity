@@ -1,14 +1,14 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
 using System.Threading;
+using System;
 #else
 using System.Collections;
 #endif
 using UnityEngine;
 using StatusEffects.Example;
-using StatusEffects.Modules;
 
-namespace StatusEffects.Custom
+namespace StatusEffects.Modules
 {
     [CreateAssetMenu(fileName = "Heal Module", menuName = "Status Effect Framework/Modules/Heal", order = 1)]
     public class HealModule : Module
@@ -31,17 +31,22 @@ namespace StatusEffects.Custom
             entity.health = Mathf.Min(entity.health, entity.maxHealth);
         }
 #else
-        public override IEnumerator Effect<T>(T monoBehaviour, StatusEffect statusEffect)
+        public override IEnumerator EnableModule<T>(T monoBehaviour, StatusEffect statusEffect, ModuleInstance moduleInstance)
         {
             if (monoBehaviour.TryGetComponent(out ExampleEntity entity))
+            {
+                // Add health according to status effect
                 entity.health += statusEffect.data.baseValue;
+                entity.health = Mathf.Min(entity.health, entity.maxHealth);
+            }
 
             yield return null;
         }
 
-        public override void EffectEnd<T>(T monoBehaviour, StatusEffect statusEffect)
+        public override void DisableModule<T>(T monoBehaviour, StatusEffect statusEffect, ModuleInstance moduleInstance)
         {
             if (monoBehaviour.TryGetComponent(out ExampleEntity entity))
+                // Clamp health after status effect ends
                 entity.health = Mathf.Min(entity.health, entity.maxHealth);                         
         }
 #endif
