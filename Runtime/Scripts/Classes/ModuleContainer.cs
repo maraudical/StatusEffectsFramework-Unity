@@ -1,9 +1,11 @@
-using StatusEffects.Modules;
 using System;
 
-[Serializable]
-public class ModuleContainer
+namespace StatusEffects.Modules
 {
-    public Module module;
-    public ModuleInstance moduleInstance;
+    [Serializable]
+    public class ModuleContainer
+    {
+        public Module module;
+        public ModuleInstance moduleInstance;
+    }
 }

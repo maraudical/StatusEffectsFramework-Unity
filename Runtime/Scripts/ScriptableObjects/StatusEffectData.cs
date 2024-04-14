@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using StatusEffects.Modules;
 #if LOCALIZED
 using UnityEngine.Localization;
 #endif
