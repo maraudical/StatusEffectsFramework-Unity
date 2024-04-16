@@ -37,7 +37,10 @@ namespace StatusEffects.Inspector
                     _value.SetUnderlyingValue(_baseValueObject);
             }
 
-            if (_monoBehaviour.objectReferenceValue == null || _monoBehaviour.objectReferenceValue != property.serializedObject.targetObject && !_monoBehaviour.hasMultipleDifferentValues)
+            if (_monoBehaviour.objectReferenceValue == null 
+             || _monoBehaviour.objectReferenceValue != property.serializedObject.targetObject 
+             && !_monoBehaviour.hasMultipleDifferentValues
+             && property.serializedObject.targetObject is MonoBehaviour)
             {
                 _monoBehaviour.SetUnderlyingValue(property.serializedObject.targetObject);
                 EditorUtility.SetDirty(property.serializedObject.targetObject);
