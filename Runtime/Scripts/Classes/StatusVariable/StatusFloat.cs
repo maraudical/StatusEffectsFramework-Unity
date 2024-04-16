@@ -37,6 +37,9 @@ namespace StatusEffects
             if (iStatus == null)
                 iStatus = monoBehaviour as IStatus;
 
+            if (iStatus.effects == null)
+                return baseValue;
+
             float additiveValue = 0;
             float multiplicativeValue = 1;
             float postAdditiveValue = 0;

@@ -37,6 +37,9 @@ namespace StatusEffects
             if (iStatus == null)
                 iStatus = monoBehaviour as IStatus;
 
+            if (iStatus.effects == null)
+                return baseValue;
+
             bool value = baseValue;
             int priority = -1;
 
