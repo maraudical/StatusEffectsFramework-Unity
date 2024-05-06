@@ -2460,7 +2460,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c8fc2bda1b077de44ab655eec76833a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  entity: {fileID: 1944042326}
+  _statusManager: {fileID: 1944042328}
+  _exampleEntity: {fileID: 1944042326}
   _health: {fileID: 267063940}
   _maxHealth: {fileID: 1196884844}
   _speed: {fileID: 539421339}
@@ -2698,6 +2699,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: efe239d6d0efaad43bd3e704cbbb2cc9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _statusManager: {fileID: 1944042328}
   _exampleEntity: {fileID: 1944042326}
   _effectParent: {fileID: 1404795237}
   _effectPrefab: {fileID: 723449315551824524, guid: fa6d04fc069e4be49a5e002999f2fd02, type: 3}
@@ -3282,6 +3284,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1944042327}
+  - component: {fileID: 1944042328}
   - component: {fileID: 1944042326}
   m_Layer: 0
   m_Name: Entity
@@ -3302,28 +3305,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69ad43433dbafd345afa073312817f40, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  statusManager: {fileID: 0}
   _maxHealth:
-    monoBehaviour: {fileID: 1944042326}
+    instance: {fileID: 0}
     statusName: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
     baseValue: 10
-    _value: 10
+    value: 0
   _speed:
-    monoBehaviour: {fileID: 1944042326}
+    instance: {fileID: 0}
     statusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
     baseValue: 5
-    _value: 5
+    value: 0
   _coinMultiplier:
-    monoBehaviour: {fileID: 1944042326}
+    instance: {fileID: 0}
     statusName: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
     baseValue: 1
-    _value: 1
+    value: 0
   _stunned:
-    monoBehaviour: {fileID: 1944042326}
+    instance: {fileID: 0}
     statusName: {fileID: 11400000, guid: f7273fbb099977747b3d7284bf74e0c8, type: 2}
     baseValue: 0
-    _value: 0
+    value: 0
   health: 0
-  <effects>k__BackingField: []
   statusEffectData: {fileID: 11400000, guid: 56d927ea90df83d498e37cfd7daba43b, type: 2}
   _duration: 10
   _group:
@@ -3346,6 +3349,19 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1944042328
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1944042325}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45436659e3c3d934490357922367cfb6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _effects: []
 --- !u!1 &2060359490
 GameObject:
   m_ObjectHideFlags: 0

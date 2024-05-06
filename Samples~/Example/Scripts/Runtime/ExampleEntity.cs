@@ -1,14 +1,13 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace StatusEffects.Example
 {
-    public class ExampleEntity : MonoBehaviour, IStatus
+    // Require the StatusEffectsInstance so that StatusVariables can be setup.
+    [RequireComponent(typeof(StatusManager))]
+    public class ExampleEntity : MonoBehaviour
     {
-        // This is an action to subscribe an effect UI to.
-        [HideInInspector] public event Action<StatusEffect, bool, int> onStatusEffect;
+        [HideInInspector] public StatusManager statusManager;
         // Example variables
         [SerializeField] private StatusFloat _maxHealth;
         [SerializeField] private StatusFloat _speed;
@@ -23,14 +22,6 @@ namespace StatusEffects.Example
         public float speed => _speed.value;
         public int coinMultiplier => _coinMultiplier.value;
         public bool stunned => _stunned.value;
-
-        [field: Space]
-        // This is apart of the IStatus interface which is required by all
-        // MonoBehaviours which will interact with status effects. It will
-        // hold the list of currently active effects and update automatically.
-        // DO NOT edit the list directly, see the below extensions for adding/
-        // removing effects.
-        [field: SerializeField] public List<StatusEffect> effects { get; set; }
         // The following is for debugging how effects are added/removed.
         [Header("Debug Variables")]
         public StatusEffectData statusEffectData;
@@ -44,43 +35,58 @@ namespace StatusEffects.Example
         // be used to update the duration of an effect.
         private UnityEvent _event;
 
+        private void Awake()
+        {
+            // Obtain the StatusEffectsInstance, this doesn't need to be on the
+            // same GameObject but you need to get the reference for whatever you
+            // want to store this Entity's Status Effects.
+            statusManager = GetComponent<StatusManager>();
+            _maxHealth.SetInstance(statusManager);
+            _speed.SetInstance(statusManager);
+            _coinMultiplier.SetInstance(statusManager);
+            _stunned.SetInstance(statusManager);
+        }
+        // I subscribe to the onStatusEffect event just to debug
+        private void OnEnable()
+        {
+            statusManager.onStatusEffect += OnStatusEffect;
+        }
+
+        private void OnDisable()
+        {
+            statusManager.onStatusEffect -= OnStatusEffect;
+        }
+
+        private void OnStatusEffect(StatusEffect statusEffect, bool added, int stacks)
+        {
+            Debug.Log($"{(added ? "Added" : "Removed")} {stacks} stacks of the effect \"{statusEffect.data.name}\"!");
+        }
+
         private void Start()
         {
             health = _maxHealth.value;
             _event = new();
             _predicateBool = false;
-            // IMPORTANT: these need to be called to setup the StatusVariables
-            /*_maxHealth.SetMonoBehaviour(this);
-            _speed.SetMonoBehaviour(this);
-            _coinMultiplier.SetMonoBehaviour(this);
-            _stunned.SetMonoBehaviour(this);*/
-        }
-        // This is also apart of the IStatus interface. It will be invoked
-        // whenever status effects are started or ended.
-        public void OnStatusEffect(StatusEffect statusEffect, bool added, int stacks)
-        {
-            Debug.Log($"{(added ? "Added" : "Removed")} {stacks} stacks of the effect \"{statusEffect.data.name}\"!");
-            onStatusEffect?.Invoke(statusEffect, added, stacks);
         }
         // Default adding of status effect is infinite.
-        public void DebugAddStatusEffect() { this.AddStatusEffect(statusEffectData, _stack); }
+        public void DebugAddStatusEffect() { statusManager.AddStatusEffect(statusEffectData, _stack); }
         // But you can set an effect duration.
-        public void DebugAddStatusEffectTimed() { this.AddStatusEffect(statusEffectData, _duration, _stack); }
+        public void DebugAddStatusEffectTimed() { statusManager.AddStatusEffect(statusEffectData, _duration, _stack); }
         // Additionally you can have the duration update of System.Action
         // events where each invoke reduces duration by 1. This could be used
         // for games that are more round based or don't work in realtime.
-        public void DebugAddStatusEffectTimedEvent() { this.AddStatusEffect(statusEffectData, _duration, _event, 1, _stack); }
+        public void DebugAddStatusEffectTimedEvent() { statusManager.AddStatusEffect(statusEffectData, _duration, _event, 1, _stack); }
         // Just calls the example action.
         public void InvokeEvent() { _event?.Invoke(); }
         // Set a predicate that when true disables the effect. In this example
         // if _predicateBool is set to true the effect is removed.
-        public void DebugAddStatusEffectPredicate() { this.AddStatusEffect(statusEffectData, () => _predicateBool, _stack); }
+        public void DebugAddStatusEffectPredicate() { statusManager.AddStatusEffect(statusEffectData, () => _predicateBool, _stack); }
         // Default removing of a status effect. There are multiple overrides
         // such as using status effect string names or the StatusEffect
         // reference itself instead.
-        public void DebugRemoveStatusEffect() { this.RemoveStatusEffect(statusEffectData, _stack); }
+        public void DebugRemoveStatusEffect() { statusManager.RemoveStatusEffect(statusEffectData, _stack); }
         // Removes all effects that fall under a specific group. Additionally
         // you can remove the group parameter and just remove all effects.
-        public void DebugRemoveStatusEffectGroup() { this.RemoveAllStatusEffects(_group); }
+        public void DebugRemoveStatusEffectGroup() { statusManager.RemoveAllStatusEffects(_group); }
     }
 }

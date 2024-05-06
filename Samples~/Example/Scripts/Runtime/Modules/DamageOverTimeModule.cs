@@ -1,6 +1,8 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
 using System.Threading;
+#elif UNITY_2023_1_OR_NEWER
+using System.Threading;
 #else
 using System.Collections;
 #endif
@@ -14,11 +16,11 @@ namespace StatusEffects.Modules
     public class DamageOverTimeModule : Module
     {
 #if UNITASK
-        public override async UniTask EnableModule<T>(T monoBehaviour, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
+        public override async UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
             DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
 
-            if (monoBehaviour.TryGetComponent(out ExampleEntity entity))
+            if (manager.TryGetComponent(out ExampleEntity entity))
                 while (!token.IsCancellationRequested)
                 {
                     // Reduce health based on the Statu Effect base value
@@ -27,12 +29,26 @@ namespace StatusEffects.Modules
                     await UniTask.WaitForSeconds(damageOverTimeInstance.intervalSeconds);
                 }
         }
-#else
-        public override IEnumerator EnableModule<T>(T monoBehaviour, StatusEffect statusEffect, ModuleInstance moduleInstance)
+#elif UNITY_2023_1_OR_NEWER
+        public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
             DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
 
-            if (monoBehaviour.TryGetComponent(out ExampleEntity entity))
+            if (manager.TryGetComponent(out ExampleEntity entity))
+                while (!token.IsCancellationRequested)
+                {
+                    // Reduce health based on the Statu Effect base value
+                    entity.health -= statusEffect.data.baseValue;
+                    // Wait for the interval before applying the damage again
+                    await Awaitable.WaitForSecondsAsync(damageOverTimeInstance.intervalSeconds);
+                }
+        }
+#else
+        public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
+        {
+            DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
+
+            if (manager.TryGetComponent(out ExampleEntity entity))
                 for (; ; )
                 {
                     // Reduce health based on the Statu Effect base value
@@ -42,7 +58,7 @@ namespace StatusEffects.Modules
                 }
         }
 
-        public override void DisableModule<T>(T monoBehaviour, StatusEffect statusEffect, ModuleInstance moduleInstance) { }
+        public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) { }
 #endif
     }
 }

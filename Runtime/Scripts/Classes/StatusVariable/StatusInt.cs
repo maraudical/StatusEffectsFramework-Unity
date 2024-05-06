@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using UnityEngine;
 
 namespace StatusEffects
@@ -7,37 +8,31 @@ namespace StatusEffects
     public class StatusInt : StatusVariable
     {
         public StatusNameInt statusName;
-        public int baseValue;
-        public int value => GetValue();
-
-#if UNITY_EDITOR
-#pragma warning disable CS0414 // Remove unread private members
-        [SerializeField] private int _value;
-#pragma warning restore CS0414 // Remove unread private members
-
-#endif
+        [SerializeField] private int baseValue;
+        public int value;
+        
         public StatusInt(int baseValue)
         {
             this.baseValue = baseValue;
         }
 
-        public StatusInt(int baseValue, StatusNameInt statusName, MonoBehaviour monoBehaviour)
+        public StatusInt(int baseValue, StatusNameInt statusName)
         {
             this.statusName = statusName;
             this.baseValue = baseValue;
-            this.monoBehaviour = monoBehaviour;
+            value = GetValue();
+        }
+
+        protected override void InstanceUpdate(StatusEffect statusEffect)
+        {
+            // Only update if the status effect actually has any effects that have the same StatusName
+            if (statusEffect.data.effects.Select(e => e.statusName).Contains(statusName))
+                value = GetValue();
         }
 
         protected virtual int GetValue()
         {
-#if UNITY_EDITOR
-            if (monoBehaviour == null)
-                return baseValue;
-#endif
-            if (iStatus == null)
-                iStatus = monoBehaviour as IStatus;
-
-            if (iStatus.effects == null)
+            if (instance == null)
                 return baseValue;
 
             int additiveValue = 0;
@@ -46,7 +41,7 @@ namespace StatusEffects
 
             int effectValue;
 
-            foreach (StatusEffect statusEffect in iStatus.effects)
+            foreach (StatusEffect statusEffect in instance.effects)
             {
                 foreach (Effect effect in statusEffect.data.effects)
                 {
@@ -75,12 +70,12 @@ namespace StatusEffects
         }
 
         public static implicit operator int(StatusInt statusInt) => statusInt.value;
-#if UNITY_EDITOR
-        public override void OnStatusEffect(MonoBehaviour monoBehaviour)
+
+        public override void SetInstance(StatusManager instance)
         {
-            _value = GetValue();
-            this.monoBehaviour = monoBehaviour;
+            base.SetInstance(instance);
+
+            value = GetValue();
         }
-#endif
     }
 }

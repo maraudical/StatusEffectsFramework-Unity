@@ -1,9 +1,11 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
+using System.Threading;
+#elif UNITY_2023_1_OR_NEWER
+using System.Threading;
 #endif
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
 
 namespace StatusEffects
@@ -19,7 +21,7 @@ namespace StatusEffects
         public float duration;
         public int stack;
 
-#if UNITASK
+#if UNITASK || UNITY_2023_1_OR_NEWER
         [HideInInspector] public List<CancellationTokenSource> moduleTokenSources;
         [HideInInspector] public CancellationTokenSource timedTokenSource;
 #else
@@ -35,7 +37,7 @@ namespace StatusEffects
             this.stack = stack;
         }
 
-        public void EnableModules<T>(T monoBehaviour, int stack) where T : MonoBehaviour, IStatus
+        public void EnableModules(StatusManager manager, int stack)
         {
             if (stack <= 0)
                 return;
@@ -44,13 +46,17 @@ namespace StatusEffects
             {
                 for (int i = 0; i < stack; i++)
                 {
-#if UNITASK
+#if UNITASK || UNITY_2023_1_OR_NEWER
                     CancellationTokenSource effectTokenSource;
 
                     foreach (var container in data.modules)
                     {
-                        effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(monoBehaviour.GetCancellationTokenOnDestroy());
-                        container.module.EnableModule(monoBehaviour, this, container.moduleInstance, effectTokenSource.Token);
+#if UNITASK
+                        effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(manager.GetCancellationTokenOnDestroy());
+#else
+                        effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(manager.destroyCancellationToken);
+#endif
+                        container.module.EnableModule(manager, this, container.moduleInstance, effectTokenSource.Token);
 
                         if (moduleTokenSources == null)
                             moduleTokenSources = new();
@@ -61,7 +67,7 @@ namespace StatusEffects
                     {
                         if (effectCoroutines == null)
                             effectCoroutines = new();
-                        effectCoroutines.Add(monoBehaviour.StartCoroutine(container.module.EnableModule(monoBehaviour, this, container.moduleInstance)));
+                        effectCoroutines.Add(manager.StartCoroutine(container.module.EnableModule(manager, this, container.moduleInstance)));
                     }
 #endif
                 }
@@ -71,7 +77,7 @@ namespace StatusEffects
         }
 
 #nullable enable
-        public void DisableModules<T>(T monoBehaviour, int? stack = null) where T : MonoBehaviour, IStatus
+        public void DisableModules(StatusManager manager, int? stack = null)
 #nullable disable
         {
             if (stack.HasValue && stack <= 0)
@@ -79,7 +85,7 @@ namespace StatusEffects
             
             if (data.modules != null)
             {
-#if UNITASK
+#if UNITASK || UNITY_2023_1_OR_NEWER
                 if (moduleTokenSources == null)
                     return;
 
@@ -87,7 +93,9 @@ namespace StatusEffects
                 {
                     foreach (var container in data.modules)
                     {
-                        moduleTokenSources[moduleTokenSources.Count - 1]?.Cancel();
+                        CancellationTokenSource cancellationTokenSource = moduleTokenSources[moduleTokenSources.Count - 1];
+                        cancellationTokenSource?.Cancel();
+                        cancellationTokenSource?.Dispose();
                         moduleTokenSources.RemoveAt(moduleTokenSources.Count - 1);
                     }
 #else
@@ -100,10 +108,10 @@ namespace StatusEffects
 
                     foreach (var container in data.modules)
                     {
-                        container.module.DisableModule(monoBehaviour, this, container.moduleInstance);
+                        container.module.DisableModule(manager, this, container.moduleInstance);
                         coroutine = effectCoroutines[effectCoroutines.Count - 1];
                         if (coroutine != null)
-                            monoBehaviour.StopCoroutine(coroutine);
+                            manager.StopCoroutine(coroutine);
                         effectCoroutines.RemoveAt(effectCoroutines.Count - 1);
                     }
 #endif

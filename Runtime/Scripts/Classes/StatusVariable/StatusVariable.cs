@@ -4,11 +4,18 @@ namespace StatusEffects
 {
     public abstract class StatusVariable
     {
-        [SerializeField] protected MonoBehaviour monoBehaviour;
-        protected IStatus iStatus;
-#if UNITY_EDITOR
+        [SerializeField] protected StatusManager instance;
 
-        public abstract void OnStatusEffect(MonoBehaviour monoBehaviour);
-#endif
+        public virtual void SetInstance(StatusManager instance)
+        {
+            if (this.instance)
+                this.instance.valueUpdate -= InstanceUpdate;
+
+            this.instance = instance;
+
+            this.instance.valueUpdate += InstanceUpdate;
+        }
+
+        protected abstract void InstanceUpdate(StatusEffect statusEffect);
     }
 }

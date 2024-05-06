@@ -2,7 +2,7 @@
   <img src="https://drive.google.com/uc?id=1UYbBluu119xenikC8iY13CaT8lcp4J_G" height="200" alt="logo"><br>
   <a href="https://unity3d.com/en/get-unity/download/archive"><img src="https://img.shields.io/badge/unity-2021%20or%20later-green.svg" alt=""></a>
   <a href="https://github.com/maraudical/StatusEffectsFramework/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-  <a href="https://github.com/maraudical/StatusEffectsFramework/releases"><img src="https://img.shields.io/badge/version-1.6.0-blue" alt="version"></a>
+  <a href="https://github.com/maraudical/StatusEffectsFramework/releases"><img src="https://img.shields.io/badge/version-1.6.1-blue" alt="version"></a>
   <a href="https://github.com/maraudical/StatusEffectsFramework/pulls"><img src="https://img.shields.io/github/issues-pr-raw/maraudical/StatusEffectsFramework" alt=""></a>
 </p><br>
 
@@ -19,8 +19,12 @@
 - Create modules to add additional functionality as required
 
 # Supported versions
-- (Tested on)Unity 2022.x
-- (Tested on)Unity 2021.x
+- Unity 2021.3 or newer
+
+# Other Support
+Unity - Localization
+Unity - Awaitable
+Cysharp - UniTask
 
 # Getting started with the Status Effect Framework
 
@@ -29,9 +33,9 @@
 1. Import the **Examples** (highly recommended)
 1. Change any settings, group names, and preset statuses in **ProjectSettings**
 1. **Create** any status effects from the create menu
-1. Implement the **IStatus** interface on any classes inheriting Monobehaviour
-1. Implement any **StatusFloat/StatusInt/StatusBools** that will be affected
-1. Use the extension methods on the **IStatus Monobehaviour** to add or remove effects
+1. Add the **StatusManager** component onto any object
+1. Implement any **StatusFloat/StatusInt/StatusBools** into scripts that will be affected
+1. Link the **StatusVariables** to the **StatusManager** and simply add or remove effects
 
 Check the [documentation](https://maraudical.gitbook.io/status-effect-framework/) for more information.
 

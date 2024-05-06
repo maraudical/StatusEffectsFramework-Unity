@@ -7,6 +7,7 @@ namespace StatusEffects.Example.UI
 {
     public class StatusEffectUIManager : MonoBehaviour
     {
+        [SerializeField] private StatusManager _statusManager;
         [SerializeField] private ExampleEntity _exampleEntity;
         [SerializeField] private Transform _effectParent;
         [SerializeField] private GameObject _effectPrefab;
@@ -29,7 +30,7 @@ namespace StatusEffects.Example.UI
 
         private void OnEnable()
         {
-            _exampleEntity.onStatusEffect += OnStatusEffect;
+            _statusManager.onStatusEffect += OnStatusEffect;
 
             _effectDropdown.onValueChanged.AddListener(DropdownValueChanged);
             _effectAddButton.onClick.AddListener(AddButtonClicked);
@@ -38,7 +39,7 @@ namespace StatusEffects.Example.UI
 
         private void OnDisable()
         {
-            _exampleEntity.onStatusEffect -= OnStatusEffect;
+            _statusManager.onStatusEffect -= OnStatusEffect;
 
             _effectDropdown.onValueChanged.RemoveListener(DropdownValueChanged);
             _effectAddButton.onClick.RemoveListener(AddButtonClicked);
@@ -89,12 +90,12 @@ namespace StatusEffects.Example.UI
 
         private void AddButtonClicked()
         {
-            _exampleEntity.AddStatusEffect(_exampleEntity.statusEffectData);
+            _statusManager.AddStatusEffect(_exampleEntity.statusEffectData);
         }
 
         private void RemoveButtonClicked()
         {
-            _exampleEntity.RemoveStatusEffect(_exampleEntity.statusEffectData, 1);
+            _statusManager.RemoveStatusEffect(_exampleEntity.statusEffectData, 1);
         }
     }
 

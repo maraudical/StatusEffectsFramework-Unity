@@ -1,4 +1,5 @@
 using StatusEffects.Modules;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
@@ -33,30 +34,30 @@ namespace StatusEffects.Inspector
         
         private Condition _condition;
 
-        private const string _baseValueWarningMessage = "Base value cannot be 0!";
-
         private bool _displayConditionsWarning;
-        private const string _conditionsWarningMessage = "Do not recursively add status datas! " +
-                                                         "Avoid adding a status data to itself! " +
-                                                         "Make sure there aren't two that add each other!";
 
         private void OnEnable()
         {
             _modules = serializedObject.FindProperty("modules");
-
-            IEnumerable<ModuleInstance> modules = (_modules.GetUnderlyingValue() as List<ModuleContainer>).Select(m => m.moduleInstance);
-
-            foreach(ModuleInstance nestedModule in AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(serializedObject.targetObject)))
-            {
-                // If there is somehow a loose module we need to clean it up
-                if (!modules.Contains(nestedModule))
-                {
-                    AssetDatabase.RemoveObjectFromAsset(nestedModule);
-                    DestroyImmediate(nestedModule);
-                    EditorUtility.SetDirty(serializedObject.targetObject);
-                }
-            }
             
+            int objectCount = serializedObject.targetObjects.Length;
+            // Remove any loose nested scriptable objects and
+            // iterate in reverse, to match the selected object order
+            for (int i = objectCount - 1; i >= 0; i--)
+            {
+                // Get the property on the corresponding serializedObject
+                var targetObject = serializedObject.targetObjects[i];
+                IEnumerable<ModuleInstance> modules = (targetObject as StatusEffectData).modules.Select(m => m.moduleInstance);
+
+                foreach (ModuleInstance nestedModule in AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(targetObject)))
+                    // If there is somehow a loose module we need to clean it up
+                    if (!modules.Contains(nestedModule))
+                    {
+                        AssetDatabase.RemoveObjectFromAsset(nestedModule);
+                        DestroyImmediate(nestedModule);
+                        EditorUtility.SetDirty(serializedObject.targetObject);
+                    }
+            }
             AssetDatabase.SaveAssetIfDirty(serializedObject.targetObject);
             // Setup the reorderable module list
             _modulesList = new ReorderableList(serializedObject, _modules, true, true, true, true);
@@ -68,42 +69,45 @@ namespace StatusEffects.Inspector
             {
                 var index = list.serializedProperty.arraySize;
                 // Add one element
-                list.serializedProperty.arraySize++;
+                list.serializedProperty.InsertArrayElementAtIndex(index);
                 // Get that element
                 var element = list.serializedProperty.GetArrayElementAtIndex(index);
                 // Reset all properties
                 element.FindPropertyRelative("module").SetUnderlyingValue(null);
                 element.FindPropertyRelative("moduleInstance").SetUnderlyingValue(null);
+
+                serializedObject.ApplyModifiedProperties();
             };
             _modulesList.onRemoveCallback = list =>
             {
                 // Remove selected or default to the last element
                 if (list.selectedIndices.Count > 0)
                     foreach (int index in list.selectedIndices.OrderByDescending(x => x))
-                    {
-                        RemoveElementAt(index);
-                    }
+                        DestroyObjectAt(index);
                 else
-                    RemoveElementAt(list.serializedProperty.arraySize - 1);
+                    DestroyObjectAt(list.serializedProperty.minArraySize - 1);
 
                 EditorUtility.SetDirty(serializedObject.targetObject);
                 AssetDatabase.SaveAssetIfDirty(serializedObject.targetObject);
 
-                void RemoveElementAt(int index)
+                void DestroyObjectAt(int index)
                 {
-                    // Get the element to remove
-                    var element = _modulesList.serializedProperty.GetArrayElementAtIndex(index);
+                    // Get the module instance
+                    ScriptableObject moduleInstance = (serializedObject.targetObject as StatusEffectData).modules.ElementAt(index)?.moduleInstance;
                     // Remove the scriptable object from nested assets
-                    var moduleInstance = element.FindPropertyRelative("moduleInstance");
-                    if (moduleInstance.objectReferenceValue != null)
+                    if (moduleInstance != null)
                     {
-                        ScriptableObject instance = moduleInstance.objectReferenceValue as ScriptableObject;
-                        AssetDatabase.RemoveObjectFromAsset(instance);
-                        DestroyImmediate(instance);
+                        AssetDatabase.RemoveObjectFromAsset(moduleInstance);
+                        DestroyImmediate(moduleInstance);
                     }
-                    // Remove one element
-                    _modulesList.serializedProperty.DeleteArrayElementAtIndex(index);
                 }
+
+                // Remove selected or default to the last element
+                if (list.selectedIndices.Count > 0)
+                    foreach (int index in list.selectedIndices.OrderByDescending(x => x))
+                        _modulesList.serializedProperty.DeleteArrayElementAtIndex(index);
+                else
+                    _modulesList.serializedProperty.DeleteArrayElementAtIndex(list.serializedProperty.minArraySize - 1);
             };
             _modulesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
             {
@@ -150,7 +154,7 @@ namespace StatusEffects.Inspector
             EditorGUILayout.PropertyField(_group);
             EditorGUILayout.PropertyField(_comparableName);
             if (_baseValue.floatValue == 0)
-                EditorGUILayout.HelpBox(_baseValueWarningMessage, MessageType.Warning);
+                EditorGUILayout.HelpBox("Base value cannot be 0!", MessageType.Warning);
             EditorGUILayout.PropertyField(_baseValue);
             EditorGUILayout.EndVertical();
             
@@ -202,7 +206,9 @@ namespace StatusEffects.Inspector
             }
 
             if (_displayConditionsWarning)
-                EditorGUILayout.HelpBox(_conditionsWarningMessage, MessageType.Warning);
+                EditorGUILayout.HelpBox("Do not recursively add status datas! " +
+                                        "Avoid adding a status data to itself! " +
+                                        "Make sure there aren't two that add each other!", MessageType.Warning);
 
             EditorGUILayout.PropertyField(_conditions);
 
@@ -210,7 +216,14 @@ namespace StatusEffects.Inspector
 
             if (Application.isPlaying)
                 GUI.enabled = false;
-            _modulesList.DoLayoutList();
+            if (!serializedObject.isEditingMultipleObjects)
+                _modulesList?.DoLayoutList();
+            else
+            {
+                EditorGUILayout.BeginVertical("groupbox");
+                EditorGUILayout.LabelField("Cannot multi-edit modules!");
+                EditorGUILayout.EndVertical();
+            }
             GUI.enabled = true;
 
             serializedObject.ApplyModifiedProperties();

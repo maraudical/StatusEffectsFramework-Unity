@@ -44,8 +44,8 @@ namespace StatusEffects.Inspector
             _add = property.FindPropertyRelative("add");
             _configurable = property.FindPropertyRelative("configurable");
             _configurableReference = property.FindPropertyRelative(_configurable.enumValueIndex == (int)ConditionalConfigurable.Data || _add.boolValue ? "data" 
-                                                                : _configurable.enumValueIndex == (int)ConditionalConfigurable.Name                  ? "comparableName"
-                                                                                                                                                    : "group");
+                                                                : _configurable.enumValueIndex == (int)ConditionalConfigurable.Name                    ? "comparableName"
+                                                                                                                                                       : "group");
             _duration = property.FindPropertyRelative("duration");
             _timing = property.FindPropertyRelative("timing");
 

@@ -6,7 +6,8 @@ namespace StatusEffects.Example.UI
 {
     public class ExampleEntityUI : MonoBehaviour
     {
-        [SerializeField] private ExampleEntity entity;
+        [SerializeField] private StatusManager _statusManager;
+        [SerializeField] private ExampleEntity _exampleEntity;
         [SerializeField] private Text _health;
         [SerializeField] private Text _maxHealth;
         [SerializeField] private Text _speed;
@@ -21,42 +22,42 @@ namespace StatusEffects.Example.UI
 
         private void Start()
         {
-            _baseHealth = entity.maxHealth;
-            _baseMaxHealth = entity.maxHealth;
-            _baseSpeed = entity.speed;
-            _baseCoinMultiplier = entity.coinMultiplier;
-            _baseStunned = entity.stunned;
+            _baseHealth = _exampleEntity.maxHealth;
+            _baseMaxHealth = _exampleEntity.maxHealth;
+            _baseSpeed = _exampleEntity.speed;
+            _baseCoinMultiplier = _exampleEntity.coinMultiplier;
+            _baseStunned = _exampleEntity.stunned;
         }
 
         private void OnEnable()
         {
-            entity.onStatusEffect += OnStatusEffect;
+            _statusManager.onStatusEffect += OnStatusEffect;
         }
 
         private void OnDisable()
         {
-            entity.onStatusEffect -= OnStatusEffect;
+            _statusManager.onStatusEffect -= OnStatusEffect;
         }
 
         public void OnStatusEffect(StatusEffect statusEffect, bool added, int stacks)
         {
-            _maxHealth.text = entity.maxHealth.ToString("0.0");
-            _maxHealth.color = GetColor(_baseMaxHealth, entity.maxHealth);
+            _maxHealth.text = _exampleEntity.maxHealth.ToString("0.0");
+            _maxHealth.color = GetColor(_baseMaxHealth, _exampleEntity.maxHealth);
 
-            _speed.text = entity.speed.ToString("0.0");
-            _speed.color = GetColor(_baseSpeed, entity.speed);
+            _speed.text = _exampleEntity.speed.ToString("0.0");
+            _speed.color = GetColor(_baseSpeed, _exampleEntity.speed);
 
-            _coinMultiplier.text = entity.coinMultiplier.ToString();
-            _coinMultiplier.color = GetColor(_baseCoinMultiplier, entity.coinMultiplier);
+            _coinMultiplier.text = _exampleEntity.coinMultiplier.ToString();
+            _coinMultiplier.color = GetColor(_baseCoinMultiplier, _exampleEntity.coinMultiplier);
 
-            _stunned.text = entity.stunned.ToString();
-            _stunned.color = GetColor(_baseStunned, entity.stunned);
+            _stunned.text = _exampleEntity.stunned.ToString();
+            _stunned.color = GetColor(_baseStunned, _exampleEntity.stunned);
         }
 
         private void Update()
         {
-            _health.text = entity.health.ToString("0.0");
-            _health.color = GetColor(_baseHealth, entity.health);
+            _health.text = _exampleEntity.health.ToString("0.0");
+            _health.color = GetColor(_baseHealth, _exampleEntity.health);
         }
 
         private Color GetColor(float origional, float current)
