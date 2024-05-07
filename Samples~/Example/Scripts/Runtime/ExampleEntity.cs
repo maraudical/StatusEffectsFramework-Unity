@@ -41,10 +41,10 @@ namespace StatusEffects.Example
             // same GameObject but you need to get the reference for whatever you
             // want to store this Entity's Status Effects.
             statusManager = GetComponent<StatusManager>();
-            _maxHealth.SetInstance(statusManager);
-            _speed.SetInstance(statusManager);
-            _coinMultiplier.SetInstance(statusManager);
-            _stunned.SetInstance(statusManager);
+            _maxHealth.SetManager(statusManager);
+            _speed.SetManager(statusManager);
+            _coinMultiplier.SetManager(statusManager);
+            _stunned.SetManager(statusManager);
         }
         // I subscribe to the onStatusEffect event just to debug
         private void OnEnable()

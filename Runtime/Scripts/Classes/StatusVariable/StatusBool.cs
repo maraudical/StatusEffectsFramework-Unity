@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace StatusEffects
@@ -21,6 +22,12 @@ namespace StatusEffects
             this.statusName = statusName;
             this.baseValue = baseValue;
             value = GetValue();
+        }
+
+        public void ChangeBaseValue(bool value)
+        {
+            baseValue = value;
+            this.value = GetValue();
         }
 
         protected override void InstanceUpdate(StatusEffect statusEffect)
@@ -62,11 +69,19 @@ namespace StatusEffects
 
         public static implicit operator bool(StatusBool statusBool) => statusBool.value;
 
-        public override void SetInstance(StatusManager instance)
+        public override void SetManager(StatusManager instance)
         {
-            base.SetInstance(instance);
+            base.SetManager(instance);
 
             value = GetValue();
         }
+#if UNITY_EDITOR
+
+        private async void BaseValueUpdate()
+        {
+            await Task.Yield();
+            value = GetValue();
+        }
+#endif
     }
 }

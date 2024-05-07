@@ -1,4 +1,4 @@
-using Unity.VisualScripting;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -18,6 +18,8 @@ namespace StatusEffects.Inspector
         private SerializedProperty _baseValue;
         private SerializedProperty _value;
 
+        private int _indent;
+
         private Rect _propertyPosition;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -36,13 +38,13 @@ namespace StatusEffects.Inspector
             _foldout = EditorGUI.Foldout(position, _foldout, label, true);
             GUI.color = Color.white;
 
-            int indent = EditorGUI.indentLevel;
-
             EditorGUI.BeginProperty(position, label, property);
+
+            _indent = EditorGUI.indentLevel;
 
             if (_foldout)
             {
-                EditorGUI.indentLevel = 2;
+                EditorGUI.indentLevel = _indent + 2;
                 position.x = 0;
                 position.y += _fieldSize + _padding;
                 GUI.color = !_statusName.objectReferenceValue ? Color.red : Color.white;
@@ -50,14 +52,17 @@ namespace StatusEffects.Inspector
                 GUI.color = Color.white;
                 position.y += _fieldSize + _padding;
 
-                GUI.enabled = !Application.isPlaying;
+                EditorGUI.BeginChangeCheck();
                 EditorGUI.PropertyField(position, _baseValue, new GUIContent(_baseValue.displayName));
+                if (EditorGUI.EndChangeCheck() && Application.isPlaying)
+                {
+                    MethodInfo basevalueUpdate = typeof(StatusVariable).Assembly.GetType($"{typeof(StatusVariable).Namespace}.{property.type}").GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+                    foreach (var statusVariable in property.serializedObject.targetObjects)
+                        basevalueUpdate.Invoke(_baseValue.GetParent(statusVariable), null);
+                }
                 position.y += _fieldSize + _padding;
-                GUI.enabled = true;
 
                 GUI.enabled = false;
-                // If editiring multiple check bse valesu
-                //if not playing just dislpay base
                 EditorGUI.PropertyField(position, Application.isPlaying ? _value : _baseValue, new GUIContent(_value.displayName));
                 GUI.enabled = true;
             }
@@ -72,7 +77,7 @@ namespace StatusEffects.Inspector
             _statusName.serializedObject.ApplyModifiedProperties();
             _baseValue.serializedObject.ApplyModifiedProperties();
 
-            EditorGUI.indentLevel = indent;
+            EditorGUI.indentLevel = _indent;
 
             EditorGUI.EndProperty();
         }

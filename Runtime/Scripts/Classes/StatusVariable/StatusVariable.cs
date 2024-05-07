@@ -6,7 +6,7 @@ namespace StatusEffects
     {
         [SerializeField] protected StatusManager instance;
 
-        public virtual void SetInstance(StatusManager instance)
+        public virtual void SetManager(StatusManager instance)
         {
             if (this.instance)
                 this.instance.valueUpdate -= InstanceUpdate;
