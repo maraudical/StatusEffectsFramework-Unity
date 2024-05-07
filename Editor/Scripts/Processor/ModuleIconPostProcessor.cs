@@ -24,6 +24,9 @@ namespace StatusEffects.Inspector
                     if (!scriptText.Contains("namespace StatusEffects.Modules"))
                         continue;
 
+                    if (scriptText.Contains("ModuleIconPostProcessor : AssetPostprocessor"))
+                        continue;
+
                     if (scriptText.Contains(": ModuleInstance"))
                         WriteIconToMeta(AssetDatabase.FindAssets("ModuleInstance l:Modules t:monoScript"));
                     else if (scriptText.Contains(": Module"))

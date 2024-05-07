@@ -23,6 +23,8 @@ namespace StatusEffects.Inspector
         private Type _moduleInstanceType;
         private Attribute _attribute;
 
+        private bool _changeCheck;
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             if (property.serializedObject.targetObject is not ScriptableObject)
@@ -73,7 +75,6 @@ namespace StatusEffects.Inspector
                         ScriptableObject instance = _moduleInstance.objectReferenceValue as ScriptableObject;
                         AssetDatabase.RemoveObjectFromAsset(instance);
                         EditorUtility.SetDirty(property.serializedObject.targetObject);
-                        AssetDatabase.SaveAssetIfDirty(property.serializedObject.targetObject);
                         UnityEngine.Object.DestroyImmediate(instance);
                     }
                     if (_moduleInstance.objectReferenceValue == null)
@@ -81,30 +82,37 @@ namespace StatusEffects.Inspector
                         ScriptableObject instance = ScriptableObject.CreateInstance(_moduleInstanceType);
                         AssetDatabase.AddObjectToAsset(instance, property.serializedObject.targetObject as ScriptableObject);
                         EditorUtility.SetDirty(property.serializedObject.targetObject);
-                        AssetDatabase.SaveAssetIfDirty(property.serializedObject.targetObject);
                         _moduleInstance.SetUnderlyingValue(instance);
                     }
                     // Iterate through the module instance to display properties even if they are derived.
-                    _instance = new SerializedObject(_moduleInstance.objectReferenceValue as ModuleInstance);
+                    /*_instance = new SerializedObject(_moduleInstance.objectReferenceValue as ModuleInstance);
                     _instance.Update();
 
                     _iterator = _instance.GetIterator();
                     // Skip the script property
                     _iterator.NextVisible(true);
 
+                    _changeCheck = false;
+
                     while (_iterator.NextVisible(false))
                     {
                         EditorGUI.BeginChangeCheck();
                         EditorGUI.PropertyField(position, _iterator);
                         if (EditorGUI.EndChangeCheck())
-                            _instance.ApplyModifiedProperties();
+                            _changeCheck = true;
                         position.y += EditorGUI.GetPropertyHeight(_iterator) + _padding;
                     }
-                    _instance.Dispose();
+
+                    if (_changeCheck)
+                        _instance.ApplyModifiedProperties();
+
+                    _instance.Dispose();*/
                 }
             }
 
             EditorGUI.EndProperty();
+
+            //AssetDatabase.SaveAssetIfDirty(property.serializedObject.targetObject);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -118,8 +126,7 @@ namespace StatusEffects.Inspector
             _derivedFieldCount = 0; 
             _derivedPropertyHeight = 0;
             // Iterate through the module instance to display properties even if they are derived.
-            _instance = new SerializedObject(_moduleInstance.objectReferenceValue as ModuleInstance);
-            _instance.Update();
+            /*_instance = new SerializedObject(_moduleInstance.objectReferenceValue as ModuleInstance);
 
             _iterator = _instance.GetIterator();
             // Skip the script property
@@ -131,7 +138,7 @@ namespace StatusEffects.Inspector
                 _derivedPropertyHeight += EditorGUI.GetPropertyHeight(_iterator);
             }
             
-            _instance.Dispose();
+            _instance.Dispose();*/
             
             return _fieldSize + _padding * (_derivedFieldCount + 2) + _derivedPropertyHeight;
         }

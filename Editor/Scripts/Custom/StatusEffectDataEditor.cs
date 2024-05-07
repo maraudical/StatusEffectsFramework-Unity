@@ -75,8 +75,6 @@ namespace StatusEffects.Inspector
                 // Reset all properties
                 element.FindPropertyRelative("module").SetUnderlyingValue(null);
                 element.FindPropertyRelative("moduleInstance").SetUnderlyingValue(null);
-
-                serializedObject.ApplyModifiedProperties();
             };
             _modulesList.onRemoveCallback = list =>
             {
@@ -105,9 +103,9 @@ namespace StatusEffects.Inspector
                 // Remove selected or default to the last element
                 if (list.selectedIndices.Count > 0)
                     foreach (int index in list.selectedIndices.OrderByDescending(x => x))
-                        _modulesList.serializedProperty.DeleteArrayElementAtIndex(index);
+                        list.serializedProperty.DeleteArrayElementAtIndex(index);
                 else
-                    _modulesList.serializedProperty.DeleteArrayElementAtIndex(list.serializedProperty.minArraySize - 1);
+                    list.serializedProperty.DeleteArrayElementAtIndex(list.serializedProperty.minArraySize - 1);
             };
             _modulesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
             {
