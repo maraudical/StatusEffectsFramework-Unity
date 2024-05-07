@@ -85,7 +85,7 @@ namespace StatusEffects.Inspector
                         _moduleInstance.SetUnderlyingValue(instance);
                     }
                     // Iterate through the module instance to display properties even if they are derived.
-                    /*_instance = new SerializedObject(_moduleInstance.objectReferenceValue as ModuleInstance);
+                    _instance = new SerializedObject(_moduleInstance.objectReferenceValue as ModuleInstance);
                     _instance.Update();
 
                     _iterator = _instance.GetIterator();
@@ -106,13 +106,13 @@ namespace StatusEffects.Inspector
                     if (_changeCheck)
                         _instance.ApplyModifiedProperties();
 
-                    _instance.Dispose();*/
+                    _instance.Dispose();
                 }
             }
 
             EditorGUI.EndProperty();
 
-            //AssetDatabase.SaveAssetIfDirty(property.serializedObject.targetObject);
+            AssetDatabase.SaveAssetIfDirty(property.serializedObject.targetObject);
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -126,7 +126,8 @@ namespace StatusEffects.Inspector
             _derivedFieldCount = 0; 
             _derivedPropertyHeight = 0;
             // Iterate through the module instance to display properties even if they are derived.
-            /*_instance = new SerializedObject(_moduleInstance.objectReferenceValue as ModuleInstance);
+            _instance = new SerializedObject(_moduleInstance.objectReferenceValue as ModuleInstance);
+            _instance.Update();
 
             _iterator = _instance.GetIterator();
             // Skip the script property
@@ -138,7 +139,7 @@ namespace StatusEffects.Inspector
                 _derivedPropertyHeight += EditorGUI.GetPropertyHeight(_iterator);
             }
             
-            _instance.Dispose();*/
+            _instance.Dispose();
             
             return _fieldSize + _padding * (_derivedFieldCount + 2) + _derivedPropertyHeight;
         }
