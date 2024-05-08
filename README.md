@@ -7,7 +7,7 @@
 </p><br>
 
 <p align="center">
-  <strong>Status Effect Framework</strong> is a framework for implementing status effects into any game. It is easy to use, and fully customizable.
+  <strong>**Status Effect Framework**</strong> is a framework for implementing status effects into any game. It is easy to use, and fully customizable.
 </p><br>
 
 <p align="center">
@@ -26,12 +26,12 @@
 # Supported versions
 - Unity 2021.3 or newer
 
-# Other Support
-Unity - Localization
-Unity - Awaitable
-Cysharp - UniTask
+# Other support
+- Unity - Localization
+- Unity - Awaitable
+- Cysharp - UniTask
 
-# Getting started with the Status Effect Framework
+# Getting started with the **Status Effect Framework**
 
 1. Add the **Status Effect Framework** through the package manager
 > Note: [Install via git](https://maraudical.gitbook.io/status-effect-framework/setup) with this URL: `https://github.com/maraudical/StatusEffectsFramework-Unity.git`
