@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://drive.google.com/uc?id=1bUVXb2KGp71c3v7f1Tmcv3sfW2ksJ5Oi" height="400" alt="sample_1">
-  <img src="https://drive.google.com/uc?id=19BTukJ-bcGAKJJnzhE-Javfu1fZdGLZz" height="400" alt="sample_2">
+  <img src="https://drive.google.com/uc?id=1VFKSCil3bBtSU-83rKXC2W9HEfqWbM2g" height="400" alt="sample_2">
 </p><br>
 
 # Features
