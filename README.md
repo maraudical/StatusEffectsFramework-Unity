@@ -11,8 +11,8 @@
 </p><br>
 
 <p align="center">
-  <img src="https://drive.google.com/uc?id=1JcSiIXcUIa40mjANNCXOJHq-awFWLXCW" height="360" alt="logo">
-  <img src="https://drive.google.com/uc?id=19BTukJ-bcGAKJJnzhE-Javfu1fZdGLZz" height="360" alt="logo">
+  <img src="https://drive.google.com/uc?id=1bUVXb2KGp71c3v7f1Tmcv3sfW2ksJ5Oi" height="400" alt="sample_1">
+  <img src="https://drive.google.com/uc?id=19BTukJ-bcGAKJJnzhE-Javfu1fZdGLZz" height="400" alt="sample_2">
 </p><br>
 
 # Features
