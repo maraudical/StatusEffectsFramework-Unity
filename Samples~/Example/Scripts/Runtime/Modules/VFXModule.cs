@@ -15,6 +15,7 @@ namespace StatusEffects.Modules
     [AttachModuleInstance(typeof(VFXInstance))]
     public class VFXModule : Module
     {
+        [SerializeField] private float destroyPrefabAfter = 8;
 #if UNITASK
         public override async UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
@@ -28,13 +29,15 @@ namespace StatusEffects.Modules
             if (!VFXGameObject)
                 return;
             // Attempt to stop the particle system
-            if (VFXGameObject.TryGetComponent(out ParticleSystem particleSystem))
+            ParticleSystem[] particleSystems = VFXGameObject.GetComponentsInChildren<ParticleSystem>();
+
+            foreach (ParticleSystem particleSystem in particleSystems)
                 particleSystem.Stop();
             // Unset the parent so that if multiple effects are being removed it doesn't
             // grab the same VFX twice.
             VFXGameObject.transform.SetParent(null);
             // Destroy after a wait so that particles have time to fade out
-            Destroy(VFXGameObject, 5);
+            Destroy(VFXGameObject, destroyPrefabAfter);
         }
 #elif UNITY_2023_1_OR_NEWER
         public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
@@ -49,13 +52,15 @@ namespace StatusEffects.Modules
             if (!VFXGameObject)
                 return;
             // Attempt to stop the particle system
-            if (VFXGameObject.TryGetComponent(out ParticleSystem particleSystem))
+            ParticleSystem[] particleSystems = VFXGameObject.GetComponentsInChildren<ParticleSystem>();
+
+            foreach (ParticleSystem particleSystem in particleSystems)
                 particleSystem.Stop();
             // Unset the parent so that if multiple effects are being removed it doesn't
             // grab the same VFX twice.
             VFXGameObject.transform.SetParent(null);
             // Destroy after a wait so that particles have time to fade out
-            Destroy(VFXGameObject, 5);
+            Destroy(VFXGameObject, destroyPrefabAfter);
         }
 #else
         public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
@@ -80,13 +85,15 @@ namespace StatusEffects.Modules
             
             GameObject VFXGameObject = VFXTransform.gameObject;
             // Attempt to stop the particle system
-            if (VFXGameObject.TryGetComponent(out ParticleSystem particleSystem))
+            ParticleSystem[] particleSystems = VFXGameObject.GetComponentsInChildren<ParticleSystem>();
+
+            foreach (ParticleSystem particleSystem in particleSystems)
                 particleSystem.Stop();
             // Unset the parent so that if multiple effects are being removed it doesn't
             // grab the same VFX twice.
             VFXTransform.SetParent(null);
             // Destroy after a wait so that particles have time to fade out
-            Destroy(VFXGameObject, 5);
+            Destroy(VFXGameObject, destroyPrefabAfter);
         }
 #endif
     }
