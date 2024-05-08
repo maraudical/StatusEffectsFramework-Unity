@@ -7,7 +7,7 @@
 </p><br>
 
 <p align="center">
-  <strong>**Status Effect Framework**</strong> is a framework for implementing status effects into any game. It is easy to use, and fully customizable.
+  <strong>Status Effect Framework</strong> is a framework for implementing status effects into any game. It is easy to use, and fully customizable.
 </p><br>
 
 <p align="center">
