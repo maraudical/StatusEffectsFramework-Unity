@@ -1,8 +1,10 @@
 # Change Log:
 
-## 1.6.1
+## 1.7.0
 - Feature: Awaitables support for versions 2023.1 or newer
 - Enhancement: New inspector icons
+- Enhancement: New VFX samples
+- Enhancement: Can now change base value in inspector during runtime with multi-editing support
 - Bug Fix: Namespace fixes
 - Change: Made the StatusManager a component and removed the IStatus interface
 
