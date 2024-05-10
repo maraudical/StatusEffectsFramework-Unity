@@ -1,6 +1,8 @@
-<picture align="center">
+<picture>
+  <p align="center">
   <source media="(prefers-color-scheme: dark)" srcset="https://drive.google.com/uc?id=1SdkuY-5eJyhta0zzGLv-xDRkmS_7YcaB">
-  <img alt="logo" src="https://drive.google.com/uc?id=1eKRQM8cIOLvdS8ENIT7HhlV-Tnpcz211"><br>
+  <img alt="logo" src="https://drive.google.com/uc?id=1eKRQM8cIOLvdS8ENIT7HhlV-Tnpcz211">
+  </p><br>
 </picture>
 <p align="center">
   <a href="https://unity3d.com/en/get-unity/download/archive"><img src="https://img.shields.io/badge/unity-2021%20or%20later-green.svg" alt=""></a>
