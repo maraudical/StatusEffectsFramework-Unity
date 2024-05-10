@@ -37,9 +37,9 @@ namespace StatusEffects.Example
 
         private void Awake()
         {
-            // Obtain the StatusEffectsInstance, this doesn't need to be on the
-            // same GameObject but you need to get the reference for whatever you
-            // want to store this Entity's Status Effects.
+            // Obtain the StatusManager, this doesn't need to be on the
+            // same GameObject but you need to get the reference for whatever
+            // you want to store this Entity's status effects.
             statusManager = GetComponent<StatusManager>();
             _maxHealth.SetManager(statusManager);
             _speed.SetManager(statusManager);

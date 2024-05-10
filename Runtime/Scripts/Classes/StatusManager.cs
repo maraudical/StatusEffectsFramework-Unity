@@ -80,7 +80,7 @@ namespace StatusEffects
         /// Returns the listed <see cref="StatusEffect"/>s in a <see cref="List{}"/> for the <see cref="StatusManager"/>.
         /// </summary>
 #nullable enable
-        public List<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null)
+        public IReadOnlyList<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null)
 #nullable disable
         {
             if (_effects == null)
@@ -88,9 +88,10 @@ namespace StatusEffects
             // Return the effects for a given monobehaviour, if given a group
             // or name to match only return effects within those categories.
             return _effects.Where(e => (name  == null || e.data.comparableName  == name) 
-                                   && (group == null || (e.data.group & group) != 0)
-                                   && (data == null || e.data == data))
-                          .ToList();
+                                    && (group == null || (e.data.group & group) != 0)
+                                    && (data == null || e.data == data))
+                          .ToList()
+                          .AsReadOnly();
         }
         /// <summary>
         /// Adds a <see cref="StatusEffect"/> to this <see cref="StatusManager"/>. Returns null if no <see cref="StatusEffect"/> was added.
