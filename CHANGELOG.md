@@ -2,7 +2,9 @@
 
 ## 1.7.0
 - Feature: Awaitables support for versions 2023.1 or newer
+- Enhancement: Modules can now be multi-edited
 - Enhancement: New inspector icons
+- Enhancement: New effect icons
 - Enhancement: New VFX samples
 - Enhancement: Can now change base value in inspector during runtime with multi-editing support
 - Bug Fix: Namespace fixes
