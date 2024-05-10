@@ -1,5 +1,6 @@
 using StatusEffects.Modules;
 using System;
+using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
@@ -20,10 +21,14 @@ namespace StatusEffects.Inspector
         private float _derivedPropertyHeight;
         private float _derivedFieldCount;
 
+        private bool _containsNullModule;
+        private object _moduleReference;
+        private object _moduleInstanceReference;
+        private Type _previousModuleInstanceType;
         private Type _moduleInstanceType;
         private Attribute _attribute;
 
-        private bool _changeCheck;
+        private List<UnityEngine.Object> _moduleInstances;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -39,6 +44,8 @@ namespace StatusEffects.Inspector
             _module = property.FindPropertyRelative("module");
             _moduleInstance = property.FindPropertyRelative("moduleInstance");
 
+            property.serializedObject.Update();
+
             EditorGUI.BeginProperty(position, label, property);
 
             position.height = _fieldSize;
@@ -46,73 +53,87 @@ namespace StatusEffects.Inspector
             // Draw base module reference
             EditorGUI.PropertyField(position, _module, GUIContent.none);
             position.y += _fieldSize + _padding;
+            
+            if (_moduleInstances == null)
+                _moduleInstances = new();
+            else
+                _moduleInstances.Clear();
 
-            if (!_module.hasMultipleDifferentValues)
+            _containsNullModule = false;
+            _previousModuleInstanceType = null;
+            // Find all relevant module instance references
+            foreach (var target in property.serializedObject.targetObjects)
             {
-                var sp = property.serializedObject.GetIterator();
+                _moduleReference = _module.GetParent(target).GetValue("module");
+                _moduleInstanceReference = _moduleInstance.GetParent(target).GetValue("moduleInstance");
                 // If the module reference was removed destroy the instance
-                if (_module.objectReferenceValue == null && _moduleInstance.objectReferenceValue != null)
+                if (_moduleReference == null && _moduleInstanceReference != null && !_moduleInstanceReference.Equals(null))
                 {
-                    ScriptableObject instance = _moduleInstance.objectReferenceValue as ScriptableObject;
+                    ScriptableObject instance = _moduleInstanceReference as ScriptableObject;
                     AssetDatabase.RemoveObjectFromAsset(instance);
-                    EditorUtility.SetDirty(property.serializedObject.targetObject);
-                    AssetDatabase.SaveAssetIfDirty(property.serializedObject.targetObject);
+                    EditorUtility.SetDirty(target);
                     UnityEngine.Object.DestroyImmediate(instance);
                 }
-
-                if (_module.objectReferenceValue != null)
+                if (_moduleReference != null)
                 {
-                    _attribute = Attribute.GetCustomAttribute(_module.objectReferenceValue.GetType(), typeof(AttachModuleInstanceAttribute));
+                    _attribute = Attribute.GetCustomAttribute(_moduleReference.GetType(), typeof(AttachModuleInstanceAttribute));
 
                     if (_attribute == null)
-                        return;
+                        goto EndProperty;
 
                     _moduleInstanceType = ((AttachModuleInstanceAttribute)_attribute).type;
+
                     // If the module reference was changed we add or destroy the instance, note that
                     // we also check in the StatusEffectDataEditor for when list items are removed.
-                    if (_moduleInstance.objectReferenceValue != null && _moduleInstanceType != _moduleInstance.objectReferenceValue.GetType())
+                    if (_moduleInstanceReference != null && !_moduleInstanceReference.Equals(null) && _moduleInstanceType != _moduleInstanceReference.GetType())
                     {
-                        ScriptableObject instance = _moduleInstance.objectReferenceValue as ScriptableObject;
+                        ScriptableObject instance = _moduleInstanceReference as ScriptableObject;
                         AssetDatabase.RemoveObjectFromAsset(instance);
-                        EditorUtility.SetDirty(property.serializedObject.targetObject);
                         UnityEngine.Object.DestroyImmediate(instance);
+                        EditorUtility.SetDirty(target);
                     }
-                    if (_moduleInstance.objectReferenceValue == null)
+                    if (_moduleInstanceReference == null || _moduleInstanceReference.Equals(null))
                     {
                         ScriptableObject instance = ScriptableObject.CreateInstance(_moduleInstanceType);
-                        AssetDatabase.AddObjectToAsset(instance, property.serializedObject.targetObject as ScriptableObject);
-                        EditorUtility.SetDirty(property.serializedObject.targetObject);
-                        _moduleInstance.SetUnderlyingValue(instance);
+                        AssetDatabase.AddObjectToAsset(instance, target as ScriptableObject);
+                        _moduleInstance.GetParent(target).SetValue("moduleInstance", instance);
+                        _moduleInstanceReference = instance;
+                        EditorUtility.SetDirty(target);
                     }
-                    // Iterate through the module instance to display properties even if they are derived.
-                    _instance = new SerializedObject(_moduleInstance.objectReferenceValue as ModuleInstance);
-                    _instance.Update();
-
-                    _iterator = _instance.GetIterator();
-                    // Skip the script property
-                    _iterator.NextVisible(true);
-
-                    _changeCheck = false;
-
-                    while (_iterator.NextVisible(false))
-                    {
-                        EditorGUI.BeginChangeCheck();
-                        EditorGUI.PropertyField(position, _iterator);
-                        if (EditorGUI.EndChangeCheck())
-                            _changeCheck = true;
-                        position.y += EditorGUI.GetPropertyHeight(_iterator) + _padding;
-                    }
-
-                    if (_changeCheck)
-                        _instance.ApplyModifiedProperties();
-
-                    _instance.Dispose();
+                    // Check if there are different module instance types
+                    if (_previousModuleInstanceType != null && _previousModuleInstanceType != _moduleInstanceType)
+                        goto EndProperty;
+                    
+                    _previousModuleInstanceType = _moduleInstanceType;
+                    _moduleInstances.Add(_moduleInstanceReference as ModuleInstance);
                 }
+                else
+                    _containsNullModule = true;
+
+                AssetDatabase.SaveAssetIfDirty(target);
             }
 
-            EditorGUI.EndProperty();
+            if (_containsNullModule || _moduleInstances.Count <= 0)
+                goto EndProperty;
+            // Iterate through the module instance to display properties even if they are derived.
+            _instance = new SerializedObject(_moduleInstances.ToArray());
 
-            AssetDatabase.SaveAssetIfDirty(property.serializedObject.targetObject);
+            _iterator = _instance.GetIterator();
+            // Skip the script property
+            _iterator.NextVisible(true);
+
+            while (_iterator.NextVisible(false))
+            {
+                EditorGUI.PropertyField(position, _iterator);
+                position.y += EditorGUI.GetPropertyHeight(_iterator) + _padding;
+            }
+
+            _instance.ApplyModifiedProperties();
+            _instance.Dispose();
+
+            EndProperty:
+
+            EditorGUI.EndProperty();
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
@@ -120,14 +141,30 @@ namespace StatusEffects.Inspector
             _module = property.FindPropertyRelative("module");
             _moduleInstance = property.FindPropertyRelative("moduleInstance");
 
-            if (_module.hasMultipleDifferentValues || _moduleInstance.objectReferenceValue == null)
-                return _fieldSize + _padding * 2;
+            if (_module.objectReferenceValue == null || _moduleInstance.objectReferenceValue == null)
+                return DrawDefault();
+
+            _attribute = Attribute.GetCustomAttribute(_module.objectReferenceValue.GetType(), typeof(AttachModuleInstanceAttribute));
+
+            if (_attribute == null)
+                return DrawDefault();
+
+            _moduleInstanceType = ((AttachModuleInstanceAttribute)_attribute).type;
+
+            foreach (var target in property.serializedObject.targetObjects)
+            {
+                _moduleInstanceReference = _moduleInstance.GetParent(target).GetValue("moduleInstance");
+
+                if (_moduleInstanceType != _moduleInstanceReference.GetType())
+                    return DrawDefault();
+
+                _moduleInstanceType = _moduleInstanceReference.GetType();
+            }
 
             _derivedFieldCount = 0; 
             _derivedPropertyHeight = 0;
             // Iterate through the module instance to display properties even if they are derived.
-            _instance = new SerializedObject(_moduleInstance.objectReferenceValue as ModuleInstance);
-            _instance.Update();
+            _instance = new SerializedObject(_moduleInstance.objectReferenceValue);
 
             _iterator = _instance.GetIterator();
             // Skip the script property
@@ -142,6 +179,11 @@ namespace StatusEffects.Inspector
             _instance.Dispose();
             
             return _fieldSize + _padding * (_derivedFieldCount + 2) + _derivedPropertyHeight;
+
+            float DrawDefault()
+            {
+                return _fieldSize + _padding * 2;
+            }
         }
     }
 }

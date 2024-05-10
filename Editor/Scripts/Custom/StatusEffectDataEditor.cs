@@ -2,7 +2,6 @@ using StatusEffects.Modules;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -46,19 +45,19 @@ namespace StatusEffects.Inspector
             for (int i = objectCount - 1; i >= 0; i--)
             {
                 // Get the property on the corresponding serializedObject
-                var targetObject = serializedObject.targetObjects[i];
-                IEnumerable<ModuleInstance> modules = (targetObject as StatusEffectData).modules.Select(m => m.moduleInstance);
+                var target = serializedObject.targetObjects[i];
+                IEnumerable<ModuleInstance> modules = (target as StatusEffectData).modules.Select(m => m.moduleInstance);
 
-                foreach (ModuleInstance nestedModule in AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(targetObject)))
+                foreach (ModuleInstance nestedModule in AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(target)))
                     // If there is somehow a loose module we need to clean it up
                     if (!modules.Contains(nestedModule))
                     {
                         AssetDatabase.RemoveObjectFromAsset(nestedModule);
                         DestroyImmediate(nestedModule);
-                        EditorUtility.SetDirty(serializedObject.targetObject);
+                        EditorUtility.SetDirty(target);
+                        AssetDatabase.SaveAssetIfDirty(target);
                     }
             }
-            AssetDatabase.SaveAssetIfDirty(serializedObject.targetObject);
             // Setup the reorderable module list
             _modulesList = new ReorderableList(serializedObject, _modules, true, true, true, true);
 
@@ -73,33 +72,35 @@ namespace StatusEffects.Inspector
                 // Get that element
                 var element = list.serializedProperty.GetArrayElementAtIndex(index);
                 // Reset all properties
-                element.FindPropertyRelative("module").SetUnderlyingValue(null);
-                element.FindPropertyRelative("moduleInstance").SetUnderlyingValue(null);
+                element.FindPropertyRelative("module").objectReferenceValue = null;
+                element.FindPropertyRelative("moduleInstance").objectReferenceValue = null;
             };
             _modulesList.onRemoveCallback = list =>
             {
-                // Remove selected or default to the last element
-                if (list.selectedIndices.Count > 0)
-                    foreach (int index in list.selectedIndices.OrderByDescending(x => x))
-                        DestroyObjectAt(index);
-                else
-                    DestroyObjectAt(list.serializedProperty.minArraySize - 1);
-
-                EditorUtility.SetDirty(serializedObject.targetObject);
-                AssetDatabase.SaveAssetIfDirty(serializedObject.targetObject);
-
-                void DestroyObjectAt(int index)
+                foreach (var target in list.serializedProperty.serializedObject.targetObjects)
                 {
-                    // Get the module instance
-                    ScriptableObject moduleInstance = (serializedObject.targetObject as StatusEffectData).modules.ElementAt(index)?.moduleInstance;
-                    // Remove the scriptable object from nested assets
-                    if (moduleInstance != null)
+                    // Remove selected or default to the last element
+                    if (list.selectedIndices.Count > 0)
+                        foreach (int index in list.selectedIndices.OrderByDescending(x => x))
+                            DestroyObjectAt(index);
+                    else
+                        DestroyObjectAt(list.serializedProperty.minArraySize - 1);
+
+                    EditorUtility.SetDirty(target);
+                    AssetDatabase.SaveAssetIfDirty(target);
+
+                    void DestroyObjectAt(int index)
                     {
-                        AssetDatabase.RemoveObjectFromAsset(moduleInstance);
-                        DestroyImmediate(moduleInstance);
+                        // Get the module instance
+                        ScriptableObject moduleInstance = (target as StatusEffectData).modules.ElementAt(index)?.moduleInstance;
+                        // Remove the scriptable object from nested assets
+                        if (moduleInstance != null)
+                        {
+                            AssetDatabase.RemoveObjectFromAsset(moduleInstance);
+                            DestroyImmediate(moduleInstance);
+                        }
                     }
                 }
-
                 // Remove selected or default to the last element
                 if (list.selectedIndices.Count > 0)
                     foreach (int index in list.selectedIndices.OrderByDescending(x => x))
@@ -214,14 +215,7 @@ namespace StatusEffects.Inspector
 
             if (Application.isPlaying)
                 GUI.enabled = false;
-            if (!serializedObject.isEditingMultipleObjects)
-                _modulesList?.DoLayoutList();
-            else
-            {
-                EditorGUILayout.BeginVertical("groupbox");
-                EditorGUILayout.LabelField("Cannot multi-edit modules!");
-                EditorGUILayout.EndVertical();
-            }
+            _modulesList?.DoLayoutList();
             GUI.enabled = true;
 
             serializedObject.ApplyModifiedProperties();

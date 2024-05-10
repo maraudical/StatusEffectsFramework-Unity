@@ -46,6 +46,23 @@ namespace StatusEffects.Inspector
             return f.GetValue(source);
         }
 
+        public static void SetValue(this object source, string name, object value)
+        {
+            if (source == null)
+                return;
+            var type = source.GetType();
+            var f = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            if (f == null)
+            {
+                var p = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                if (p == null)
+                    return;
+                p.SetValue(source, value, null);
+                return;
+            }
+            f.SetValue(source, value);
+        }
+
         public static object GetValue(this object source, string name, int index)
         {
             var enumerable = GetValue(source, name) as IEnumerable;
