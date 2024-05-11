@@ -517,7 +517,7 @@ namespace StatusEffects
             // If stacking is allowed then check for the max stack and possible stack merging.
             if (statusEffectData.allowEffectStacking)
             {
-                List<StatusEffect> statusEffects = GetStatusEffects(data: statusEffectData);
+                IReadOnlyList<StatusEffect> statusEffects = GetStatusEffects(data: statusEffectData);
 
                 if (statusEffects == null || statusEffects.Count <= 0)
                     goto NothingToStack;
