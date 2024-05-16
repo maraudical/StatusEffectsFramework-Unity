@@ -8,6 +8,8 @@ namespace StatusEffects
     [Serializable]
     public class StatusInt : StatusVariable
     {
+        [SerializeField] public event Action onValueChanged;
+
         public StatusNameInt statusName;
         [SerializeField] private int _baseValue;
         [SerializeField] private bool _signProtected;
@@ -31,13 +33,17 @@ namespace StatusEffects
         {
             _baseValue = value;
             this.value = GetValue();
+            onValueChanged?.Invoke();
         }
 
         protected override void InstanceUpdate(StatusEffect statusEffect)
         {
             // Only update if the status effect actually has any effects that have the same StatusName
             if (statusEffect.data.effects.Select(e => e.statusName).Contains(statusName))
+            {
                 value = GetValue();
+                onValueChanged?.Invoke();
+            }
         }
 
         protected virtual int GetValue()
@@ -89,6 +95,7 @@ namespace StatusEffects
             base.SetManager(instance);
 
             value = GetValue();
+            onValueChanged?.Invoke();
         }
 #if UNITY_EDITOR
 
@@ -96,11 +103,13 @@ namespace StatusEffects
         {
             await Task.Yield();
             value = GetValue();
+            onValueChanged?.Invoke();
         }
         private async void SignProtectedUpdate()
         {
             await Task.Yield();
             value = GetValue();
+            onValueChanged?.Invoke();
         }
 #endif
     }
