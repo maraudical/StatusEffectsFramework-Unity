@@ -8,7 +8,7 @@ namespace StatusEffects
     [Serializable]
     public class StatusFloat : StatusVariable
     {
-        [SerializeField] public event Action onValueChanged;
+        [SerializeField] public event Action<float, float> onValueChanged;
 
         public StatusNameFloat statusName;
         [SerializeField] private float _baseValue;
@@ -32,8 +32,9 @@ namespace StatusEffects
         public void ChangeBaseValue(float value)
         {
             _baseValue = value;
+            float previousValue = this.value;
             this.value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, this.value);
         }
 
         protected override void InstanceUpdate(StatusEffect statusEffect)
@@ -41,8 +42,9 @@ namespace StatusEffects
             // Only update if the status effect actually has any effects that have the same StatusName
             if (statusEffect.data.effects.Select(e => e.statusName).Contains(statusName))
             {
+                float previousValue = value;
                 value = GetValue();
-                onValueChanged?.Invoke();
+                onValueChanged?.Invoke(previousValue, this.value);
             }
         }
 
@@ -95,22 +97,25 @@ namespace StatusEffects
         {
             base.SetManager(instance);
 
+            float previousValue = value;
             value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, this.value);
         }
 #if UNITY_EDITOR
 
         private async void BaseValueUpdate()
         {
             await Task.Yield();
+            float previousValue = value;
             value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, this.value);
         }
         private async void SignProtectedUpdate()
         {
             await Task.Yield();
+            float previousValue = value;
             value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, this.value);
         }
 #endif
     }

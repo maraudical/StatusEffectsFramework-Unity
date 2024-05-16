@@ -8,7 +8,7 @@ namespace StatusEffects
     [Serializable]
     public class StatusInt : StatusVariable
     {
-        [SerializeField] public event Action onValueChanged;
+        [SerializeField] public event Action<int, int> onValueChanged;
 
         public StatusNameInt statusName;
         [SerializeField] private int _baseValue;
@@ -32,8 +32,9 @@ namespace StatusEffects
         public void ChangeBaseValue(int value)
         {
             _baseValue = value;
+            int previousValue = this.value;
             this.value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, this.value);
         }
 
         protected override void InstanceUpdate(StatusEffect statusEffect)
@@ -41,8 +42,9 @@ namespace StatusEffects
             // Only update if the status effect actually has any effects that have the same StatusName
             if (statusEffect.data.effects.Select(e => e.statusName).Contains(statusName))
             {
+                int previousValue = this.value;
                 value = GetValue();
-                onValueChanged?.Invoke();
+                onValueChanged?.Invoke(previousValue, this.value);
             }
         }
 
@@ -94,22 +96,25 @@ namespace StatusEffects
         {
             base.SetManager(instance);
 
+            int previousValue = this.value;
             value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, this.value);
         }
 #if UNITY_EDITOR
 
         private async void BaseValueUpdate()
         {
             await Task.Yield();
+            int previousValue = this.value;
             value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, this.value);
         }
         private async void SignProtectedUpdate()
         {
             await Task.Yield();
+            int previousValue = this.value;
             value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, this.value);
         }
 #endif
     }

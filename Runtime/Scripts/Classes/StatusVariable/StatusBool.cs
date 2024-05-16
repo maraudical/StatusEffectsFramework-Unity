@@ -8,7 +8,7 @@ namespace StatusEffects
     [Serializable]
     public class StatusBool : StatusVariable
     {
-        [SerializeField] public event Action onValueChanged;
+        [SerializeField] public event Action<bool, bool> onValueChanged;
 
         public StatusNameBool statusName;
         [SerializeField] private bool _baseValue;
@@ -29,8 +29,9 @@ namespace StatusEffects
         public void ChangeBaseValue(bool value)
         {
             _baseValue = value;
+            bool previousValue = this.value;
             this.value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, this.value);
         }
 
         protected override void InstanceUpdate(StatusEffect statusEffect)
@@ -38,8 +39,9 @@ namespace StatusEffects
             // Only update if the status effect actually has any effects that have the same StatusName
             if (statusEffect.data.effects.Select(e => e.statusName).Contains(statusName))
             {
+                bool previousValue = value;
                 value = GetValue();
-                onValueChanged?.Invoke();
+                onValueChanged?.Invoke(previousValue, value);
             }
         }
 
@@ -79,16 +81,18 @@ namespace StatusEffects
         {
             base.SetManager(instance);
 
+            bool previousValue = value;
             value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, value);
         }
 #if UNITY_EDITOR
 
         private async void BaseValueUpdate()
         {
             await Task.Yield();
+            bool previousValue = value;
             value = GetValue();
-            onValueChanged?.Invoke();
+            onValueChanged?.Invoke(previousValue, value);
         }
 #endif
     }
