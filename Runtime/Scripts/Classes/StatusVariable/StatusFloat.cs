@@ -9,24 +9,27 @@ namespace StatusEffects
     public class StatusFloat : StatusVariable
     {
         public StatusNameFloat statusName;
-        [SerializeField] private float baseValue;
+        [SerializeField] private float _baseValue;
+        [SerializeField] private bool _signProtected;
         public float value;
         
-        public StatusFloat(float baseValue)
+        public StatusFloat(float baseValue, bool signProtected = true)
         {
-            this.baseValue = baseValue;
+            _baseValue = baseValue;
+            _signProtected = signProtected;
         }
 
-        public StatusFloat(float baseValue, StatusNameFloat statusName)
+        public StatusFloat(float baseValue, StatusNameFloat statusName, bool signProtected = true)
         {
             this.statusName = statusName;
-            this.baseValue = baseValue;
+            _baseValue = baseValue;
+            _signProtected = signProtected;
             value = GetValue();
         }
         
         public void ChangeBaseValue(float value)
         {
-            baseValue = value;
+            _baseValue = value;
             this.value = GetValue();
         }
 
@@ -40,8 +43,9 @@ namespace StatusEffects
         protected float GetValue()
         {
             if (instance == null)
-                return baseValue;
+                return _baseValue;
 
+            bool positive = Mathf.Sign(_baseValue) >= 0;
             float additiveValue = 0;
             float multiplicativeValue = 1;
             float postAdditiveValue = 0;
@@ -73,7 +77,10 @@ namespace StatusEffects
                 }
             }
             
-            return (baseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
+            if (_signProtected)
+                return Mathf.Clamp((_baseValue + additiveValue) * multiplicativeValue + postAdditiveValue, positive ? 0 : float.NegativeInfinity, positive ? float.PositiveInfinity : 0);
+            else
+                return (_baseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
         }
 
         public static implicit operator float(StatusFloat statusFloat) => statusFloat.value;
@@ -87,6 +94,11 @@ namespace StatusEffects
 #if UNITY_EDITOR
 
         private async void BaseValueUpdate()
+        {
+            await Task.Yield();
+            value = GetValue();
+        }
+        private async void SignProtectedUpdate()
         {
             await Task.Yield();
             value = GetValue();

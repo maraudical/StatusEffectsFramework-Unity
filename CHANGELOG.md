@@ -1,5 +1,10 @@
 # Change Log:
 
+## 1.7.1
+- Feature: StatusVariables now have an additional bool for int/float variables to clamp the value to the sign of the base value
+- Enhancement: General cleanup and fixes of multiple property drawers
+- Bug Fix: Fixed foldouts bugged in list for StatusVariables
+
 ## 1.7.0
 - Feature: Awaitables support for versions 2023.1 or newer
 - Enhancement: Modules can now be multi-edited

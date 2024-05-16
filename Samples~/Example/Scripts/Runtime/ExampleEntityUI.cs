@@ -27,6 +27,8 @@ namespace StatusEffects.Example.UI
             _baseSpeed = _exampleEntity.speed;
             _baseCoinMultiplier = _exampleEntity.coinMultiplier;
             _baseStunned = _exampleEntity.stunned;
+
+            UpdateText();
         }
 
         private void OnEnable()
@@ -40,6 +42,11 @@ namespace StatusEffects.Example.UI
         }
 
         public void OnStatusEffect(StatusEffect statusEffect, bool added, int stacks)
+        {
+            UpdateText();
+        }
+
+        public void UpdateText()
         {
             _maxHealth.text = _exampleEntity.maxHealth.ToString("0.0");
             _maxHealth.color = GetColor(_baseMaxHealth, _exampleEntity.maxHealth);

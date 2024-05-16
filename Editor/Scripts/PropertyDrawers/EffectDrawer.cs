@@ -1,5 +1,4 @@
 using System;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,13 +18,12 @@ namespace StatusEffects.Inspector
         private SerializedProperty _primary;
         private SerializedProperty _secondary;
 
-        Rect _propertyPosition;
-        Rect _offset;
+        private Rect _propertyPosition;
+        private Rect _offset;
 
         private StatusName _statusNameReference;
         private Type _statusNameType;
         private Type _statusNameTypeDummy;
-        private SerializedObject _serializedObject;
         private int _multiObjectCount;
         private bool _typeDifference;
         private GUIStyle style;
@@ -39,10 +37,12 @@ namespace StatusEffects.Inspector
             _multiObjectCount = property.serializedObject.targetObjects.Length;
             _typeDifference = false;
 
+            _statusName = property.FindPropertyRelative("statusName");
+            _useBaseValue = property.FindPropertyRelative("useBaseValue");
+
             for (int i = 0; i < _multiObjectCount; i++)
             {
-                _serializedObject = new SerializedObject(property.serializedObject.targetObjects[i]);
-                _statusNameReference = (_serializedObject.FindProperty(property.propertyPath).GetUnderlyingValue() as Effect).statusName;
+                _statusNameReference = (_statusName.GetParent(property.serializedObject.targetObjects[i]) as Effect).statusName;
                 _statusNameTypeDummy = _statusNameReference is StatusNameBool ? typeof(StatusNameBool)
                                      : _statusNameReference is StatusNameInt  ? typeof(StatusNameInt)
                                                                               : typeof(StatusNameFloat);
@@ -55,9 +55,6 @@ namespace StatusEffects.Inspector
                 
                 _statusNameType = _statusNameTypeDummy;
             }
-
-            _statusName = property.FindPropertyRelative("statusName");
-            _useBaseValue = property.FindPropertyRelative("useBaseValue");
 
             _primary = _statusNameType == typeof(StatusNameBool)   ? property.FindPropertyRelative("boolValue")
                       : _statusNameType == typeof(StatusNameInt)   ? property.FindPropertyRelative("intValue")

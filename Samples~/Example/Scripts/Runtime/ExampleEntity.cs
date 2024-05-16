@@ -9,10 +9,10 @@ namespace StatusEffects.Example
     {
         [HideInInspector] public StatusManager statusManager;
         // Example variables
-        [SerializeField] private StatusFloat _maxHealth;
-        [SerializeField] private StatusFloat _speed;
-        [SerializeField] private StatusInt _coinMultiplier;
-        [SerializeField] private StatusBool _stunned;
+        [SerializeField] private StatusFloat _maxHealth = new StatusFloat(10, true);
+        [SerializeField] private StatusFloat _speed = new StatusFloat(5, true);
+        [SerializeField] private StatusInt _coinMultiplier = new StatusInt(1, true);
+        [SerializeField] private StatusBool _stunned = new StatusBool(false);
         // Note that health would not be a StatusVariable because its
         // value shouldn't dynamically update with effects.
         public float health;

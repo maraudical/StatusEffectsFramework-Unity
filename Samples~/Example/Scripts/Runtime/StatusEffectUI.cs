@@ -5,7 +5,7 @@ namespace StatusEffects.Example.UI
 {
     public class StatusEffectUI : MonoBehaviour
     {
-        [SerializeField] private Text _text;
+        [SerializeField] private Text _text;        
         [SerializeField] private Image _image;
 
         public int stack;

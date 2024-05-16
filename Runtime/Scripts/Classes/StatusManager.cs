@@ -140,7 +140,7 @@ namespace StatusEffects
                 // Basic decreasing timer.
                 while (statusEffect.duration > 0
                    && !_overrideGlobalTime
-#if UNITASK || !UNITY_2023_1_OR_NEWER
+#if UNITASK || UNITY_2023_1_OR_NEWER
                    && !token.IsCancellationRequested
 #endif
                    )

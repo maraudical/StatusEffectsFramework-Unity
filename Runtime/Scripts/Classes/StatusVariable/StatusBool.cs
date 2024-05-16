@@ -9,24 +9,24 @@ namespace StatusEffects
     public class StatusBool : StatusVariable
     {
         public StatusNameBool statusName;
-        [SerializeField] private bool baseValue;
+        [SerializeField] private bool _baseValue;
         public bool value;
         
         public StatusBool(bool baseValue)
         {
-            this.baseValue = baseValue;
+            _baseValue = baseValue;
         }
 
         public StatusBool(bool baseValue, StatusNameBool statusName)
         {
             this.statusName = statusName;
-            this.baseValue = baseValue;
+            _baseValue = baseValue;
             value = GetValue();
         }
 
         public void ChangeBaseValue(bool value)
         {
-            baseValue = value;
+            _baseValue = value;
             this.value = GetValue();
         }
 
@@ -40,9 +40,9 @@ namespace StatusEffects
         protected bool GetValue()
         {
             if (instance == null)
-                return baseValue;
+                return _baseValue;
 
-            bool value = baseValue;
+            bool value = _baseValue;
             int priority = -1;
 
             bool effectValue;

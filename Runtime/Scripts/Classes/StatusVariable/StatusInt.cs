@@ -9,24 +9,27 @@ namespace StatusEffects
     public class StatusInt : StatusVariable
     {
         public StatusNameInt statusName;
-        [SerializeField] private int baseValue;
+        [SerializeField] private int _baseValue;
+        [SerializeField] private bool _signProtected;
         public int value;
         
-        public StatusInt(int baseValue)
+        public StatusInt(int baseValue, bool signProtected = true)
         {
-            this.baseValue = baseValue;
+            _baseValue = baseValue;
+            _signProtected = signProtected;
         }
 
-        public StatusInt(int baseValue, StatusNameInt statusName)
+        public StatusInt(int baseValue, StatusNameInt statusName, bool signProtected = true)
         {
             this.statusName = statusName;
-            this.baseValue = baseValue;
+            _baseValue = baseValue;
+            _signProtected = signProtected;
             value = GetValue();
         }
 
         public void ChangeBaseValue(int value)
         {
-            baseValue = value;
+            _baseValue = value;
             this.value = GetValue();
         }
 
@@ -40,8 +43,9 @@ namespace StatusEffects
         protected virtual int GetValue()
         {
             if (instance == null)
-                return baseValue;
+                return _baseValue;
 
+            bool positive = Mathf.Sign(_baseValue) > 0;
             int additiveValue = 0;
             int multiplicativeValue = 1;
             int postAdditiveValue = 0;
@@ -72,10 +76,12 @@ namespace StatusEffects
                     }
                 }
             }
-            
-            return (baseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
-        }
 
+            if (_signProtected)
+                return Mathf.Clamp((_baseValue + additiveValue) * multiplicativeValue + postAdditiveValue, positive ? 0 : int.MinValue, positive ? int.MaxValue : 0);
+            else
+                return (_baseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
+        }
         public static implicit operator int(StatusInt statusInt) => statusInt.value;
 
         public override void SetManager(StatusManager instance)
@@ -87,6 +93,11 @@ namespace StatusEffects
 #if UNITY_EDITOR
 
         private async void BaseValueUpdate()
+        {
+            await Task.Yield();
+            value = GetValue();
+        }
+        private async void SignProtectedUpdate()
         {
             await Task.Yield();
             value = GetValue();
