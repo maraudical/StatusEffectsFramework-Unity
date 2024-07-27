@@ -55,12 +55,18 @@ namespace StatusEffects.Inspector
                             }
                             // Read meta for script new script
                             var scriptMetaTextLines = File.ReadAllLines(metaPath);
+							bool iconLineFound = false;
                             for (var i = 0; i < scriptMetaTextLines.Length; ++i)
                             {
                                 var line = scriptMetaTextLines[i];
                                 // Find icon line
-                                if (line.Contains("icon: ") && !line.Contains(metaIconLine))
+                                if (line.Contains("icon: "))
                                 {
+                                    iconLineFound = true;
+
+                                    if (line.Contains(metaIconLine))
+                                        break;
+
                                     var indexIconKeyName = line.IndexOf("icon: ");
                                     var indexAfterClosingBrace = line.IndexOf("}", indexIconKeyName) + 1;
                                     var newLine = line.Replace(line.Substring(indexIconKeyName, indexAfterClosingBrace - indexIconKeyName), metaIconLine);
@@ -69,6 +75,17 @@ namespace StatusEffects.Inspector
                                     metaChangedForAssets.Add(assetPath);
                                     break;
                                 }
+                            }
+
+                            if (!iconLineFound)
+                            {
+                                // If it doesn't have an icon line already we will add one
+                                var monoImporter = AssetImporter.GetAtPath(assetPath) as MonoImporter;
+                                var indexIconKeyName = metaIconLine.IndexOf("guid: ") + 6;
+                                var indexAfterClosingBrace = metaIconLine.IndexOf(",", indexIconKeyName);
+                                var icon = AssetDatabase.LoadAssetAtPath<Texture2D>(AssetDatabase.GUIDToAssetPath(metaIconLine.Substring(indexIconKeyName, indexAfterClosingBrace - indexIconKeyName)));
+
+                                monoImporter.SetIcon(icon);
                             }
                         }
                     }
