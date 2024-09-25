@@ -1,3 +1,4 @@
+using System;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -8,26 +9,28 @@ namespace StatusEffects.Inspector
     [CanEditMultipleObjects]
     public class StatusManagerEditor : Editor
     {
-        private ReorderableList _effectList;
+        private ReorderableList m_EffectList;
 
-        private SerializedProperty _effects;
+        private SerializedProperty m_Effects;
 
         private void OnEnable()
         {
-            _effects = serializedObject.FindProperty("_effects");
+            try { m_Effects = serializedObject.FindProperty("m_EditorOnlyEffects"); }
+            catch { return; }
 
-            _effectList = new ReorderableList(serializedObject, _effects, true, true, true, true);
 
-            _effectList.displayAdd = false;
-            _effectList.displayRemove = false;
-            _effectList.draggable = false;
+            m_EffectList = new ReorderableList(serializedObject, m_Effects, true, true, true, true);
 
-            _effectList.drawHeaderCallback = rect => {
+            m_EffectList.displayAdd = false;
+            m_EffectList.displayRemove = false;
+            m_EffectList.draggable = false;
+
+            m_EffectList.drawHeaderCallback = rect => {
                 EditorGUI.LabelField(rect, "Status Effects");
             };
-            _effectList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
+            m_EffectList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
             {
-                var element = _effectList.serializedProperty.GetArrayElementAtIndex(index);
+                var element = m_EffectList.serializedProperty.GetArrayElementAtIndex(index);
                 rect.y += EditorGUIUtility.standardVerticalSpacing / 1.515f;
                 rect.height = EditorGUI.GetPropertyHeight(element);
                 GUI.enabled = false;
@@ -39,7 +42,7 @@ namespace StatusEffects.Inspector
         public override void OnInspectorGUI()
         {
             EditorGUILayout.Space(22);
-            _effectList.DoLayoutList();
+            m_EffectList?.DoLayoutList();
         }
     }
 }

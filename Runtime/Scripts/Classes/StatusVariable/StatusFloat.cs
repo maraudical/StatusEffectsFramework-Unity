@@ -8,68 +8,90 @@ namespace StatusEffects
     [Serializable]
     public class StatusFloat : StatusVariable
     {
-        [SerializeField] public event Action<float, float> onValueChanged;
+        [SerializeField] public event Action<float, float> OnValueChanged;
 
-        public StatusNameFloat statusName;
-        [SerializeField] private float _baseValue;
-        [SerializeField] private bool _signProtected;
-        public float value;
-        
+        public StatusNameFloat StatusName => m_StatusName;
+        public float BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
+        public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; SignProtectedChanged(); } }
+        public float Value => m_Value;
+
+        [SerializeField] protected StatusNameFloat m_StatusName;
+        [SerializeField] protected float m_BaseValue;
+        [SerializeField] protected bool m_SignProtected;
+        [SerializeField] protected float m_Value;
+
         public StatusFloat(float baseValue, bool signProtected = true)
         {
-            _baseValue = baseValue;
-            _signProtected = signProtected;
+            m_BaseValue = baseValue;
+            m_SignProtected = signProtected;
         }
 
         public StatusFloat(float baseValue, StatusNameFloat statusName, bool signProtected = true)
         {
-            this.statusName = statusName;
-            _baseValue = baseValue;
-            _signProtected = signProtected;
-            value = GetValue();
+            m_StatusName = statusName;
+            m_BaseValue = baseValue;
+            m_SignProtected = signProtected;
+            m_Value = GetValue();
         }
-        
-        public void ChangeBaseValue(float value)
+
+        public static implicit operator float(StatusFloat statusFloat) => statusFloat.Value;
+
+        public override void SetManager(IStatusManager instance)
         {
-            _baseValue = value;
-            float previousValue = this.value;
-            this.value = GetValue();
-            onValueChanged?.Invoke(previousValue, this.value);
+            base.SetManager(instance);
+
+            float previousValue = m_Value;
+            m_Value = GetValue();
+            OnValueChanged?.Invoke(previousValue, m_Value);
+        }
+
+        protected virtual void BaseValueChanged()
+        {
+            float previousValue = m_Value;
+            m_Value = GetValue();
+            OnValueChanged?.Invoke(previousValue, m_Value);
+        }
+
+        protected virtual void SignProtectedChanged()
+        {
+            float previousValue = m_Value;
+            m_Value = GetValue();
+            OnValueChanged?.Invoke(previousValue, m_Value);
         }
 
         protected override void InstanceUpdate(StatusEffect statusEffect)
         {
             // Only update if the status effect actually has any effects that have the same StatusName
-            if (statusEffect.data.effects.Select(e => e.statusName).Contains(statusName))
+            if (statusEffect.Data.Effects.Select(e => e.StatusName).Contains(m_StatusName))
             {
-                float previousValue = value;
-                value = GetValue();
-                onValueChanged?.Invoke(previousValue, this.value);
+                float previousValue = m_Value;
+                m_Value = GetValue();
+                OnValueChanged?.Invoke(previousValue, m_Value);
             }
         }
 
         protected float GetValue()
         {
-            if (instance == null)
-                return _baseValue;
+            if (Instance == null)
+                return m_BaseValue;
 
-            bool positive = Mathf.Sign(_baseValue) >= 0;
+            bool positive = Mathf.Sign(m_BaseValue) >= 0;
             float additiveValue = 0;
             float multiplicativeValue = 1;
             float postAdditiveValue = 0;
 
             float effectValue;
 
-            foreach (StatusEffect statusEffect in instance.effects)
+            foreach (StatusEffect statusEffect in Instance.Effects)
             {
-                foreach (Effect effect in statusEffect.data.effects)
+                foreach (Effect effect in statusEffect.Data.Effects)
                 {
-                    if (effect.statusName != statusName)
+                    if (effect.StatusName != m_StatusName)
                         continue;
 
-                    effectValue = statusEffect.stack * (effect.useBaseValue ? statusEffect.data.baseValue : effect.floatValue);
-
-                    switch (effect.valueModifier)
+                    effectValue = statusEffect.Stack * (effect.UseBaseValue ? statusEffect.Data.BaseValue : effect.FloatValue);
+                    
+                    switch (effect.ValueModifier)
                     {
                         case ValueModifier.Additive:
                             additiveValue += effectValue;
@@ -85,37 +107,27 @@ namespace StatusEffects
                 }
             }
             
-            if (_signProtected)
-                return Mathf.Clamp((_baseValue + additiveValue) * multiplicativeValue + postAdditiveValue, positive ? 0 : float.NegativeInfinity, positive ? float.PositiveInfinity : 0);
+            if (m_SignProtected)
+                return Mathf.Clamp((m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, positive ? 0 : float.NegativeInfinity, positive ? float.PositiveInfinity : 0);
             else
-                return (_baseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
-        }
-
-        public static implicit operator float(StatusFloat statusFloat) => statusFloat.value;
-
-        public override void SetManager(StatusManager instance)
-        {
-            base.SetManager(instance);
-
-            float previousValue = value;
-            value = GetValue();
-            onValueChanged?.Invoke(previousValue, this.value);
+                return (m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
         }
 #if UNITY_EDITOR
 
-        private async void BaseValueUpdate()
+        protected virtual async void BaseValueUpdate()
         {
             await Task.Yield();
-            float previousValue = value;
-            value = GetValue();
-            onValueChanged?.Invoke(previousValue, this.value);
+            float previousValue = m_Value;
+            m_Value = GetValue();
+            OnValueChanged?.Invoke(previousValue, m_Value);
         }
-        private async void SignProtectedUpdate()
+
+        protected virtual async void SignProtectedUpdate()
         {
             await Task.Yield();
-            float previousValue = value;
-            value = GetValue();
-            onValueChanged?.Invoke(previousValue, this.value);
+            float previousValue = m_Value;
+            m_Value = GetValue();
+            OnValueChanged?.Invoke(previousValue, m_Value);
         }
 #endif
     }

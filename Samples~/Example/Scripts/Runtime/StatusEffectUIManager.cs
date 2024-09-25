@@ -7,95 +7,95 @@ namespace StatusEffects.Example.UI
 {
     public class StatusEffectUIManager : MonoBehaviour
     {
-        [SerializeField] private StatusManager _statusManager;
-        [SerializeField] private ExampleEntity _exampleEntity;
-        [SerializeField] private Transform _effectParent;
-        [SerializeField] private GameObject _effectPrefab;
-        [SerializeField] private Dropdown _effectDropdown;
-        [SerializeField] private Button _effectAddButton;
-        [SerializeField] private Button _effectRemoveButton;
+        [SerializeField] private StatusManager m_StatusManager;
+        [SerializeField] private ExampleEntity m_ExampleEntity;
+        [SerializeField] private Transform m_EffectParent;
+        [SerializeField] private GameObject m_EffectPrefab;
+        [SerializeField] private Dropdown m_EffectDropdown;
+        [SerializeField] private Button m_EffectAddButton;
+        [SerializeField] private Button m_EffectRemoveButton;
         [Space]
-        [SerializeField] private List<StatusEffectData> _statusEffectDatas;
+        [SerializeField] private List<StatusEffectData> m_StatusEffectDatas;
 
-        private Dictionary<StatusEffectData, StatusEffectUI> _statusEffectUIs;
+        private Dictionary<StatusEffectData, StatusEffectUI> m_StatusEffectUIs;
 
         private void Awake()
         {
-            _statusEffectUIs = new();
+            m_StatusEffectUIs = new();
 
-            _effectDropdown.AddOptions(_statusEffectDatas.Select(data => new Dropdown.OptionData(data.name)).ToList());
+            m_EffectDropdown.AddOptions(m_StatusEffectDatas.Select(data => new Dropdown.OptionData(data.name)).ToList());
 
-            _exampleEntity.statusEffectData = _statusEffectDatas.First();
+            m_ExampleEntity.StatusEffectData = m_StatusEffectDatas.First();
         }
 
         private void OnEnable()
         {
-            _statusManager.onStatusEffect += OnStatusEffect;
+            m_StatusManager.OnStatusEffect += OnStatusEffect;
 
-            _effectDropdown.onValueChanged.AddListener(DropdownValueChanged);
-            _effectAddButton.onClick.AddListener(AddButtonClicked);
-            _effectRemoveButton.onClick.AddListener(RemoveButtonClicked);
+            m_EffectDropdown.onValueChanged.AddListener(DropdownValueChanged);
+            m_EffectAddButton.onClick.AddListener(AddButtonClicked);
+            m_EffectRemoveButton.onClick.AddListener(RemoveButtonClicked);
         }
 
         private void OnDisable()
         {
-            _statusManager.onStatusEffect -= OnStatusEffect;
+            m_StatusManager.OnStatusEffect -= OnStatusEffect;
 
-            _effectDropdown.onValueChanged.RemoveListener(DropdownValueChanged);
-            _effectAddButton.onClick.RemoveListener(AddButtonClicked);
-            _effectRemoveButton.onClick.RemoveListener(RemoveButtonClicked);
+            m_EffectDropdown.onValueChanged.RemoveListener(DropdownValueChanged);
+            m_EffectAddButton.onClick.RemoveListener(AddButtonClicked);
+            m_EffectRemoveButton.onClick.RemoveListener(RemoveButtonClicked);
         }
 
-        private void OnStatusEffect(StatusEffect statusEffect, bool added, int stacks)
+        private void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int stacks)
         {
             // If there is no icon for the effect we ignore it.
-            if (!statusEffect.data.icon)
+            if (!statusEffect.Data.Icon)
                 return;
             // We check the current list of UI elements to see if it exists
             // already, with the objective to update the stack count.
-            if (_statusEffectUIs.TryGetValue(statusEffect.data, out StatusEffectUI ui))
+            if (m_StatusEffectUIs.TryGetValue(statusEffect.Data, out StatusEffectUI ui))
             {
                 // Add or remove the given stack count.
-                ui.UpdateStack(added ? stacks : -stacks);
+                ui.UpdateStack(action is StatusEffectAction.AddedStatusEffect or StatusEffectAction.AddedStacks ? stacks : -stacks);
                 // If the stack count after removing is below or equal to 0 then remove it.
-                if (ui.stack <= 0)
+                if (ui.Stack <= 0)
                     RemoveUI(ui);
 
                 return;
             }
             // Otherwise we will instantiate a new UI prefab to the scene.
-            if (added)
+            if (action is StatusEffectAction.AddedStatusEffect or StatusEffectAction.AddedStacks)
                 AddUI(stacks);
 
             void AddUI(int stacks)
             {
-                GameObject effectUIObject = Instantiate(_effectPrefab, _effectParent);
+                GameObject effectUIObject = Instantiate(m_EffectPrefab, m_EffectParent);
                 StatusEffectUI effectUI = effectUIObject.GetComponent<StatusEffectUI>();
                 // There is an initialize method to setup the icon and stack count.
-                effectUI.Initialize(statusEffect.data.icon, stacks);
-                _statusEffectUIs.Add(statusEffect.data, effectUI);
+                effectUI.Initialize(statusEffect.Data.Icon, stacks);
+                m_StatusEffectUIs.Add(statusEffect.Data, effectUI);
             }
 
             void RemoveUI(StatusEffectUI ui)
             {
-                _statusEffectUIs.Remove(statusEffect.data);
+                m_StatusEffectUIs.Remove(statusEffect.Data);
                 Destroy(ui.gameObject);
             }
         }
 
         private void DropdownValueChanged(int value)
         {
-            _exampleEntity.statusEffectData = _statusEffectDatas.ElementAtOrDefault(value);
+            m_ExampleEntity.StatusEffectData = m_StatusEffectDatas.ElementAtOrDefault(value);
         }
 
         private void AddButtonClicked()
         {
-            _statusManager.AddStatusEffect(_exampleEntity.statusEffectData);
+            m_StatusManager.AddStatusEffect(m_ExampleEntity.StatusEffectData);
         }
 
         private void RemoveButtonClicked()
         {
-            _statusManager.RemoveStatusEffect(_exampleEntity.statusEffectData, 1);
+            m_StatusManager.RemoveStatusEffect(m_ExampleEntity.StatusEffectData, 1);
         }
     }
 

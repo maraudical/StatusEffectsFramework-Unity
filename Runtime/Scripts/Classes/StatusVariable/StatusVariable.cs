@@ -4,16 +4,18 @@ namespace StatusEffects
 {
     public abstract class StatusVariable
     {
-        [SerializeField] protected StatusManager instance;
-
-        public virtual void SetManager(StatusManager instance)
+        protected IStatusManager Instance;
+        /// <summary>
+        /// Sets up the <see cref="StatusVariable"/>. This must be set before trying to get any value from it.
+        /// </summary>
+        public virtual void SetManager(IStatusManager instance)
         {
-            if (this.instance)
-                this.instance.valueUpdate -= InstanceUpdate;
+            if (Instance != null)
+                Instance.ValueUpdate -= InstanceUpdate;
 
-            this.instance = instance;
+            Instance = instance;
 
-            this.instance.valueUpdate += InstanceUpdate;
+            Instance.ValueUpdate += InstanceUpdate;
         }
 
         protected abstract void InstanceUpdate(StatusEffect statusEffect);

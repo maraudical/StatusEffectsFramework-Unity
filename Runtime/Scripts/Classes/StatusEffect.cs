@@ -7,118 +7,131 @@ using System.Threading;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Runtime.CompilerServices;
+using Unity.VisualScripting.YamlDotNet.Core.Tokens;
 
 namespace StatusEffects
 {
     [Serializable]
     public class StatusEffect
     {
-        [HideInInspector] public Action started;
-        [HideInInspector] public Action stopped;
+        [HideInInspector] public event Action Started;
+        [HideInInspector] public event Action Stopped;
+        [HideInInspector] public event Action<float> OnDurationUpdate;
+        [HideInInspector] public event Action<int, int> OnStackUpdate;
 
-        public StatusEffectData data;
-        public StatusEffectTiming timing;
-        public float duration;
-        public int stack;
+        public StatusEffectData Data;
+        public StatusEffectTiming Timing;
+        public float Duration { get => m_Duration; set { m_Duration = value; OnDurationUpdate?.Invoke(value); } }
+        public int Stack { get => m_Stack; set { m_PreviousStack = m_Stack; m_Stack = value; } }
+
+        [SerializeField] private float m_Duration;
+        [SerializeField] private int m_Stack;
+
+        private int m_PreviousStack;
+        private int? m_InstanceId;
+        private bool m_ModulesEnabled;
 
 #if UNITASK || UNITY_2023_1_OR_NEWER
-        [HideInInspector] public List<CancellationTokenSource> moduleTokenSources;
-        [HideInInspector] public CancellationTokenSource timedTokenSource;
+        private List<CancellationTokenSource> m_ModuleTokenSources;
+        [HideInInspector] public CancellationTokenSource TimedTokenSource;
 #else
-        [HideInInspector] public List<Coroutine> effectCoroutines;
-        [HideInInspector] public Coroutine timedCoroutine;
+        private List<Coroutine> m_EffectCoroutines;
+        [HideInInspector] public Coroutine TimedCoroutine;
 #endif
-
         public StatusEffect(StatusEffectData data, StatusEffectTiming timing, float duration, int stack)
         {
-            this.data = data;
-            this.timing = timing;
-            this.duration = duration;
-            this.stack = stack;
+            Data = data;
+            Timing = timing;
+            m_Duration = duration;
+            m_Stack = stack;
+            m_ModulesEnabled = false;
         }
 
-        public void EnableModules(StatusManager manager, int stack)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetInstanceID()
         {
-            if (stack <= 0)
+            if (!m_InstanceId.HasValue)
+                SetInstanceID(Guid.NewGuid().GetHashCode());
+
+            return m_InstanceId.Value;
+        }
+
+        internal void SetInstanceID(int value)
+        {
+            m_InstanceId = value;
+        }
+
+        internal void InvokeStackUpdate()
+        {
+            OnStackUpdate?.Invoke(m_PreviousStack, m_Stack);
+        }
+
+        internal void EnableModules(StatusManager manager)
+        {
+            if (Data.Modules == null || m_ModulesEnabled)
                 return;
-
-            if (data.modules != null)
-            {
-                for (int i = 0; i < stack; i++)
-                {
 #if UNITASK || UNITY_2023_1_OR_NEWER
-                    CancellationTokenSource effectTokenSource;
+            CancellationTokenSource effectTokenSource;
 
-                    foreach (var container in data.modules)
-                    {
+            foreach (var container in Data.Modules)
+            {
 #if UNITASK
-                        effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(manager.GetCancellationTokenOnDestroy());
+                effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(manager.GetCancellationTokenOnDestroy());
 #else
-                        effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(manager.destroyCancellationToken);
+                effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(manager.destroyCancellationToken);
 #endif
-                        container.module.EnableModule(manager, this, container.moduleInstance, effectTokenSource.Token);
+                container.Module.EnableModule(manager, this, container.ModuleInstance, effectTokenSource.Token);
 
-                        if (moduleTokenSources == null)
-                            moduleTokenSources = new();
-                        moduleTokenSources.Add(effectTokenSource);
-                    }
-#else
-                    foreach (var container in data.modules)
-                    {
-                        if (effectCoroutines == null)
-                            effectCoroutines = new();
-                        effectCoroutines.Add(manager.StartCoroutine(container.module.EnableModule(manager, this, container.moduleInstance)));
-                    }
-#endif
-                }
+                if (m_ModuleTokenSources == null)
+                    m_ModuleTokenSources = new();
+                m_ModuleTokenSources.Add(effectTokenSource);
             }
-            
-            started?.Invoke();
+#else
+            foreach (var container in Data.Modules)
+            {
+                if (m_EffectCoroutines == null)
+                    m_EffectCoroutines = new();
+                m_EffectCoroutines.Add(manager.StartCoroutine(container.Module.EnableModule(manager, this, container.ModuleInstance)));
+            }
+#endif
+
+            m_ModulesEnabled = true;
+            Started?.Invoke();
         }
 
 #nullable enable
-        public void DisableModules(StatusManager manager, int? stack = null)
+        internal void DisableModules(StatusManager manager)
 #nullable disable
         {
-            if (stack.HasValue && stack <= 0)
+            if (Data.Modules == null || !m_ModulesEnabled)
                 return;
-            
-            if (data.modules != null)
-            {
+
 #if UNITASK || UNITY_2023_1_OR_NEWER
-                if (moduleTokenSources == null)
-                    return;
+            if (m_ModuleTokenSources == null)
+                return;
 
-                for (int i = 0; (!stack.HasValue || i < stack) && moduleTokenSources.Count > 0; i++)
-                {
-                    foreach (var container in data.modules)
-                    {
-                        CancellationTokenSource cancellationTokenSource = moduleTokenSources[moduleTokenSources.Count - 1];
-                        cancellationTokenSource?.Cancel();
-                        cancellationTokenSource?.Dispose();
-                        moduleTokenSources.RemoveAt(moduleTokenSources.Count - 1);
-                    }
+            foreach (var container in m_ModuleTokenSources)
+                container?.Cancel();
 #else
-                if (effectCoroutines == null)
-                    return;
+            if (m_EffectCoroutines == null)
+                return;
 
-                for (int i = 0; (!stack.HasValue || i < stack) && effectCoroutines.Count > 0; i++)
-                {
-                    Coroutine coroutine;
+            Coroutine coroutine;
 
-                    foreach (var container in data.modules)
-                    {
-                        container.module.DisableModule(manager, this, container.moduleInstance);
-                        coroutine = effectCoroutines[effectCoroutines.Count - 1];
-                        if (coroutine != null)
-                            manager.StopCoroutine(coroutine);
-                        effectCoroutines.RemoveAt(effectCoroutines.Count - 1);
-                    }
-#endif
-                }
+            foreach (var container in m_EffectCoroutines)
+            {
+                container.Module.DisableModule(manager, this, container.ModuleInstance);
+                coroutine = m_EffectCoroutines[m_EffectCoroutines.Count - 1];
+                if (coroutine != null)
+                    manager.StopCoroutine(coroutine);
+                m_EffectCoroutines.RemoveAt(m_EffectCoroutines.Count - 1);
             }
+#endif
 
-            stopped?.Invoke();
+            m_ModuleTokenSources?.Clear();
+            m_ModulesEnabled = false;
+            Stopped?.Invoke();
         }
     }
 }

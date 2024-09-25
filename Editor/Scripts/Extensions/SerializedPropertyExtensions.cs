@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
+using UnityEngine;
 
 namespace StatusEffects.Inspector
 {
@@ -35,12 +37,19 @@ namespace StatusEffects.Inspector
             if (source == null)
                 return null;
             var type = source.GetType();
+            ReflectField:
             var f = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
             if (f == null)
             {
                 var p = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
                 if (p == null)
-                    return null;
+                {
+                    if (type.Namespace.Contains(nameof(UnityEngine)))
+                        return null;
+
+                    type = type.BaseType;
+                    goto ReflectField;
+                }
                 return p.GetValue(source, null);
             }
             return f.GetValue(source);

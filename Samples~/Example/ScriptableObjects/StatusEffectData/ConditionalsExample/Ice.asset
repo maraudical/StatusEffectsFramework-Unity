@@ -12,53 +12,62 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Ice
   m_EditorClassIdentifier: 
-  group:
-    value: 2
-  comparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4, type: 2}
-  baseValue: -0.3
-  icon: {fileID: 21300000, guid: 4bae7d79998147e40bfbd395c6b4bbfb, type: 3}
-  statusEffectName: Ice
-  description: The ice effect will slow movement speed by 30%. It also cancels out
-    the fire effect.
-  allowEffectStacking: 0
-  nonStackingBehaviour: 0
-  maxStack: -1
-  effects:
-  - statusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
-    valueModifier: 1
-    useBaseValue: 1
-    floatValue: -0.3
-    intValue: 0
-    boolValue: 0
-    priority: 0
-  conditions:
-  - searchable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    exists: 1
-    add: 0
-    configurable: 0
-    data: {fileID: 11400000}
-    comparableName: {fileID: 0}
-    group:
-      value: 0
-    timing: 0
-    duration: 12
-  - searchable: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    exists: 1
-    add: 0
-    configurable: 0
-    data: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    comparableName: {fileID: 0}
-    group:
-      value: 0
-    timing: 0
-    duration: 0
-  modules:
-  - module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
-    moduleInstance: {fileID: 3798898187394050518}
-  enableIcon: 1
-  enableName: 1
-  enableDescription: 1
---- !u!114 &3798898187394050518
+  m_Group:
+    Value: 2
+  m_ComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4, type: 2}
+  m_BaseValue: -0.3
+  m_Icon: {fileID: 21300000, guid: 4bae7d79998147e40bfbd395c6b4bbfb, type: 3}
+  m_StatusEffectName: Ice
+  m_Description: Applies a slowing effect.
+  m_AllowEffectStacking: 0
+  m_NonStackingBehaviour: 0
+  m_MaxStack: -1
+  m_Effects:
+  - StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
+    ValueModifier: 1
+    UseBaseValue: 1
+    FloatValue: 0
+    IntValue: 0
+    BoolValue: 0
+    Priority: 0
+  m_Conditions:
+  - SearchableConfigurable: 1
+    SearchableData: {fileID: 0}
+    SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78,
+      type: 2}
+    SearchableGroup:
+      Value: 0
+    Exists: 1
+    Add: 0
+    ActionConfigurable: 0
+    ActionData: {fileID: 11400000}
+    ActionComparableName: {fileID: 0}
+    ActionGroup:
+      Value: 0
+    Timing: 0
+    Duration: 0
+  - SearchableConfigurable: 1
+    SearchableData: {fileID: 0}
+    SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78,
+      type: 2}
+    SearchableGroup:
+      Value: 0
+    Exists: 1
+    Add: 0
+    ActionConfigurable: 0
+    ActionData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    ActionComparableName: {fileID: 0}
+    ActionGroup:
+      Value: 0
+    Timing: 0
+    Duration: 0
+  m_Modules:
+  - Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
+    ModuleInstance: {fileID: 8148485282251604263}
+  m_EnableIcon: 1
+  m_EnableName: 1
+  m_EnableDescription: 1
+--- !u!114 &8148485282251604263
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -70,4 +79,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefab: {fileID: 2646296195290802649, guid: ff4c2e5985a52234a9a42c642800f49c, type: 3}
+  Prefab: {fileID: 2646296195290802649, guid: ff4c2e5985a52234a9a42c642800f49c, type: 3}

@@ -8,65 +8,79 @@ namespace StatusEffects
     [Serializable]
     public class StatusBool : StatusVariable
     {
-        [SerializeField] public event Action<bool, bool> onValueChanged;
+        [SerializeField] public event Action<bool, bool> OnValueChanged;
 
-        public StatusNameBool statusName;
-        [SerializeField] private bool _baseValue;
-        public bool value;
-        
+        public StatusNameBool StatusName => m_StatusName;
+        public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
+        public bool Value => m_Value;
+
+        [SerializeField] protected StatusNameBool m_StatusName;
+        [SerializeField] protected bool m_BaseValue;
+        [SerializeField] protected bool m_Value;
+
         public StatusBool(bool baseValue)
         {
-            _baseValue = baseValue;
+            m_BaseValue = baseValue;
         }
 
         public StatusBool(bool baseValue, StatusNameBool statusName)
         {
-            this.statusName = statusName;
-            _baseValue = baseValue;
-            value = GetValue();
+            m_StatusName = statusName;
+            m_BaseValue = baseValue;
+            m_Value = GetValue();
         }
 
-        public void ChangeBaseValue(bool value)
+        public static implicit operator bool(StatusBool statusBool) => statusBool.Value;
+
+        public override void SetManager(IStatusManager instance)
         {
-            _baseValue = value;
-            bool previousValue = this.value;
-            this.value = GetValue();
-            onValueChanged?.Invoke(previousValue, this.value);
+            base.SetManager(instance);
+
+            bool previousValue = m_Value;
+            m_Value = GetValue();
+            OnValueChanged?.Invoke(previousValue, m_Value);
+        }
+
+        protected virtual void BaseValueChanged()
+        {
+            bool previousValue = m_Value;
+            m_Value = GetValue();
+            OnValueChanged?.Invoke(previousValue, m_Value);
         }
 
         protected override void InstanceUpdate(StatusEffect statusEffect)
         {
             // Only update if the status effect actually has any effects that have the same StatusName
-            if (statusEffect.data.effects.Select(e => e.statusName).Contains(statusName))
+            if (statusEffect.Data.Effects.Select(e => e.StatusName).Contains(m_StatusName))
             {
-                bool previousValue = value;
-                value = GetValue();
-                onValueChanged?.Invoke(previousValue, value);
+                bool previousValue = m_Value;
+                m_Value = GetValue();
+                OnValueChanged?.Invoke(previousValue, m_Value);
             }
         }
 
         protected bool GetValue()
         {
-            if (instance == null)
-                return _baseValue;
+            if (Instance == null)
+                return m_BaseValue;
 
-            bool value = _baseValue;
+            bool value = m_BaseValue;
             int priority = -1;
 
             bool effectValue;
 
-            foreach (StatusEffect statusEffect in instance.effects)
+            foreach (StatusEffect statusEffect in Instance.Effects)
             {
-                foreach (Effect effect in statusEffect.data.effects)
+                foreach (Effect effect in statusEffect.Data.Effects)
                 {
-                    if (effect.statusName != statusName)
+                    if (effect.StatusName != m_StatusName)
                         continue;
 
-                    effectValue = effect.useBaseValue ? Convert.ToBoolean(statusEffect.data.baseValue) : effect.boolValue;
+                    effectValue = effect.UseBaseValue ? Convert.ToBoolean(statusEffect.Data.BaseValue) : effect.BoolValue;
 
-                    if (priority < effect.priority)
+                    if (priority < effect.Priority)
                     {
-                        priority = effect.priority;
+                        priority = effect.Priority;
                         value = effectValue;
                     }
                 }
@@ -74,25 +88,14 @@ namespace StatusEffects
 
             return value;
         }
-
-        public static implicit operator bool(StatusBool statusBool) => statusBool.value;
-
-        public override void SetManager(StatusManager instance)
-        {
-            base.SetManager(instance);
-
-            bool previousValue = value;
-            value = GetValue();
-            onValueChanged?.Invoke(previousValue, value);
-        }
 #if UNITY_EDITOR
 
-        private async void BaseValueUpdate()
+        protected virtual async void BaseValueUpdate()
         {
             await Task.Yield();
-            bool previousValue = value;
-            value = GetValue();
-            onValueChanged?.Invoke(previousValue, value);
+            bool previousValue = m_Value;
+            m_Value = GetValue();
+            OnValueChanged?.Invoke(previousValue, m_Value);
         }
 #endif
     }

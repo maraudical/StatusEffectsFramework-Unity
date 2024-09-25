@@ -13,14 +13,14 @@ namespace StatusEffects
         /// <summary>
         /// Returns the integer value of the group.
         /// </summary>
-        public int value;
+        public int Value;
         /// <summary>
         /// Given a set of group names, returns the equivalent 
         /// <see cref="int"/> value for all of them.
         /// </summary>
         public static int GetGroup(params string[] groupNames)
         {
-            var groups = StatusEffectSettings.GetOrCreateSettings().groups;
+            var groups = StatusEffectSettings.GetOrCreateSettings().Groups;
 
             BitArray bits = new BitArray(new[] { 0 });
 
@@ -36,7 +36,7 @@ namespace StatusEffects
         /// </summary>
         public static string IndexToName(int group)
         {
-            var groups = StatusEffectSettings.GetOrCreateSettings().groups;
+            var groups = StatusEffectSettings.GetOrCreateSettings().Groups;
 
             return groups.ElementAtOrDefault(group);
         }
@@ -45,14 +45,14 @@ namespace StatusEffects
         /// </summary>
         public static int NameToIndex(string groupName)
         {
-            var groups = StatusEffectSettings.GetOrCreateSettings().groups;
+            var groups = StatusEffectSettings.GetOrCreateSettings().Groups;
 
             return Array.IndexOf(groups, groupName);
         }
 
-        public StatusEffectGroup(int value) { this.value = value; }
+        public StatusEffectGroup(int value) { this.Value = value; }
 
-        public static implicit operator int(StatusEffectGroup group) => group.value;
+        public static implicit operator int(StatusEffectGroup group) => group.Value;
         public static implicit operator StatusEffectGroup(int value) => new StatusEffectGroup(value);
     }
 }

@@ -8,11 +8,11 @@ namespace StatusEffects.Modules
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class AttachModuleInstanceAttribute : Attribute
     {
-        public Type type;
+        public Type Type;
         
         public AttachModuleInstanceAttribute(Type requiredComponent)
         {
-            type = requiredComponent;
+            Type = requiredComponent;
         }
     }
 }

@@ -21,8 +21,10 @@ namespace StatusEffects.Modules
             if (!manager.TryGetComponent(out ExampleEntity entity))
                 return;
             // Add health according to status effect
-            entity.health += statusEffect.data.baseValue;
-            entity.health = Mathf.Min(entity.health, entity.maxHealth);
+            entity.Health += statusEffect.Data.BaseValue * statusEffect.Stack;
+            entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
+
+            statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(entity, statusEffect, previous, stack);
 
             await UniTask.WaitUntilCanceled(token);
             // Note that you need to check if the entity is null in case the
@@ -30,7 +32,7 @@ namespace StatusEffects.Modules
             if (!entity)
                 return;
             // Clamp health after status effect ends
-            entity.health = Mathf.Min(entity.health, entity.maxHealth);
+            entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
         }
 #elif UNITY_2023_1_OR_NEWER
         public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
@@ -38,8 +40,10 @@ namespace StatusEffects.Modules
             if (!manager.TryGetComponent(out ExampleEntity entity))
                 return;
             // Add health according to status effect
-            entity.health += statusEffect.data.baseValue;
-            entity.health = Mathf.Min(entity.health, entity.maxHealth);
+            entity.Health += statusEffect.Data.BaseValue;
+            entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
+
+            statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(entity, statusEffect, previous, stack);
             
             await AwaitableExtensions.WaitUntilCanceled(token);
             // Note that you need to check if the entity is null in case the
@@ -47,7 +51,7 @@ namespace StatusEffects.Modules
             if (!entity)
                 return;
             // Clamp health after status effect ends
-            entity.health = Mathf.Min(entity.health, entity.maxHealth);
+            entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
         }
 #else
         public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
@@ -55,8 +59,10 @@ namespace StatusEffects.Modules
             if (manager.TryGetComponent(out ExampleEntity entity))
             {
                 // Add health according to status effect
-                entity.health += statusEffect.data.baseValue;
-                entity.health = Mathf.Min(entity.health, entity.maxHealth);
+                entity.Health += statusEffect.Data.BaseValue;
+                entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
+
+                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(entity, statusEffect, previous, stack);
             }
 
             yield return null;
@@ -66,8 +72,14 @@ namespace StatusEffects.Modules
         {
             if (manager.TryGetComponent(out ExampleEntity entity))
                 // Clamp health after status effect ends
-                entity.health = Mathf.Min(entity.health, entity.maxHealth);                         
+                entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);                         
         }
 #endif
+
+        private void OnStackUpdate(ExampleEntity entity, StatusEffect statusEffect, int previous, int stack)
+        {
+            entity.Health += statusEffect.Data.BaseValue * Mathf.Max(0, stack - previous);
+            entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
+        }
     }
 }

@@ -12,34 +12,54 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Basic Health Boost
   m_EditorClassIdentifier: 
-  group:
-    value: 4
-  comparableName: {fileID: 11400000, guid: 5d59c617e9e27c645b4a95c856dc345e, type: 2}
-  baseValue: 10
-  icon: {fileID: 21300000, guid: 2cb9fd87a40eb2b4fb7384c36ccc128e, type: 3}
-  statusEffectName: Basic Health Boost
-  description: The basic health boost will increase health by 10.
-  allowEffectStacking: 1
-  nonStackingBehaviour: 0
-  maxStack: -1
-  effects:
-  - statusName: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
-    valueModifier: 0
-    useBaseValue: 1
-    floatValue: 10
-    intValue: 0
-    boolValue: 0
-    priority: 0
-  conditions: []
-  modules:
-  - module: {fileID: 11400000, guid: fc369abdd5ca5574b92d2962ebfd5d96, type: 2}
-    moduleInstance: {fileID: 0}
-  - module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
-    moduleInstance: {fileID: 271108028750792070}
-  enableIcon: 1
-  enableName: 1
-  enableDescription: 1
---- !u!114 &271108028750792070
+  m_Group:
+    Value: 4
+  m_ComparableName: {fileID: 11400000, guid: 5d59c617e9e27c645b4a95c856dc345e, type: 2}
+  m_BaseValue: 10
+  m_Icon: {fileID: 21300000, guid: 2cb9fd87a40eb2b4fb7384c36ccc128e, type: 3}
+  m_StatusEffectName:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_Description:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_AllowEffectStacking: 1
+  m_NonStackingBehaviour: 0
+  m_MaxStack: -1
+  m_Effects:
+  - StatusName: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
+    ValueModifier: 0
+    UseBaseValue: 1
+    FloatValue: 0
+    IntValue: 0
+    BoolValue: 0
+    Priority: 0
+  m_Conditions: []
+  m_Dependencies: []
+  m_Modules:
+  - Module: {fileID: 11400000, guid: fc369abdd5ca5574b92d2962ebfd5d96, type: 2}
+    ModuleInstance: {fileID: 0}
+  - Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
+    ModuleInstance: {fileID: 6777300105268748897}
+  m_EnableIcon: 1
+  m_EnableName: 1
+  m_EnableDescription: 1
+  references:
+    version: 2
+    RefIds: []
+--- !u!114 &6777300105268748897
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -51,4 +71,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefab: {fileID: 3165632045659492785, guid: 596723451463a6443aff5842e68ee3c3, type: 3}
+  Prefab: {fileID: 3165632045659492785, guid: 596723451463a6443aff5842e68ee3c3, type: 3}
+  InstantiateAgainWhenAddingStacks: 1

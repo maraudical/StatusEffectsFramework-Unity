@@ -8,7 +8,10 @@ namespace StatusEffects.Inspector
     // Register a SettingsProvider using IMGUI for the drawing framework:
     static class StatusEffectSettingsIMGUIRegister
     {
-        private static bool s_groupFoldout = true;
+        private static SerializedObject s_Settings;
+        private static SerializedProperty s_Groups;
+        private static bool s_GroupFoldout = true;
+        private static int s_DefaultIndent;
 
         [SettingsProvider]
         public static SettingsProvider CreateStatusEffectSettingsProvider()
@@ -22,30 +25,29 @@ namespace StatusEffects.Inspector
                 // Create the SettingsProvider and initialize its drawing (IMGUI) function in place:
                 guiHandler = (searchContext) =>
                 {
-                    var settings = StatusEffectSettings.GetSerializedSettings();
-                    settings.Update();
+                    s_Settings = StatusEffectSettings.GetSerializedSettings();
+                    s_Settings.Update();
                     EditorGUIUtility.labelWidth = 215;
-                    int defaultIndent = EditorGUI.indentLevel;
+                    s_DefaultIndent = EditorGUI.indentLevel;
                     EditorGUI.indentLevel = 0;
-                    SerializedProperty property;
                     EditorGUIUtility.labelWidth = 0;
                     EditorGUILayout.Space();
                     EditorGUILayout.BeginVertical("groupbox");
-                    s_groupFoldout = EditorGUILayout.Foldout(s_groupFoldout, "Groups");
-                    if (s_groupFoldout)
+                    s_Groups = s_Settings.FindProperty(nameof(StatusEffectSettings.Groups));
+                    s_GroupFoldout = EditorGUILayout.Foldout(s_GroupFoldout, s_Groups.displayName);
+                    if (s_GroupFoldout)
                     {
                         EditorGUI.indentLevel++;
-                        property = settings.FindProperty("groups");
-                        for (int i = 0; i < property.arraySize; i++)
+                        for (int i = 0; i < s_Groups.arraySize; i++)
                         {
                             // draw every element of the array
-                            EditorGUILayout.PropertyField(property.GetArrayElementAtIndex(i));
+                            EditorGUILayout.PropertyField(s_Groups.GetArrayElementAtIndex(i));
                         }
                         EditorGUI.indentLevel--;
                     }
                     GUILayout.EndVertical();
-                    EditorGUI.indentLevel = defaultIndent;
-                    settings.ApplyModifiedPropertiesWithoutUndo();
+                    EditorGUI.indentLevel = s_DefaultIndent;
+                    s_Settings.ApplyModifiedPropertiesWithoutUndo();
                 },
 
                 // Populate the search keywords to enable smart search filtering and label highlighting:

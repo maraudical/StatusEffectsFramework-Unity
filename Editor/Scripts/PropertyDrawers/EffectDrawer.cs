@@ -7,98 +7,98 @@ namespace StatusEffects.Inspector
     [CustomPropertyDrawer(typeof(Effect))]
     public class EffectDrawer : PropertyDrawer
     {
-        private float _fieldSize = EditorGUIUtility.singleLineHeight;
-        private float _padding = EditorGUIUtility.standardVerticalSpacing;
-        private const float _horizontalPadding = 3;
-        private const int _fieldCount = 3;
-        private const int _toggleSize = 15;
+        private SerializedProperty m_StatusName;
+        private SerializedProperty m_UseBaseValue;
+        private SerializedProperty m_Primary;
+        private SerializedProperty m_Secondary;
 
-        private SerializedProperty _statusName;
-        private SerializedProperty _useBaseValue;
-        private SerializedProperty _primary;
-        private SerializedProperty _secondary;
+        private Rect m_PropertyPosition;
+        private Rect m_Offset;
 
-        private Rect _propertyPosition;
-        private Rect _offset;
+        private StatusName m_StatusNameReference;
+        private Type m_StatusNameType;
+        private Type m_StatusNameTypeDummy;
+        private int m_MultiObjectCount;
+        private bool m_TypeDifference;
+        private GUIStyle m_Style;
+        private Color m_Color;
 
-        private StatusName _statusNameReference;
-        private Type _statusNameType;
-        private Type _statusNameTypeDummy;
-        private int _multiObjectCount;
-        private bool _typeDifference;
-        private GUIStyle style;
-        private Color _color;
+        private readonly float m_FieldSize = EditorGUIUtility.singleLineHeight;
+        private readonly float m_Padding = EditorGUIUtility.standardVerticalSpacing;
+        private const float k_HorizontalPadding = 3;
+        private const int k_FieldCount = 3;
+        private const int k_ToggleSize = 15;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            style = GUI.skin.label;
-            style.alignment = TextAnchor.MiddleCenter;
+            m_Style = GUI.skin.label;
+            m_Style.alignment = TextAnchor.MiddleCenter;
 
-            _multiObjectCount = property.serializedObject.targetObjects.Length;
-            _typeDifference = false;
+            m_MultiObjectCount = property.serializedObject.targetObjects.Length;
+            m_TypeDifference = false;
 
-            _statusName = property.FindPropertyRelative("statusName");
-            _useBaseValue = property.FindPropertyRelative("useBaseValue");
+            m_StatusName = property.FindPropertyRelative(nameof(Effect.StatusName));
+            m_UseBaseValue = property.FindPropertyRelative(nameof(Effect.UseBaseValue));
 
-            for (int i = 0; i < _multiObjectCount; i++)
+            for (int i = 0; i < m_MultiObjectCount; i++)
             {
-                _statusNameReference = (_statusName.GetParent(property.serializedObject.targetObjects[i]) as Effect).statusName;
-                _statusNameTypeDummy = _statusNameReference is StatusNameBool ? typeof(StatusNameBool)
-                                     : _statusNameReference is StatusNameInt  ? typeof(StatusNameInt)
-                                                                              : typeof(StatusNameFloat);
+                m_StatusNameReference = (m_StatusName.GetParent(property.serializedObject.targetObjects[i]) as Effect).StatusName;
+                m_StatusNameTypeDummy = m_StatusNameReference is StatusNameBool ? typeof(StatusNameBool)
+                                      : m_StatusNameReference is StatusNameInt  ? typeof(StatusNameInt)
+                                                                                : typeof(StatusNameFloat);
 
-                if (i > 0 && _statusNameTypeDummy != _statusNameType)
+                if (i > 0 && m_StatusNameTypeDummy != m_StatusNameType)
                 {
-                    _typeDifference = true;
+                    m_TypeDifference = true;
                     break;
                 }
                 
-                _statusNameType = _statusNameTypeDummy;
+                m_StatusNameType = m_StatusNameTypeDummy;
             }
 
-            _primary = _statusNameType == typeof(StatusNameBool)   ? property.FindPropertyRelative("boolValue")
-                      : _statusNameType == typeof(StatusNameInt)   ? property.FindPropertyRelative("intValue")
-                                                                   : property.FindPropertyRelative("floatValue");
+            m_Primary = m_StatusNameType == typeof(StatusNameBool)   ? property.FindPropertyRelative(nameof(Effect.BoolValue))
+                      : m_StatusNameType == typeof(StatusNameInt)   ? property.FindPropertyRelative(nameof(Effect.IntValue))
+                                                                   : property.FindPropertyRelative(nameof(Effect.FloatValue));
 
-            _secondary = _statusNameType == typeof(StatusNameBool) ? property.FindPropertyRelative("priority")
-                                                                   : property.FindPropertyRelative("valueModifier");
+            m_Secondary = m_StatusNameType == typeof(StatusNameBool) ? property.FindPropertyRelative(nameof(Effect.Priority))
+                                                                   : property.FindPropertyRelative(nameof(Effect.ValueModifier));
 
             EditorGUI.BeginProperty(position, label, property);
 
-            position.height = _fieldSize;
-            position.y += _padding;
+            position.height = m_FieldSize;
+            position.y += m_Padding;
 
-            EditorGUI.PropertyField(position, _statusName, new GUIContent(_statusName.displayName));
-            position.y += _fieldSize + _padding;
+            EditorGUI.PropertyField(position, m_StatusName, new GUIContent(m_StatusName.displayName));
+            position.y += m_FieldSize + m_Padding;
 
-            if (_typeDifference)
+            if (m_TypeDifference)
             {
-                _color = GUI.color;
+                m_Color = GUI.color;
                 GUI.color = Color.yellow;
-                EditorGUI.LabelField(position, "Cannot display information due", style);
+                EditorGUI.LabelField(position, "Cannot display information due", m_Style);
             }
             else
             {
-                EditorGUI.PropertyField(position, _secondary, new GUIContent(_secondary.displayName));
+                EditorGUI.PropertyField(position, m_Secondary, new GUIContent(m_Secondary.displayName));
             }
-            position.y += _fieldSize + _padding;
+            position.y += m_FieldSize + m_Padding;
 
-            if (_typeDifference)
+            if (m_TypeDifference)
             {
-                EditorGUI.LabelField(position, "to Status Name type difference.", style);
-                GUI.color = _color;
+                EditorGUI.LabelField(position, "to Status Name type difference.", m_Style);
+                GUI.color = m_Color;
             }
             else
             {
-                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_primary.displayName));
-                _offset = new Rect(_propertyPosition.x, _propertyPosition.y, _toggleSize, _propertyPosition.height);
-                EditorGUI.PropertyField(_offset, _useBaseValue, GUIContent.none);
+                m_PropertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(m_Primary.displayName));
+                m_Offset = new Rect(m_PropertyPosition.x, m_PropertyPosition.y, k_ToggleSize, m_PropertyPosition.height);
+                EditorGUI.PropertyField(m_Offset, m_UseBaseValue, GUIContent.none);
 
-                _offset = new Rect(_propertyPosition.x + _toggleSize + _horizontalPadding, _propertyPosition.y, _propertyPosition.width - _toggleSize - _horizontalPadding, _propertyPosition.height);
-                if (!_useBaseValue.boolValue)
-                    EditorGUI.PropertyField(_offset, _primary, GUIContent.none);
+                m_Offset = new Rect(m_PropertyPosition.x + k_ToggleSize + k_HorizontalPadding, m_PropertyPosition.y, m_PropertyPosition.width - k_ToggleSize - k_HorizontalPadding, m_PropertyPosition.height);
+                if (!m_UseBaseValue.boolValue)
+                    EditorGUI.PropertyField(m_Offset, m_Primary, GUIContent.none);
                 else
-                    EditorGUI.LabelField(_offset, "Using Base Value");
+                    EditorGUI.LabelField(m_Offset, "Using Base Value");
             }
 
             EditorGUI.EndProperty();
@@ -106,7 +106,7 @@ namespace StatusEffects.Inspector
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return (_fieldSize + _padding) * _fieldCount + _padding;
+            return (m_FieldSize + m_Padding) * k_FieldCount + m_Padding;
         }
     }
 }

@@ -5,14 +5,17 @@ namespace StatusEffects
     [Serializable]
     public class Condition
     {
-        public StatusEffectData searchable;
-        public bool exists = true;
-        public bool add = true;
-        public ConditionalConfigurable configurable;
-        public StatusEffectData data;
-        public ComparableName comparableName;
-        public StatusEffectGroup group;
-        public ConditionalTiming timing;
-        public float duration;
+        public ConditionalConfigurable SearchableConfigurable;
+        public StatusEffectData SearchableData;
+        public ComparableName SearchableComparableName;
+        public StatusEffectGroup SearchableGroup;
+        public bool Exists = true;
+        public bool Add = true;
+        public ConditionalConfigurable ActionConfigurable;
+        public StatusEffectData ActionData;
+        public ComparableName ActionComparableName;
+        public StatusEffectGroup ActionGroup;
+        public ConditionalTiming Timing;
+        public float Duration;
     }
 }

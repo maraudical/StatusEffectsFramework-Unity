@@ -4,6 +4,7 @@ namespace StatusEffects.Modules
 {
     public class VFXInstance : ModuleInstance
     {
-        public GameObject prefab;  
+        public GameObject Prefab;
+        public bool InstantiateAgainWhenAddingStacks;
     }
 }

@@ -7,9 +7,9 @@ namespace StatusEffects.Inspector
     [CanEditMultipleObjects]
     public class StatusEffectSettingsEditor : Editor
     {
-        private bool _groupFoldout = true;
+        private bool m_GroupFoldout = true;
 
-        private SerializedProperty _property;
+        private SerializedProperty m_Groups;
 
         public override void OnInspectorGUI()
         {
@@ -20,15 +20,15 @@ namespace StatusEffects.Inspector
             EditorGUIUtility.labelWidth = 0;
             EditorGUILayout.Space();
             EditorGUILayout.BeginVertical("groupbox");
-            _groupFoldout = EditorGUILayout.Foldout(_groupFoldout, "Groups");
-            if (_groupFoldout)
+            m_Groups = serializedObject.FindProperty(nameof(StatusEffectSettings.Groups));
+            m_GroupFoldout = EditorGUILayout.Foldout(m_GroupFoldout, m_Groups.displayName);
+            if (m_GroupFoldout)
             {
                 EditorGUI.indentLevel++;
-                _property = serializedObject.FindProperty("groups");
-                for (int i = 0; i < _property.arraySize; i++)
+                for (int i = 0; i < m_Groups.arraySize; i++)
                 {
                     // draw every element of the array
-                    EditorGUILayout.PropertyField(_property.GetArrayElementAtIndex(i));
+                    EditorGUILayout.PropertyField(m_Groups.GetArrayElementAtIndex(i));
                 }
                 EditorGUI.indentLevel--;
             }

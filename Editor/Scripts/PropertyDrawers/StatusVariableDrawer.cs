@@ -5,112 +5,128 @@ using UnityEngine;
 
 namespace StatusEffects.Inspector
 {
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+    [CustomPropertyDrawer(typeof(NetworkStatusFloat))]
+    [CustomPropertyDrawer(typeof(NetworkStatusInt))]
+    [CustomPropertyDrawer(typeof(NetworkStatusBool))]
+#endif
     [CustomPropertyDrawer(typeof(StatusFloat))]
     [CustomPropertyDrawer(typeof(StatusInt))]
     [CustomPropertyDrawer(typeof(StatusBool))]
     public class StatusVariableDrawer : PropertyDrawer
     {
-        private float _fieldSize = EditorGUIUtility.singleLineHeight;
-        private float _padding = EditorGUIUtility.standardVerticalSpacing;
-        private const float _horizontalPadding = 3;
-        private const int _fieldCount = 4;
-        private const int _toggleSize = 15;
-        private const int _signSize = 20;
+        private readonly float m_FieldSize = EditorGUIUtility.singleLineHeight;
+        private readonly float m_Padding = EditorGUIUtility.standardVerticalSpacing;
+        private const float k_HorizontalPadding = 3;
+        private const int k_FieldCount = 4;
+        private const int k_ToggleSize = 15;
+        private const int k_SignSize = 20;
 
-        private SerializedProperty _statusName;
-        private SerializedProperty _baseValue;
-        private SerializedProperty _signProtected;
-        private SerializedProperty _value;
+        private const string k_SignProtectedTooltip =
+        "Toggles whether the value of this variable should limit " +
+        "itself to being positive or negative. If the base value is " +
+        "positive, the value will be prevented from going below 0. " +
+        "If the base value is negative, the value will be prevented " +
+        "from going above 0.";
 
-        private Rect _propertyPosition;
-        private Rect _offset;
+        private SerializedProperty m_StatusName;
+        private SerializedProperty m_BaseValue;
+        private SerializedProperty m_SignProtected;
+        private SerializedProperty m_Value;
 
-        private int _indent;
-        private bool _sign;
+        private Rect m_PropertyPosition;
+        private Rect m_Offset;
+
+        private int m_Indent;
+        private bool m_Sign;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
-            _statusName = property.FindPropertyRelative("statusName");
-            _baseValue = property.FindPropertyRelative("_baseValue");
-            _signProtected = property.FindPropertyRelative("_signProtected");
-            _value = property.FindPropertyRelative("value");
+            m_StatusName = property.FindPropertyRelative($"m_{nameof(StatusFloat.StatusName)}");
+            m_BaseValue = property.FindPropertyRelative($"m_{nameof(StatusFloat.BaseValue)}");
+            m_SignProtected = property.FindPropertyRelative($"m_{nameof(StatusFloat.SignProtected)}");
+            m_Value = property.FindPropertyRelative($"m_{nameof(StatusFloat.Value)}");
 
-            position.height = _fieldSize;
-            position.y += _padding;
+            position.height = m_FieldSize;
+            position.y += m_Padding;
             
-            GUI.color = !_statusName.objectReferenceValue && !property.isExpanded ? Color.red : Color.white;
+            GUI.color = !m_StatusName.objectReferenceValue && !property.isExpanded ? Color.red : Color.white;
             property.isExpanded = EditorGUI.Foldout(position, property.isExpanded, label, true);
             GUI.color = Color.white;
 
             EditorGUI.BeginProperty(position, label, property);
 
-            _indent = EditorGUI.indentLevel;
+            m_Indent = EditorGUI.indentLevel;
 
             if (property.isExpanded)
             {
-                EditorGUI.indentLevel = _indent + 1;
-                position.y += _fieldSize + _padding;
-                GUI.color = !_statusName.objectReferenceValue ? Color.red : Color.white;
-                EditorGUI.PropertyField(position, _statusName, new GUIContent(_statusName.displayName));
+                EditorGUI.indentLevel = m_Indent + 1;
+                position.y += m_FieldSize + m_Padding;
+                GUI.color = !m_StatusName.objectReferenceValue ? Color.red : Color.white;
+                if (Application.isPlaying)
+                    GUI.enabled = false;
+                EditorGUI.PropertyField(position, m_StatusName);
+                GUI.enabled = true;
                 GUI.color = Color.white;
-                position.y += _fieldSize + _padding;
+                position.y += m_FieldSize + m_Padding;
 
                 EditorGUI.BeginChangeCheck();
-                EditorGUI.PropertyField(position, _baseValue, new GUIContent(_baseValue.displayName));
+                EditorGUI.PropertyField(position, m_BaseValue);
                 if (EditorGUI.EndChangeCheck() && Application.isPlaying)
                 {
                     MethodInfo baseValueUpdate = typeof(StatusVariable).Assembly.GetType($"{typeof(StatusVariable).Namespace}.{property.type}").GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                     foreach (var statusVariable in property.serializedObject.targetObjects)
-                        baseValueUpdate.Invoke(_baseValue.GetParent(statusVariable), null);
+                        baseValueUpdate.Invoke(m_Value.GetParent(statusVariable), null);
                 }
-                position.y += _fieldSize + _padding;
+                position.y += m_FieldSize + m_Padding;
 
-                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(_value.displayName));
-                EditorGUI.indentLevel = _indent;
-                if (_signProtected != null && !_signProtected.Equals(null))
+                m_PropertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(m_Value.displayName));
+                EditorGUI.indentLevel = m_Indent;
+                if (m_SignProtected != null && !m_SignProtected.Equals(null))
                 {
-                    _offset = new Rect(_propertyPosition.x, _propertyPosition.y, _toggleSize, _propertyPosition.height);
+                    m_Offset = new Rect(m_PropertyPosition.x, m_PropertyPosition.y, k_ToggleSize, m_PropertyPosition.height);
                     EditorGUI.BeginChangeCheck();
-                    EditorGUI.PropertyField(_offset, _signProtected, GUIContent.none);
+                    EditorGUI.PropertyField(m_Offset, m_SignProtected, GUIContent.none);
+                    GUI.Label(m_Offset, new GUIContent("", k_SignProtectedTooltip));
                     if (EditorGUI.EndChangeCheck() && Application.isPlaying)
                     {
                         MethodInfo signProtectedUpdate = typeof(StatusVariable).Assembly.GetType($"{typeof(StatusVariable).Namespace}.{property.type}").GetMethod("SignProtectedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                         foreach (var statusVariable in property.serializedObject.targetObjects)
-                            signProtectedUpdate.Invoke(_signProtected.GetParent(statusVariable), null);
+                            signProtectedUpdate.Invoke(m_Value.GetParent(statusVariable), null);
                     }
-                    if (_signProtected.boolValue)
+                    if (m_SignProtected.boolValue)
                     {
-                        _offset = new Rect(_propertyPosition.x - _signSize, _propertyPosition.y, _signSize, _propertyPosition.height);
-                        _sign = Convert.ToInt32(_baseValue.GetParent(_baseValue.serializedObject.targetObject).GetValue("_baseValue")) >= 0;
-                        GUI.color = _signProtected.hasMultipleDifferentValues || _baseValue.hasMultipleDifferentValues ? Color.white : _sign ? Color.green : Color.red;
-                        EditorGUI.LabelField(_offset, $"({(_signProtected.hasMultipleDifferentValues || _baseValue.hasMultipleDifferentValues ? "?" : _sign ? "+" : "-")})");
+                        m_Offset = new Rect(m_PropertyPosition.x - k_SignSize, m_PropertyPosition.y, k_SignSize, m_PropertyPosition.height);
+                        m_Sign = Convert.ToInt32(m_BaseValue.GetParent(m_BaseValue.serializedObject.targetObject).GetValue($"m_{nameof(StatusFloat.BaseValue)}")) >= 0;
+                        GUI.color = m_SignProtected.hasMultipleDifferentValues || m_BaseValue.hasMultipleDifferentValues ? Color.white : m_Sign ? Color.green : Color.red;
+                        EditorGUI.LabelField(m_Offset, $"({(m_SignProtected.hasMultipleDifferentValues || m_BaseValue.hasMultipleDifferentValues ? "?" : m_Sign ? "+" : "-")})");
                         GUI.color = Color.white;
                     }
-                    _offset = new Rect(_propertyPosition.x + _toggleSize + _horizontalPadding, _propertyPosition.y, _propertyPosition.width - _toggleSize - _horizontalPadding, _propertyPosition.height);
+                    m_Offset = new Rect(m_PropertyPosition.x + k_ToggleSize + k_HorizontalPadding, m_PropertyPosition.y, m_PropertyPosition.width - k_ToggleSize - k_HorizontalPadding, m_PropertyPosition.height);
                 }
                 else
-                    _offset = new Rect(_propertyPosition.x, _propertyPosition.y, _propertyPosition.width, _propertyPosition.height);
+                    m_Offset = new Rect(m_PropertyPosition.x, m_PropertyPosition.y, m_PropertyPosition.width, m_PropertyPosition.height);
 
                 GUI.enabled = false;
-                EditorGUI.PropertyField(_offset, Application.isPlaying ? _value : _baseValue, GUIContent.none);
+                EditorGUI.PropertyField(m_Offset, Application.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
                 GUI.enabled = true;
             }
             else
             {
                 GUI.enabled = false;
-                _propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(" "));
-                EditorGUI.PropertyField(_propertyPosition, Application.isPlaying ? _value : _baseValue, GUIContent.none);
+                m_PropertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(" "));
+                EditorGUI.PropertyField(m_PropertyPosition, Application.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
                 GUI.enabled = true;
             }
 
-            EditorGUI.indentLevel = _indent;
+            EditorGUI.indentLevel = m_Indent;
 
             EditorGUI.EndProperty();
         }
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return (_fieldSize + _padding) * (property.isExpanded ? _fieldCount : 1) + _padding;
+            return (m_FieldSize + m_Padding) * (property.isExpanded ? k_FieldCount : 1) + m_Padding;
         }
     }
 }

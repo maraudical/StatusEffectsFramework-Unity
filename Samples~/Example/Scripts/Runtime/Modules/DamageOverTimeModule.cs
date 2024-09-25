@@ -24,9 +24,9 @@ namespace StatusEffects.Modules
                 while (!token.IsCancellationRequested)
                 {
                     // Reduce health based on the Statu Effect base value
-                    entity.health -= statusEffect.data.baseValue;
+                    entity.Health -= statusEffect.Data.BaseValue * statusEffect.Stack;
                     // Wait for the interval before applying the damage again
-                    await UniTask.WaitForSeconds(damageOverTimeInstance.intervalSeconds);
+                    await UniTask.WaitForSeconds(damageOverTimeInstance.IntervalSeconds);
                 }
         }
 #elif UNITY_2023_1_OR_NEWER
@@ -38,9 +38,9 @@ namespace StatusEffects.Modules
                 while (!token.IsCancellationRequested)
                 {
                     // Reduce health based on the Statu Effect base value
-                    entity.health -= statusEffect.data.baseValue;
+                    entity.Health -= statusEffect.Data.BaseValue * statusEffect.Stack;
                     // Wait for the interval before applying the damage again
-                    await Awaitable.WaitForSecondsAsync(damageOverTimeInstance.intervalSeconds);
+                    await Awaitable.WaitForSecondsAsync(damageOverTimeInstance.IntervalSeconds);
                 }
         }
 #else
@@ -52,9 +52,9 @@ namespace StatusEffects.Modules
                 for (; ; )
                 {
                     // Reduce health based on the Statu Effect base value
-                    entity.health -= statusEffect.data.baseValue;
+                    entity.Health -= statusEffect.Data.BaseValue * statusEffect.Stack;
                     // Wait for the interval before applying the damage again
-                    yield return new WaitForSeconds(damageOverTimeInstance.intervalSeconds);
+                    yield return new WaitForSeconds(damageOverTimeInstance.IntervalSeconds);
                 }
         }
 

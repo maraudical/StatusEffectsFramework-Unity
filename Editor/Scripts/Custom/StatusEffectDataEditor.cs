@@ -12,32 +12,35 @@ namespace StatusEffects.Inspector
     [CanEditMultipleObjects]
     public class StatusEffectDataEditor : Editor
     {
-        private SerializedProperty _group;
-        private SerializedProperty _comparableName;
-        private SerializedProperty _baseValue;
-        private SerializedProperty _icon;
-        private SerializedProperty _statusEffectName;
-        private SerializedProperty _description;
-        private SerializedProperty _allowEffectStacking;
-        private SerializedProperty _nonStackingBehaviour;
-        private SerializedProperty _maxStack;
-        private SerializedProperty _effects;
-        private SerializedProperty _conditions;
-        private SerializedProperty _modules;
+        private SerializedProperty m_Group;
+        private SerializedProperty m_ComparableName;
+        private SerializedProperty m_BaseValue;
+        private SerializedProperty m_Icon;
+        private SerializedProperty m_StatusEffectName;
+        private SerializedProperty m_Description;
+        private SerializedProperty m_AllowEffectStacking;
+        private SerializedProperty m_NonStackingBehaviour;
+        private SerializedProperty m_MaxStack;
+        private SerializedProperty m_Effects;
+        private SerializedProperty m_Conditions;
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+        private SerializedProperty m_Dependencies;
+#endif
+        private SerializedProperty m_Modules;
 
-        private SerializedProperty _enableIcon;
-        private SerializedProperty _enableName;
-        private SerializedProperty _enableDescription;
+        private SerializedProperty m_EnableIcon;
+        private SerializedProperty m_EnableName;
+        private SerializedProperty m_EnableDescription;
 
-        private ReorderableList _modulesList;
+        private ReorderableList m_ModulesList;
         
-        private Condition _condition;
+        private Condition m_Condition;
 
-        private bool _displayConditionsWarning;
+        private bool m_DisplayConditionsWarning;
 
         private void OnEnable()
         {
-            _modules = serializedObject.FindProperty("modules");
+            m_Modules = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Modules)}");
             
             int objectCount = serializedObject.targetObjects.Length;
             // Remove any loose nested scriptable objects and
@@ -46,7 +49,7 @@ namespace StatusEffects.Inspector
             {
                 // Get the property on the corresponding serializedObject
                 var target = serializedObject.targetObjects[i];
-                IEnumerable<ModuleInstance> modules = (target as StatusEffectData).modules.Select(m => m.moduleInstance);
+                IEnumerable<ModuleInstance> modules = (target as StatusEffectData).Modules.Select(m => m.ModuleInstance);
 
                 foreach (ModuleInstance nestedModule in AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(target)))
                     // If there is somehow a loose module we need to clean it up
@@ -59,12 +62,12 @@ namespace StatusEffects.Inspector
                     }
             }
             // Setup the reorderable module list
-            _modulesList = new ReorderableList(serializedObject, _modules, true, true, true, true);
+            m_ModulesList = new ReorderableList(serializedObject, m_Modules, true, true, true, true);
 
-            _modulesList.drawHeaderCallback = rect => {
-                EditorGUI.LabelField(rect, "Modules");
+            m_ModulesList.drawHeaderCallback = rect => {
+                EditorGUI.LabelField(rect, m_Modules.displayName);
             };
-            _modulesList.onAddCallback = list =>
+            m_ModulesList.onAddCallback = list =>
             {
                 var index = list.serializedProperty.arraySize;
                 // Add one element
@@ -72,10 +75,10 @@ namespace StatusEffects.Inspector
                 // Get that element
                 var element = list.serializedProperty.GetArrayElementAtIndex(index);
                 // Reset all properties
-                element.FindPropertyRelative("module").objectReferenceValue = null;
-                element.FindPropertyRelative("moduleInstance").objectReferenceValue = null;
+                element.FindPropertyRelative(nameof(ModuleContainer.Module)).objectReferenceValue = null;
+                element.FindPropertyRelative(nameof(ModuleContainer.ModuleInstance)).objectReferenceValue = null;
             };
-            _modulesList.onRemoveCallback = list =>
+            m_ModulesList.onRemoveCallback = list =>
             {
                 foreach (var target in list.serializedProperty.serializedObject.targetObjects)
                 {
@@ -92,7 +95,7 @@ namespace StatusEffects.Inspector
                     void DestroyObjectAt(int index)
                     {
                         // Get the module instance
-                        ScriptableObject moduleInstance = (target as StatusEffectData).modules.ElementAt(index)?.moduleInstance;
+                        ScriptableObject moduleInstance = (target as StatusEffectData).Modules.ElementAt(index)?.ModuleInstance;
                         // Remove the scriptable object from nested assets
                         if (moduleInstance != null)
                         {
@@ -108,16 +111,16 @@ namespace StatusEffects.Inspector
                 else
                     list.serializedProperty.DeleteArrayElementAtIndex(list.serializedProperty.minArraySize - 1);
             };
-            _modulesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
+            m_ModulesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
             {
-                var element = _modulesList.serializedProperty.GetArrayElementAtIndex(index);
+                var element = m_ModulesList.serializedProperty.GetArrayElementAtIndex(index);
                 rect.y += EditorGUIUtility.standardVerticalSpacing / 1.515f;
                 rect.height = EditorGUI.GetPropertyHeight(element);
                 EditorGUI.PropertyField(rect, element, GUIContent.none);
             };
-            _modulesList.elementHeightCallback = index => 
+            m_ModulesList.elementHeightCallback = index => 
             {
-                var element = _modulesList.serializedProperty.GetArrayElementAtIndex(index);
+                var element = m_ModulesList.serializedProperty.GetArrayElementAtIndex(index);
                 return EditorGUI.GetPropertyHeight(element);
             };
         }
@@ -125,97 +128,113 @@ namespace StatusEffects.Inspector
         public override void OnInspectorGUI()
         {
             // Retrieve properties
-            _group = serializedObject.FindProperty("group");
-            _comparableName = serializedObject.FindProperty("comparableName");
-            _baseValue = serializedObject.FindProperty("baseValue");
+            m_Group = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Group)}");
+            m_ComparableName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.ComparableName)}");
+            m_BaseValue = serializedObject.FindProperty($"m_{nameof(StatusEffectData.BaseValue)}");
 
-            _statusEffectName = serializedObject.FindProperty("statusEffectName");
-            _description = serializedObject.FindProperty("description");
-            _icon = serializedObject.FindProperty("icon");
+            m_StatusEffectName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.StatusEffectName)}");
+            m_Description = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Description)}");
+            m_Icon = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Icon)}");
 
-            _allowEffectStacking = serializedObject.FindProperty("allowEffectStacking");
-            _nonStackingBehaviour = serializedObject.FindProperty("nonStackingBehaviour");
-            _maxStack = serializedObject.FindProperty("maxStack");
+            m_AllowEffectStacking = serializedObject.FindProperty($"m_{nameof(StatusEffectData.AllowEffectStacking)}");
+            m_NonStackingBehaviour = serializedObject.FindProperty($"m_{nameof(StatusEffectData.NonStackingBehaviour)}");
+            m_MaxStack = serializedObject.FindProperty($"m_{nameof(StatusEffectData.MaxStack)}");
 
-            _effects = serializedObject.FindProperty("effects");
-            _conditions = serializedObject.FindProperty("conditions");
-            _modules = serializedObject.FindProperty("modules");
+            m_Effects = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Effects)}");
+            m_Conditions = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Conditions)}");
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+            m_Dependencies = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Dependencies)}");
+#endif
+            m_Modules = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Modules)}");
 
-            _enableIcon = serializedObject.FindProperty("enableIcon");
-            _enableName = serializedObject.FindProperty("enableName");
-            _enableDescription = serializedObject.FindProperty("enableDescription");
+            m_EnableIcon = serializedObject.FindProperty("m_EnableIcon");
+            m_EnableName = serializedObject.FindProperty("m_EnableName");
+            m_EnableDescription = serializedObject.FindProperty("m_EnableDescription");
 
             serializedObject.Update();
             
             EditorGUILayout.BeginVertical("groupbox");
             EditorGUILayout.LabelField("Required Fields", EditorStyles.boldLabel);
             HorizontalLine();
-            EditorGUILayout.PropertyField(_group);
-            EditorGUILayout.PropertyField(_comparableName);
-            if (_baseValue.floatValue == 0)
+            EditorGUILayout.PropertyField(m_Group);
+            EditorGUILayout.PropertyField(m_ComparableName);
+            if (m_BaseValue.floatValue == 0)
                 EditorGUILayout.HelpBox("Base value cannot be 0!", MessageType.Warning);
-            EditorGUILayout.PropertyField(_baseValue);
+            EditorGUILayout.PropertyField(m_BaseValue);
             EditorGUILayout.EndVertical();
             
             EditorGUILayout.BeginVertical("groupbox");
             EditorGUILayout.LabelField("Optional Fields", EditorStyles.boldLabel);
             HorizontalLine();
             EditorGUILayout.BeginHorizontal();
-            _enableIcon.boolValue = EditorGUILayout.Toggle(_enableIcon.boolValue, GUILayout.MaxWidth(18));
-            if (_enableIcon.boolValue)
-                EditorGUILayout.PropertyField(_icon);
+            m_EnableIcon.boolValue = EditorGUILayout.Toggle(m_EnableIcon.boolValue, GUILayout.MaxWidth(18));
+            if (m_EnableIcon.boolValue)
+                EditorGUILayout.PropertyField(m_Icon);
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
-            _enableName.boolValue = EditorGUILayout.Toggle(_enableName.boolValue, GUILayout.MaxWidth(18));
-            if (_enableName.boolValue)
-                EditorGUILayout.PropertyField(_statusEffectName, new GUIContent("Name"));
+            m_EnableName.boolValue = EditorGUILayout.Toggle(m_EnableName.boolValue, GUILayout.MaxWidth(18));
+            if (m_EnableName.boolValue)
+                EditorGUILayout.PropertyField(m_StatusEffectName, new GUIContent("Name"));
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
-            _enableDescription.boolValue = EditorGUILayout.Toggle(_enableDescription.boolValue, GUILayout.MaxWidth(18));
-            if (_enableDescription.boolValue)
-                EditorGUILayout.PropertyField(_description);
+            m_EnableDescription.boolValue = EditorGUILayout.Toggle(m_EnableDescription.boolValue, GUILayout.MaxWidth(18));
+            if (m_EnableDescription.boolValue)
+                EditorGUILayout.PropertyField(m_Description);
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
 
             EditorGUILayout.BeginVertical("groupbox");
             EditorGUILayout.LabelField("Stacking", EditorStyles.boldLabel);
             HorizontalLine();
-            EditorGUILayout.PropertyField(_allowEffectStacking);
-            if (!_allowEffectStacking.boolValue)
-                EditorGUILayout.PropertyField(_nonStackingBehaviour);
-            if (_allowEffectStacking.boolValue)
-                EditorGUILayout.PropertyField(_maxStack);
+            EditorGUILayout.PropertyField(m_AllowEffectStacking);
+            if (!m_AllowEffectStacking.boolValue)
+                EditorGUILayout.PropertyField(m_NonStackingBehaviour);
+            if (m_AllowEffectStacking.boolValue)
+                EditorGUILayout.PropertyField(m_MaxStack);
             EditorGUILayout.EndVertical();
 
-            EditorGUILayout.PropertyField(_effects);
+            EditorGUILayout.BeginVertical("groupbox");
+            EditorGUI.indentLevel++;
+            EditorGUILayout.PropertyField(m_Effects);
+			EditorGUI.indentLevel--;
+            EditorGUILayout.EndVertical();
 
             EditorGUILayout.Space(5);
+			
+			EditorGUILayout.BeginVertical("groupbox");
+            EditorGUI.indentLevel++;
 
-            _displayConditionsWarning = false;
+            m_DisplayConditionsWarning = false;
 
-            for (int i = 0; i < _conditions.arraySize; i++)
+            for (int i = 0; i < m_Conditions.arraySize; i++)
             {
-                _condition = (target as StatusEffectData).conditions.ElementAt(i);
+                m_Condition = (target as StatusEffectData).Conditions.ElementAt(i);
 
-                if (!_condition.add || _condition.data != target)
+                if (!m_Condition.Add || m_Condition.ActionData != target)
                     continue;
 
-                _displayConditionsWarning = true;
+                m_DisplayConditionsWarning = true;
                 break;
             }
 
-            if (_displayConditionsWarning)
+            if (m_DisplayConditionsWarning)
                 EditorGUILayout.HelpBox("Do not recursively add status datas! " +
                                         "Avoid adding a status data to itself! " +
                                         "Make sure there aren't two that add each other!", MessageType.Warning);
 
-            EditorGUILayout.PropertyField(_conditions);
+            EditorGUILayout.PropertyField(m_Conditions);
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+            EditorGUILayout.PropertyField(m_Dependencies);
+#endif
+
+            EditorGUI.indentLevel--;
+            EditorGUILayout.EndVertical();
 
             EditorGUILayout.Space(7.5f);
 
             if (Application.isPlaying)
                 GUI.enabled = false;
-            _modulesList?.DoLayoutList();
+            m_ModulesList?.DoLayoutList();
             GUI.enabled = true;
 
             serializedObject.ApplyModifiedProperties();

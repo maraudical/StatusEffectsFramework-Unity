@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -5,28 +6,28 @@ namespace StatusEffects.Example.UI
 {
     public class StatusEffectUI : MonoBehaviour
     {
-        [SerializeField] private Text _text;        
-        [SerializeField] private Image _image;
+        [SerializeField] private Text m_Text;        
+        [SerializeField] private Image m_Image;
 
-        public int stack;
+        [NonSerialized] public int Stack;
 
         public void Initialize(Sprite sprite, int stacks)
         {
-            _image.sprite = sprite;
-            stack = stacks;
+            m_Image.sprite = sprite;
+            Stack = stacks;
             UpdateStack(0);
         }
 
         public void UpdateStack(int value)
         {
-            stack += value;
+            Stack += value;
 
-            _text.text = stack.ToString();
+            m_Text.text = Stack.ToString();
 
-            if (stack > 1)
-                _text.gameObject.SetActive(true);
+            if (Stack > 1)
+                m_Text.gameObject.SetActive(true);
             else
-                _text.gameObject.SetActive(false);
+                m_Text.gameObject.SetActive(false);
         }
     }
 }

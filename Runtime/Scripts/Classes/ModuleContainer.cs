@@ -5,7 +5,7 @@ namespace StatusEffects.Modules
     [Serializable]
     public class ModuleContainer
     {
-        public Module module;
-        public ModuleInstance moduleInstance;
+        public Module Module;
+        public ModuleInstance ModuleInstance;
     }
 }

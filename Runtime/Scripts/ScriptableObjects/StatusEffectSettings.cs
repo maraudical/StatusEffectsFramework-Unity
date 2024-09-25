@@ -12,19 +12,19 @@ namespace StatusEffects
         public const string k_MyCustomSettingsPath = "Assets/Resources/StatusEffectSettings.asset";
         [Space]
         [NonReorderable]
-        public string[] groups;
+        public string[] Groups;
 
         public static StatusEffectSettings GetOrCreateSettings()
         {
             var settings = Resources.Load<StatusEffectSettings>("StatusEffectSettings");
 #if UNITY_EDITOR
-            if (settings == null)
+            if (settings == null || settings.Groups == null || settings.Groups.Length != 32)
             {
                 settings = CreateInstance<StatusEffectSettings>();
-                settings.groups = new string[32];
-                settings.groups[0] = "Static";
-                settings.groups[1] = "Negative";
-                settings.groups[2] = "Positive";
+                settings.Groups = new string[32];
+                settings.Groups[0] = "Static";
+                settings.Groups[1] = "Negative";
+                settings.Groups[2] = "Positive";
                 Directory.CreateDirectory($"{Application.dataPath}/Resources");
                 AssetDatabase.CreateAsset(settings, k_MyCustomSettingsPath);
                 AssetDatabase.SaveAssets();

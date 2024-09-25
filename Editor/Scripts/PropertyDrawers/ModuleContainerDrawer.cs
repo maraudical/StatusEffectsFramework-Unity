@@ -9,25 +9,26 @@ namespace StatusEffects.Inspector
     [CustomPropertyDrawer(typeof(ModuleContainer))]
     public class ModuleContainerDrawer : PropertyDrawer
     {
-        private SerializedProperty _module;
-        private SerializedProperty _moduleInstance;
+        private SerializedProperty m_Module;
+        private SerializedProperty m_ModuleInstance;
 
-        private SerializedObject _instance;
-        private SerializedProperty _iterator;
+        private SerializedObject m_Instance;
+        private SerializedProperty m_Iterator;
 
-        private float _fieldSize = EditorGUIUtility.singleLineHeight;
-        private float _padding = EditorGUIUtility.standardVerticalSpacing;
-        private float _derivedPropertyHeight;
-        private float _derivedFieldCount;
+        private float m_DerivedPropertyHeight;
+        private float m_DerivedFieldCount;
 
-        private bool _containsNullModule;
-        private object _moduleReference;
-        private object _moduleInstanceReference;
-        private Type _previousModuleInstanceType;
-        private Type _moduleInstanceType;
-        private Attribute _attribute;
+        private bool m_ContainsNullModule;
+        private object m_ModuleReference;
+        private object m_ModuleInstanceReference;
+        private Type m_PreviousModuleInstanceType;
+        private Type m_ModuleInstanceType;
+        private Attribute m_Attribute;
 
-        private List<UnityEngine.Object> _moduleInstances;
+        private List<UnityEngine.Object> m_ModuleInstances;
+
+        private readonly float m_FieldSize = EditorGUIUtility.singleLineHeight;
+        private readonly float m_Padding = EditorGUIUtility.standardVerticalSpacing;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -40,95 +41,93 @@ namespace StatusEffects.Inspector
                 return;
             }
 
-            _module = property.FindPropertyRelative("module");
-            _moduleInstance = property.FindPropertyRelative("moduleInstance");
-
-            property.serializedObject.Update();
-
+            m_Module = property.FindPropertyRelative(nameof(ModuleContainer.Module));
+            m_ModuleInstance = property.FindPropertyRelative(nameof(ModuleContainer.ModuleInstance));
+            
             EditorGUI.BeginProperty(position, label, property);
 
-            position.height = _fieldSize;
-            position.y += _padding;
+            position.height = m_FieldSize;
+            position.y += m_Padding;
             // Draw base module reference
-            EditorGUI.PropertyField(position, _module, GUIContent.none);
-            position.y += _fieldSize + _padding;
+            EditorGUI.PropertyField(position, m_Module, GUIContent.none);
+            position.y += m_FieldSize + m_Padding;
             
-            if (_moduleInstances == null)
-                _moduleInstances = new();
+            if (m_ModuleInstances == null)
+                m_ModuleInstances = new();
             else
-                _moduleInstances.Clear();
+                m_ModuleInstances.Clear();
 
-            _containsNullModule = false;
-            _previousModuleInstanceType = null;
+            m_ContainsNullModule = false;
+            m_PreviousModuleInstanceType = null;
             // Find all relevant module instance references
             foreach (var target in property.serializedObject.targetObjects)
             {
-                _moduleReference = _module.GetParent(target).GetValue("module");
-                _moduleInstanceReference = _moduleInstance.GetParent(target).GetValue("moduleInstance");
+                m_ModuleReference = m_Module.GetParent(target).GetValue(nameof(ModuleContainer.Module));
+                m_ModuleInstanceReference = m_ModuleInstance.GetParent(target).GetValue(nameof(ModuleContainer.ModuleInstance));
                 // If the module reference was removed destroy the instance
-                if (_moduleReference == null && _moduleInstanceReference != null && !_moduleInstanceReference.Equals(null))
+                if (m_ModuleReference == null && m_ModuleInstanceReference != null && !m_ModuleInstanceReference.Equals(null))
                 {
-                    ScriptableObject instance = _moduleInstanceReference as ScriptableObject;
+                    ScriptableObject instance = m_ModuleInstanceReference as ScriptableObject;
                     AssetDatabase.RemoveObjectFromAsset(instance);
                     EditorUtility.SetDirty(target);
                     UnityEngine.Object.DestroyImmediate(instance);
                 }
-                if (_moduleReference != null)
+                if (m_ModuleReference != null)
                 {
-                    _attribute = Attribute.GetCustomAttribute(_moduleReference.GetType(), typeof(AttachModuleInstanceAttribute));
+                    m_Attribute = Attribute.GetCustomAttribute(m_ModuleReference.GetType(), typeof(AttachModuleInstanceAttribute));
 
-                    if (_attribute == null)
+                    if (m_Attribute == null)
                         goto EndProperty;
 
-                    _moduleInstanceType = ((AttachModuleInstanceAttribute)_attribute).type;
+                    m_ModuleInstanceType = ((AttachModuleInstanceAttribute)m_Attribute).Type;
 
                     // If the module reference was changed we add or destroy the instance, note that
                     // we also check in the StatusEffectDataEditor for when list items are removed.
-                    if (_moduleInstanceReference != null && !_moduleInstanceReference.Equals(null) && _moduleInstanceType != _moduleInstanceReference.GetType())
+                    if (m_ModuleInstanceReference != null && !m_ModuleInstanceReference.Equals(null) && m_ModuleInstanceType != m_ModuleInstanceReference.GetType())
                     {
-                        ScriptableObject instance = _moduleInstanceReference as ScriptableObject;
+                        ScriptableObject instance = m_ModuleInstanceReference as ScriptableObject;
                         AssetDatabase.RemoveObjectFromAsset(instance);
                         UnityEngine.Object.DestroyImmediate(instance);
                         EditorUtility.SetDirty(target);
                     }
-                    if (_moduleInstanceReference == null || _moduleInstanceReference.Equals(null))
+                    if (m_ModuleInstanceReference == null || m_ModuleInstanceReference.Equals(null))
                     {
-                        ScriptableObject instance = ScriptableObject.CreateInstance(_moduleInstanceType);
+                        ScriptableObject instance = ScriptableObject.CreateInstance(m_ModuleInstanceType);
                         AssetDatabase.AddObjectToAsset(instance, target as ScriptableObject);
-                        _moduleInstance.GetParent(target).SetValue("moduleInstance", instance);
-                        _moduleInstanceReference = instance;
+                        m_ModuleInstance.GetParent(target).SetValue(nameof(ModuleContainer.ModuleInstance), instance);
+                        m_ModuleInstanceReference = instance;
                         EditorUtility.SetDirty(target);
                     }
                     // Check if there are different module instance types
-                    if (_previousModuleInstanceType != null && _previousModuleInstanceType != _moduleInstanceType)
+                    if (m_PreviousModuleInstanceType != null && m_PreviousModuleInstanceType != m_ModuleInstanceType)
                         goto EndProperty;
                     
-                    _previousModuleInstanceType = _moduleInstanceType;
-                    _moduleInstances.Add(_moduleInstanceReference as ModuleInstance);
+                    m_PreviousModuleInstanceType = m_ModuleInstanceType;
+                    m_ModuleInstances.Add(m_ModuleInstanceReference as ModuleInstance);
                 }
                 else
-                    _containsNullModule = true;
+                    m_ContainsNullModule = true;
 
                 AssetDatabase.SaveAssetIfDirty(target);
             }
 
-            if (_containsNullModule || _moduleInstances.Count <= 0)
+            if (m_ContainsNullModule || m_ModuleInstances.Count <= 0)
                 goto EndProperty;
             // Iterate through the module instance to display properties even if they are derived.
-            _instance = new SerializedObject(_moduleInstances.ToArray());
+            m_Instance = new SerializedObject(m_ModuleInstances.ToArray());
 
-            _iterator = _instance.GetIterator();
+            m_Iterator = m_Instance.GetIterator();
             // Skip the script property
-            _iterator.NextVisible(true);
+            m_Iterator.NextVisible(true);
 
-            while (_iterator.NextVisible(false))
+            while (m_Iterator.NextVisible(false))
             {
-                EditorGUI.PropertyField(position, _iterator);
-                position.y += EditorGUI.GetPropertyHeight(_iterator) + _padding;
+                EditorGUI.PropertyField(position, m_Iterator);
+                position.y += EditorGUI.GetPropertyHeight(m_Iterator) + m_Padding;
             }
 
-            _instance.ApplyModifiedProperties();
-            _instance.Dispose();
+            m_Instance.ApplyModifiedProperties();
+            m_Instance.Dispose();
 
             EndProperty:
 
@@ -137,51 +136,51 @@ namespace StatusEffects.Inspector
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            _module = property.FindPropertyRelative("module");
-            _moduleInstance = property.FindPropertyRelative("moduleInstance");
+            m_Module = property.FindPropertyRelative(nameof(ModuleContainer.Module));
+            m_ModuleInstance = property.FindPropertyRelative(nameof(ModuleContainer.ModuleInstance));
 
-            if (_module.objectReferenceValue == null || _moduleInstance.objectReferenceValue == null)
+            if (m_Module.objectReferenceValue == null || m_ModuleInstance.objectReferenceValue == null)
                 return DrawDefault();
 
-            _attribute = Attribute.GetCustomAttribute(_module.objectReferenceValue.GetType(), typeof(AttachModuleInstanceAttribute));
+            m_Attribute = Attribute.GetCustomAttribute(m_Module.objectReferenceValue.GetType(), typeof(AttachModuleInstanceAttribute));
 
-            if (_attribute == null)
+            if (m_Attribute == null)
                 return DrawDefault();
 
-            _moduleInstanceType = ((AttachModuleInstanceAttribute)_attribute).type;
+            m_ModuleInstanceType = ((AttachModuleInstanceAttribute)m_Attribute).Type;
 
             foreach (var target in property.serializedObject.targetObjects)
             {
-                _moduleInstanceReference = _moduleInstance.GetParent(target).GetValue("moduleInstance");
+                m_ModuleInstanceReference = m_ModuleInstance.GetParent(target).GetValue(nameof(ModuleContainer.ModuleInstance));
 
-                if (_moduleInstanceType != _moduleInstanceReference.GetType())
+                if (m_ModuleInstanceType != m_ModuleInstanceReference.GetType())
                     return DrawDefault();
 
-                _moduleInstanceType = _moduleInstanceReference.GetType();
+                m_ModuleInstanceType = m_ModuleInstanceReference.GetType();
             }
 
-            _derivedFieldCount = 0; 
-            _derivedPropertyHeight = 0;
+            m_DerivedFieldCount = 0; 
+            m_DerivedPropertyHeight = 0;
             // Iterate through the module instance to display properties even if they are derived.
-            _instance = new SerializedObject(_moduleInstance.objectReferenceValue);
+            m_Instance = new SerializedObject(m_ModuleInstance.objectReferenceValue);
 
-            _iterator = _instance.GetIterator();
+            m_Iterator = m_Instance.GetIterator();
             // Skip the script property
-            _iterator.NextVisible(true);
+            m_Iterator.NextVisible(true);
 
-            while (_iterator.NextVisible(false))
+            while (m_Iterator.NextVisible(false))
             {
-                _derivedFieldCount++;
-                _derivedPropertyHeight += EditorGUI.GetPropertyHeight(_iterator);
+                m_DerivedFieldCount++;
+                m_DerivedPropertyHeight += EditorGUI.GetPropertyHeight(m_Iterator);
             }
             
-            _instance.Dispose();
+            m_Instance.Dispose();
             
-            return _fieldSize + _padding * (_derivedFieldCount + 2) + _derivedPropertyHeight;
+            return m_FieldSize + m_Padding * (m_DerivedFieldCount + 2) + m_DerivedPropertyHeight;
 
             float DrawDefault()
             {
-                return _fieldSize + _padding * 2;
+                return m_FieldSize + m_Padding * 2;
             }
         }
     }
