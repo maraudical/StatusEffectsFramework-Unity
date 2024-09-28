@@ -1,4 +1,3 @@
-using System;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -12,6 +11,11 @@ namespace StatusEffects.Inspector
         private ReorderableList m_EffectList;
 
         private SerializedProperty m_Effects;
+
+        public override bool RequiresConstantRepaint()
+        {
+            return true;
+        }
 
         private void OnEnable()
         {

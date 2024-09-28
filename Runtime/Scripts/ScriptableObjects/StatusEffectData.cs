@@ -2,7 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using StatusEffects.Modules;
 using System.Collections.ObjectModel;
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
 using UnityEngine.AddressableAssets;
+#endif
 #if LOCALIZED
 using UnityEngine.Localization;
 #endif
@@ -72,6 +74,6 @@ namespace StatusEffects
         [SerializeField] private bool m_EnableDescription = true;
 #pragma warning restore 0414
 #endif
-        #endregion
+#endregion
     }
 }

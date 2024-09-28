@@ -13,12 +13,13 @@ namespace StatusEffects
         public StatusNameInt StatusName => m_StatusName;
         public int BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
         public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; SignProtectedChanged(); } }
-        public int Value => m_Value;
+        public int Value => Instance != null ? m_Value : m_BaseValue;
 
         [SerializeField] protected StatusNameInt m_StatusName;
         [SerializeField] protected int m_BaseValue;
         [SerializeField] protected bool m_SignProtected;
         [SerializeField] protected int m_Value;
+        protected int m_PreviousValue;
 
         public StatusInt(int baseValue, bool signProtected = true)
         {
@@ -31,8 +32,7 @@ namespace StatusEffects
             m_StatusName = statusName;
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
-            m_Value = GetValue();
-            
+            UpdateValue();
         }
 
         public static implicit operator int(StatusInt statusInt) => statusInt.Value;
@@ -40,35 +40,25 @@ namespace StatusEffects
         public override void SetManager(IStatusManager instance)
         {
             base.SetManager(instance);
-
-            int previousValue = m_Value;
-            m_Value = GetValue();
-            OnValueChanged?.Invoke(previousValue, m_Value);
+            m_Value = m_BaseValue;
+            UpdateValue();
         }
 
         protected virtual void BaseValueChanged()
         {
-            int previousValue = m_Value;
-            m_Value = GetValue();
-            OnValueChanged?.Invoke(previousValue, m_Value);
+            UpdateValue();
         }
 
         protected virtual void SignProtectedChanged()
         {
-            int previousValue = m_Value;
-            m_Value = GetValue();
-            OnValueChanged?.Invoke(previousValue, m_Value);
+            UpdateValue();
         }
 
         protected override void InstanceUpdate(StatusEffect statusEffect)
         {
             // Only update if the status effect actually has any effects that have the same StatusName
             if (statusEffect.Data.Effects.Select(e => e.StatusName).Contains(m_StatusName))
-            {
-                int previousValue = m_Value;
-                m_Value = GetValue();
-                OnValueChanged?.Invoke(previousValue, m_Value);
-            }
+                UpdateValue();
         }
 
         protected virtual int GetValue()
@@ -113,22 +103,26 @@ namespace StatusEffects
             else
                 return (m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
         }
+
+        protected void UpdateValue()
+        {
+            m_PreviousValue = m_Value;
+            m_Value = GetValue();
+            if (m_Value != m_PreviousValue)
+                OnValueChanged?.Invoke(m_PreviousValue, m_Value);
+        }
 #if UNITY_EDITOR
 
         protected virtual async void BaseValueUpdate()
         {
             await Task.Yield();
-            int previousValue = m_Value;
-            m_Value = GetValue();
-            OnValueChanged?.Invoke(previousValue, m_Value);
+            UpdateValue();
         }
 
         protected virtual async void SignProtectedUpdate()
         {
             await Task.Yield();
-            int previousValue = m_Value;
-            m_Value = GetValue();
-            OnValueChanged?.Invoke(previousValue, m_Value);
+            UpdateValue();
         }
 #endif
     }

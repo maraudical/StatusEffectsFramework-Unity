@@ -7,7 +7,6 @@ namespace StatusEffects.Example.UI
     public class ExampleEntityUI : MonoBehaviour
     {
         [SerializeField] private StatusManager m_StatusManager;
-        [SerializeField] private ExampleEntity m_ExampleEntity;
         [SerializeField] private Text m_Health;
         [SerializeField] private Text m_MaxHealth;
         [SerializeField] private Text m_Speed;
@@ -20,8 +19,11 @@ namespace StatusEffects.Example.UI
         private int m_BaseCoinMultiplier;
         private bool m_BaseStunned;
 
+        private IExampleEntity m_ExampleEntity;
+
         private void Start()
         {
+            m_ExampleEntity = m_StatusManager.GetComponent<IExampleEntity>();
             m_BaseHealth = m_ExampleEntity.MaxHealth;
             m_BaseMaxHealth = m_ExampleEntity.MaxHealth;
             m_BaseSpeed = m_ExampleEntity.Speed;

@@ -12,3 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 860269c7aa108254f96e7f65fbe4b187, type: 3}
   m_Name: Coin Multiplier
   m_EditorClassIdentifier: 
+  m_Id: 36b95141-edfc-406b-a79c-ce048f29ee78

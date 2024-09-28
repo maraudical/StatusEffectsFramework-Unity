@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.CompilerServices;
-using Unity.VisualScripting.YamlDotNet.Core.Tokens;
 
 namespace StatusEffects
 {
@@ -111,25 +110,24 @@ namespace StatusEffects
             if (m_ModuleTokenSources == null)
                 return;
 
-            foreach (var container in m_ModuleTokenSources)
-                container?.Cancel();
+            foreach (var tokenSources in m_ModuleTokenSources)
+                tokenSources?.Cancel();
+
+            m_ModuleTokenSources?.Clear();
 #else
             if (m_EffectCoroutines == null)
                 return;
-
-            Coroutine coroutine;
-
-            foreach (var container in m_EffectCoroutines)
-            {
+            
+            foreach (var container in Data.Modules)
                 container.Module.DisableModule(manager, this, container.ModuleInstance);
-                coroutine = m_EffectCoroutines[m_EffectCoroutines.Count - 1];
+
+            foreach (var coroutine in m_EffectCoroutines)
                 if (coroutine != null)
                     manager.StopCoroutine(coroutine);
-                m_EffectCoroutines.RemoveAt(m_EffectCoroutines.Count - 1);
-            }
+
+            m_EffectCoroutines.Clear();
 #endif
 
-            m_ModuleTokenSources?.Clear();
             m_ModulesEnabled = false;
             Stopped?.Invoke();
         }

@@ -29,7 +29,7 @@
         },
         {
             "name": "com.unity.netcode.gameobjects",
-            "expression": "",
+            "expression": "1.8",
             "define": "NETCODE"
         },
         {

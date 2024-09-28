@@ -20,7 +20,7 @@ namespace StatusEffects.Modules
         {
             DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
 
-            if (manager.TryGetComponent(out ExampleEntity entity))
+            if (manager.TryGetComponent(out IExampleEntity entity))
                 while (!token.IsCancellationRequested)
                 {
                     // Reduce health based on the Statu Effect base value
@@ -34,7 +34,7 @@ namespace StatusEffects.Modules
         {
             DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
 
-            if (manager.TryGetComponent(out ExampleEntity entity))
+            if (manager.TryGetComponent(out IExampleEntity entity))
                 while (!token.IsCancellationRequested)
                 {
                     // Reduce health based on the Statu Effect base value
@@ -48,7 +48,7 @@ namespace StatusEffects.Modules
         {
             DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
 
-            if (manager.TryGetComponent(out ExampleEntity entity))
+            if (manager.TryGetComponent(out IExampleEntity entity))
                 for (; ; )
                 {
                     // Reduce health based on the Statu Effect base value

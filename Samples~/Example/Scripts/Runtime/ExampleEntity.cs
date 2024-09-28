@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -5,9 +6,9 @@ namespace StatusEffects.Example
 {
     // Require the StatusEffectsInstance so that StatusVariables can be setup.
     [RequireComponent(typeof(StatusManager))]
-    public class ExampleEntity : MonoBehaviour
+    public class ExampleEntity : MonoBehaviour, IExampleEntity
     {
-        [HideInInspector] public StatusManager StatusManager;
+        [NonSerialized] public StatusManager StatusManager;
         // Example variables
         [SerializeField] private StatusFloat m_MaxHealth = new StatusFloat(100, true);
         [SerializeField] private StatusFloat m_Speed = new StatusFloat(5, true);
@@ -15,7 +16,7 @@ namespace StatusEffects.Example
         [SerializeField] private StatusBool m_Stunned = new StatusBool(false);
         // Note that health would not be a StatusVariable because its
         // value shouldn't dynamically update with effects.
-        public float Health;
+        [property: SerializeField] public float Health { get; set; }
         // To make it easier for other scripts to access StatusVariables
         // you can publicize them like this.
         public virtual float MaxHealth => m_MaxHealth.Value;

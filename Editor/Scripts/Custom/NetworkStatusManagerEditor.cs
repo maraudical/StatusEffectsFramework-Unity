@@ -1,7 +1,5 @@
-using Unity.VisualScripting;
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
 using UnityEditor;
-using UnityEditorInternal;
-using UnityEngine;
 
 namespace StatusEffects.Inspector
 {
@@ -10,6 +8,11 @@ namespace StatusEffects.Inspector
     public class NetworkStatusManagerEditor : Editor
     {
         private SerializedProperty m_StatusManager;
+
+        public override bool RequiresConstantRepaint()
+        {
+            return true;
+        }
 
         private void OnEnable()
         {
@@ -22,3 +25,4 @@ namespace StatusEffects.Inspector
         }
     }
 }
+#endif

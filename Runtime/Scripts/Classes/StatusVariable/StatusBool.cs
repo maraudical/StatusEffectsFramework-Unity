@@ -12,11 +12,12 @@ namespace StatusEffects
 
         public StatusNameBool StatusName => m_StatusName;
         public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
-        public bool Value => m_Value;
+        public bool Value => Instance != null ? m_Value : m_BaseValue;
 
         [SerializeField] protected StatusNameBool m_StatusName;
         [SerializeField] protected bool m_BaseValue;
         [SerializeField] protected bool m_Value;
+        protected bool m_PreviousValue;
 
         public StatusBool(bool baseValue)
         {
@@ -27,7 +28,7 @@ namespace StatusEffects
         {
             m_StatusName = statusName;
             m_BaseValue = baseValue;
-            m_Value = GetValue();
+            UpdateValue();
         }
 
         public static implicit operator bool(StatusBool statusBool) => statusBool.Value;
@@ -35,28 +36,20 @@ namespace StatusEffects
         public override void SetManager(IStatusManager instance)
         {
             base.SetManager(instance);
-
-            bool previousValue = m_Value;
-            m_Value = GetValue();
-            OnValueChanged?.Invoke(previousValue, m_Value);
+            m_Value = m_BaseValue;
+            UpdateValue();
         }
 
         protected virtual void BaseValueChanged()
         {
-            bool previousValue = m_Value;
-            m_Value = GetValue();
-            OnValueChanged?.Invoke(previousValue, m_Value);
+            UpdateValue();
         }
 
         protected override void InstanceUpdate(StatusEffect statusEffect)
         {
             // Only update if the status effect actually has any effects that have the same StatusName
             if (statusEffect.Data.Effects.Select(e => e.StatusName).Contains(m_StatusName))
-            {
-                bool previousValue = m_Value;
-                m_Value = GetValue();
-                OnValueChanged?.Invoke(previousValue, m_Value);
-            }
+                UpdateValue();
         }
 
         protected bool GetValue()
@@ -88,14 +81,20 @@ namespace StatusEffects
 
             return value;
         }
+
+        protected void UpdateValue()
+        {
+            m_PreviousValue = m_Value;
+            m_Value = GetValue();
+            if (m_Value != m_PreviousValue)
+                OnValueChanged?.Invoke(m_PreviousValue, m_Value);
+        }
 #if UNITY_EDITOR
 
         protected virtual async void BaseValueUpdate()
         {
             await Task.Yield();
-            bool previousValue = m_Value;
-            m_Value = GetValue();
-            OnValueChanged?.Invoke(previousValue, m_Value);
+            UpdateValue();
         }
 #endif
     }

@@ -10,6 +10,7 @@ using UnityEngine.Events;
 using UnityEngine.AddressableAssets;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Linq;
 using EventType = Unity.Netcode.NetworkListEvent<StatusEffects.NetworkStatusEffect>.EventType;
 
 namespace StatusEffects
@@ -48,6 +49,7 @@ namespace StatusEffects
         int m_Index;
 
         private const HideFlags k_HideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+        private const float k_FlushEverySeconds = 30;
 
         private void OnValidate()
         {
@@ -65,6 +67,12 @@ namespace StatusEffects
             m_LoadedDataResourceHandles = new();
             m_DataToGuid = new();
             m_NetworkEffect = new();
+
+#if UNITASK
+            FlushUnusedStatusEffectDatas(destroyCancellationToken).Forget();
+#else
+            _ = FlushUnusedStatusEffectDatas(destroyCancellationToken);
+#endif
         }
 
         public override void OnDestroy()
@@ -76,14 +84,19 @@ namespace StatusEffects
 
         public override void OnNetworkSpawn()
         {
-            base.OnNetworkSpawn();
-
             m_StatusManager.TimerOverride = CreateTimer;
-
+            
             if (IsServer)
                 m_StatusManager.OnStatusEffect += OnStatusEffectForServer;
             else
+            {
+                var listEvent = new NetworkListEvent<NetworkStatusEffect>();
+                listEvent.Type = EventType.Full;
+                OnListChangedForClient(listEvent);
                 m_NetworkEffects.OnListChanged += OnListChangedForClient;
+            }
+
+            base.OnNetworkSpawn();
         }
 
         public override void OnNetworkDespawn()
@@ -256,7 +269,7 @@ namespace StatusEffects
 #endregion
 
         #region Public Methods
-        public bool TryGetLoadedDataFromNetworkStatusEffect(in NetworkStatusEffect hash, out AsyncOperationHandle<StatusEffectData> loadedData) => TryGetLoadedDataFromHash(hash.AssetGuid.GetHashCode(), out loadedData);
+        public bool TryGetLoadedDataFromNetworkStatusEffect(in NetworkStatusEffect hash, out AsyncOperationHandle<StatusEffectData> loadedData) => TryGetLoadedDataFromHash(hash.AssetGuid.ToString().GetHashCode(), out loadedData);
         
         public bool TryGetLoadedDataFromHash(int hash, out AsyncOperationHandle<StatusEffectData> loadedData) => m_LoadedDataResourceHandles.TryGetValue(hash, out loadedData);
 
@@ -282,9 +295,9 @@ namespace StatusEffects
                 m_LoadedDataResourceHandles.Add(hash, handle);
                 await handle.Task;
                 StatusEffectData data = handle.Result;
-                m_DataToGuid.TryAdd(data, assedGuid);
-                foreach (var dependency in data.Dependencies)
-                    await LoadStatusEffectData(dependency.AssetGUID);
+                if (m_DataToGuid.TryAdd(data, assedGuid))
+                    foreach (var dependency in data.Dependencies)
+                        await LoadStatusEffectData(dependency.AssetGUID);
             }
 
             return handle.Result;
@@ -308,12 +321,12 @@ namespace StatusEffects
         {
             if (!NetworkManager.IsListening)
             {
-                Debug.LogError("Network has not been started. Cannot add Status Effects.");
+                Debug.LogError("Network has not been started. Cannot add or remove Status Effects.");
                 return false;
             }
             if (!IsServer)
             {
-                Debug.LogError("Please do not try to add Status Effects from non-servers.");
+                Debug.LogError("Please do not try to add or remove Status Effects from non-servers.");
                 return false;
             }
 
@@ -358,16 +371,80 @@ namespace StatusEffects
                     RemoveStatusEffect(statusEffect);
             }
         }
+
+        private async
+#if UNITASK
+            UniTaskVoid
+#else
+            Awaitable
+#endif
+            FlushUnusedStatusEffectDatas(CancellationToken token)
+        {
+            bool found;
+            int count;
+            KeyValuePair<int, AsyncOperationHandle<StatusEffectData>> kvp;
+
+            for (; ; )
+            {
+#if UNITASK
+                await UniTask.WaitForSeconds(k_FlushEverySeconds, ignoreTimeScale: true, cancellationToken: token);
+#else
+                await Awaitable.WaitForSecondsAsync(k_FlushEverySeconds, token);
+#endif
+                if (token.IsCancellationRequested)
+                    return;
+
+                count = m_LoadedDataResourceHandles.Count;
+                for (int i = count - 1; i >=0; i--)
+                {
+                    kvp = m_LoadedDataResourceHandles.ElementAt(i);
+
+                    if (!kvp.Value.IsDone)
+                        continue;
+                    
+                    found = false;
+                    // Check if loaded handle is still being used
+                    foreach (var networkEffect in m_NetworkEffects)
+                    {
+                        if (networkEffect.AssetGuid.ToString().GetHashCode() == kvp.Key)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        m_LoadedDataResourceHandles.Remove(kvp.Key);
+                        m_DataToGuid.Remove(kvp.Value.Result);
+                        kvp.Value.Release();
+                    }    
+
+#if UNITASK
+                    await UniTask.NextFrame(token);
+#else
+                    await Awaitable.NextFrameAsync(token);
+#endif
+
+                    if (token.IsCancellationRequested)
+                        return;
+                }
+            }
+        }
         #endregion
 
         #region Subscriptions
         private void OnListChangedForClient(NetworkListEvent<NetworkStatusEffect> changeEvent)
         {
-            OnListChangedForClientAsync(destroyCancellationToken).Forget();
 #if UNITASK
-            async UniTask OnListChangedForClientAsync(CancellationToken token)
+            OnListChangedForClientAsync(destroyCancellationToken).Forget();
 #else
-            async Awaitable TimedEffect(CancellationToken token)
+            _ = OnListChangedForClientAsync(destroyCancellationToken);
+#endif
+#if UNITASK
+            async UniTaskVoid OnListChangedForClientAsync(CancellationToken token)
+#else
+            async Awaitable OnListChangedForClientAsync(CancellationToken token)
 #endif
             {
                 switch (changeEvent.Type)
@@ -440,7 +517,7 @@ namespace StatusEffects
             m_NetworkEffect.Duration = duration;
             m_NetworkEffects[m_Index] = m_NetworkEffect;
         }
-        #endregion
+#endregion
     }
 }
 #endif

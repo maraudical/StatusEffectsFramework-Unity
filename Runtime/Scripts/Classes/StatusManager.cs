@@ -612,6 +612,8 @@ namespace StatusEffects
                 switch (statusEffectData.NonStackingBehaviour)
                 {
                     case NonStackingBehaviour.MatchHighestValue:
+                        if (statusEffectData.BaseValue == oldStatusEffect.Data.BaseValue)
+                            goto case NonStackingBehaviour.TakeHighestDuration;
                         // WARNING: There is an extremely special case here where
                         // a player may either have or try to apply an effect which
                         // has an infinite duration (-1). In this situation, attempt
@@ -641,7 +643,7 @@ namespace StatusEffects
                         RemoveStatusEffect(statusEffectData.ComparableName);
                         break;
                     case NonStackingBehaviour.TakeHighestDuration:
-                        if (!(durationValue < 0) && (durationValue < oldStatusEffect.Duration || oldStatusEffect.Duration < 0))
+                        if (oldStatusEffect.Duration < 0 || (durationValue < oldStatusEffect.Duration && durationValue >= 0))
                             return null;
                         else
                             RemoveStatusEffect(statusEffectData.ComparableName);

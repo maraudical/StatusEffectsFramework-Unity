@@ -36,7 +36,7 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_AllowEffectStacking: 0
-  m_NonStackingBehaviour: 0
+  m_NonStackingBehaviour: 2
   m_MaxStack: -1
   m_Effects:
   - StatusName: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
