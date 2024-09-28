@@ -1,5 +1,20 @@
 # Change Log:
 
+## 2.0.0
+- Feature: Added a NetworkStatusManager and NetworkStatusVariables that work with Netcode for GameObjects (1.8.0+)
+- Enhancement: Added additional conditional options to check for group and comparable names
+- Enhancement: Added an on value changed event to status variables
+- Enhancement: Added IDs to various Name scriptable objects that fix addressables issues
+- Enhancement: StatusVariables can now be nested
+- Bug Fix: Module icon post processor now works in different file structures
+- Bug Fix: Fixed critical issue preventing the status effect data inspector working with modules
+- Bug Fix: Minor inspector fixes to multiple editors and drawers
+- Bug Fix: Fixed StatusManager HighestDuration add logic
+- Change: Updated naming conventions, this will break pre-existing code
+- Change: Removed Info attribute
+- Change: Removed global time override (it was redundant with Unity Event based Status Effects)
+- Change: Modules now only enable one module, use StatusEffect.Stacks to scale it now
+
 ## 1.7.1
 - Feature: StatusVariables now have an additional bool for int/float variables to clamp the value to the sign of the base value
 - Enhancement: General cleanup and fixes of multiple property drawers

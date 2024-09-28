@@ -1,6 +1,6 @@
 {
   "name": "com.maraudical.sef",
-  "version": "1.7.1",
+  "version": "2.0.0",
   "displayName": "Status Effects Framework",
   "description": "A framework for implementing status effects into any game.",
   "license": "MIT",
@@ -8,8 +8,8 @@
 	"type": "git",
 	"url": "https://github.com/maraudical/StatusEffectsFramework-Unity.git"
   },
-  "unity": "2022.3",
-  "unityRelease": "4f1",
+  "unity": "2021.3",
+  "unityRelease": "9f1",
   "keywords": [
 	"status",
 	"effect",
