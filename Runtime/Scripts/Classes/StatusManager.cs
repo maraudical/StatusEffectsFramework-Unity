@@ -12,6 +12,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using System.Runtime.CompilerServices;
+using System.Collections;
 
 namespace StatusEffects
 {
@@ -44,9 +45,7 @@ namespace StatusEffects
         /// <summary>
         /// Gets a <see cref="StatusEffect"/>s by its <see cref="StatusEffect.GetInstanceID"/>.
         /// </summary>
-#nullable enable
         public bool GetStatusEffect(int instanceId, out StatusEffect statusEffect)
-#nullable disable
         {
             if (m_Effects == null)
             {
@@ -70,7 +69,7 @@ namespace StatusEffects
                                    && (data  == null || e.Data == data));
         }
         /// <summary>
-        /// Returns the first <see cref="StatusEffect"/>s that matches the given parameters. If none is found returns null.
+        /// Returns the first <see cref="StatusEffect"/>s that matches the given parameters. If none are found returns null.
         /// </summary>
 #nullable enable
         public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null)
@@ -194,40 +193,13 @@ namespace StatusEffects
             if (statusEffectData == null || m_Effects == null)
                 return;
 
-            if (stack.HasValue && stack <= 0)
+            if (stack.HasValue && stack.Value <= 0)
                 return;
-
-            int removedCount = 0;
-            int currentRemoveCount;
-            int currentStackCount;
-            StatusEffect statusEffect;
-            // From the end of the list iterate through and if the given data is tagged remove the effect.
-            for (int i = m_Effects.Count - 1; i >= 0; i--)
-            {
-                statusEffect = m_Effects.ElementAt(i).Value;
-
-                if (statusEffect.Data != statusEffectData)
-                    continue;
-
-                if (stack != null)
-                {
-                    currentStackCount = statusEffect.Stack;
-
-                    if (removedCount + currentStackCount > stack)
-                    {
-                        currentRemoveCount = (int)(currentStackCount - (removedCount + currentStackCount - stack));
-                        statusEffect.Stack -= currentRemoveCount;
-
-                        ValueUpdate?.Invoke(statusEffect);
-                        statusEffect.InvokeStackUpdate();
-                        OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStacks, currentRemoveCount);
-
-                        break;
-                    }
-                    removedCount += currentStackCount;
-                }
-                RemoveStatusEffect(statusEffect);
-            }
+            
+            IEnumerable<StatusEffect> leastToMostValueThenDuration = m_Effects.Values.Where(se => se.Data == statusEffectData)
+                                                                                     .OrderBy(se => se.Data.BaseValue)
+                                                                                     .ThenBy(se => se.Duration);
+            IterateRemoval(leastToMostValueThenDuration, stack);
         }
         /// <summary>
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
@@ -238,40 +210,30 @@ namespace StatusEffects
             if (m_Effects == null)
                 return;
 
-            if (stack <= 0)
+            if (stack.HasValue && stack.Value <= 0)
+                return;
+            
+            IEnumerable<StatusEffect> leastToMostValueThenDuration = m_Effects.Values.Where(se => se.Data.ComparableName == name)
+                                                                                     .OrderBy(se => se.Data.BaseValue)
+                                                                                     .ThenBy(se => se.Duration);
+            IterateRemoval(leastToMostValueThenDuration, stack);
+        }
+        /// <summary>
+        /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
+        /// are part of the given <see cref="StatusEffectGroup"/> group.
+        /// </summary>
+        public void RemoveAllStatusEffects(StatusEffectGroup group, int? stack = null)
+        {
+            if (m_Effects == null)
                 return;
 
-            int removedCount = 0;
-            int currentRemoveCount;
-            int currentStackCount;
-            StatusEffect statusEffect;
-            // From the end of the list iterate through and if the given name is tagged remove the effect.
-            for (int i = m_Effects.Count - 1; i >= 0; i--)
-            {
-                statusEffect = m_Effects.ElementAt(i).Value;
+            if (stack.HasValue && stack.Value <= 0)
+                return;
 
-                if (statusEffect.Data.ComparableName != name)
-                    continue;
-
-                if (stack != null)
-                {
-                    currentStackCount = statusEffect.Stack;
-
-                    if (removedCount + currentStackCount > stack)
-                    {
-                        currentRemoveCount = (int)(currentStackCount - (removedCount + currentStackCount - stack));
-                        statusEffect.Stack -= currentRemoveCount;
-
-                        ValueUpdate?.Invoke(statusEffect);
-                        statusEffect.InvokeStackUpdate();
-                        OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStacks, currentRemoveCount);
-
-                        break;
-                    }
-                    removedCount += currentStackCount;
-                }
-                RemoveStatusEffect(statusEffect);
-            }
+            IEnumerable<StatusEffect> leastToMostValueThenDuration = m_Effects.Values.Where(se => (se.Data.Group & group) != 0)
+                                                                                     .OrderBy(se => se.Data.BaseValue)
+                                                                                     .ThenBy(se => se.Duration);
+            IterateRemoval(leastToMostValueThenDuration, stack);
         }
         /// <summary>
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/>.
@@ -283,24 +245,6 @@ namespace StatusEffects
             // From the end of the list iterate through and remove all.
             for (int i = m_Effects.Count - 1; i >= 0; i--)
                 RemoveStatusEffect(m_Effects.ElementAt(i).Value);
-        }
-        /// <summary>
-        /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
-        /// are part of the given <see cref="string"/> group. See <see cref="GroupStringAttribute"/>.
-        /// </summary>
-        public void RemoveAllStatusEffects(StatusEffectGroup group)
-        {
-            if (m_Effects == null)
-                return;
-            StatusEffect statusEffect;
-            // From the end of the list iterate through and if the given group is tagged remove the effect.
-            for (int i = m_Effects.Count - 1; i >= 0; i--)
-            {
-                statusEffect = m_Effects.ElementAt(i).Value;
-
-                if ((statusEffect.Data.Group & group) != 0)
-                    RemoveStatusEffect(statusEffect);
-            }
         }
         /// <summary>
         /// Forcibly adds a <see cref="StatusEffect"/> regardless of whether it can or can't.
@@ -355,6 +299,35 @@ namespace StatusEffects
         #endregion
 
         #region Private Methods
+        private void IterateRemoval(IEnumerable<StatusEffect> statusEffectsToRemove, int? stack)
+        {
+            int removedCount = 0;
+            int currentRemoveCount;
+            int currentStackCount;
+
+            foreach (var statusEffect in statusEffectsToRemove)
+            {
+                if (stack != null)
+                {
+                    currentStackCount = statusEffect.Stack;
+
+                    if (removedCount + currentStackCount > stack)
+                    {
+                        currentRemoveCount = (int)(currentStackCount - (removedCount + currentStackCount - stack));
+                        statusEffect.Stack -= currentRemoveCount;
+
+                        ValueUpdate?.Invoke(statusEffect);
+                        statusEffect.InvokeStackUpdate();
+                        OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStacks, currentRemoveCount);
+
+                        break;
+                    }
+                    removedCount += currentStackCount;
+                }
+                RemoveStatusEffect(statusEffect);
+            }
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CreateTimer(StatusEffect statusEffect, bool remove = true)
         {
@@ -599,7 +572,7 @@ namespace StatusEffects
                     goto AddedToStack;
                 }
             }
-            // Check to delete the effect if it already exists to prevent duplicates.
+            // Non-stackable: Check to delete the effect if it already exists to prevent duplicates.
             else
             {
                 stack = 1;
@@ -614,6 +587,9 @@ namespace StatusEffects
                     case NonStackingBehaviour.MatchHighestValue:
                         if (statusEffectData.BaseValue == oldStatusEffect.Data.BaseValue)
                             goto case NonStackingBehaviour.TakeHighestDuration;
+
+                        float baseValue = Mathf.Abs(statusEffectData.BaseValue);
+                        float oldBaseValue = Mathf.Abs(statusEffectData.BaseValue);
                         // WARNING: There is an extremely special case here where
                         // a player may either have or try to apply an effect which
                         // has an infinite duration (-1). In this situation, attempt
@@ -621,8 +597,8 @@ namespace StatusEffects
                         // the infinite duration effect.
                         if (durationValue < 0 || oldStatusEffect.Duration < 0)
                         {
-                            if (statusEffectData.BaseValue < oldStatusEffect.Data.BaseValue) { return null; }
-                            else if (statusEffectData.BaseValue > oldStatusEffect.Data.BaseValue || durationValue < 0)
+                            if (baseValue < oldStatusEffect.Data.BaseValue) { return null; }
+                            else if (baseValue > oldStatusEffect.Data.BaseValue || durationValue < 0)
                             {
                                 RemoveStatusEffect(statusEffectData.ComparableName);
                                 break;
@@ -630,23 +606,23 @@ namespace StatusEffects
                             else { return null; }
                         }
                         // Find which effect is highest value.
-                        StatusEffectData higestValueData = statusEffectData.BaseValue < oldStatusEffect.Data.BaseValue ? oldStatusEffect.Data : statusEffectData;
-                        float highestValueDuration = statusEffectData.BaseValue < oldStatusEffect.Data.BaseValue ? oldStatusEffect.Duration : durationValue;
-                        StatusEffectData lowestValueData = statusEffectData.BaseValue < oldStatusEffect.Data.BaseValue ? statusEffectData : oldStatusEffect.Data;
-                        float lowestValueDuration = statusEffectData.BaseValue < oldStatusEffect.Data.BaseValue ? durationValue : oldStatusEffect.Duration;
+                        StatusEffectData higestValueData = baseValue < oldBaseValue ? oldStatusEffect.Data : statusEffectData;
+                        float highestValueDuration = baseValue < oldBaseValue ? oldStatusEffect.Duration : durationValue;
+                        StatusEffectData lowestValueData = baseValue < oldBaseValue ? statusEffectData : oldStatusEffect.Data;
+                        float lowestValueDuration = baseValue < oldBaseValue ? durationValue : oldStatusEffect.Duration;
                         // Calculate the new duration = d1 + d2 / (v1 / v2). Note this assumes neither base value will ever be 0.
                         if (higestValueData.BaseValue == 0 || lowestValueData.BaseValue == 0)
                             Debug.LogError($"{(higestValueData.BaseValue == 0 ? higestValueData : lowestValueData)} has a base value of 0! This will cause an error!");
 
                         durationValue = highestValueDuration + lowestValueDuration / (Mathf.Abs(higestValueData.BaseValue) / Mathf.Abs(lowestValueData.BaseValue));
                         statusEffectData = higestValueData;
-                        RemoveStatusEffect(statusEffectData.ComparableName);
+                        RemoveStatusEffect(oldStatusEffect);
                         break;
                     case NonStackingBehaviour.TakeHighestDuration:
                         if (oldStatusEffect.Duration < 0 || (durationValue < oldStatusEffect.Duration && durationValue >= 0))
                             return null;
                         else
-                            RemoveStatusEffect(statusEffectData.ComparableName);
+                            RemoveStatusEffect(oldStatusEffect);
                         break;
                     case NonStackingBehaviour.TakeHighestValue:
                         float oldValue = Mathf.Abs(oldStatusEffect.Data.BaseValue);
@@ -656,10 +632,10 @@ namespace StatusEffects
                         if (newValue < oldValue)
                             return null;
                         else
-                            RemoveStatusEffect(statusEffectData.ComparableName);
+                            RemoveStatusEffect(oldStatusEffect);
                         break;
                     case NonStackingBehaviour.TakeNewest:
-                        RemoveStatusEffect(statusEffectData.ComparableName);
+                        RemoveStatusEffect(oldStatusEffect);
                         break;
                     case NonStackingBehaviour.TakeOldest:
                         return null;

@@ -76,20 +76,25 @@ namespace StatusEffects.Inspector
                 {
                     m_Attribute = Attribute.GetCustomAttribute(m_ModuleReference.GetType(), typeof(AttachModuleInstanceAttribute));
 
-                    if (m_Attribute == null)
-                        goto EndProperty;
-
-                    m_ModuleInstanceType = ((AttachModuleInstanceAttribute)m_Attribute).Type;
+                    if (m_Attribute != null)
+                        m_ModuleInstanceType = ((AttachModuleInstanceAttribute)m_Attribute).Type;
 
                     // If the module reference was changed we add or destroy the instance, note that
                     // we also check in the StatusEffectDataEditor for when list items are removed.
-                    if (m_ModuleInstanceReference != null && !m_ModuleInstanceReference.Equals(null) && m_ModuleInstanceType != m_ModuleInstanceReference.GetType())
+                    if (m_ModuleInstanceReference != null && !m_ModuleInstanceReference.Equals(null) && (m_Attribute == null || m_ModuleInstanceType != m_ModuleInstanceReference.GetType()))
                     {
                         ScriptableObject instance = m_ModuleInstanceReference as ScriptableObject;
+                        string path = AssetDatabase.GetAssetPath(target);
                         AssetDatabase.RemoveObjectFromAsset(instance);
-                        UnityEngine.Object.DestroyImmediate(instance);
                         EditorUtility.SetDirty(target);
+                        UnityEngine.Object.DestroyImmediate(instance);
+                        // Unity bug with removing the final sub asset
+                        AssetDatabase.ImportAsset(path, ImportAssetOptions.ImportRecursive);
                     }
+
+                    if (m_Attribute == null)
+                        goto EndProperty;
+
                     if (m_ModuleInstanceReference == null || m_ModuleInstanceReference.Equals(null))
                     {
                         ScriptableObject instance = ScriptableObject.CreateInstance(m_ModuleInstanceType);

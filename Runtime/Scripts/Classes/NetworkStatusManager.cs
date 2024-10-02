@@ -49,7 +49,7 @@ namespace StatusEffects
         int m_Index;
 
         private const HideFlags k_HideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
-        private const float k_FlushEverySeconds = 30;
+        private const float k_FlushEverySeconds = 300;
 
         private void OnValidate()
         {

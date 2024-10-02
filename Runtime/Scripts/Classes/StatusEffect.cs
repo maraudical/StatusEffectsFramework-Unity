@@ -75,6 +75,8 @@ namespace StatusEffects
 
             foreach (var container in Data.Modules)
             {
+                if (!container.Module)
+                    continue;
 #if UNITASK
                 effectTokenSource = CancellationTokenSource.CreateLinkedTokenSource(manager.GetCancellationTokenOnDestroy());
 #else
@@ -89,6 +91,9 @@ namespace StatusEffects
 #else
             foreach (var container in Data.Modules)
             {
+                if (!container.Module)
+                    continue;
+
                 if (m_EffectCoroutines == null)
                     m_EffectCoroutines = new();
                 m_EffectCoroutines.Add(manager.StartCoroutine(container.Module.EnableModule(manager, this, container.ModuleInstance)));
@@ -119,7 +124,7 @@ namespace StatusEffects
                 return;
             
             foreach (var container in Data.Modules)
-                container.Module.DisableModule(manager, this, container.ModuleInstance);
+                container.Module?.DisableModule(manager, this, container.ModuleInstance);
 
             foreach (var coroutine in m_EffectCoroutines)
                 if (coroutine != null)

@@ -41,17 +41,28 @@ namespace StatusEffects.Inspector
         private void OnEnable()
         {
             m_Modules = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Modules)}");
-            
+
+            UnityEngine.Object target;
+            string path;
+            IEnumerable<ModuleInstance> modules;
+            UnityEngine.Object[] subAssets;
+            UnityEngine.Object nestedModule;
+
             int objectCount = serializedObject.targetObjects.Length;
             // Remove any loose nested scriptable objects and
             // iterate in reverse, to match the selected object order
             for (int i = objectCount - 1; i >= 0; i--)
             {
                 // Get the property on the corresponding serializedObject
-                var target = serializedObject.targetObjects[i];
-                IEnumerable<ModuleInstance> modules = (target as StatusEffectData).Modules.Select(m => m.ModuleInstance);
+                target = serializedObject.targetObjects[i];
+                path = AssetDatabase.GetAssetPath(target);
 
-                foreach (ModuleInstance nestedModule in AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(target)))
+                modules = (target as StatusEffectData).Modules.Select(m => m.ModuleInstance);
+                subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
+
+                for (int v = subAssets.Length - 1; v >= 0; v--)
+                {
+                    nestedModule = subAssets[v];
                     // If there is somehow a loose module we need to clean it up
                     if (!modules.Contains(nestedModule))
                     {
@@ -60,11 +71,13 @@ namespace StatusEffects.Inspector
                         EditorUtility.SetDirty(target);
                         AssetDatabase.SaveAssetIfDirty(target);
                     }
+                }
             }
             // Setup the reorderable module list
             m_ModulesList = new ReorderableList(serializedObject, m_Modules, true, true, true, true);
 
-            m_ModulesList.drawHeaderCallback = rect => {
+            m_ModulesList.drawHeaderCallback = rect => 
+            {
                 EditorGUI.LabelField(rect, m_Modules.displayName);
             };
             m_ModulesList.onAddCallback = list =>

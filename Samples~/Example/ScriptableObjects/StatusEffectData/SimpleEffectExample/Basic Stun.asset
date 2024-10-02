@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-6722743977970175809
+--- !u!114 &-3458880565124376468
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Prefab: {fileID: 556424116285107890, guid: 067710c4c4c0051478cfec350dda1e57, type: 3}
+  InstantiateAgainWhenAddingStacks: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -44,9 +45,10 @@ MonoBehaviour:
     BoolValue: 0
     Priority: 0
   m_Conditions: []
+  m_Dependencies: []
   m_Modules:
   - Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
-    ModuleInstance: {fileID: -6722743977970175809}
+    ModuleInstance: {fileID: -3458880565124376468}
   m_EnableIcon: 1
   m_EnableName: 1
   m_EnableDescription: 1
