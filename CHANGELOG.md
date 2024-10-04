@@ -6,7 +6,7 @@
 - Enhancement: Cleaned up module sub asset management
 - Bug Fix: Fixed conditional logic when adding new effects
 - Bug Fix: Fixed removal logic to prioritize low values and then low durations
-- Bug Fix: Fixed nonstacking data base value comparisons with negative values
+- Bug Fix: Fixed non-stacking data base value comparisons with negative values
 - Change: Updated addressable flush timer for the NetworkStatusManager
 
 ## 2.0.0
