@@ -1,5 +1,14 @@
 # Change Log:
 
+## 2.0.1
+- Enhancement: Added stack count to conditionals
+- Enhancement: Added OnBaseValueChanged and OnSignProtectedChanged events to all Status Variables
+- Enhancement: Cleaned up module sub asset management
+- Bug Fix: Fixed conditional logic when adding new effects
+- Bug Fix: Fixed removal logic to prioritize low values and then low durations
+- Bug Fix: Fixed nonstacking data base value comparisons with negative values
+- Change: Updated addressable flush timer for the NetworkStatusManager
+
 ## 2.0.0
 - Feature: Added a NetworkStatusManager and NetworkStatusVariables that work with Netcode for GameObjects (1.8.0+)
 - Enhancement: Added additional conditional options to check for group and comparable names
