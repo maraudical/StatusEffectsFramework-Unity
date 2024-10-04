@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Prefab: {fileID: 3350783055171671458, guid: fe17f8879467d5e4da9540a5249738dd, type: 3}
+  InstantiateAgainWhenAddingStacks: 0
 --- !u!114 &-257926088491156318
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -58,9 +59,13 @@ MonoBehaviour:
       Value: 0
     Exists: 1
     Add: 0
-    ActionConfigurable: 0
+    Scaled: 1
+    UseStacks: 0
+    Stacks: 1
+    ActionConfigurable: 1
     ActionData: {fileID: 11400000}
-    ActionComparableName: {fileID: 0}
+    ActionComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78,
+      type: 2}
     ActionGroup:
       Value: 0
     Timing: 0
@@ -73,13 +78,18 @@ MonoBehaviour:
       Value: 0
     Exists: 1
     Add: 0
-    ActionConfigurable: 0
+    Scaled: 1
+    UseStacks: 0
+    Stacks: 1
+    ActionConfigurable: 1
     ActionData: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
-    ActionComparableName: {fileID: 0}
+    ActionComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4,
+      type: 2}
     ActionGroup:
       Value: 0
     Timing: 0
     Duration: 0
+  m_Dependencies: []
   m_Modules:
   - Module: {fileID: 11400000, guid: 953f3e2a50b26cf4c8c47c3e819094c8, type: 2}
     ModuleInstance: {fileID: -257926088491156318}

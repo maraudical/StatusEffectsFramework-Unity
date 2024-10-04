@@ -88,6 +88,6 @@ namespace StatusEffects.Example
         public void DebugRemoveStatusEffect() { StatusManager.RemoveStatusEffect(StatusEffectData, Stack); }
         // Removes all effects that fall under a specific group. Additionally
         // you can remove the group parameter and just remove all effects.
-        public void DebugRemoveStatusEffectGroup() { StatusManager.RemoveAllStatusEffects(Group); }
+        public void DebugRemoveStatusEffectGroup() { StatusManager.RemoveStatusEffect(Group); }
     }
 }

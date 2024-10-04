@@ -9,6 +9,7 @@ namespace StatusEffects
     public class StatusBool : StatusVariable
     {
         [SerializeField] public event Action<bool, bool> OnValueChanged;
+        [SerializeField] public event Action<bool, bool> OnBaseValueChanged;
 
         public StatusNameBool StatusName => m_StatusName;
         public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
@@ -16,18 +17,31 @@ namespace StatusEffects
 
         [SerializeField] protected StatusNameBool m_StatusName;
         [SerializeField] protected bool m_BaseValue;
+        protected bool m_PreviousBaseValue;
         [SerializeField] protected bool m_Value;
         protected bool m_PreviousValue;
 
         public StatusBool(bool baseValue)
         {
             m_BaseValue = baseValue;
+
+            if (Instance != null)
+            {
+                UpdateBaseValue();
+                m_PreviousBaseValue = baseValue;
+            }
         }
 
         public StatusBool(bool baseValue, StatusNameBool statusName)
         {
             m_StatusName = statusName;
             m_BaseValue = baseValue;
+
+            if (Instance != null)
+            {
+                UpdateBaseValue();
+                m_PreviousBaseValue = baseValue;
+            }
             UpdateValue();
         }
 
@@ -36,12 +50,15 @@ namespace StatusEffects
         public override void SetManager(IStatusManager instance)
         {
             base.SetManager(instance);
+            m_PreviousBaseValue = m_BaseValue;
             m_Value = m_BaseValue;
             UpdateValue();
         }
 
         protected virtual void BaseValueChanged()
         {
+            UpdateBaseValue();
+            m_PreviousBaseValue = m_BaseValue;
             UpdateValue();
         }
 
@@ -89,11 +106,20 @@ namespace StatusEffects
             if (m_Value != m_PreviousValue)
                 OnValueChanged?.Invoke(m_PreviousValue, m_Value);
         }
+
+        protected void UpdateBaseValue()
+        {
+            if (m_BaseValue != m_PreviousBaseValue)
+                OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
+        }
 #if UNITY_EDITOR
 
         protected virtual async void BaseValueUpdate()
         {
             await Task.Yield();
+
+            UpdateBaseValue();
+            m_PreviousBaseValue = m_BaseValue;
             UpdateValue();
         }
 #endif

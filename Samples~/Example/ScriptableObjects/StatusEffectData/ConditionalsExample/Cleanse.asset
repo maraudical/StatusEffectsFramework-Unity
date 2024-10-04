@@ -31,6 +31,8 @@ MonoBehaviour:
       Value: 2
     Exists: 1
     Add: 0
+    RemoveOption: 0
+    Stacks: 0
     ActionConfigurable: 2
     ActionData: {fileID: 0}
     ActionComparableName: {fileID: 0}
@@ -45,6 +47,8 @@ MonoBehaviour:
       Value: 2
     Exists: 0
     Add: 0
+    RemoveOption: 0
+    Stacks: 0
     ActionConfigurable: 0
     ActionData: {fileID: 11400000}
     ActionComparableName: {fileID: 0}
@@ -52,6 +56,7 @@ MonoBehaviour:
       Value: 2
     Timing: 0
     Duration: 0
+  m_Dependencies: []
   m_Modules: []
   m_EnableIcon: 1
   m_EnableName: 1

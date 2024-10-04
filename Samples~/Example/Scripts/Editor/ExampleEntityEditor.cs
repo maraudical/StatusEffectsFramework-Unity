@@ -13,6 +13,7 @@ namespace StatusEffects.Inspector
         public override void OnInspectorGUI()
         {
             EditorGUILayout.HelpBox("Please view the code in this script for example implementation!", MessageType.Info);
+            EditorGUILayout.Space(1);
 
             base.OnInspectorGUI();
 

@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace StatusEffects
 {
@@ -11,11 +12,14 @@ namespace StatusEffects
         public StatusEffectGroup SearchableGroup;
         public bool Exists = true;
         public bool Add = true;
+        public bool Scaled = true;
+        public bool UseStacks;
+        [Min(1)] public int Stacks = 1;
         public ConditionalConfigurable ActionConfigurable;
         public StatusEffectData ActionData;
         public ComparableName ActionComparableName;
         public StatusEffectGroup ActionGroup;
         public ConditionalTiming Timing;
-        public float Duration;
+        [Min(0)] public float Duration;
     }
 }

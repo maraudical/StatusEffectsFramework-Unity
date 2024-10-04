@@ -11,6 +11,9 @@ namespace StatusEffects.Inspector
         private SerializedProperty m_SearchableReference;
         private SerializedProperty m_Exists;
         private SerializedProperty m_Add;
+        private SerializedProperty m_Scaled;
+        private SerializedProperty m_UseStacks;
+        private SerializedProperty m_Stacks;
         private SerializedProperty m_ActionConfigurable;
         private SerializedProperty m_ActionReference;
         private SerializedProperty m_Duration;
@@ -18,6 +21,8 @@ namespace StatusEffects.Inspector
 
         private Existence m_Existence;
         private Configurability m_Configurability;
+        private RemoveOption m_RemoveOption;
+        private ScaleOption m_ScaleOption;
 
         private float m_PositionWidth;
 
@@ -26,12 +31,19 @@ namespace StatusEffects.Inspector
 
         private readonly float m_FieldSize = EditorGUIUtility.singleLineHeight;
 
+        private const float k_MinimumSize = 40;
+
         private const float k_Padding = 3;
         private const float k_IfSize = 10;
         private const float k_IsSize = 12;
         private const float k_ExistsPropertySize = 70;
         private const float k_ThenSize = 28;
         private const float k_AddRemoveSize = 70;
+        private const float k_ScaledSize = 77;
+        private const float k_RemoveOptionStackSize = 98;
+        private const float k_RemoveOptionAllSize = 40;
+        private const float k_AddOptionSize = 70;
+        private const float k_StacksSize = 28;
         private const float k_ConfigurableSize = 70;
         private const float k_SecondsPropertySize = 28;
         private const float k_TimingSize = 70;
@@ -45,6 +57,9 @@ namespace StatusEffects.Inspector
                                                                                                                                                : nameof(Condition.SearchableGroup));
             m_Exists = property.FindPropertyRelative(nameof(Condition.Exists));
             m_Add = property.FindPropertyRelative(nameof(Condition.Add));
+            m_Scaled = property.FindPropertyRelative(nameof(Condition.Scaled));
+            m_UseStacks = property.FindPropertyRelative(nameof(Condition.UseStacks));
+            m_Stacks = property.FindPropertyRelative(nameof(Condition.Stacks));
             m_ActionConfigurable = property.FindPropertyRelative(nameof(Condition.ActionConfigurable));
             m_ActionReference = property.FindPropertyRelative(m_ActionConfigurable.enumValueIndex == (int)ConditionalConfigurable.Data || m_Add.boolValue ? nameof(Condition.ActionData)
                                                             : m_ActionConfigurable.enumValueIndex == (int)ConditionalConfigurable.Name                    ? nameof(Condition.ActionComparableName)
@@ -63,25 +78,31 @@ namespace StatusEffects.Inspector
                                           - k_ExistsPropertySize 
                                           - k_ThenSize 
                                           - k_AddRemoveSize
+                                          - (m_Add.boolValue || m_UseStacks.boolValue ? k_ScaledSize : 0)
+                                          - (m_Add.boolValue ? k_AddOptionSize : m_UseStacks.boolValue ? k_RemoveOptionStackSize : k_RemoveOptionAllSize)
                                           - (m_Add.boolValue && m_Timing.enumValueIndex == (int)ConditionalTiming.Duration ? k_SecondsPropertySize : m_Add.boolValue ? 0 : k_ConfigurableSize) 
                                           - (m_Add.boolValue ? k_TimingSize : 0)
-                                          - k_Padding * (m_Add.boolValue && m_Timing.enumValueIndex == (int)ConditionalTiming.Duration ? 9 : 8));
+                                          - k_Padding * (m_Add.boolValue && m_Timing.enumValueIndex == (int)ConditionalTiming.Duration ? 11 : m_Add.boolValue || m_UseStacks.boolValue ? 10 : 9));
 
             float currentWidth = 0;
-            Rect offset = new Rect(position.position, new Vector2(width / 2, position.height));
+            Rect offset = new Rect(position.position, new Vector2(Mathf.Max(k_MinimumSize, width / 2), position.height));
 
             EditorGUI.BeginProperty(position, label, property);
 
+            if (!CheckForSpace(k_IfSize + k_ExpandWindowSize))
+                return;
             EditorGUI.LabelField(new Rect(offset.position, new Vector2(k_IfSize, offset.height)), "If");
             offset.x += k_IfSize + k_Padding;
             currentWidth += k_IfSize + k_Padding;
 
-            if (!CheckForSpace(k_ConfigurableSize + k_ExpandWindowSize - 60))
+            if (!CheckForSpace(k_ConfigurableSize + k_ExpandWindowSize))
                 return;
             EditorGUI.PropertyField(new Rect(offset.position, new Vector2(k_ConfigurableSize, offset.height)), m_SearchableConfigurable, GUIContent.none);
             offset.x += k_ConfigurableSize + k_Padding;
             currentWidth += k_ConfigurableSize + k_Padding;
-            
+
+            if (!CheckForSpace(offset.size.x + k_ExpandWindowSize))
+                return;
             EditorGUI.PropertyField(offset, m_SearchableReference, GUIContent.none);
             offset.x += offset.width + k_Padding;
             currentWidth += offset.width + k_Padding;
@@ -117,29 +138,72 @@ namespace StatusEffects.Inspector
             EditorGUI.showMixedValue = m_Add.hasMultipleDifferentValues;
             m_Value = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(k_AddRemoveSize, offset.height)), m_Configurability));
             if (m_Value != m_Add.boolValue)
+            {
                 m_Add.boolValue = m_Value;
+                if (m_Value)
+                    m_UseStacks.boolValue = true;
+            }
             EditorGUI.showMixedValue = m_RestoreShowMixedValue;
             offset.x += k_AddRemoveSize + k_Padding;
             currentWidth += k_AddRemoveSize + k_Padding;
 
             if (m_Add.hasMultipleDifferentValues)
             {
-                if (!CheckForSpace(k_ExpandWindowSize + 5))
+                if (!CheckForSpace(k_ExpandWindowSize + 20))
                     return;
 
                 EditorGUI.LabelField(new Rect(offset.position, new Vector2(m_PositionWidth - currentWidth, offset.height)), "(Different add/remove)");
                 return;
             }
 
+            if (m_Add.boolValue || m_UseStacks.boolValue)
+            {
+                if (!CheckForSpace(k_ScaledSize + k_ExpandWindowSize))
+                    return;
+                m_ScaleOption = (ScaleOption)Convert.ToInt32(m_Scaled.boolValue);
+                m_RestoreShowMixedValue = EditorGUI.showMixedValue;
+                EditorGUI.showMixedValue = m_Scaled.hasMultipleDifferentValues;
+                m_Value = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(k_ScaledSize, offset.height)), m_ScaleOption));
+                if (m_Value != m_Scaled.boolValue)
+                    m_Scaled.boolValue = m_Value;
+                EditorGUI.showMixedValue = m_RestoreShowMixedValue;
+                offset.x += k_ScaledSize + k_Padding;
+                currentWidth += k_ScaledSize + k_Padding;
+            }
+
             if (!m_Add.boolValue)
             {
-                if (!CheckForSpace(k_ConfigurableSize + k_ExpandWindowSize - 60))
+                if (!CheckForSpace((m_UseStacks.boolValue ? k_RemoveOptionStackSize : k_RemoveOptionAllSize) + k_ExpandWindowSize + 2))
                     return;
+                if (m_UseStacks.boolValue)
+                {
+                    EditorGUI.PropertyField(new Rect(offset.position, new Vector2(k_StacksSize, offset.height)), m_Stacks, GUIContent.none);
+                    offset.x += k_StacksSize + k_Padding;
+                }
+                m_RemoveOption = (RemoveOption)Convert.ToInt32(m_UseStacks.boolValue);
+                m_RestoreShowMixedValue = EditorGUI.showMixedValue;
+                EditorGUI.showMixedValue = m_Add.hasMultipleDifferentValues;
+                m_Value = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(m_UseStacks.boolValue ? k_RemoveOptionStackSize - k_StacksSize - k_Padding : k_RemoveOptionAllSize, offset.height)), m_RemoveOption));
+                if (m_Value != m_UseStacks.boolValue)
+                    m_UseStacks.boolValue = m_Value;
+                EditorGUI.showMixedValue = m_RestoreShowMixedValue;
+                offset.x += m_UseStacks.boolValue ? k_RemoveOptionStackSize - k_StacksSize : k_RemoveOptionAllSize + k_Padding;
                 EditorGUI.PropertyField(new Rect(offset.position, new Vector2(k_ConfigurableSize, offset.height)), m_ActionConfigurable, GUIContent.none);
                 offset.x += k_ConfigurableSize + k_Padding;
             }
-            else if (!CheckForSpace(k_ExpandWindowSize + 20))
-                return;
+            else
+            {
+                if (!CheckForSpace(k_AddOptionSize + k_ExpandWindowSize))
+                    return;
+                EditorGUI.PropertyField(new Rect(offset.position, new Vector2(k_StacksSize, offset.height)), m_Stacks, GUIContent.none);
+                offset.x += k_StacksSize + k_Padding;
+                EditorGUI.LabelField(new Rect(offset.position, new Vector2(k_AddOptionSize - k_StacksSize - k_Padding, offset.height)), "stacks");
+                offset.x += k_AddOptionSize - k_StacksSize;
+                currentWidth += k_AddOptionSize + k_Padding;
+
+                if (!CheckForSpace(offset.size.x + k_Padding + (m_Timing.enumValueIndex == (int)ConditionalTiming.Duration ? k_SecondsPropertySize + k_Padding + k_TimingSize : k_TimingSize) - 1))
+                    return;
+            }
 
             EditorGUI.PropertyField(offset, m_ActionReference, GUIContent.none);
 
@@ -158,7 +222,7 @@ namespace StatusEffects.Inspector
             
             EditorGUI.EndProperty();
 
-            bool CheckForSpace(float roomNeeded)
+            bool CheckForSpace(float roomNeeded, bool debug = false)
             {
                 if (currentWidth + roomNeeded > m_PositionWidth)
                 {
@@ -181,6 +245,18 @@ namespace StatusEffects.Inspector
         {
             Remove,
             Add
+        }
+
+        public enum RemoveOption
+        {
+            All,
+            Stacks,
+        }
+
+        public enum ScaleOption
+        {
+            Unscaled,
+            Scaled
         }
     }
 }

@@ -17,24 +17,8 @@ MonoBehaviour:
   m_ComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4, type: 2}
   m_BaseValue: -0.3
   m_Icon: {fileID: 21300000, guid: 4bae7d79998147e40bfbd395c6b4bbfb, type: 3}
-  m_StatusEffectName:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_Description:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_StatusEffectName: 
+  m_Description: 
   m_AllowEffectStacking: 0
   m_NonStackingBehaviour: 0
   m_MaxStack: -1
@@ -55,9 +39,13 @@ MonoBehaviour:
       Value: 0
     Exists: 1
     Add: 0
-    ActionConfigurable: 0
+    Scaled: 1
+    UseStacks: 0
+    Stacks: 1
+    ActionConfigurable: 1
     ActionData: {fileID: 11400000}
-    ActionComparableName: {fileID: 0}
+    ActionComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4,
+      type: 2}
     ActionGroup:
       Value: 0
     Timing: 0
@@ -70,9 +58,13 @@ MonoBehaviour:
       Value: 0
     Exists: 1
     Add: 0
-    ActionConfigurable: 0
+    Scaled: 1
+    UseStacks: 0
+    Stacks: 1
+    ActionConfigurable: 1
     ActionData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    ActionComparableName: {fileID: 0}
+    ActionComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78,
+      type: 2}
     ActionGroup:
       Value: 0
     Timing: 0
@@ -84,9 +76,6 @@ MonoBehaviour:
   m_EnableIcon: 1
   m_EnableName: 1
   m_EnableDescription: 1
-  references:
-    version: 2
-    RefIds: []
 --- !u!114 &8148485282251604263
 MonoBehaviour:
   m_ObjectHideFlags: 0

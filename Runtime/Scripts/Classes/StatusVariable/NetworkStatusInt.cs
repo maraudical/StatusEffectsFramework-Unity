@@ -11,6 +11,8 @@ namespace StatusEffects
     public class NetworkStatusInt : NetworkStatusVariable
     {
         [SerializeField] public event Action<int, int> OnValueChanged;
+        [SerializeField] public event Action<int, int> OnBaseValueChanged;
+        [SerializeField] public event Action<bool, bool> OnSignProtectedChanged;
 
         public StatusNameInt StatusName => m_StatusName;
         public int BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
@@ -32,6 +34,14 @@ namespace StatusEffects
         {
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
+
+            if (Instance != null)
+            {
+                UpdateBaseValue();
+                m_PreviousBaseValue = baseValue;
+                UpdateSignProtected();
+                m_PreviousSignProtected = signProtected;
+            }
         }
 
         public NetworkStatusInt(int baseValue, StatusNameInt statusName, bool signProtected = true) : base(NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server)
@@ -39,6 +49,14 @@ namespace StatusEffects
             m_StatusName = statusName;
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
+
+            if (Instance != null)
+            {
+                UpdateBaseValue();
+                m_PreviousBaseValue = baseValue;
+                UpdateSignProtected();
+                m_PreviousSignProtected = signProtected;
+            }
             UpdateValue();
         }
 
@@ -76,6 +94,8 @@ namespace StatusEffects
                     SetDirty(true);
             }
 
+            UpdateBaseValue();
+            m_PreviousBaseValue = m_BaseValue;
             UpdateValue();
         }
 
@@ -97,6 +117,8 @@ namespace StatusEffects
                     SetDirty(true);
             }
 
+            UpdateSignProtected();
+            m_PreviousSignProtected = m_SignProtected;
             UpdateValue();
         }
 
@@ -158,6 +180,18 @@ namespace StatusEffects
                 OnValueChanged?.Invoke(m_PreviousValue, m_Value);
         }
 
+        protected void UpdateBaseValue()
+        {
+            if (m_BaseValue != m_PreviousBaseValue)
+                OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
+        }
+
+        protected void UpdateSignProtected()
+        {
+            if (m_SignProtected != m_PreviousSignProtected)
+                OnSignProtectedChanged?.Invoke(m_PreviousSignProtected, m_SignProtected);
+        }
+
         public override void OnInitialize()
         {
             base.OnInitialize();
@@ -179,6 +213,8 @@ namespace StatusEffects
             reader.ReadValueSafe(out m_BaseValue);
             reader.ReadValueSafe(out m_SignProtected);
 
+            UpdateBaseValue();
+            UpdateSignProtected();
             if (m_BaseValue != m_PreviousBaseValue || m_SignProtected != m_PreviousSignProtected)
                 UpdateValue();
         }
@@ -196,6 +232,8 @@ namespace StatusEffects
             reader.ReadValueSafe(out m_BaseValue);
             reader.ReadValueSafe(out m_SignProtected);
 
+            UpdateBaseValue();
+            UpdateSignProtected();
             if (m_BaseValue != m_PreviousBaseValue || m_SignProtected != m_PreviousSignProtected)
                 UpdateValue();
         }
@@ -254,6 +292,8 @@ namespace StatusEffects
                     SetDirty(true);
             }
 
+            UpdateBaseValue();
+            m_PreviousBaseValue = m_BaseValue;
             UpdateValue();
         }
 
@@ -277,6 +317,8 @@ namespace StatusEffects
                     SetDirty(true);
             }
 
+            UpdateSignProtected();
+            m_PreviousSignProtected = m_SignProtected;
             UpdateValue();
         }
 #endif

@@ -12,7 +12,6 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using System.Runtime.CompilerServices;
-using System.Collections;
 
 namespace StatusEffects
 {
@@ -203,7 +202,7 @@ namespace StatusEffects
         }
         /// <summary>
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
-        /// have the same <see cref="ComparableName"/>.
+        /// have the same <see cref="ComparableName"/>. If a stack count is given it will remove only the specified amount.
         /// </summary>
         public void RemoveStatusEffect(ComparableName name, int? stack = null)
         {
@@ -220,9 +219,9 @@ namespace StatusEffects
         }
         /// <summary>
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
-        /// are part of the given <see cref="StatusEffectGroup"/> group.
+        /// are part of the given <see cref="StatusEffectGroup"/> group. If a stack count is given it will remove only the specified amount.
         /// </summary>
-        public void RemoveAllStatusEffects(StatusEffectGroup group, int? stack = null)
+        public void RemoveStatusEffect(StatusEffectGroup group, int? stack = null)
         {
             if (m_Effects == null)
                 return;
@@ -467,80 +466,18 @@ namespace StatusEffects
                 return null;
             // First determine correct duration.
             float durationValue = duration.HasValue ? duration.Value : -1;
-            // Check for conditions.
-            List<StatusEffectData> removeEffects = new();
-            List<ComparableName> removeNameEffects = new();
-            List<StatusEffectGroup> removeGroupEffects = new();
-            bool preventStatusEffect = false;
+
             StatusEffectAction action = StatusEffectAction.AddedStatusEffect;
-
-            foreach (Condition condition in statusEffectData.Conditions)
-            {
-                bool exists = condition.SearchableConfigurable == ConditionalConfigurable.Group ? GetFirstStatusEffect(group: condition.SearchableGroup) != null
-                            : condition.SearchableConfigurable == ConditionalConfigurable.Name  ? GetFirstStatusEffect(name: condition.SearchableComparableName) != null
-                                                                                                : GetFirstStatusEffect(data: condition.SearchableData) != null;
-                // If the condition is checking for existence and it doesn't exist or if
-                // its checking non-existence and does exist then skip this condition.
-                if ((condition.Exists && !exists) 
-                || (!condition.Exists && exists))
-                    continue;
-
-                if (condition.Add)
-                    switch (condition.Timing)
-                    {
-                        case ConditionalTiming.Duration:
-                            AddStatusEffect(condition.ActionData, condition.Duration);
-                            break;
-                        case ConditionalTiming.Inherited:
-                            if (duration.HasValue)
-                                AddStatusEffect(condition.ActionData, durationValue);
-                            else
-                                goto default;
-                            break;
-                        default:
-                            AddStatusEffect(condition.ActionData);
-                            break;
-                    }
-                // Special case where the configurable which is the
-                // current data to be added is tagged for removal.
-                else if (condition.ActionData == statusEffectData)
-                    preventStatusEffect = true;
-                // Otherwise we remove effects.
-                else
-                    switch (condition.ActionConfigurable)
-                    {
-                        case ConditionalConfigurable.Data:
-                            removeEffects.Add(condition.ActionData);
-                            break;
-                        case ConditionalConfigurable.Name:
-                            removeNameEffects.Add(condition.ActionComparableName);
-                            break;
-                        case ConditionalConfigurable.Group:
-                            removeGroupEffects.Add(condition.ActionGroup);
-                            break;
-                    }
-            }
-
-            foreach (var data in removeEffects)
-                RemoveStatusEffect(data);
-
-            foreach (var name in removeNameEffects)
-                RemoveStatusEffect(name);
-
-            foreach (var group in removeGroupEffects)
-                RemoveAllStatusEffects(group);
-
-            if (preventStatusEffect)
-                return null;
             // Declare here to use later.
-            StatusEffect statusEffect;
+            StatusEffect statusEffect = null;
+            bool addedToStack = false;
             // If stacking is allowed then check for the max stack and possible stack merging.
             if (statusEffectData.AllowEffectStacking)
             {
                 IEnumerable<StatusEffect> statusEffects = GetStatusEffects(data: statusEffectData);
 
                 if (timing is not StatusEffectTiming.Infinite || statusEffects == null || statusEffects.Count() <= 0)
-                    goto NothingToStack;
+                    goto CheckConditionals;
 
                 StatusEffect infiniteEffect = null;
                 int stackCount = 0;
@@ -565,11 +502,8 @@ namespace StatusEffects
                 if (infiniteEffect != null)
                 {
                     statusEffect = infiniteEffect;
-                    statusEffect.Stack += stack;
-                    ValueUpdate?.Invoke(statusEffect);
-                    statusEffect.InvokeStackUpdate();
-                    action = StatusEffectAction.AddedStacks;
-                    goto AddedToStack;
+                    addedToStack = true;
+                    goto CheckConditionals;
                 }
             }
             // Non-stackable: Check to delete the effect if it already exists to prevent duplicates.
@@ -577,10 +511,10 @@ namespace StatusEffects
             {
                 stack = 1;
 
-                StatusEffect oldStatusEffect = GetStatusEffects(name: statusEffectData.ComparableName)?.FirstOrDefault();
-
+                StatusEffect oldStatusEffect = GetStatusEffects(name: statusEffectData.ComparableName, data: statusEffectData.ComparableName ? null : statusEffectData)?.FirstOrDefault();
+                
                 if (oldStatusEffect == null)
-                    goto NothingToStack;
+                    goto CheckConditionals;
 
                 switch (statusEffectData.NonStackingBehaviour)
                 {
@@ -642,29 +576,120 @@ namespace StatusEffects
                 }
             }
 
-            NothingToStack:
-            // Create a new status effect instance.
-            statusEffect = new StatusEffect(statusEffectData, timing, durationValue, stack);
-            // Add the effect for a given monobehaviour. This also is the first time
-            // initializing so we need to initialize all of the Status Variables
-            if (m_Effects == null)
+            CheckConditionals:
+            // Check for conditions.
+            List<(StatusEffectData Data, int? Stacks)> removeEffects = new();
+            List<(ComparableName Name, int? Stacks)> removeNameEffects = new();
+            List<(StatusEffectGroup Group, int? Stacks)> removeGroupEffects = new();
+            bool preventStatusEffect = false;
+
+            foreach (Condition condition in statusEffectData.Conditions)
             {
-                m_Effects = new Dictionary<int, StatusEffect> { { statusEffect.GetInstanceID(), statusEffect } };
-#if UNITY_EDITOR
-                m_EditorOnlyEffects = new List<StatusEffect> { statusEffect };
-#endif
+                bool exists = condition.SearchableConfigurable == ConditionalConfigurable.Group ? GetFirstStatusEffect(group: condition.SearchableGroup) != null
+                            : condition.SearchableConfigurable == ConditionalConfigurable.Name ? GetFirstStatusEffect(name: condition.SearchableComparableName) != null
+                                                                                                : GetFirstStatusEffect(data: condition.SearchableData) != null;
+                // If the condition is checking for existence and it doesn't exist or if
+                // its checking non-existence and does exist then skip this condition.
+                if ((condition.Exists && !exists)
+                || (!condition.Exists && exists))
+                    continue;
+
+                if (condition.Add)
+                    switch (condition.Timing)
+                    {
+                        case ConditionalTiming.Duration:
+                            AddStatusEffect(condition.ActionData, condition.Duration, condition.Stacks * (condition.Scaled ? stack : 1));
+                            break;
+                        case ConditionalTiming.Inherited:
+                            if (duration.HasValue)
+                                AddStatusEffect(condition.ActionData, durationValue, condition.Stacks * (condition.Scaled ? stack : 1));
+                            else
+                                goto default;
+                            break;
+                        default:
+                            AddStatusEffect(condition.ActionData, condition.Stacks * (condition.Scaled ? stack : 1));
+                            break;
+                    }
+                // Special case where the configurable which is the
+                // current data to be added is tagged for removal.
+                else if (condition.ActionData == statusEffectData)
+                {
+                    int? stacks = condition.UseStacks ? condition.Stacks * (condition.Scaled ? stack : 1) : null;
+                    if (!stacks.HasValue || stacks.Value > stack)
+                    {
+                        preventStatusEffect = true;
+                        if (stacks.HasValue)
+                            stacks -= stack;
+                        stack = 0;
+                        if (!stacks.HasValue || stacks.Value > 0)
+                            RemoveBasedOnConfigurable(stacks);
+                    }
+                    else
+                        stack -= stacks.Value;
+                }
+                // Otherwise we remove effects.
+                else
+                    RemoveBasedOnConfigurable(condition.UseStacks ? condition.Stacks * (condition.Scaled ? stack : 1) : null);
+
+                void RemoveBasedOnConfigurable(int? stacks)
+                {
+                    switch (condition.ActionConfigurable)
+                    {
+                        case ConditionalConfigurable.Data:
+                            removeEffects.Add((condition.ActionData, stacks));
+                            break;
+                        case ConditionalConfigurable.Name:
+                            removeNameEffects.Add((condition.ActionComparableName, stacks));
+                            break;
+                        case ConditionalConfigurable.Group:
+                            removeGroupEffects.Add((condition.ActionGroup, stacks));
+                            break;
+                    }
+                }
+            }
+
+            foreach (var data in removeEffects)
+                RemoveStatusEffect(data.Data, data.Stacks);
+
+            foreach (var name in removeNameEffects)
+                RemoveStatusEffect(name.Name, name.Stacks);
+
+            foreach (var group in removeGroupEffects)
+                RemoveStatusEffect(group.Group, group.Stacks);
+
+            if (preventStatusEffect)
+                return null;
+            // Add the status effect
+            if (addedToStack)
+            {
+                statusEffect.Stack += stack;
+                ValueUpdate?.Invoke(statusEffect);
+                statusEffect.InvokeStackUpdate();
+                action = StatusEffectAction.AddedStacks;
             }
             else
             {
-                m_Effects.Add(statusEffect.GetInstanceID(), statusEffect);
+                // Create a new status effect instance.
+                statusEffect = new StatusEffect(statusEffectData, timing, durationValue, stack);
+                // Add the effect for a given monobehaviour. This also is the first time
+                // initializing so we need to initialize all of the Status Variables
+                if (m_Effects == null)
+                {
+                    m_Effects = new Dictionary<int, StatusEffect> { { statusEffect.GetInstanceID(), statusEffect } };
 #if UNITY_EDITOR
-                m_EditorOnlyEffects.Add(statusEffect);
+                    m_EditorOnlyEffects = new List<StatusEffect> { statusEffect };
 #endif
+                }
+                else
+                {
+                    m_Effects.Add(statusEffect.GetInstanceID(), statusEffect);
+#if UNITY_EDITOR
+                    m_EditorOnlyEffects.Add(statusEffect);
+#endif
+                }
+
+                ValueUpdate?.Invoke(statusEffect);
             }
-
-            ValueUpdate?.Invoke(statusEffect);
-
-            AddedToStack:
             // If a module exists it will be started.
             statusEffect.EnableModules(this);
             

@@ -11,6 +11,7 @@ namespace StatusEffects
     public class NetworkStatusBool : NetworkStatusVariable
     {
         [SerializeField] public event Action<bool, bool> OnValueChanged;
+        [SerializeField] public event Action<bool, bool> OnBaseValueChanged;
 
         public StatusNameBool StatusName => m_StatusName;
         public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
@@ -28,12 +29,24 @@ namespace StatusEffects
         public NetworkStatusBool(bool baseValue) : base(NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server)
         {
             m_BaseValue = baseValue;
+
+            if (Instance != null)
+            {
+                UpdateBaseValue();
+                m_PreviousBaseValue = baseValue;
+            }
         }
 
         public NetworkStatusBool(bool baseValue, StatusNameBool statusName) : base(NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server)
         {
             m_StatusName = statusName;
             m_BaseValue = baseValue;
+
+            if (Instance != null)
+            {
+                UpdateBaseValue();
+                m_PreviousBaseValue = baseValue;
+            }
             UpdateValue();
         }
 
@@ -70,6 +83,8 @@ namespace StatusEffects
                     SetDirty(true);
             }
 
+            UpdateBaseValue();
+            m_PreviousBaseValue = m_BaseValue;
             UpdateValue();
         }
 
@@ -118,6 +133,12 @@ namespace StatusEffects
                 OnValueChanged?.Invoke(m_PreviousValue, m_Value);
         }
 
+        protected void UpdateBaseValue()
+        {
+            if (m_BaseValue != m_PreviousBaseValue)
+                OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
+        }
+
         public override void OnInitialize()
         {
             base.OnInitialize();
@@ -136,7 +157,10 @@ namespace StatusEffects
             reader.ReadValueSafe(out m_BaseValue);
 
             if (m_BaseValue != m_PreviousBaseValue)
+            {
+                OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
                 UpdateValue();
+            }
         }
 
         public override void WriteDelta(FastBufferWriter writer)
@@ -150,7 +174,10 @@ namespace StatusEffects
             reader.ReadValueSafe(out m_BaseValue);
 
             if (m_BaseValue != m_PreviousBaseValue)
+            {
+                OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
                 UpdateValue();
+            }
         }
 
         public override void ResetDirty()
@@ -204,6 +231,8 @@ namespace StatusEffects
                     SetDirty(true);
             }
 
+            UpdateBaseValue();
+            m_PreviousBaseValue = m_BaseValue;
             UpdateValue();
         }
 #endif

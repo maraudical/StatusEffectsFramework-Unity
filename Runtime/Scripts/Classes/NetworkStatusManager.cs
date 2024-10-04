@@ -250,6 +250,14 @@ namespace StatusEffects
 
             m_StatusManager.RemoveStatusEffect(name, stack);
         }
+        /// <inheritdoc cref="StatusManager.RemoveAllStatusEffects(StatusEffectGroup)"/>
+        public void RemoveStatusEffect(StatusEffectGroup group)
+        {
+            if (!CheckForServer())
+                return;
+
+            m_StatusManager.RemoveStatusEffect(group);
+        }
         /// <inheritdoc cref="StatusManager.RemoveAllStatusEffects"/>
         public void RemoveAllStatusEffects()
         {
@@ -257,14 +265,6 @@ namespace StatusEffects
                 return;
 
             m_StatusManager.RemoveAllStatusEffects();
-        }
-        /// <inheritdoc cref="StatusManager.RemoveAllStatusEffects(StatusEffectGroup)"/>
-        public void RemoveAllStatusEffects(StatusEffectGroup group)
-        {
-            if (!CheckForServer())
-                return;
-
-            m_StatusManager.RemoveAllStatusEffects(group);
         }
 #endregion
 
