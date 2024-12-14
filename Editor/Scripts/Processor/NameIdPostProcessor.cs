@@ -11,8 +11,8 @@ namespace StatusEffects.Inspector
             {
                 string assetPath = importedAssets[i];
                 UnityEngine.Object asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
-
-                if (asset != null && asset is Name name && string.IsNullOrWhiteSpace(name.Id))
+                
+                if (asset != null && asset is Name name)
                     name.GenerateId();
             }
         }
