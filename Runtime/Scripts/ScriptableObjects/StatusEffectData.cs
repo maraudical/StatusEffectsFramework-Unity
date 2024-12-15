@@ -31,9 +31,6 @@ namespace StatusEffects
         public int MaxStack => m_MaxStack;
         public ReadOnlyCollection<Effect> Effects => m_Effects.AsReadOnly();
         public ReadOnlyCollection<Condition> Conditions => m_Conditions.AsReadOnly();
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
-        public ReadOnlyCollection<AssetReferenceT<StatusEffectData>> Dependencies => m_Dependencies.AsReadOnly();
-#endif
         public ReadOnlyCollection<ModuleContainer> Modules => m_Modules.AsReadOnly();
         #endregion
 
@@ -61,10 +58,6 @@ namespace StatusEffects
         [SerializeField] private List<Effect> m_Effects = new();
         [Tooltip("Conditionals will be checked when a Status Effect is added. This way you can automatically add or remove other effects with ease.")]
         [SerializeField] private List<Condition> m_Conditions = new();
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
-        [Tooltip("Please add any Status Effect Datas as their Addressables Asset Reference so that the network can send conditional information.")]
-        [SerializeField] private List<AssetReferenceT<StatusEffectData>> m_Dependencies = new();
-#endif
         [Tooltip("Modules will apply additional functionality to a Status Effect. This is not required.")]
         [SerializeField] private List<ModuleContainer> m_Modules = new();
 #if UNITY_EDITOR

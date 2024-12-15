@@ -348,7 +348,6 @@ namespace StatusEffects
             IEnumerator TimedEffect()
 #endif
             {
-                Debug.Log(statusEffect.Duration);
                 float startTime = Time.time;
                 float startDuration = statusEffect.Duration;
                 // Basic decreasing timer.
@@ -586,7 +585,7 @@ namespace StatusEffects
             foreach (Condition condition in statusEffectData.Conditions)
             {
                 bool exists = condition.SearchableConfigurable == ConditionalConfigurable.Group ? GetFirstStatusEffect(group: condition.SearchableGroup) != null
-                            : condition.SearchableConfigurable == ConditionalConfigurable.Name ? GetFirstStatusEffect(name: condition.SearchableComparableName) != null
+                            : condition.SearchableConfigurable == ConditionalConfigurable.Name  ? GetFirstStatusEffect(name: condition.SearchableComparableName) != null
                                                                                                 : GetFirstStatusEffect(data: condition.SearchableData) != null;
                 // If the condition is checking for existence and it doesn't exist or if
                 // its checking non-existence and does exist then skip this condition.

@@ -1,5 +1,8 @@
 using System;
 using UnityEngine;
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+using UnityEngine.AddressableAssets;
+#endif
 
 namespace StatusEffects
 {
@@ -7,6 +10,9 @@ namespace StatusEffects
     public class Condition
     {
         public ConditionalConfigurable SearchableConfigurable;
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+        public AssetReferenceT<StatusEffectData> SearchableDataReference;
+#endif
         public StatusEffectData SearchableData;
         public ComparableName SearchableComparableName;
         public StatusEffectGroup SearchableGroup;
@@ -16,6 +22,9 @@ namespace StatusEffects
         public bool UseStacks;
         [Min(1)] public int Stacks = 1;
         public ConditionalConfigurable ActionConfigurable;
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+        public AssetReferenceT<StatusEffectData> ActionDataReference;
+#endif
         public StatusEffectData ActionData;
         public ComparableName ActionComparableName;
         public StatusEffectGroup ActionGroup;

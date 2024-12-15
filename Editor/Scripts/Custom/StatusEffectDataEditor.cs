@@ -23,9 +23,6 @@ namespace StatusEffects.Inspector
         private SerializedProperty m_MaxStack;
         private SerializedProperty m_Effects;
         private SerializedProperty m_Conditions;
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
-        private SerializedProperty m_Dependencies;
-#endif
         private SerializedProperty m_Modules;
 
         private SerializedProperty m_EnableIcon;
@@ -40,7 +37,27 @@ namespace StatusEffects.Inspector
 
         private void OnEnable()
         {
+            // Retrieve properties
+            m_Group = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Group)}");
+            m_ComparableName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.ComparableName)}");
+            m_BaseValue = serializedObject.FindProperty($"m_{nameof(StatusEffectData.BaseValue)}");
+
+            m_StatusEffectName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.StatusEffectName)}");
+            m_Description = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Description)}");
+            m_Icon = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Icon)}");
+
+            m_AllowEffectStacking = serializedObject.FindProperty($"m_{nameof(StatusEffectData.AllowEffectStacking)}");
+            m_NonStackingBehaviour = serializedObject.FindProperty($"m_{nameof(StatusEffectData.NonStackingBehaviour)}");
+            m_MaxStack = serializedObject.FindProperty($"m_{nameof(StatusEffectData.MaxStack)}");
+
+            m_Effects = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Effects)}");
+            m_Conditions = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Conditions)}");
+
             m_Modules = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Modules)}");
+
+            m_EnableIcon = serializedObject.FindProperty("m_EnableIcon");
+            m_EnableName = serializedObject.FindProperty("m_EnableName");
+            m_EnableDescription = serializedObject.FindProperty("m_EnableDescription");
 
             UnityEngine.Object target;
             string path;
@@ -140,30 +157,6 @@ namespace StatusEffects.Inspector
 
         public override void OnInspectorGUI()
         {
-            // Retrieve properties
-            m_Group = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Group)}");
-            m_ComparableName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.ComparableName)}");
-            m_BaseValue = serializedObject.FindProperty($"m_{nameof(StatusEffectData.BaseValue)}");
-
-            m_StatusEffectName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.StatusEffectName)}");
-            m_Description = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Description)}");
-            m_Icon = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Icon)}");
-
-            m_AllowEffectStacking = serializedObject.FindProperty($"m_{nameof(StatusEffectData.AllowEffectStacking)}");
-            m_NonStackingBehaviour = serializedObject.FindProperty($"m_{nameof(StatusEffectData.NonStackingBehaviour)}");
-            m_MaxStack = serializedObject.FindProperty($"m_{nameof(StatusEffectData.MaxStack)}");
-
-            m_Effects = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Effects)}");
-            m_Conditions = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Conditions)}");
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
-            m_Dependencies = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Dependencies)}");
-#endif
-            m_Modules = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Modules)}");
-
-            m_EnableIcon = serializedObject.FindProperty("m_EnableIcon");
-            m_EnableName = serializedObject.FindProperty("m_EnableName");
-            m_EnableDescription = serializedObject.FindProperty("m_EnableDescription");
-
             serializedObject.Update();
             
             EditorGUILayout.BeginVertical("groupbox");
@@ -236,9 +229,6 @@ namespace StatusEffects.Inspector
                                         "Make sure there aren't two that add each other!", MessageType.Warning);
 
             EditorGUILayout.PropertyField(m_Conditions);
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
-            EditorGUILayout.PropertyField(m_Dependencies);
-#endif
 
             EditorGUI.indentLevel--;
             EditorGUILayout.EndVertical();

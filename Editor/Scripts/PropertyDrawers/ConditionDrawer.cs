@@ -52,7 +52,12 @@ namespace StatusEffects.Inspector
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             m_SearchableConfigurable = property.FindPropertyRelative(nameof(Condition.SearchableConfigurable));
-            m_SearchableReference = property.FindPropertyRelative(m_SearchableConfigurable.enumValueIndex == (int)ConditionalConfigurable.Data ? nameof(Condition.SearchableData)
+            m_SearchableReference = property.FindPropertyRelative(m_SearchableConfigurable.enumValueIndex == (int)ConditionalConfigurable.Data ?
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+                                                                                                                                                 nameof(Condition.SearchableDataReference)
+#else
+                                                                                                                                                 nameof(Condition.SearchableData)
+#endif
                                                                 : m_SearchableConfigurable.enumValueIndex == (int)ConditionalConfigurable.Name ? nameof(Condition.SearchableComparableName)
                                                                                                                                                : nameof(Condition.SearchableGroup));
             m_Exists = property.FindPropertyRelative(nameof(Condition.Exists));
@@ -61,7 +66,12 @@ namespace StatusEffects.Inspector
             m_UseStacks = property.FindPropertyRelative(nameof(Condition.UseStacks));
             m_Stacks = property.FindPropertyRelative(nameof(Condition.Stacks));
             m_ActionConfigurable = property.FindPropertyRelative(nameof(Condition.ActionConfigurable));
-            m_ActionReference = property.FindPropertyRelative(m_ActionConfigurable.enumValueIndex == (int)ConditionalConfigurable.Data || m_Add.boolValue ? nameof(Condition.ActionData)
+            m_ActionReference = property.FindPropertyRelative(m_ActionConfigurable.enumValueIndex == (int)ConditionalConfigurable.Data || m_Add.boolValue ?
+#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+                                                                                                                                                            nameof(Condition.ActionDataReference)
+#else
+                                                                                                                                                            nameof(Condition.ActionData)
+#endif
                                                             : m_ActionConfigurable.enumValueIndex == (int)ConditionalConfigurable.Name                    ? nameof(Condition.ActionComparableName)
                                                                                                                                                           : nameof(Condition.ActionGroup));
             m_Duration = property.FindPropertyRelative(nameof(Condition.Duration));

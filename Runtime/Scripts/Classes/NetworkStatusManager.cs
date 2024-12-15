@@ -296,8 +296,13 @@ namespace StatusEffects
                 await handle.Task;
                 StatusEffectData data = handle.Result;
                 if (m_DataToGuid.TryAdd(data, assedGuid))
-                    foreach (var dependency in data.Dependencies)
-                        await LoadStatusEffectData(dependency.AssetGUID);
+                    foreach (var dependency in data.Conditions)
+                    {
+                        if (dependency.SearchableDataReference.RuntimeKeyIsValid())
+                            dependency.SearchableData = await LoadStatusEffectData(dependency.SearchableDataReference.AssetGUID);
+                        if (dependency.ActionDataReference.RuntimeKeyIsValid())
+                            dependency.ActionData = await LoadStatusEffectData(dependency.ActionDataReference.AssetGUID);
+                    }
             }
 
             return handle.Result;
