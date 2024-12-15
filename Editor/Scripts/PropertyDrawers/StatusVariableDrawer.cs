@@ -17,6 +17,7 @@ namespace StatusEffects.Inspector
     {
         private readonly float m_FieldSize = EditorGUIUtility.singleLineHeight;
         private readonly float m_Padding = EditorGUIUtility.standardVerticalSpacing;
+        private const float k_TopFix = 0.035f;
         private const float k_HorizontalPadding = 3;
         private const int k_FieldCount = 4;
         private const int k_ToggleSize = 15;
@@ -48,7 +49,7 @@ namespace StatusEffects.Inspector
             m_Value = property.FindPropertyRelative($"m_{nameof(StatusFloat.Value)}");
 
             position.height = m_FieldSize;
-            position.y += m_Padding;
+            position.y -= k_TopFix;
             
             GUI.color = !m_StatusName.objectReferenceValue && !property.isExpanded ? Color.red : Color.white;
             property.isExpanded = EditorGUI.Foldout(position, property.isExpanded, label, true);
@@ -126,7 +127,7 @@ namespace StatusEffects.Inspector
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return (m_FieldSize + m_Padding) * (property.isExpanded ? k_FieldCount : 1) + m_Padding;
+            return (m_FieldSize + m_Padding) * (property.isExpanded ? k_FieldCount : 1) - m_Padding;
         }
     }
 }
