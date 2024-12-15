@@ -67,6 +67,9 @@ namespace StatusEffects
             m_LoadedDataResourceHandles = new();
             m_DataToGuid = new();
             m_NetworkEffect = new();
+            
+            if (m_StatusManager.hideFlags != k_HideFlags)
+                m_StatusManager.hideFlags = k_HideFlags;
 
 #if UNITASK
             FlushUnusedStatusEffectDatas(destroyCancellationToken).Forget();
