@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Add Coin Multiplier
   m_EditorClassIdentifier: 
+  m_Id: 397cfabc-8742-438f-83fe-b30ae3c6fc2e
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 11400000, guid: b962d893a3a667d4480d17ac12f7c54c, type: 2}
@@ -21,7 +22,7 @@ MonoBehaviour:
   m_Description: Adds coin multiplier.
   m_AllowEffectStacking: 1
   m_NonStackingBehaviour: 0
-  m_MaxStack: -1
+  m_MaxStacks: -1
   m_Effects:
   - StatusName: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
     ValueModifier: 0

@@ -22,10 +22,10 @@ namespace StatusEffects
         public StatusEffectData Data;
         public StatusEffectTiming Timing;
         public float Duration { get => m_Duration; set { m_Duration = value; OnDurationUpdate?.Invoke(value); } }
-        public int Stack { get => m_Stack; set { m_PreviousStack = m_Stack; m_Stack = value; } }
+        public int Stacks { get => m_Stacks; set { m_PreviousStack = m_Stacks; m_Stacks = value; } }
 
         [SerializeField] private float m_Duration;
-        [SerializeField] private int m_Stack;
+        [SerializeField] private int m_Stacks;
 
         private int m_PreviousStack;
         private int? m_InstanceId;
@@ -43,7 +43,7 @@ namespace StatusEffects
             Data = data;
             Timing = timing;
             m_Duration = duration;
-            m_Stack = stack;
+            m_Stacks = stack;
             m_ModulesEnabled = false;
         }
 
@@ -63,7 +63,7 @@ namespace StatusEffects
 
         internal void InvokeStackUpdate()
         {
-            OnStackUpdate?.Invoke(m_PreviousStack, m_Stack);
+            OnStackUpdate?.Invoke(m_PreviousStack, m_Stacks);
         }
 
         internal void EnableModules(StatusManager manager)

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Cleanse
   m_EditorClassIdentifier: 
+  m_Id: 5826a67f-eeb6-4fbd-8094-ace6a9af0536
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 11400000, guid: 737bd34f77eb0bd46b81025fa5eea595, type: 2}
@@ -21,7 +22,7 @@ MonoBehaviour:
   m_Description: Removes all negative effects.
   m_AllowEffectStacking: 0
   m_NonStackingBehaviour: 3
-  m_MaxStack: 0
+  m_MaxStacks: -1
   m_Effects: []
   m_Conditions:
   - SearchableConfigurable: 2
@@ -31,7 +32,8 @@ MonoBehaviour:
       Value: 2
     Exists: 1
     Add: 0
-    RemoveOption: 0
+    Scaled: 1
+    UseStacks: 0
     Stacks: 0
     ActionConfigurable: 2
     ActionData: {fileID: 0}
@@ -47,7 +49,8 @@ MonoBehaviour:
       Value: 2
     Exists: 0
     Add: 0
-    RemoveOption: 0
+    Scaled: 1
+    UseStacks: 0
     Stacks: 0
     ActionConfigurable: 0
     ActionData: {fileID: 11400000}
@@ -56,7 +59,6 @@ MonoBehaviour:
       Value: 2
     Timing: 0
     Duration: 0
-  m_Dependencies: []
   m_Modules: []
   m_EnableIcon: 1
   m_EnableName: 1

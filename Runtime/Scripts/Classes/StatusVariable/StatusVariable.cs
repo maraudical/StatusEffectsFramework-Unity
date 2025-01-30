@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace StatusEffects
 {
     public abstract class StatusVariable

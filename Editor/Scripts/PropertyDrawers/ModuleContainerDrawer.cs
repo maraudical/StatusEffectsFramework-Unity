@@ -1,8 +1,10 @@
 using StatusEffects.Modules;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 namespace StatusEffects.Inspector
 {
@@ -18,7 +20,7 @@ namespace StatusEffects.Inspector
         private float m_DerivedPropertyHeight;
         private float m_DerivedFieldCount;
 
-        private bool m_ContainsNullModule;
+        private UnityEngine.Object m_Target;
         private object m_ModuleReference;
         private object m_ModuleInstanceReference;
         private Type m_PreviousModuleInstanceType;
@@ -29,7 +31,7 @@ namespace StatusEffects.Inspector
 
         private readonly float m_FieldSize = EditorGUIUtility.singleLineHeight;
         private readonly float m_Padding = EditorGUIUtility.standardVerticalSpacing;
-
+        
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             if (property.serializedObject.targetObject is not ScriptableObject)
@@ -49,7 +51,11 @@ namespace StatusEffects.Inspector
             position.height = m_FieldSize;
             position.y += m_Padding;
             // Draw base module reference
+            EditorGUI.BeginChangeCheck();
             EditorGUI.PropertyField(position, m_Module, GUIContent.none);
+            if (EditorGUI.EndChangeCheck())
+                property.serializedObject.ApplyModifiedProperties();
+
             position.y += m_FieldSize + m_Padding;
             
             if (m_ModuleInstances == null)
@@ -57,19 +63,25 @@ namespace StatusEffects.Inspector
             else
                 m_ModuleInstances.Clear();
 
-            m_ContainsNullModule = false;
             m_PreviousModuleInstanceType = null;
             // Find all relevant module instance references
-            foreach (var target in property.serializedObject.targetObjects)
+            bool isDirty = false;
+            bool differentModuleTypes = false;
+            bool containsNullModule = false;
+            int count = property.serializedObject.targetObjects.Length;
+            for (int i = 0; i < count; i++)
             {
-                m_ModuleReference = m_Module.GetParent(target).GetValue(nameof(ModuleContainer.Module));
-                m_ModuleInstanceReference = m_ModuleInstance.GetParent(target).GetValue(nameof(ModuleContainer.ModuleInstance));
+                m_Target = property.serializedObject.targetObjects[i];
+                bool requireReimport = false;
+                m_ModuleReference = m_Module.GetParent(m_Target).GetValue(nameof(ModuleContainer.Module));
+                m_ModuleInstanceReference = m_ModuleInstance.GetParent(m_Target).GetValue(nameof(ModuleContainer.ModuleInstance));
                 // If the module reference was removed destroy the instance
                 if (m_ModuleReference == null && m_ModuleInstanceReference != null && !m_ModuleInstanceReference.Equals(null))
                 {
                     ScriptableObject instance = m_ModuleInstanceReference as ScriptableObject;
                     AssetDatabase.RemoveObjectFromAsset(instance);
-                    EditorUtility.SetDirty(target);
+                    EditorUtility.SetDirty(m_Target);
+                    isDirty = true;
                     UnityEngine.Object.DestroyImmediate(instance);
                 }
                 if (m_ModuleReference != null)
@@ -84,57 +96,69 @@ namespace StatusEffects.Inspector
                     if (m_ModuleInstanceReference != null && !m_ModuleInstanceReference.Equals(null) && (m_Attribute == null || m_ModuleInstanceType != m_ModuleInstanceReference.GetType()))
                     {
                         ScriptableObject instance = m_ModuleInstanceReference as ScriptableObject;
-                        string path = AssetDatabase.GetAssetPath(target);
                         AssetDatabase.RemoveObjectFromAsset(instance);
-                        EditorUtility.SetDirty(target);
+                        EditorUtility.SetDirty(m_Target);
+                        isDirty = true;
+                        requireReimport = true;
                         UnityEngine.Object.DestroyImmediate(instance);
-                        // Unity bug with removing the final sub asset
-                        AssetDatabase.ImportAsset(path, ImportAssetOptions.ImportRecursive);
                     }
 
                     if (m_Attribute == null)
-                        goto EndProperty;
+                        goto SaveAsset;
 
                     if (m_ModuleInstanceReference == null || m_ModuleInstanceReference.Equals(null))
                     {
                         ScriptableObject instance = ScriptableObject.CreateInstance(m_ModuleInstanceType);
-                        AssetDatabase.AddObjectToAsset(instance, target as ScriptableObject);
-                        m_ModuleInstance.GetParent(target).SetValue(nameof(ModuleContainer.ModuleInstance), instance);
+                        AssetDatabase.AddObjectToAsset(instance, m_Target as ScriptableObject);
+                        m_ModuleInstance.GetParent(m_Target).SetValue(nameof(ModuleContainer.ModuleInstance), instance);
                         m_ModuleInstanceReference = instance;
-                        EditorUtility.SetDirty(target);
+                        EditorUtility.SetDirty(m_Target);
+                        isDirty = true;
                     }
                     // Check if there are different module instance types
-                    if (m_PreviousModuleInstanceType != null && m_PreviousModuleInstanceType != m_ModuleInstanceType)
-                        goto EndProperty;
+                    if (i > 0 && m_PreviousModuleInstanceType != m_ModuleInstanceType)
+                        differentModuleTypes = true;
                     
                     m_PreviousModuleInstanceType = m_ModuleInstanceType;
                     m_ModuleInstances.Add(m_ModuleInstanceReference as ModuleInstance);
                 }
                 else
-                    m_ContainsNullModule = true;
+                    containsNullModule = true;
 
-                AssetDatabase.SaveAssetIfDirty(target);
+                SaveAsset:
+
+                AssetDatabase.SaveAssetIfDirty(m_Target);
+                
+                if (requireReimport)
+                    // Unity bug with removing the final sub asset by changing the module to
+                    // one without a module instance.
+                    AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(m_Target), ImportAssetOptions.ImportRecursive);
             }
 
-            if (m_ContainsNullModule || m_ModuleInstances.Count <= 0)
-                goto EndProperty;
-            // Iterate through the module instance to display properties even if they are derived.
-            m_Instance = new SerializedObject(m_ModuleInstances.ToArray());
-
-            m_Iterator = m_Instance.GetIterator();
-            // Skip the script property
-            m_Iterator.NextVisible(true);
-
-            while (m_Iterator.NextVisible(false))
+            if (isDirty)
             {
-                EditorGUI.PropertyField(position, m_Iterator);
-                position.y += EditorGUI.GetPropertyHeight(m_Iterator) + m_Padding;
+                property.serializedObject.ApplyModifiedProperties();
+                property.serializedObject.Update();
             }
 
-            m_Instance.ApplyModifiedProperties();
-            m_Instance.Dispose();
+            if (!differentModuleTypes && !containsNullModule && m_ModuleInstances.Count > 0)
+            {
+                // Iterate through the module instance to display properties even if they are derived.
+                m_Instance = new SerializedObject(m_ModuleInstances.ToArray());
 
-            EndProperty:
+                m_Iterator = m_Instance.GetIterator();
+                // Skip the script property
+                m_Iterator.NextVisible(true);
+
+                while (m_Iterator.NextVisible(false))
+                {
+                    EditorGUI.PropertyField(position, m_Iterator);
+                    position.y += EditorGUI.GetPropertyHeight(m_Iterator) + m_Padding;
+                }
+
+                m_Instance.ApplyModifiedProperties();
+                m_Instance.Dispose();
+            }
 
             EditorGUI.EndProperty();
         }
@@ -158,7 +182,7 @@ namespace StatusEffects.Inspector
             {
                 m_ModuleInstanceReference = m_ModuleInstance.GetParent(target).GetValue(nameof(ModuleContainer.ModuleInstance));
 
-                if (m_ModuleInstanceType != m_ModuleInstanceReference.GetType())
+                if (m_ModuleInstanceType != m_ModuleInstanceReference?.GetType())
                     return DrawDefault();
 
                 m_ModuleInstanceType = m_ModuleInstanceReference.GetType();

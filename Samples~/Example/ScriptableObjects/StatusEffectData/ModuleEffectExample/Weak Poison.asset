@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Prefab: {fileID: 2445651699385114991, guid: 41228d958dc081047a3b305133724305, type: 3}
+  InstantiateAgainWhenAddingStacks: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25,6 +26,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Weak Poison
   m_EditorClassIdentifier: 
+  m_Id: d0b38008-1502-42ec-b906-18cbbe7c4bd5
   m_Group:
     Value: 2
   m_ComparableName: {fileID: 11400000, guid: b343dd2374330dd40bfadc3bd9490190, type: 2}
@@ -34,7 +36,7 @@ MonoBehaviour:
   m_Description: Deals a bit of damage over time and slows.
   m_AllowEffectStacking: 0
   m_NonStackingBehaviour: 0
-  m_MaxStack: -1
+  m_MaxStacks: -1
   m_Effects:
   - StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
     ValueModifier: 1

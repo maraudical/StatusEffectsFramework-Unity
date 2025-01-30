@@ -12,16 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Ice
   m_EditorClassIdentifier: 
+  m_Id: 1e1f065e-8533-49ef-9ed6-0d5050108ddb
   m_Group:
     Value: 2
   m_ComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4, type: 2}
   m_BaseValue: -0.3
   m_Icon: {fileID: 21300000, guid: 4bae7d79998147e40bfbd395c6b4bbfb, type: 3}
-  m_StatusEffectName: 
-  m_Description: 
+  m_StatusEffectName: Ice
+  m_Description: Reduces movement speed and cancels out any fire effects.
   m_AllowEffectStacking: 0
   m_NonStackingBehaviour: 0
-  m_MaxStack: -1
+  m_MaxStacks: -1
   m_Effects:
   - StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
     ValueModifier: 1
@@ -33,8 +34,7 @@ MonoBehaviour:
   m_Conditions:
   - SearchableConfigurable: 1
     SearchableData: {fileID: 0}
-    SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78,
-      type: 2}
+    SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
     SearchableGroup:
       Value: 0
     Exists: 1
@@ -44,16 +44,14 @@ MonoBehaviour:
     Stacks: 1
     ActionConfigurable: 1
     ActionData: {fileID: 11400000}
-    ActionComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4,
-      type: 2}
+    ActionComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4, type: 2}
     ActionGroup:
       Value: 0
     Timing: 0
     Duration: 0
   - SearchableConfigurable: 1
     SearchableData: {fileID: 0}
-    SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78,
-      type: 2}
+    SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
     SearchableGroup:
       Value: 0
     Exists: 1
@@ -63,13 +61,11 @@ MonoBehaviour:
     Stacks: 1
     ActionConfigurable: 1
     ActionData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    ActionComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78,
-      type: 2}
+    ActionComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
     ActionGroup:
       Value: 0
     Timing: 0
     Duration: 0
-  m_Dependencies: []
   m_Modules:
   - Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
     ModuleInstance: {fileID: 8148485282251604263}

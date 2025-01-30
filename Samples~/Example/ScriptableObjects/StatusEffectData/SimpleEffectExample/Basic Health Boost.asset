@@ -26,16 +26,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Basic Health Boost
   m_EditorClassIdentifier: 
+  m_Id: 5cf8d6fc-254d-47ad-b6b3-9c1b369a97e8
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 11400000, guid: 5d59c617e9e27c645b4a95c856dc345e, type: 2}
   m_BaseValue: 10
   m_Icon: {fileID: 21300000, guid: 2cb9fd87a40eb2b4fb7384c36ccc128e, type: 3}
-  m_StatusEffectName: 
-  m_Description: 
+  m_StatusEffectName: Basic Health Boost
+  m_Description: Adds a little max health.
   m_AllowEffectStacking: 1
   m_NonStackingBehaviour: 0
-  m_MaxStack: -1
+  m_MaxStacks: -1
   m_Effects:
   - StatusName: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
     ValueModifier: 0
@@ -45,7 +46,6 @@ MonoBehaviour:
     BoolValue: 0
     Priority: 0
   m_Conditions: []
-  m_Dependencies: []
   m_Modules:
   - Module: {fileID: 11400000, guid: fc369abdd5ca5574b92d2962ebfd5d96, type: 2}
     ModuleInstance: {fileID: 0}

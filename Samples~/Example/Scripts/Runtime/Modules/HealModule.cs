@@ -9,60 +9,73 @@ using System.Collections;
 #endif
 using UnityEngine;
 using StatusEffects.Example;
+using StatusEffects.NetCode.Entities;
+using Unity.Entities;
 
 namespace StatusEffects.Modules
 {
     [CreateAssetMenu(fileName = "Heal Module", menuName = "Status Effect Framework/Modules/Heal", order = 1)]
     public class HealModule : Module
+#if ENTITIES && ADDRESSABLES
+        , IEntityModule
     {
+        public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)
+        {
+            commandBuffer.AddComponent(entity, new HealEntityModule());
+        }
+
+        public struct HealEntityModule : IComponentData { }
+#else
+    {
+#endif
 #if UNITASK
         public override async UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
-            if (!manager.TryGetComponent(out IExampleEntity entity))
+            if (!manager.TryGetComponent(out IExamplePlayer player))
                 return;
             // Add health according to status effect
-            entity.Health += statusEffect.Data.BaseValue * statusEffect.Stack;
-            entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
+            player.Health += statusEffect.Data.BaseValue * statusEffect.Stacks;
+            player.Health = Mathf.Min(player.Health, player.MaxHealth);
 
-            statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(entity, statusEffect, previous, stack);
+            statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(player, statusEffect, previous, stack);
 
             await UniTask.WaitUntilCanceled(token);
             // Note that you need to check if the entity is null in case the
             // cancellation was invoked from the destruction of the MonoBehaviour
-            if (entity == null)
+            if (player == null)
                 return;
             // Clamp health after status effect ends
-            entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
+            player.Health = Mathf.Min(player.Health, player.MaxHealth);
         }
 #elif UNITY_2023_1_OR_NEWER
         public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
-            if (!manager.TryGetComponent(out IExampleEntity entity))
+            if (!manager.TryGetComponent(out IExamplePlayer player))
                 return;
             // Add health according to status effect
-            entity.Health += statusEffect.Data.BaseValue;
-            entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
+            player.Health += statusEffect.Data.BaseValue;
+            player.Health = Mathf.Min(player.Health, player.MaxHealth);
 
-            statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(entity, statusEffect, previous, stack);
+            statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(player, statusEffect, previous, stack);
             
             await AwaitableExtensions.WaitUntilCanceled(token);
-            // Note that you need to check if the entity is null in case the
+            // Note that you need to check if the player is null in case the
             // cancellation was invoked from the destruction of the MonoBehaviour
-            if (entity == null)
+            if (player == null)
                 return;
             // Clamp health after status effect ends
-            entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
+            player.Health = Mathf.Min(player.Health, player.MaxHealth);
         }
 #else
         public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
         {
-            if (manager.TryGetComponent(out IExampleEntity entity))
+            if (manager.TryGetComponent(out IExamplePlayer player))
             {
                 // Add health according to status effect
-                entity.Health += statusEffect.Data.BaseValue;
-                entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
+                player.Health += statusEffect.Data.BaseValue;
+                player.Health = Mathf.Min(player.Health, player.MaxHealth);
 
-                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(entity, statusEffect, previous, stack);
+                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(player, statusEffect, previous, stack);
             }
 
             yield return null;
@@ -70,16 +83,16 @@ namespace StatusEffects.Modules
 
         public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
         {
-            if (manager.TryGetComponent(out IExampleEntity entity))
+            if (manager.TryGetComponent(out IExamplePlayer player))
                 // Clamp health after status effect ends
-                entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);                         
+                player.Health = Mathf.Min(player.Health, player.MaxHealth);                         
         }
 #endif
 
-        private void OnStackUpdate(IExampleEntity entity, StatusEffect statusEffect, int previous, int stack)
+        private void OnStackUpdate(IExamplePlayer player, StatusEffect statusEffect, int previous, int stack)
         {
-            entity.Health += statusEffect.Data.BaseValue * Mathf.Max(0, stack - previous);
-            entity.Health = Mathf.Min(entity.Health, entity.MaxHealth);
+            player.Health += statusEffect.Data.BaseValue * Mathf.Max(0, stack - previous);
+            player.Health = Mathf.Min(player.Health, player.MaxHealth);
         }
     }
 }

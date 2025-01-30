@@ -1,15 +1,11 @@
 using System;
 using System.Reflection;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
 namespace StatusEffects.Inspector
 {
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
-    [CustomPropertyDrawer(typeof(NetworkStatusFloat))]
-    [CustomPropertyDrawer(typeof(NetworkStatusInt))]
-    [CustomPropertyDrawer(typeof(NetworkStatusBool))]
-#endif
     [CustomPropertyDrawer(typeof(StatusFloat))]
     [CustomPropertyDrawer(typeof(StatusInt))]
     [CustomPropertyDrawer(typeof(StatusBool))]
@@ -75,7 +71,7 @@ namespace StatusEffects.Inspector
                 EditorGUI.PropertyField(position, m_BaseValue);
                 if (EditorGUI.EndChangeCheck() && Application.isPlaying)
                 {
-                    MethodInfo baseValueUpdate = typeof(StatusVariable).Assembly.GetType($"{typeof(StatusVariable).Namespace}.{property.type}").GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+                    MethodInfo baseValueUpdate = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                     foreach (var statusVariable in property.serializedObject.targetObjects)
                         baseValueUpdate.Invoke(m_Value.GetParent(statusVariable), null);
                 }
@@ -91,7 +87,7 @@ namespace StatusEffects.Inspector
                     GUI.Label(m_Offset, new GUIContent("", k_SignProtectedTooltip));
                     if (EditorGUI.EndChangeCheck() && Application.isPlaying)
                     {
-                        MethodInfo signProtectedUpdate = typeof(StatusVariable).Assembly.GetType($"{typeof(StatusVariable).Namespace}.{property.type}").GetMethod("SignProtectedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+                        MethodInfo signProtectedUpdate = property.GetPropertyType().GetMethod("SignProtectedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                         foreach (var statusVariable in property.serializedObject.targetObjects)
                             signProtectedUpdate.Invoke(m_Value.GetParent(statusVariable), null);
                     }

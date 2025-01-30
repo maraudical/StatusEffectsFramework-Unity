@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using UnityEditor;
+using UnityEngine;
 
 namespace StatusEffects.Inspector
 {
@@ -75,8 +77,80 @@ namespace StatusEffects.Inspector
             var enumerable = GetValue(source, name) as IEnumerable;
             var enm = enumerable.GetEnumerator();
             while (index-- >= 0)
+            {
                 enm.MoveNext();
+            }
             return enm.Current;
+        }
+
+        // Directly taken from Unity.VisualScripting extension
+        public static Type GetPropertyType(this SerializedProperty property)
+        {
+            var type = property.serializedObject.targetObject.GetType();
+
+            var parts = property.propertyPath.Replace(".Array.data[", "[").Split('.');
+
+            foreach (var part in parts)
+            {
+                type = GetPropertyPartType(part, type);
+            }
+
+            return type;
+
+            Type GetPropertyPartType(string propertyPathPart, Type type)
+            {
+                string fieldName;
+                int index;
+
+                if (IsPropertyIndexer(propertyPathPart, out fieldName, out index))
+                {
+                    var listType = GetSerializedFieldInfo(type, fieldName).FieldType;
+
+                    if (listType.IsArray)
+                    {
+                        return listType.GetElementType();
+                    }
+                    else // List<T> is the only other Unity-serializable collection
+                    {
+                        return listType.GetGenericArguments()[0];
+                    }
+                }
+                else
+                {
+                    return GetSerializedFieldInfo(type, fieldName).FieldType;
+                }
+            }
+
+            bool IsPropertyIndexer(string propertyPart, out string fieldName, out int index)
+            {
+                var regex = new Regex(@"(.+)\[(\d+)\]");
+                var match = regex.Match(propertyPart);
+
+                if (match.Success) // Property refers to an array or list
+                {
+                    fieldName = match.Groups[1].Value;
+                    index = int.Parse(match.Groups[2].Value);
+                    return true;
+                }
+                else
+                {
+                    fieldName = propertyPart;
+                    index = -1;
+                    return false;
+                }
+            }
+
+            FieldInfo GetSerializedFieldInfo(Type type, string name)
+            {
+                var field = type.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+                if (field == null)
+                {
+                    throw new MissingMemberException(type.FullName, name);
+                }
+
+                return field;
+            }
         }
     }
 }

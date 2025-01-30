@@ -56,12 +56,12 @@ namespace StatusEffects.Inspector
                 m_StatusNameType = m_StatusNameTypeDummy;
             }
 
-            m_Primary = m_StatusNameType == typeof(StatusNameBool)   ? property.FindPropertyRelative(nameof(Effect.BoolValue))
-                      : m_StatusNameType == typeof(StatusNameInt)   ? property.FindPropertyRelative(nameof(Effect.IntValue))
+            m_Primary = m_StatusNameType == typeof(StatusNameBool) ? property.FindPropertyRelative(nameof(Effect.BoolValue))
+                      : m_StatusNameType == typeof(StatusNameInt)  ? property.FindPropertyRelative(nameof(Effect.IntValue))
                                                                    : property.FindPropertyRelative(nameof(Effect.FloatValue));
 
             m_Secondary = m_StatusNameType == typeof(StatusNameBool) ? property.FindPropertyRelative(nameof(Effect.Priority))
-                                                                   : property.FindPropertyRelative(nameof(Effect.ValueModifier));
+                                                                     : property.FindPropertyRelative(nameof(Effect.ValueModifier));
 
             EditorGUI.BeginProperty(position, label, property);
 

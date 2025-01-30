@@ -9,22 +9,22 @@ namespace StatusEffects.Example.UI
         [SerializeField] private Text m_Text;        
         [SerializeField] private Image m_Image;
 
-        [NonSerialized] public int Stack;
+        [NonSerialized] public int Stacks;
 
         public void Initialize(Sprite sprite, int stacks)
         {
             m_Image.sprite = sprite;
-            Stack = stacks;
+            Stacks = stacks;
             UpdateStack(0);
         }
 
         public void UpdateStack(int value)
         {
-            Stack += value;
+            Stacks = value;
 
-            m_Text.text = Stack.ToString();
+            m_Text.text = Stacks.ToString();
 
-            if (Stack > 1)
+            if (Stacks > 1)
                 m_Text.gameObject.SetActive(true);
             else
                 m_Text.gameObject.SetActive(false);

@@ -23,7 +23,7 @@ namespace StatusEffects.Inspector
             m_Data = property.FindPropertyRelative(nameof(StatusEffect.Data));
             m_Timing = property.FindPropertyRelative(nameof(StatusEffect.Timing));
             m_Duration = property.FindPropertyRelative($"m_{nameof(StatusEffect.Duration)}");
-            m_Stack = property.FindPropertyRelative($"m_{nameof(StatusEffect.Stack)}");
+            m_Stack = property.FindPropertyRelative($"m_{nameof(StatusEffect.Stacks)}");
             
             EditorGUI.BeginProperty(position, label, property);
 

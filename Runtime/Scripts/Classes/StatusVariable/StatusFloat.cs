@@ -108,7 +108,7 @@ namespace StatusEffects
                     if (effect.StatusName != m_StatusName)
                         continue;
 
-                    effectValue = statusEffect.Stack * (effect.UseBaseValue ? statusEffect.Data.BaseValue : effect.FloatValue);
+                    effectValue = statusEffect.Stacks * (effect.UseBaseValue ? statusEffect.Data.BaseValue : effect.FloatValue);
                     
                     switch (effect.ValueModifier)
                     {

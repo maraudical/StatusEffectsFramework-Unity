@@ -1,38 +1,65 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
-using StatusEffects.Example;
 using System.Threading;
+using Unity.Entities.Serialization;
+
 #elif UNITY_2023_1_OR_NEWER
 using StatusEffects.Extensions;
 using System.Threading;
 #else
 using System.Collections;
 #endif
+#if ENTITIES && ADDRESSABLES
+using StatusEffects.NetCode.Entities;
+using Unity.Entities;
+#endif
 using UnityEngine;
-using static UnityEngine.EventSystems.EventTrigger;
 
 namespace StatusEffects.Modules
 {
     [CreateAssetMenu(fileName = "VFX Module", menuName = "Status Effect Framework/Modules/VFX", order = 1)]
-    [AttachModuleInstance(typeof(VFXInstance))]
-    public class VFXModule : Module
+    [AttachModuleInstance(typeof(VfxInstance))]
+    public class VfxModule : Module
+#if ENTITIES && ADDRESSABLES
+        , IEntityModule
     {
+        public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)
+        {
+            VfxInstance vfxInstance = moduleInstance as VfxInstance;
+            
+            commandBuffer.AddComponent(entity, new VfxEntityModule() 
+            { 
+                Prefab = vfxInstance.Prefab,
+                InstantiateAgainWhenAddingStacks = vfxInstance.InstantiateAgainWhenAddingStacks,
+                DestroyPrefabAfter = DestroyPrefabAfter
+            });
+        }
+
+        public struct VfxEntityModule : IComponentData
+        {
+            public UnityObjectRef<GameObject> Prefab;
+            public bool InstantiateAgainWhenAddingStacks;
+            public float DestroyPrefabAfter;
+        }
+#else
+    {
+#endif
         [SerializeField] private float DestroyPrefabAfter = 8;
 
 #if UNITASK
         public override async UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
-            VFXInstance VFXInstance = moduleInstance as VFXInstance;
+            VfxInstance VfxInstance = moduleInstance as VfxInstance;
             
-            GameObject VFXGameObject = Instantiate(VFXInstance.Prefab, manager.transform);
-            // If we want this effect to be added everytime more are stacks
+            GameObject VFXGameObject = Instantiate(VfxInstance.Prefab, manager.transform);
+            // If we want this effect to be added everytime more stacks are
             // added we just immediately begin destruction on the current particle.
-            if (VFXInstance.InstantiateAgainWhenAddingStacks)
-                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(VFXInstance.Prefab, manager, statusEffect, previous, stack);
+            if (VfxInstance.InstantiateAgainWhenAddingStacks)
+                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(VfxInstance.Prefab, manager, statusEffect, previous, stack);
             else
                 await UniTask.WaitUntilCanceled(token);
             // Attempt to stop the particle system.
-            if (!VFXInstance.InstantiateAgainWhenAddingStacks)
+            if (!VfxInstance.InstantiateAgainWhenAddingStacks)
             {
                 // Note that you need to check if the effect is null in case the
                 // cancellation was invoked from the destruction of the MonoBehaviour.
