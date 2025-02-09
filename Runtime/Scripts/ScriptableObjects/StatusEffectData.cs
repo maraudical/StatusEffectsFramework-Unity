@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using StatusEffects.Modules;
 using System.Collections.ObjectModel;
+using System;
 #if LOCALIZED
 using UnityEngine.Localization;
 #endif
@@ -11,13 +12,13 @@ namespace StatusEffects
     [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effect Framework/Status Effect Data", order = 1)]
     public class StatusEffectData : ScriptableObject
     {
-#if ENTITIES && ADDRESSABLES
-        public string Id => m_Id;
-        [SerializeField] private string m_Id;
+#if ENTITIES
+        public Hash128 Id => m_Id;
+        [SerializeField] private Hash128 m_Id;
 
         private void OnValidate()
         {
-            if (string.IsNullOrWhiteSpace(m_Id))
+            if (m_Id == default)
                 GenerateId();
         }
 
@@ -31,7 +32,7 @@ namespace StatusEffects
         public void GenerateId()
         {
 #if UNITY_EDITOR
-            m_Id = System.Guid.NewGuid().ToString();
+            m_Id = Hash128.Compute(Guid.NewGuid().ToString("N"));
             UnityEditor.EditorUtility.SetDirty(this);
 #endif
         }

@@ -1,22 +1,22 @@
-#if ENTITIES && ADDRESSABLES
-using StatusEffects.NetCode.Entities;
+#if ENTITIES
+using StatusEffects.Entities;
 using Unity.Entities;
+using Hash128 = Unity.Entities.Hash128;
 #endif
 using System;
 using UnityEngine;
 using UnityEngine.Events;
-using Unity.Collections;
 
 namespace StatusEffects.Example
 {
     // Require the StatusEffectsInstance so that StatusVariables can be setup.
     [RequireComponent(typeof(StatusManager))]
     public class ExamplePlayer : MonoBehaviour, IExamplePlayer
-#if ENTITIES && ADDRESSABLES
+#if ENTITIES
             , IEntityStatus
     {
-        public FixedString64Bytes ComponentId => m_ComponentId;
-        private FixedString64Bytes m_ComponentId = Guid.NewGuid().ToString();
+        public Hash128 ComponentId => m_ComponentId;
+        private Hash128 m_ComponentId = new Hash128(Guid.NewGuid().ToString("N"));
 
         public void OnBake(Entity entity, StatusManagerBaker baker)
         {

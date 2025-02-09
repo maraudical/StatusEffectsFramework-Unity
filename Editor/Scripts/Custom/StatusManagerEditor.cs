@@ -37,9 +37,9 @@ namespace StatusEffects.Inspector
                 var element = m_EffectList.serializedProperty.GetArrayElementAtIndex(index);
                 rect.y += EditorGUIUtility.standardVerticalSpacing / 1.515f;
                 rect.height = EditorGUI.GetPropertyHeight(element);
-                GUI.enabled = false;
+                EditorGUI.BeginDisabledGroup(true);
                 EditorGUI.PropertyField(rect, element, GUIContent.none);
-                GUI.enabled = true;
+                EditorGUI.EndDisabledGroup();
             };
         }
 

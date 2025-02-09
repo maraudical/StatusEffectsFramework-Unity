@@ -14,7 +14,9 @@
         "GUID:8819f35a0fc84499b990e90a4ca1911f",
         "GUID:2665a8d13d1b3f18800f46e256720795",
         "GUID:a5baed0c9693541a5bd947d336ec7659",
-        "GUID:d8b63aba1907145bea998dd612889d6b"
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:953adc2a6b8b4e3c8df5b728bcd546e9",
+        "GUID:f2d49d9fa7e7eb3418e39723a7d3b92f"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -38,11 +40,6 @@
             "name": "com.unity.netcode.gameobjects",
             "expression": "1.8",
             "define": "NETCODE_GAMEOBJECTS"
-        },
-        {
-            "name": "com.unity.addressables",
-            "expression": "",
-            "define": "ADDRESSABLES"
         },
         {
             "name": "com.cysharp.unitask",

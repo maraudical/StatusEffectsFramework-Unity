@@ -24,9 +24,5 @@ namespace StatusEffects
         public StatusEffectGroup ActionGroup;
         public ConditionalTiming Timing;
         [Min(0)] public float Duration;
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
-        public AssetReferenceT<StatusEffectData> SearchableDataReference;
-        public AssetReferenceT<StatusEffectData> ActionDataReference;
-#endif
     }
 }

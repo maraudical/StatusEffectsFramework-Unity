@@ -5,7 +5,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 namespace StatusEffects.Inspector
 {
@@ -13,9 +12,8 @@ namespace StatusEffects.Inspector
     [CanEditMultipleObjects]
     public class StatusEffectDataEditor : Editor
     {
-#if ENTITIES && ADDRESSABLES
         private SerializedProperty m_Id;
-#endif
+
         private SerializedProperty m_Group;
         private SerializedProperty m_ComparableName;
         private SerializedProperty m_BaseValue;
@@ -43,9 +41,8 @@ namespace StatusEffects.Inspector
         private void OnEnable()
         {
             // Retrieve properties
-#if ENTITIES && ADDRESSABLES
             m_Id = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Id)}");
-#endif
+
             m_Group = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Group)}");
             m_ComparableName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.ComparableName)}");
             m_BaseValue = serializedObject.FindProperty($"m_{nameof(StatusEffectData.BaseValue)}");
@@ -67,6 +64,8 @@ namespace StatusEffects.Inspector
             m_EnableName = serializedObject.FindProperty("m_EnableName");
             m_EnableDescription = serializedObject.FindProperty("m_EnableDescription");
 
+            // Check if it is added to the database.
+            StatusEffectDatabase database = StatusEffectDatabase.Get();
             UnityEngine.Object target;
             string path;
             IEnumerable<ModuleInstance> modules;
@@ -75,29 +74,40 @@ namespace StatusEffects.Inspector
 
             int objectCount = serializedObject.targetObjects.Length;
             // Remove any loose nested scriptable objects and
-            // iterate in reverse, to match the selected object order
+            // iterate in reverse, to match the selected object order.
+            // Also check that the StatusEffect is added to the Database.
             for (int i = objectCount - 1; i >= 0; i--)
             {
-                // Get the property on the corresponding serializedObject
+                // Get the property on the corresponding serializedObject.
                 target = serializedObject.targetObjects[i];
                 path = AssetDatabase.GetAssetPath(target);
 
-                modules = (target as StatusEffectData).Modules.Select(m => m.ModuleInstance);
+                StatusEffectData data = target as StatusEffectData;
+
+                if (!database.Values.ContainsKey(data.Id))
+                {
+                    database.Values.Add(data.Id, data);
+                    EditorUtility.SetDirty(database);
+                }
+
+                modules = data.Modules.Select(m => m.ModuleInstance);
                 subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
 
                 for (int v = subAssets.Length - 1; v >= 0; v--)
                 {
                     nestedModule = subAssets[v];
-                    // If there is somehow a loose module we need to clean it up
+                    // If there is somehow a loose module we need to clean it up.
                     if (!modules.Contains(nestedModule))
                     {
                         AssetDatabase.RemoveObjectFromAsset(nestedModule);
                         DestroyImmediate(nestedModule);
                         EditorUtility.SetDirty(target);
-                        AssetDatabase.SaveAssetIfDirty(target);
                     }
                 }
+
+                AssetDatabase.SaveAssetIfDirty(target);
             }
+            AssetDatabase.SaveAssetIfDirty(database);
             // Setup the reorderable module list
             m_ModulesList = new ReorderableList(serializedObject, m_Modules, true, true, true, true);
 
@@ -205,12 +215,10 @@ namespace StatusEffects.Inspector
             if (m_Data.Effects.Count != m_Effects.arraySize || m_Data.Conditions.Count != m_Conditions.arraySize)
                 serializedObject.ApplyModifiedProperties();
 
-#if ENTITIES && ADDRESSABLES
-            GUI.enabled = false;
+            EditorGUI.BeginDisabledGroup(true);
             EditorGUILayout.PropertyField(m_Id);
-            GUI.enabled = true;
+            EditorGUI.EndDisabledGroup();
 
-#endif
             EditorGUILayout.BeginVertical("groupbox");
             EditorGUILayout.LabelField("Required Fields", EditorStyles.boldLabel);
             HorizontalLine();
@@ -287,10 +295,9 @@ namespace StatusEffects.Inspector
 
             EditorGUILayout.Space(7.5f);
 
-            if (Application.isPlaying)
-                GUI.enabled = false;
+            EditorGUI.BeginDisabledGroup(Application.isPlaying);
             m_ModulesList?.DoLayoutList();
-            GUI.enabled = true;
+            EditorGUI.EndDisabledGroup();
         }
 
         private void HorizontalLine()

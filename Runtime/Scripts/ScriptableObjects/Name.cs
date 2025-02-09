@@ -5,12 +5,12 @@ namespace StatusEffects
 {
     public abstract class Name : ScriptableObject, IEquatable<Name>
     {
-        public string Id => m_Id;
-        [SerializeField] private string m_Id;
+        public Hash128 Id => m_Id;
+        [SerializeField] private Hash128 m_Id;
 
         private void OnValidate()
         {
-            if (string.IsNullOrWhiteSpace(m_Id))
+            if (m_Id == default)
                 GenerateId();
         }
 
@@ -24,7 +24,7 @@ namespace StatusEffects
         public void GenerateId()
         {
 #if UNITY_EDITOR
-            m_Id = Guid.NewGuid().ToString();
+            m_Id = Hash128.Compute(Guid.NewGuid().ToString("N"));
             UnityEditor.EditorUtility.SetDirty(this);
 #endif
         }

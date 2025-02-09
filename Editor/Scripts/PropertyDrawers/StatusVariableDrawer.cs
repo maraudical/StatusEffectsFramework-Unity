@@ -60,10 +60,9 @@ namespace StatusEffects.Inspector
                 EditorGUI.indentLevel = m_Indent + 1;
                 position.y += m_FieldSize + m_Padding;
                 GUI.color = !m_StatusName.objectReferenceValue ? Color.red : Color.white;
-                if (Application.isPlaying)
-                    GUI.enabled = false;
+                EditorGUI.BeginDisabledGroup(Application.isPlaying);
                 EditorGUI.PropertyField(position, m_StatusName);
-                GUI.enabled = true;
+                EditorGUI.EndDisabledGroup();
                 GUI.color = Color.white;
                 position.y += m_FieldSize + m_Padding;
 
@@ -104,16 +103,16 @@ namespace StatusEffects.Inspector
                 else
                     m_Offset = new Rect(m_PropertyPosition.x, m_PropertyPosition.y, m_PropertyPosition.width, m_PropertyPosition.height);
 
-                GUI.enabled = false;
+                EditorGUI.BeginDisabledGroup(true);
                 EditorGUI.PropertyField(m_Offset, Application.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
-                GUI.enabled = true;
+                EditorGUI.EndDisabledGroup();
             }
             else
             {
-                GUI.enabled = false;
+                EditorGUI.BeginDisabledGroup(true);
                 m_PropertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(" "));
                 EditorGUI.PropertyField(m_PropertyPosition, Application.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
-                GUI.enabled = true;
+                EditorGUI.EndDisabledGroup();
             }
 
             EditorGUI.indentLevel = m_Indent;

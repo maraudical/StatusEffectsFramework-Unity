@@ -5,7 +5,8 @@
         "GUID:54cb1906aeb4e4264bc1d2aa3818a43f",
         "GUID:c1d753aaef5f86c4488844bae8cb6730",
         "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5",
-        "GUID:9e24947de15b9834991c9d8411ea37cf"
+        "GUID:9e24947de15b9834991c9d8411ea37cf",
+        "GUID:df380645f10b7bc4b97d4f5eb6303d95"
     ],
     "includePlatforms": [
         "Editor"
@@ -31,11 +32,6 @@
             "name": "com.unity.netcode.gameobjects",
             "expression": "1.8",
             "define": "NETCODE"
-        },
-        {
-            "name": "com.unity.addressables",
-            "expression": "",
-            "define": "ADDRESSABLES"
         },
         {
             "name": "com.unity.entities",

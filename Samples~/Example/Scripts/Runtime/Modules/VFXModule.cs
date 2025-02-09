@@ -9,18 +9,18 @@ using System.Threading;
 #else
 using System.Collections;
 #endif
-#if ENTITIES && ADDRESSABLES
-using StatusEffects.NetCode.Entities;
+#if ENTITIES
+using StatusEffects.Entities;
 using Unity.Entities;
 #endif
 using UnityEngine;
 
 namespace StatusEffects.Modules
 {
-    [CreateAssetMenu(fileName = "VFX Module", menuName = "Status Effect Framework/Modules/VFX", order = 1)]
+    [CreateAssetMenu(fileName = "Vfx Module", menuName = "Status Effect Framework/Modules/Vfx", order = 1)]
     [AttachModuleInstance(typeof(VfxInstance))]
     public class VfxModule : Module
-#if ENTITIES && ADDRESSABLES
+#if ENTITIES
         , IEntityModule
     {
         public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)
@@ -31,7 +31,6 @@ namespace StatusEffects.Modules
             { 
                 Prefab = vfxInstance.Prefab,
                 InstantiateAgainWhenAddingStacks = vfxInstance.InstantiateAgainWhenAddingStacks,
-                DestroyPrefabAfter = DestroyPrefabAfter
             });
         }
 
@@ -39,80 +38,72 @@ namespace StatusEffects.Modules
         {
             public UnityObjectRef<GameObject> Prefab;
             public bool InstantiateAgainWhenAddingStacks;
-            public float DestroyPrefabAfter;
         }
 #else
     {
 #endif
-        [SerializeField] private float DestroyPrefabAfter = 8;
 
 #if UNITASK
         public override async UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
-            VfxInstance VfxInstance = moduleInstance as VfxInstance;
-            
-            GameObject VFXGameObject = Instantiate(VfxInstance.Prefab, manager.transform);
+            VfxInstance vfxInstance = moduleInstance as VfxInstance;
+            // Make sure the particle system stop action is set to destroy so it
+            // automatically destroys itself when all particles die.
+            GameObject vfxGameObject = Instantiate(vfxInstance.Prefab, manager.transform);
             // If we want this effect to be added everytime more stacks are
             // added we just immediately begin destruction on the current particle.
-            if (VfxInstance.InstantiateAgainWhenAddingStacks)
-                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(VfxInstance.Prefab, manager, statusEffect, previous, stack);
+            if (vfxInstance.InstantiateAgainWhenAddingStacks)
+                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
             else
                 await UniTask.WaitUntilCanceled(token);
             // Attempt to stop the particle system.
-            if (!VfxInstance.InstantiateAgainWhenAddingStacks)
+            if (!vfxInstance.InstantiateAgainWhenAddingStacks)
             {
                 // Note that you need to check if the effect is null in case the
                 // cancellation was invoked from the destruction of the MonoBehaviour.
-                if (!VFXGameObject)
+                if (!vfxGameObject)
                     return;
 
-                ParticleSystem[] particleSystems = VFXGameObject.GetComponentsInChildren<ParticleSystem>();
-
-                foreach (ParticleSystem particleSystem in particleSystems)
-                    particleSystem.Stop();
+                vfxGameObject.GetComponent<ParticleSystem>().Stop();
             }
-            // Destroy after a wait so that particles have time to fade out.
-            Destroy(VFXGameObject, DestroyPrefabAfter);
         }
 #elif UNITY_2023_1_OR_NEWER
         public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
-            VFXInstance VFXInstance = moduleInstance as VFXInstance;
-            
-            GameObject VFXGameObject = Instantiate(VFXInstance.Prefab, manager.transform);
+            VfxInstance vfxInstance = moduleInstance as VfxInstance;
+            // Make sure the particle system stop action is set to destroy so it
+            // automatically destroys itself when all particles die.
+            GameObject vfxGameObject = Instantiate(vfxInstance.Prefab, manager.transform);
             // If we want this effect to be added everytime more are stacks
             // added we just immediately begin destruction on the current particle.
-            if (VFXInstance.InstantiateAgainWhenAddingStacks)
-                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(VFXInstance.Prefab, manager, statusEffect, previous, stack);
+            if (vfxInstance.InstantiateAgainWhenAddingStacks)
+                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
             else
                 await AwaitableExtensions.WaitUntilCanceled(token);
             // Attempt to stop the particle system.
-            if (!VFXInstance.InstantiateAgainWhenAddingStacks)
+            if (!vfxInstance.InstantiateAgainWhenAddingStacks)
             {
                 // Note that you need to check if the effect is null in case the
                 // cancellation was invoked from the destruction of the MonoBehaviour.
-                if (!VFXGameObject)
+                if (!vfxGameObject)
                     return;
-                ParticleSystem[] particleSystems = VFXGameObject.GetComponentsInChildren<ParticleSystem>();
 
-                foreach (ParticleSystem particleSystem in particleSystems)
-                    particleSystem.Stop();
+                vfxGameObject.GetComponent<ParticleSystem>().Stop();
             }
-            // Destroy after a wait so that particles have time to fade out.
-            Destroy(VFXGameObject, DestroyPrefabAfter);
         }
 #else
         public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
         {
-            VFXInstance VFXInstance = moduleInstance as VFXInstance;
-            // Give the vfx the name of the prefab so it can be queried later
-            GameObject VFXGameObject = Instantiate(VFXInstance.Prefab, manager.transform).name = VFXInstance.Prefab.name;
+            VfxInstance vfxInstance = moduleInstance as VfxInstance;
+            // Make sure the particle system stop action is set to destroy so it
+            // automatically destroys itself when all particles die.
 
-            if (VFXInstance.InstantiateAgainWhenAddingStacks)
+            // Give the vfx the name of the prefab so it can be queried later.
+            GameObject vfxGameObject = Instantiate(vfxInstance.Prefab, manager.transform).name = VfxInstance.Prefab.name;
+
+            if (vfxInstance.InstantiateAgainWhenAddingStacks)
             {
-                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(VFXInstance.Prefab, manager, statusEffect, previous, stack);
-
-                Destroy(VFXGameObject, DestroyPrefabAfter);
+                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
             }
 
             yield break;
@@ -120,29 +111,24 @@ namespace StatusEffects.Modules
 
         public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) 
         {
-            VFXInstance VFXInstance = moduleInstance as VFXInstance;
+            VfxInstance vfxInstance = moduleInstance as VfxInstance;
             // If we are instantiating when adding stacks it has already been destroyed.
-            if (VFXInstance.InstantiateAgainWhenAddingStacks)
+            if (vfxInstance.InstantiateAgainWhenAddingStacks)
                 return;
             // This magic name finding system is horrible but it works. Unitask would do
             // the enabling and disabling so much better since the reference to the
             // GameObject can be kept as DisableModule is just when cancellation is called.
-            Transform VFXTransform = manager.transform.Find(VFXInstance.Prefab.name);
+            Transform vfxTransform = manager.transform.Find(vfxInstance.Prefab.name);
             
-            if (!VFXTransform)
+            if (!vfxTransform)
                 return;
             
-            GameObject VFXGameObject = VFXTransform.gameObject;
+            GameObject vfxGameObject = vfxTransform.gameObject;
             // Attempt to stop the particle system.
-            ParticleSystem[] particleSystems = VFXGameObject.GetComponentsInChildren<ParticleSystem>();
-
-            foreach (ParticleSystem particleSystem in particleSystems)
-                particleSystem.Stop();
+            vfxGameObject.GetComponent<ParticleSystem>().Stop();
             // Unset the parent so that if multiple effects are being removed it doesn't
             // grab the same VFX twice.
-            VFXTransform.SetParent(null);
-            // Destroy after a wait so that particles have time to fade out.
-            Destroy(VFXGameObject, DestroyPrefabAfter);
+            vfxTransform.SetParent(null);
         }
 #endif
 
@@ -151,9 +137,7 @@ namespace StatusEffects.Modules
             if (previous >= stack)
                 return;
 
-            GameObject VFXGameObject = Instantiate(prefab, manager.transform);
-            // Destroy after a wait so that particles have time to fade out.
-            Destroy(VFXGameObject, DestroyPrefabAfter);
+            Instantiate(prefab, manager.transform);
         }
     }
 }

@@ -8,8 +8,10 @@ using System.Collections;
 #endif
 using UnityEngine;
 using StatusEffects.Example;
-using StatusEffects.NetCode.Entities;
+#if ENTITIES
+using StatusEffects.Entities;
 using Unity.Entities;
+#endif
 
 namespace StatusEffects.Modules
 {
@@ -19,7 +21,7 @@ namespace StatusEffects.Modules
     [CreateAssetMenu(fileName = "Damage Over Time Module", menuName = "Status Effect Framework/Modules/Damage Over Time", order = 1)]
     [AttachModuleInstance(typeof(DamageOverTimeInstance))]
     public class DamageOverTimeModule : Module
-#if ENTITIES && ADDRESSABLES
+#if ENTITIES
         , IEntityModule
     {
         public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)

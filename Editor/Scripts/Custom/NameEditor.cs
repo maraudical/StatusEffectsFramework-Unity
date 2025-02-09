@@ -17,9 +17,9 @@ namespace StatusEffects.Inspector
 
         public override void OnInspectorGUI()
         {
-            GUI.enabled = false;
+            EditorGUI.BeginDisabledGroup(true);
             EditorGUILayout.PropertyField(m_Id);
-            GUI.enabled = true;
+            EditorGUI.EndDisabledGroup();
         }
     }
 }

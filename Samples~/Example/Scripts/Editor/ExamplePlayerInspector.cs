@@ -21,10 +21,9 @@ namespace StatusEffects.Example.Inspector
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PrefixLabel(nameof(player.Health));
-            if (!EditorApplication.isPlaying)
-                GUI.enabled = false;
+            EditorGUI.BeginDisabledGroup(!EditorApplication.isPlaying);
             player.Health = EditorGUILayout.FloatField(player.Health);
-            GUI.enabled = true;
+            EditorGUI.EndDisabledGroup();
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(10);
