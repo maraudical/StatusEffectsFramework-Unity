@@ -2,7 +2,7 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
-  m_ObjectHideFlags: 0
+  m_ObjectHideFlags: 64
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -10,6 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2dc9ea339ec818f43a77a0a628ba5ed6, type: 3}
-  m_Name: Coin Add
+  m_Name: 
   m_EditorClassIdentifier: 
-  m_Id: 0586ecd5-2d06-48a4-b7ee-8f830520467e
+  m_Id:
+    serializedVersion: 2
+    Hash: 693872f4b0cba0b7702ee0d856834962

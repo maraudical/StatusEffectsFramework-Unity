@@ -1,6 +1,8 @@
 #if ENTITIES
 using Unity.Entities;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 namespace StatusEffects.Entities
 {
@@ -39,10 +41,20 @@ namespace StatusEffects.Entities
         public StatusFloats(Hash128 componentId, global::StatusEffects.StatusFloat statusFloat)
         {
             ComponentId = componentId;
-            Id = statusFloat.StatusName.Id;
-            BaseValue = statusFloat.BaseValue;
-            SignProtected = statusFloat.SignProtected;
-            Value = statusFloat.BaseValue;
+            if (statusFloat != null && statusFloat.StatusName)
+            {
+                Id = statusFloat.StatusName.Id;
+                BaseValue = statusFloat.BaseValue;
+                SignProtected = statusFloat.SignProtected;
+                Value = statusFloat.BaseValue;
+            }
+            else
+            {
+                Id = default;
+                BaseValue = default;
+                SignProtected = default;
+                Value = default;
+            }
         }
     }
 }

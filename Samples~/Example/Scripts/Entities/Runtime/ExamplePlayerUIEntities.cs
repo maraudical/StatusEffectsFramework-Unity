@@ -1,6 +1,7 @@
 #if ENTITIES
 using System;
 using System.Collections;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 using UnityEngine;
@@ -22,8 +23,7 @@ namespace StatusEffects.Entities.Example.UI
         private int m_SpeedIndex;
         private int m_CoinMultiplierIndex;
         private int m_StunnedIndex;
-
-        private float m_BaseHealth;
+        
         private float m_BaseMaxHealth;
         private float m_BaseSpeed;
         private int m_BaseCoinMultiplier;
@@ -68,13 +68,11 @@ namespace StatusEffects.Entities.Example.UI
             m_SpeedIndex = player.Speed.GetBufferIndex(player.ComponentId, m_StatusFloatBuffer);
             m_CoinMultiplierIndex = player.CoinMultiplier.GetBufferIndex(player.ComponentId, m_StatusIntBuffer);
             m_StunnedIndex = player.Stunned.GetBufferIndex(player.ComponentId, m_StatusBoolBuffer);
-
-            m_BaseHealth = player.Health;
-
-            m_BaseMaxHealth = m_StatusFloatBuffer[m_MaxHealthIndex].Value;
-            m_BaseSpeed = m_StatusFloatBuffer[m_SpeedIndex].Value;
-            m_BaseCoinMultiplier = m_StatusIntBuffer[m_CoinMultiplierIndex].Value;
-            m_BaseStunned = m_StatusBoolBuffer[m_StunnedIndex].Value;
+            
+            m_BaseMaxHealth = m_StatusFloatBuffer[m_MaxHealthIndex].BaseValue;
+            m_BaseSpeed = m_StatusFloatBuffer[m_SpeedIndex].BaseValue;
+            m_BaseCoinMultiplier = m_StatusIntBuffer[m_CoinMultiplierIndex].BaseValue;
+            m_BaseStunned = m_StatusBoolBuffer[m_StunnedIndex].BaseValue;
         }
 
         private void Update()
@@ -99,7 +97,7 @@ namespace StatusEffects.Entities.Example.UI
             bool stunned = m_StatusBoolBuffer[m_StunnedIndex].Value;
 
             m_Health.text = player.Health.ToString("0.0");
-            m_Health.color = GetColor(m_BaseHealth, player.Health);
+            m_Health.color = GetColor(m_BaseMaxHealth, player.Health);
 
             m_MaxHealth.text = maxHealth.ToString("0.0");
             m_MaxHealth.color = GetColor(m_BaseMaxHealth, maxHealth);
@@ -116,7 +114,10 @@ namespace StatusEffects.Entities.Example.UI
 
         private Color GetColor(float origional, float current)
         {
-            return current > origional ? Color.green : current < origional ? Color.red : Color.white;
+            // Fix floating point errors.
+            float roundedOrigional = Mathf.Round(origional * 10f) / 10f;
+            float roundedCurrent = Mathf.Round(current * 10f) / 10f;
+            return roundedCurrent > roundedOrigional ? Color.green : roundedCurrent < roundedOrigional ? Color.red : Color.white;
         }
 
         private Color GetColor(bool origional, bool current)

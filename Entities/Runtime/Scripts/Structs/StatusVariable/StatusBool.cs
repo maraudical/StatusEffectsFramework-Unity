@@ -41,7 +41,7 @@ namespace StatusEffects.Entities
         }
 
         public static implicit operator StatusBool(Hash128 value) => new StatusBool(value);
-        public static implicit operator StatusBool(global::StatusEffects.StatusBool value) => new StatusBool(value.StatusName.Id);
+        public static implicit operator StatusBool(global::StatusEffects.StatusBool value) => new StatusBool(value != null && value.StatusName ? value.StatusName.Id : default);
     }
 }
 #endif

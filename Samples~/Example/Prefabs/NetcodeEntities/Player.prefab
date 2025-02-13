@@ -119,11 +119,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8893033297203664942}
-  - component: {fileID: 5607112629273106323}
-  - component: {fileID: 3105634786988841415}
+  - component: {fileID: 7917969275043286025}
+  - component: {fileID: 3770662382427145550}
   - component: {fileID: 2789727394302673794}
   - component: {fileID: 3863047433280611513}
-  - component: {fileID: 6165913776590775191}
+  - component: {fileID: 1752254091126230075}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -147,7 +147,7 @@ Transform:
   - {fileID: 8473766669308520133}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &5607112629273106323
+--- !u!114 &7917969275043286025
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -160,7 +160,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_EditorOnlyEffects: []
---- !u!114 &3105634786988841415
+--- !u!114 &3770662382427145550
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -222,7 +222,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c79d771cedb4794bf100ce60df5f764, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  DefaultGhostMode: 1
+  DefaultGhostMode: 0
   SupportedGhostModes: 3
   OptimizationMode: 0
   Importance: 1
@@ -234,7 +234,7 @@ MonoBehaviour:
   UsePreSerialization: 0
   RollbackPredictedSpawnedGhostState: 0
   RollbackPredictionOnStructuralChanges: 1
---- !u!114 &6165913776590775191
+--- !u!114 &1752254091126230075
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -246,9 +246,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bfdaa6c06fe64fbda2b16e07a4ee0b25, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ComponentOverrides:
-  - FullTypeName: Unity.Transforms.LocalTransform
-    EntityIndex: 0
-    PrefabType: -1
-    SendTypeOptimization: -1
-    VariantHash: 18225908329647095764
+  ComponentOverrides: []

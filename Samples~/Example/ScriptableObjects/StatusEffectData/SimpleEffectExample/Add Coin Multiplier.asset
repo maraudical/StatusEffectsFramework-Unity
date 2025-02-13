@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Add Coin Multiplier
   m_EditorClassIdentifier: 
-  m_Id: 397cfabc-8742-438f-83fe-b30ae3c6fc2e
+  m_Id:
+    serializedVersion: 2
+    Hash: 03bf51fff2498f420e1789c840631f35
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 11400000, guid: b962d893a3a667d4480d17ac12f7c54c, type: 2}

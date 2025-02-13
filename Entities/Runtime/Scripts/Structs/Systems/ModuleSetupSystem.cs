@@ -5,10 +5,11 @@ using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    [DisableAutoCreation]
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
+    [UpdateBefore(typeof(ModuleCleanupSystem))]
     [BurstCompile]
-    public partial struct StatusSetupSystem : ISystem
+    // Cannot add cleanup components during baking process so it is done here instead.
+    public partial struct ModuleSetupSystem : ISystem
     {
         private EntityQuery m_StatusSetupQuery;
 

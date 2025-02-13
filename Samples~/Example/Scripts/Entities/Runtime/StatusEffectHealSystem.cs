@@ -7,9 +7,7 @@ using static StatusEffects.Modules.HealModule;
 
 namespace StatusEffects.Entities.Example
 {
-#if NETCODE_ENTITIES
-    [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
-#endif
+    [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation | WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     // Special case where on the same frame we are dealing damage over time
     // and healing. In this example the heal comes after the damage over time.
@@ -27,7 +25,7 @@ namespace StatusEffects.Entities.Example
             m_PlayerLookup = state.GetComponentLookup<ExamplePlayer>();
             m_StatusFloatLookup = state.GetBufferLookup<StatusFloats>();
 
-            var builder = new EntityQueryBuilder(Allocator.Temp).WithAll<HealEntityModule, ModuleUpdateTag>();
+            var builder = new EntityQueryBuilder(Allocator.Temp).WithAll<HealEntityModule, Module, ModuleUpdateTag>();
             m_EntityQuery = state.GetEntityQuery(builder);
             state.RequireForUpdate(m_EntityQuery);
         }
@@ -49,7 +47,7 @@ namespace StatusEffects.Entities.Example
                 CommandBuffer = commandBufferParallel,
                 PlayerLookup = m_PlayerLookup,
                 StatusFloatLookup = m_StatusFloatLookup
-            }.Schedule();
+            }.Schedule(m_EntityQuery);
 
             state.Dependency.Complete();
 

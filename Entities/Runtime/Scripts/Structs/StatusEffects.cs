@@ -11,10 +11,6 @@ namespace StatusEffects.Entities
 #if NETCODE
         [GhostField]
 #endif
-        public bool HasModule;
-#if NETCODE
-        [GhostField]
-#endif
         public Entity Module;
 #if NETCODE
         [GhostField]

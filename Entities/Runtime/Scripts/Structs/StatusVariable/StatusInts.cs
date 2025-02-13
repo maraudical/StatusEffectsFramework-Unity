@@ -1,6 +1,8 @@
 #if ENTITIES
 using Unity.Entities;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 namespace StatusEffects.Entities
 {
@@ -39,10 +41,20 @@ namespace StatusEffects.Entities
         public StatusInts(Hash128 componentId, global::StatusEffects.StatusInt statusInt)
         {
             ComponentId = componentId;
-            Id = statusInt.StatusName.Id;
-            BaseValue = statusInt.BaseValue;
-            SignProtected = statusInt.SignProtected;
-            Value = statusInt.BaseValue;
+            if (statusInt != null && statusInt.StatusName)
+            {
+                Id = statusInt.StatusName.Id;
+                BaseValue = statusInt.BaseValue;
+                SignProtected = statusInt.SignProtected;
+                Value = statusInt.BaseValue;
+            }
+            else
+            {
+                Id = default;
+                BaseValue = default;
+                SignProtected = default;
+                Value = default;
+            }
         }
     }
 }

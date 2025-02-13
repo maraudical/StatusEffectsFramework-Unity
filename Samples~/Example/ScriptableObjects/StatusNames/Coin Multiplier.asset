@@ -2,7 +2,7 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
-  m_ObjectHideFlags: 0
+  m_ObjectHideFlags: 64
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -10,6 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 860269c7aa108254f96e7f65fbe4b187, type: 3}
-  m_Name: Coin Multiplier
+  m_Name: 
   m_EditorClassIdentifier: 
-  m_Id: d4434c1d-7f72-4407-83d6-fd94c8c3727e
+  m_Id:
+    serializedVersion: 2
+    Hash: af69522a59d3ac3382ebdbcbdb7156b0

@@ -4,10 +4,17 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
+#if NETCODE
+using Unity.NetCode;
+#endif
 
 namespace StatusEffects.Entities
 {
+    [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation | WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
+#if NETCODE
+    [CreateAfter(typeof(DefaultVariantSystemGroup))]
+#endif
     public partial class StatusReferencesSetupSystem : SystemBase
     {
         protected override void OnCreate()
@@ -17,6 +24,7 @@ namespace StatusEffects.Entities
             var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
             var references = commandBuffer.CreateEntity();
             commandBuffer.SetName(references, "Status References");
+            commandBuffer.AddBuffer<ModulePrefabs>(references);
 
             BlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>> statusEffectDataHashMapReferences;
             // Setup status effect datas
@@ -25,11 +33,14 @@ namespace StatusEffects.Entities
             var statusEffectDataHashMap = builder.AllocateHashMap(ref statusEffectDataHashMapRoot, statusEffectDatas.Count);
             global::StatusEffects.Effect effect;
             global::StatusEffects.Condition condition;
-            commandBuffer.AddBuffer<ModulePrefabs>(references);
             int moduleIndex = 0;
 
             foreach (var statusEffectData in statusEffectDatas)
             {
+                // Rare case where data is null. This should never happen.
+                if (!statusEffectData)
+                    continue;
+
                 var subBuilder = new BlobBuilder(Allocator.Temp);
 
                 ref StatusEffectData statusEffectDataRoot = ref subBuilder.ConstructRoot<StatusEffectData>();
@@ -56,7 +67,7 @@ namespace StatusEffects.Entities
                     effect = statusEffectData.Effects[i];
                     effects[i] = new Effect
                     {
-                        Id = effect.StatusName.Id,
+                        Id = effect.StatusName ? effect.StatusName.Id : default,
                         ValueModifier = effect.ValueModifier,
                         UseBaseValue = effect.UseBaseValue,
                         FloatValue = effect.FloatValue,
@@ -95,6 +106,12 @@ namespace StatusEffects.Entities
                 if (entityModules.Count > 0)
                 {
                     var moduleEntity = commandBuffer.CreateEntity();
+                    commandBuffer.SetName(moduleEntity, $"{statusEffectData.name} Module");
+                    commandBuffer.AddComponent<Prefab>(moduleEntity);
+                    commandBuffer.AddComponent<Module>(moduleEntity);
+                    commandBuffer.AddComponent<ModuleUpdateTag>(moduleEntity);
+                    commandBuffer.AddComponent<ModuleDestroyTag>(moduleEntity);
+                    commandBuffer.AddComponent<ModuleCleanupTag>(moduleEntity);
                     foreach (var entityModule in entityModules)
                         // Call each modify command buffer on each module so that it adds
                         // whatever component/buffers it wants. This way, a custom system
@@ -103,13 +120,13 @@ namespace StatusEffects.Entities
                         (entityModule.Module as IEntityModule).ModifyCommandBuffer(ref commandBuffer, moduleEntity, entityModule.ModuleInstance);
 
                     commandBuffer.AppendToBuffer(references, new ModulePrefabs() { Entity = moduleEntity });
-                    statusEffectDataRoot.ModuleBufferIndex = moduleIndex;
+                    statusEffectDataRoot.ModulePrefabIndex = moduleIndex;
                     moduleIndex++;
                 }
                 else
                 {
                     // There weren't any modules.
-                    statusEffectDataRoot.ModuleBufferIndex = -1;
+                    statusEffectDataRoot.ModulePrefabIndex = -1;
                 }
 
                 statusEffectDataHashMap.Add(statusEffectData.Id, subBuilder.CreateBlobAssetReference<StatusEffectData>(Allocator.Persistent));
@@ -127,12 +144,34 @@ namespace StatusEffects.Entities
             commandBuffer.Playback(EntityManager);
             commandBuffer.Dispose();
 
-            Enabled = false;
+            RequireForUpdate<ModulePrefabs>();
         }
 
-        protected override void OnUpdate()
+        protected override void OnUpdate() 
         {
-            return;
+#if NETCODE
+            var prefabs = SystemAPI.GetSingletonBuffer<ModulePrefabs>().Reinterpret<Entity>().ToNativeArray(Allocator.Temp);
+            var blobAssets = SystemAPI.GetSingleton<StatusReferences>().BlobAsset.Value.GetValueArray(Allocator.Temp);
+
+            foreach (var blobAsset in blobAssets)
+            {
+                ref var data = ref blobAsset.Value;
+
+                if (data.ModulePrefabIndex < 0)
+                    continue;
+
+                GhostPrefabCreation.ConvertToGhostPrefab(EntityManager, prefabs[data.ModulePrefabIndex], new GhostPrefabCreation.Config()
+                {
+                    Name = data.Id.ToString(),
+                    DefaultGhostMode = GhostMode.Interpolated,
+                    SupportedGhostModes = GhostModeMask.Interpolated,
+                    OptimizationMode = GhostOptimizationMode.Static
+                });
+            }
+
+            blobAssets.Dispose();
+#endif
+            Enabled = false;
         }
 
         protected override void OnDestroy()

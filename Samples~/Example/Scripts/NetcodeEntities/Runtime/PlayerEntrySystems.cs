@@ -9,7 +9,7 @@ namespace Gameplay.Player
     public struct PlayerEntryRequest : IRpcCommand { }
 
     [BurstCompile]
-    [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
+    [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation)]
     public partial struct PlayerEntryClientSystem : ISystem
     {
         private EntityQuery m_PendingNetworkIdQuery;
@@ -60,8 +60,6 @@ namespace Gameplay.Player
             {
                 commandBuffer.DestroyEntity(entity);
                 commandBuffer.AddComponent<NetworkStreamInGame>(rpc.SourceConnection);
-
-                var clientId = SystemAPI.GetComponent<NetworkId>(rpc.SourceConnection).Value;
             }
             commandBuffer.Playback(state.EntityManager);
         }

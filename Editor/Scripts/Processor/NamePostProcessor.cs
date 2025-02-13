@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,25 +10,46 @@ namespace StatusEffects.Inspector
         private static Dictionary<Hash128, Name> s_NameIds;
         private static Name m_NameReference;
 
-        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
+        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths, bool didDomainReload)
         {
-            int importedCount = importedAssets.Length;
-            for (int i = 0; i < importedCount; i++)
+            if (s_NameIds != null)
+                for (int i = s_NameIds.Count - 1; i >= 0; i--)
+                {
+                    var kvp = s_NameIds.ElementAt(i);
+                    if (kvp.Value == null || kvp.Key != kvp.Value.Id)
+                        s_NameIds.Remove(kvp.Key);
+                }
+
+            if (didDomainReload)
             {
-                if (i == 0)
-                    s_NameIds = new();
+                s_NameIds = new();
+                var guids = AssetDatabase.FindAssets($"t:{nameof(Name)}");
+                var assetPaths = guids.Select((guid) => AssetDatabase.GUIDToAssetPath(guid));
 
-                string assetPath = importedAssets[i];
+                foreach (string assetPath in assetPaths)
+                    ValidateAsset(assetPath);
+            }
+            else
+            {
+                foreach (string assetPath in importedAssets)
+                    ValidateAsset(assetPath);
+            }
+            
+            void ValidateAsset(string assetPath)
+            {
                 Object asset = AssetDatabase.LoadAssetAtPath<Object>(assetPath);
-
+                
                 if (asset == null)
-                    continue;
+                    return;
 
                 if (asset is Name name)
                 {
                     if (name.Id != default)
-                        if (s_NameIds.TryGetValue(name.Id, out m_NameReference) && m_NameReference != name)
-                            GenerateUntilAddable();
+                        if (s_NameIds.TryGetValue(name.Id, out m_NameReference))
+                        {
+                            if (m_NameReference != name)
+                                GenerateUntilAddable();
+                        }
                         else
                             s_NameIds.Add(name.Id, name);
                     else
@@ -36,7 +58,7 @@ namespace StatusEffects.Inspector
                     void GenerateUntilAddable()
                     {
                         name.GenerateId();
-                        if (!s_NameIds.TryAdd(name.Id, name))                           
+                        if (!s_NameIds.TryAdd(name.Id, name))
                             GenerateUntilAddable();
                     }
                 }

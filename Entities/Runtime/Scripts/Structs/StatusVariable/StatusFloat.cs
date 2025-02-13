@@ -41,7 +41,7 @@ namespace StatusEffects.Entities
         }
 
         public static implicit operator StatusFloat(Hash128 value) => new StatusFloat(value);
-        public static implicit operator StatusFloat(global::StatusEffects.StatusFloat value) => new StatusFloat(value.StatusName.Id);
+        public static implicit operator StatusFloat(global::StatusEffects.StatusFloat value) => new StatusFloat(value != null && value.StatusName ? value.StatusName.Id : default);
     }
 }
 #endif

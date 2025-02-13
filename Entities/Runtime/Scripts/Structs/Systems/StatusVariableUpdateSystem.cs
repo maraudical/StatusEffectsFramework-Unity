@@ -111,7 +111,7 @@ namespace StatusEffects.Entities
                 float postAdditiveValue = 0;
 
                 float effectValue;
-
+                
                 foreach (var statusEffect in statusEffects)
                 {
                     ref StatusEffectData data = ref references.BlobAsset.Value[statusEffect.Id].Value;

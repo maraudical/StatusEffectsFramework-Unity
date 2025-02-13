@@ -1,7 +1,4 @@
-using StatusEffects;
 using UnityEditor;
-using UnityEditorInternal;
-using UnityEngine;
 
 namespace StatusEffects.Inspector
 {
@@ -17,6 +14,7 @@ namespace StatusEffects.Inspector
 
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
             EditorGUI.BeginDisabledGroup(true);
             EditorGUILayout.PropertyField(m_Id);
             EditorGUI.EndDisabledGroup();

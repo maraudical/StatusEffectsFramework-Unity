@@ -1,6 +1,8 @@
 #if ENTITIES
 using Unity.Entities;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 namespace StatusEffects.Entities
 {
@@ -22,12 +24,30 @@ namespace StatusEffects.Entities
         [GhostField]
 #endif
         public int PreviousStacks;
+
 #if NETCODE
-        [GhostField]
+        // These are specific to the client as they are
+        // for recieving immediately updated values via RPC.
+        [GhostField(SendData = false)]
+        public int ReplicatedStacks;
+
+        [GhostField(SendData = false)]
+        public int ReplicatedPreviousStacks;
+
+        [GhostField(SendData = false)]
+        public bool IsReplicated;
+#endif
+
+#if NETCODE
+        // Sending is irrelivant since updates are
+        // replicated through rpcs.
+        [GhostField(SendData = false)]
 #endif
         public bool IsBeingUpdated;
 #if NETCODE
-        [GhostField]
+        // Sending is irrelivant since it gets destroyed
+        // before any clients will notice the change.
+        [GhostField(SendData = false)]
 #endif
         public bool IsBeingDestroyed;
     }

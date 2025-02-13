@@ -32,7 +32,7 @@ namespace StatusEffects.Inspector
                 }
                 EditorGUI.indentLevel--;
             }
-            GUILayout.EndVertical();
+            EditorGUILayout.EndVertical();
             EditorGUI.indentLevel = defaultIndent;
             serializedObject.ApplyModifiedProperties();
         }

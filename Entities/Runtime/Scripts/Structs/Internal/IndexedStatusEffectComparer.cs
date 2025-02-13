@@ -1,5 +1,4 @@
 #if ENTITIES
-using System;
 using System.Collections.Generic;
 
 namespace StatusEffects.Entities

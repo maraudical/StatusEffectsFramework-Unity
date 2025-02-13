@@ -125,7 +125,7 @@ namespace StatusEffects.Entities.Example.UI
 
                 if (!m_StatusEffectDataReference.Icon.IsValid())
                     return;
-                
+
                 bool currentExists = m_CurrentStackCounts.TryGetValue(id, out int currentStacks);
                 bool statusEffectUIExists = m_StatusEffectUIs.TryGetValue(id, out var statusEffectUI);
                 // Check if it got added.

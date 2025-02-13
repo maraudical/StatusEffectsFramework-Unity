@@ -10,7 +10,6 @@ namespace StatusEffects.Entities
             var entity = GetEntity(TransformUsageFlags.None);
             AddComponent<StatusVariableUpdate>(entity);
             AddBuffer<StatusEffects>(entity);
-            AddBuffer<Modules>(entity);
             AddBuffer<StatusEffectRequests>(entity);
             AddBuffer<StatusFloats>(entity);
             AddBuffer<StatusInts>(entity);

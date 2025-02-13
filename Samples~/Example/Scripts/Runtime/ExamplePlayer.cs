@@ -12,6 +12,7 @@ namespace StatusEffects.Example
     // Require the StatusEffectsInstance so that StatusVariables can be setup.
     [RequireComponent(typeof(StatusManager))]
     public class ExamplePlayer : MonoBehaviour, IExamplePlayer
+    // The following block is for strictly when using the ECS framework.
 #if ENTITIES
             , IEntityStatus
     {
@@ -20,6 +21,11 @@ namespace StatusEffects.Example
 
         public void OnBake(Entity entity, StatusManagerBaker baker)
         {
+            baker.DependsOn(this);
+            baker.DependsOn(StatusMaxHealth.StatusName);
+            baker.DependsOn(StatusSpeed.StatusName);
+            baker.DependsOn(StatusCoinMultiplier.StatusName);
+            baker.DependsOn(StatusStunned.StatusName);
             baker.AppendToBuffer(entity, new StatusFloats(ComponentId, StatusMaxHealth));
             baker.AppendToBuffer(entity, new StatusFloats(ComponentId, StatusSpeed));
             baker.AppendToBuffer(entity, new StatusInts(ComponentId, StatusCoinMultiplier));

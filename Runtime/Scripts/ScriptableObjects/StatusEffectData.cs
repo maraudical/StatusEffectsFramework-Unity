@@ -12,29 +12,40 @@ namespace StatusEffects
     [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effect Framework/Status Effect Data", order = 1)]
     public class StatusEffectData : ScriptableObject
     {
-#if ENTITIES
         public Hash128 Id => m_Id;
         [SerializeField] private Hash128 m_Id;
 
+#if UNITY_EDITOR
         private void OnValidate()
         {
             if (m_Id == default)
-                GenerateId();
+            {
+                GenerateAndImport();
+            }
         }
 
         private void Reset()
         {
+            GenerateAndImport();
+        }
+
+        [ContextMenu("Generate New ID")]
+        private void GenerateAndImport()
+        {
+            string path = UnityEditor.AssetDatabase.GetAssetPath(this);
+            if (string.IsNullOrWhiteSpace(path))
+                return;
             GenerateId();
+            UnityEditor.AssetDatabase.ImportAsset(path);
         }
         /// <summary>
         /// This will be called automatically from a post processor.
         /// </summary>
         public void GenerateId()
         {
-#if UNITY_EDITOR
             m_Id = Hash128.Compute(Guid.NewGuid().ToString("N"));
             UnityEditor.EditorUtility.SetDirty(this);
-#endif
+            UnityEditor.AssetDatabase.SaveAssetIfDirty(this);
         }
 
 #endif

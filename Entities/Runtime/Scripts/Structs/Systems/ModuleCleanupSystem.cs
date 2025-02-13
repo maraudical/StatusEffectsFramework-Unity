@@ -5,7 +5,7 @@ using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    [UpdateInGroup(typeof(StatusEffectSystemGroup))]
+    [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
     [UpdateBefore(typeof(ModuleUpdateSystem))]
     [BurstCompile]
     public partial struct ModuleCleanupSystem : ISystem
@@ -40,8 +40,8 @@ namespace StatusEffects.Entities
             var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
             var commandBufferParallel = commandBuffer.AsParallelWriter();
 
-            NativeParallelMultiHashMap<Entity, int> linkedEntityGroupIndexes = new NativeParallelMultiHashMap<Entity, int>(m_ModuleDestroyTagQuery.CalculateEntityCount(), Allocator.TempJob);
-            NativeParallelMultiHashMap<Entity, int>.ParallelWriter ModulesIndexesParallel = linkedEntityGroupIndexes.AsParallelWriter();
+            NativeParallelMultiHashMap<Entity, int> modulesEntitiesIndexes = new NativeParallelMultiHashMap<Entity, int>(m_ModuleDestroyTagQuery.CalculateEntityCount(), Allocator.TempJob);
+            NativeParallelMultiHashMap<Entity, int>.ParallelWriter modulesIndexesParallel = modulesEntitiesIndexes.AsParallelWriter();
             
             // Validate status managers on entities to see if parent entity is destroyed.
             new ModuleValidateJob
@@ -58,32 +58,39 @@ namespace StatusEffects.Entities
             new ModuleDestroyJob
             {
                 CommandBuffer = commandBufferParallel,
-                ModulesIndexes = ModulesIndexesParallel,
+                ModulesIndexes = modulesIndexesParallel,
                 ModulesLookup = m_ModulesLookup
             }.ScheduleParallel();
             
             state.Dependency.Complete();
 
-            // Cleanup linked entity groups.
-            var linkedEntityGroupKeys = linkedEntityGroupIndexes.GetUniqueKeyArray(Allocator.Temp).Item1;
+            // Cleanup modules.
+            var uniqueModulesEntitiesIndexes = modulesEntitiesIndexes.GetUniqueKeyArray(Allocator.Temp);
 
-            foreach (var key in linkedEntityGroupKeys)
+            for (int i = 0; i < uniqueModulesEntitiesIndexes.Item2; i++)
             {
+                Entity key = uniqueModulesEntitiesIndexes.Item1[i];
+                
                 if (!m_ModulesLookup.HasBuffer(key))
-                    return;
+                    continue;
+
                 var buffer = m_ModulesLookup[key];
-                var enumerator = linkedEntityGroupIndexes.GetValuesForKey(key);
-                var sortedIndexes = new NativeList<int>(Allocator.Temp);
+                var enumerator = modulesEntitiesIndexes.GetValuesForKey(key);
+                var sortedIndexes = new NativeList<int>(buffer.Length, Allocator.Temp);
+
                 foreach (var value in enumerator)
                     sortedIndexes.Add(value);
+
                 sortedIndexes.Sort();
-                for (var i = sortedIndexes.Length - 1; i >= 0; i--)
-                    buffer.RemoveAt(sortedIndexes[i]);
+
+                for (var v = sortedIndexes.Length - 1; v >= 0; v--)
+                    buffer.RemoveAt(sortedIndexes[v]);
+
                 sortedIndexes.Dispose();
             }
-
-            linkedEntityGroupKeys.Dispose();
-            linkedEntityGroupIndexes.Dispose();
+            
+            uniqueModulesEntitiesIndexes.Item1.Dispose();
+            modulesEntitiesIndexes.Dispose();
 
             commandBuffer.Playback(state.EntityManager);
             commandBuffer.Dispose();

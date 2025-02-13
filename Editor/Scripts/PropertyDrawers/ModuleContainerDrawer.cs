@@ -1,10 +1,8 @@
 using StatusEffects.Modules;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEditor;
 using UnityEngine;
-using static UnityEngine.GraphicsBuffer;
 
 namespace StatusEffects.Inspector
 {

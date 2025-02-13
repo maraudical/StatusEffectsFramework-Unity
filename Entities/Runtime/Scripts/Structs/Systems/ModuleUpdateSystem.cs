@@ -5,8 +5,8 @@ using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    [UpdateInGroup(typeof(StatusEffectSystemGroup))]
-    [UpdateBefore(typeof(StatusManagerSystem))]
+    [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation | WorldSystemFilterFlags.ServerSimulation)]
+    [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
     [BurstCompile]
     public partial struct ModuleUpdateSystem : ISystem
     {
@@ -15,7 +15,7 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var builder = new EntityQueryBuilder(Allocator.Temp).WithAll<ModuleUpdateTag, Module>();
+            var builder = new EntityQueryBuilder(Allocator.Temp).WithAllRW<Module>().WithAll<ModuleUpdateTag>();
             m_EntityQuery = state.GetEntityQuery(builder);
             state.RequireForUpdate(m_EntityQuery);
         }

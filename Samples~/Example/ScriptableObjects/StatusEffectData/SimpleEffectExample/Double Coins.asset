@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Double Coins
   m_EditorClassIdentifier: 
-  m_Id: c8f8fcd5-9ace-40cc-becb-3207e9915f66
+  m_Id:
+    serializedVersion: 2
+    Hash: a1796008135362625d23fa0cbb5e322b
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 11400000, guid: ead4f201d7729054ebdfb401082d014e, type: 2}

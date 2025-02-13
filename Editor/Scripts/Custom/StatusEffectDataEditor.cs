@@ -151,8 +151,6 @@ namespace StatusEffects.Inspector
                 // Reset all properties
                 element.FindPropertyRelative(nameof(ModuleContainer.Module)).objectReferenceValue = null;
                 element.FindPropertyRelative(nameof(ModuleContainer.ModuleInstance)).objectReferenceValue = null;
-
-                list.serializedProperty.serializedObject.ApplyModifiedProperties();
             };
             m_ModulesList.onRemoveCallback = list =>
             {
@@ -186,8 +184,6 @@ namespace StatusEffects.Inspector
                         list.serializedProperty.DeleteArrayElementAtIndex(index);
                 else
                     list.serializedProperty.DeleteArrayElementAtIndex(list.serializedProperty.minArraySize - 1);
-
-                list.serializedProperty.serializedObject.ApplyModifiedProperties();
             };
             m_ModulesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
             {
@@ -203,18 +199,12 @@ namespace StatusEffects.Inspector
             };
         }
 
-        private void OnDisable()
-        {
-            serializedObject.ApplyModifiedProperties();
-        }
-
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
+
             m_Data = target as StatusEffectData;
-
-            if (m_Data.Effects.Count != m_Effects.arraySize || m_Data.Conditions.Count != m_Conditions.arraySize)
-                serializedObject.ApplyModifiedProperties();
-
+            
             EditorGUI.BeginDisabledGroup(true);
             EditorGUILayout.PropertyField(m_Id);
             EditorGUI.EndDisabledGroup();
@@ -274,9 +264,9 @@ namespace StatusEffects.Inspector
 
             for (int i = 0; i < m_Conditions.arraySize; i++)
             {
-                m_Condition = m_Data.Conditions.ElementAt(i);
+                m_Condition = m_Data.Conditions.ElementAtOrDefault(i);
 
-                if (!m_Condition.Add || m_Condition.ActionData != target)
+                if (m_Condition == null || !m_Condition.Add || m_Condition.ActionData != target)
                     continue;
 
                 m_DisplayConditionsWarning = true;
@@ -298,6 +288,8 @@ namespace StatusEffects.Inspector
             EditorGUI.BeginDisabledGroup(Application.isPlaying);
             m_ModulesList?.DoLayoutList();
             EditorGUI.EndDisabledGroup();
+
+            serializedObject.ApplyModifiedProperties();
         }
 
         private void HorizontalLine()

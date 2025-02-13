@@ -29,7 +29,7 @@ namespace StatusEffects.Entities
         /// <summary>
         /// <see cref="IBufferElementData"/> index for a <see cref="ModulePrefabs"/> on the <see cref="StatusReferences"/> singleton.
         /// </summary>
-        public int ModuleBufferIndex;
+        public int ModulePrefabIndex;
     }
 }
 #endif

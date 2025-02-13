@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Cleanse
   m_EditorClassIdentifier: 
-  m_Id: 5826a67f-eeb6-4fbd-8094-ace6a9af0536
+  m_Id:
+    serializedVersion: 2
+    Hash: ca8736f212f4a179371f7a05dba7195a
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 11400000, guid: 737bd34f77eb0bd46b81025fa5eea595, type: 2}

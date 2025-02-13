@@ -4,6 +4,9 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+#if NETCODE
+using Unity.NetCode;
+#endif
 
 namespace StatusEffects.Entities
 {
@@ -73,7 +76,7 @@ namespace StatusEffects.Entities
             [ReadOnly]
             public DynamicBuffer<ModulePrefabs> ModulePrefabs;
 
-            void Execute([EntityIndexInQuery] int sortKey, Entity entity, ref DynamicBuffer<StatusEffectRequests> statusEffectRequests, ref DynamicBuffer<StatusEffects> statusEffects)
+            void Execute([EntityIndexInQuery] int sortKey, Entity entity, ref DynamicBuffer<StatusEffectRequests> statusEffectRequests, ref DynamicBuffer<StatusEffects> statusEffects, in DynamicBuffer<Modules> modules)
             {
                 // If nothing to change then continue.
                 if (statusEffectRequests.Length <= 0)
@@ -108,7 +111,7 @@ namespace StatusEffects.Entities
                             IndexedStatusEffect indexedStatusEffect = new IndexedStatusEffect()
                             {
                                 Index = -1,
-                                HasModule = statusEffectData.ModuleBufferIndex >= 0,
+                                HasModule = statusEffectData.ModulePrefabIndex >= 0,
                                 Id = statusEffectData.Id,
                                 Timing = request.Timing,
                                 Interval = request.Interval,
@@ -620,13 +623,13 @@ namespace StatusEffects.Entities
                     if (indexedUpdate.Index < 0)
                     {
                         CommandBuffer.SetComponentEnabled<StatusVariableUpdate>(sortKey, entity, true);
-                        Entity moduleEntity = default;
+                        Entity moduleEntity = Entity.Null;
                         
                         if (indexedUpdate.HasModule && References.BlobAsset.Value.TryGetValue(indexedUpdate.Id, out var reference))
                         {
-                            moduleEntity = CommandBuffer.Instantiate(sortKey, ModulePrefabs[reference.Value.ModuleBufferIndex].Entity);
+                            moduleEntity = CommandBuffer.Instantiate(sortKey, ModulePrefabs[reference.Value.ModulePrefabIndex].Entity);
                             CommandBuffer.AppendToBuffer(sortKey, entity, new Modules { Value = moduleEntity });
-                            CommandBuffer.AddComponent(sortKey, moduleEntity, new Module
+                            CommandBuffer.SetComponent(sortKey, moduleEntity, new Module
                             {
                                 Parent = entity,
                                 BaseValue = reference.Value.BaseValue,
@@ -635,15 +638,12 @@ namespace StatusEffects.Entities
                                 IsBeingDestroyed = false,
                                 IsBeingUpdated = false
                             });
-                            CommandBuffer.AddComponent(sortKey, moduleEntity, new ModuleUpdateTag());
-                            CommandBuffer.AddComponent(sortKey, moduleEntity, new ModuleDestroyTag());
+                            CommandBuffer.SetComponentEnabled<ModuleUpdateTag>(sortKey, moduleEntity, true);
                             CommandBuffer.SetComponentEnabled<ModuleDestroyTag>(sortKey, moduleEntity, false);
-                            CommandBuffer.AddComponent(sortKey, moduleEntity, new ModuleCleanupTag());
                             CommandBuffer.SetComponentEnabled<ModuleCleanupTag>(sortKey, moduleEntity, false);
                         }
                         CommandBuffer.AppendToBuffer(sortKey, entity, new StatusEffects()
                         {
-                            HasModule = indexedUpdate.HasModule,
                             Module = moduleEntity,
                             Id = indexedUpdate.Id,
                             Timing = indexedUpdate.Timing,
@@ -660,7 +660,7 @@ namespace StatusEffects.Entities
                     if (updatingStatusEffectRef.Stacks + indexedUpdate.Stacks <= 0)
                     {
                         CommandBuffer.SetComponentEnabled<StatusVariableUpdate>(sortKey, entity, true);
-                        if (updatingStatusEffectRef.HasModule)
+                        if (updatingStatusEffectRef.Module != Entity.Null)
                         {
                             Module module = ModuleLookup[updatingStatusEffectRef.Module];
                             module.PreviousStacks = module.Stacks;
@@ -677,7 +677,7 @@ namespace StatusEffects.Entities
                     {
                         CommandBuffer.SetComponentEnabled<StatusVariableUpdate>(sortKey, entity, true);
                         updatingStatusEffectRef.Stacks += indexedUpdate.Stacks;
-                        if (updatingStatusEffectRef.HasModule)
+                        if (updatingStatusEffectRef.Module != Entity.Null)
                         {
                             Module module = ModuleLookup[updatingStatusEffectRef.Module];
                             module.PreviousStacks = module.Stacks;
@@ -685,6 +685,16 @@ namespace StatusEffects.Entities
                             module.IsBeingUpdated = true;
                             CommandBuffer.SetComponent(sortKey, updatingStatusEffectRef.Module, module);
                             CommandBuffer.SetComponentEnabled<ModuleUpdateTag>(sortKey, updatingStatusEffectRef.Module, true);
+#if NETCODE
+                            var request = CommandBuffer.CreateEntity(sortKey);
+                            CommandBuffer.AddComponent(sortKey, request, new ModuleReplicationCommand() 
+                            { 
+                                Entity = updatingStatusEffectRef.Module,
+                                Stacks = module.Stacks,
+                                PreviousStacks = module.PreviousStacks
+                            });
+                            CommandBuffer.AddComponent(sortKey, request, new SendRpcCommandRequest { TargetConnection = Entity.Null });
+#endif
                         }
                     }
                 }
@@ -735,7 +745,7 @@ namespace StatusEffects.Entities
             void RemoveStatusEffect(ref StatusEffects statusEffect, ref DynamicBuffer<StatusEffects> statusEffectBuffer, Entity entity, int index, int sortKey)
             {
                 CommandBuffer.SetComponentEnabled<StatusVariableUpdate>(sortKey, entity, true);
-                if (statusEffect.HasModule)
+                if (statusEffect.Module != Entity.Null)
                 {
                     Module module = ModuleLookup[statusEffect.Module];
                     module.PreviousStacks = module.Stacks;

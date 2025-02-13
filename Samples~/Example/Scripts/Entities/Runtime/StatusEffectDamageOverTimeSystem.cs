@@ -6,19 +6,22 @@ using static StatusEffects.Modules.DamageOverTimeModule;
 
 namespace StatusEffects.Entities.Example
 {
-#if NETCODE_ENTITIES
-    [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
-#endif
+    [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation | WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct StatusEffectDamageOverTimeSystem : ISystem
     {
         private ComponentLookup<ExamplePlayer> m_PlayerLookup;
+
+        private EntityQuery m_EntityQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             m_PlayerLookup = state.GetComponentLookup<ExamplePlayer>();
 
+            var builder = new EntityQueryBuilder(Allocator.Temp).WithAll<DamageOverTimeEntityModule, Module>();
+            m_EntityQuery = state.GetEntityQuery(builder);
+            state.RequireForUpdate(m_EntityQuery);
             state.RequireForUpdate<DamageOverTimeEntityModule>();
         }
 
@@ -35,7 +38,7 @@ namespace StatusEffects.Entities.Example
                 CommandBuffer = commandBufferParallel,
                 PlayerLookup = m_PlayerLookup,
                 TimeDelta = SystemAPI.Time.DeltaTime
-            }.Schedule();
+            }.Schedule(m_EntityQuery);
 
             state.Dependency.Complete();
 
@@ -58,9 +61,9 @@ namespace StatusEffects.Entities.Example
                 if (PlayerLookup.TryGetComponent(entity, out ExamplePlayer player))
                 {
                     damageOverTime.CurrentSeconds -= TimeDelta;
-                    if (damageOverTime.CurrentSeconds <= 0)
+                    while (damageOverTime.CurrentSeconds <= 0)
                     {
-                        damageOverTime.CurrentSeconds = damageOverTime.InvervalSeconds;
+                        damageOverTime.CurrentSeconds += damageOverTime.InvervalSeconds;
                         player.Health -= module.BaseValue * module.Stacks;
                         CommandBuffer.SetComponent(sortKey, entity, player);
                     }

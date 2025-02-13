@@ -11,7 +11,7 @@ namespace StatusEffects
     public class StatusEffectDatabase : ScriptableObject
     {
         public const string k_MyCustomDatabasePath = "Assets/Resources/StatusEffectDatabase.asset";
-        [Space]
+        
         public SerializedDictionary<Hash128, StatusEffectData> Values;
 
         public static StatusEffectDatabase Get()

@@ -12,8 +12,7 @@ namespace StatusEffects.Example.UI
         [SerializeField] private Text m_Speed;
         [SerializeField] private Text m_CoinMultiplier;
         [SerializeField] private Text m_Stunned;
-
-        private float m_BaseHealth;
+        
         private float m_BaseMaxHealth;
         private float m_BaseSpeed;
         private int m_BaseCoinMultiplier;
@@ -24,7 +23,6 @@ namespace StatusEffects.Example.UI
         private void Start()
         {
             m_ExamplePlayer = m_StatusManager.GetComponent<IExamplePlayer>();
-            m_BaseHealth = m_ExamplePlayer.MaxHealth;
             m_BaseMaxHealth = m_ExamplePlayer.MaxHealth;
             m_BaseSpeed = m_ExamplePlayer.Speed;
             m_BaseCoinMultiplier = m_ExamplePlayer.CoinMultiplier;
@@ -35,7 +33,7 @@ namespace StatusEffects.Example.UI
         {
             // Alternatively you can subscribe to each StatusVariable's OnValueUpdate event
             m_Health.text = m_ExamplePlayer.Health.ToString("0.0");
-            m_Health.color = GetColor(m_BaseHealth, m_ExamplePlayer.Health);
+            m_Health.color = GetColor(m_BaseMaxHealth, m_ExamplePlayer.Health);
 
             m_MaxHealth.text = m_ExamplePlayer.MaxHealth.ToString("0.0");
             m_MaxHealth.color = GetColor(m_BaseMaxHealth, m_ExamplePlayer.MaxHealth);
@@ -52,7 +50,10 @@ namespace StatusEffects.Example.UI
 
         private Color GetColor(float origional, float current)
         {
-            return current > origional ? Color.green : current < origional ? Color.red : Color.white;
+            // Fix floating point errors.
+            float roundedOrigional = Mathf.Round(origional * 10f) / 10f;
+            float roundedCurrent = Mathf.Round(current * 10f) / 10f;
+            return roundedCurrent > roundedOrigional ? Color.green : roundedCurrent < roundedOrigional ? Color.red : Color.white;
         }
 
         private Color GetColor(bool origional, bool current)

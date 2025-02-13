@@ -3,7 +3,7 @@ using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    [WorldSystemFilter(WorldSystemFilterFlags.Default)]// | WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation)]
+    [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation | WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation, WorldSystemFilterFlags.LocalSimulation | WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
     [UpdateBefore(typeof(VariableRateSimulationSystemGroup))]
     [UpdateBefore(typeof(FixedStepSimulationSystemGroup))]

@@ -2,7 +2,7 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
-  m_ObjectHideFlags: 0
+  m_ObjectHideFlags: 64
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -10,6 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6e1678e45818256438f115bbc0b7e551, type: 3}
-  m_Name: Stunned
+  m_Name: 
   m_EditorClassIdentifier: 
-  m_Id: f981ac24-da5f-4ed8-a15d-eb854e205827
+  m_Id:
+    serializedVersion: 2
+    Hash: 05db0d9aa734897a8e23d29293bc4b26

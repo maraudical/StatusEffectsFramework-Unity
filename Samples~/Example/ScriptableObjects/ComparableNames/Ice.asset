@@ -2,7 +2,7 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
-  m_ObjectHideFlags: 0
+  m_ObjectHideFlags: 64
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
@@ -10,6 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2dc9ea339ec818f43a77a0a628ba5ed6, type: 3}
-  m_Name: Ice
+  m_Name: 
   m_EditorClassIdentifier: 
-  m_Id: 3b3e3209-6a18-4a17-a66c-e611f3440d2d
+  m_Id:
+    serializedVersion: 2
+    Hash: 7816f84e9a6c0fff15384c009dac1cde

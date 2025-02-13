@@ -13,7 +13,6 @@ namespace StatusEffects.Entities
         public int Index;
 
         public bool HasModule;
-        public Entity Module;
         public Hash128 Id;
         public StatusEffectTiming Timing;
         public float Duration;
@@ -25,8 +24,8 @@ namespace StatusEffects.Entities
         {
             Index = index;
 
-            HasModule = statusEffect.HasModule;
-            Module = statusEffect.Module;
+            HasModule = statusEffect.Module != Entity.Null;
+ 
             Id = statusEffect.Id;
             Timing = statusEffect.Timing;
             Duration = statusEffect.Duration;

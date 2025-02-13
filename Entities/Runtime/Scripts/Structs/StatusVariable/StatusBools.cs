@@ -1,6 +1,8 @@
 #if ENTITIES
 using Unity.Entities;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 namespace StatusEffects.Entities
 {
@@ -34,9 +36,18 @@ namespace StatusEffects.Entities
         public StatusBools(Hash128 componentId, global::StatusEffects.StatusBool statusBool)
         {
             ComponentId = componentId;
-            Id = statusBool.StatusName.Id;
-            BaseValue = statusBool.BaseValue;
-            Value = statusBool.BaseValue;
+            if (statusBool != null && statusBool.StatusName)
+            {
+                Id = statusBool.StatusName.Id;
+                BaseValue = statusBool.BaseValue;
+                Value = statusBool.BaseValue;
+            }
+            else
+            {
+                Id = default;
+                BaseValue = default;
+                Value = default;
+            }
         }
     }
 }
