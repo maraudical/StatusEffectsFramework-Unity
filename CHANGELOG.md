@@ -3,8 +3,6 @@
 ## 3.0.0
 - Feature: Support for Entities and NetCode for Entities
 - Enhancement: Updated samples to include Entities/Netcode for Entities/Netcode for GameObjects
-- Enhancement: Added OnBaseValueChanged and OnSignProtectedChanged events to all Status Variables
-- Enhancement: Cleaned up module sub asset management
 - Bug Fix: Cleaned up assembly defenitions for unused dependencies
 - Bug Fix: Cleaned up unused namespaces from scripts
 - Bug Fix: Status effect data editor refresh issues
