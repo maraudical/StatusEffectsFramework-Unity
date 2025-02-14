@@ -33,7 +33,9 @@
 # Other support
 - Unity - Localization
 - Unity - Awaitable
-- Unity - Netcode for GameObjects (1.8.0+) and Addressables
+- Unity - Netcode for GameObjects (1.8.0+)
+- Unity - Entities
+- Unity - Netcode for Entities
 - Cysharp - UniTask
 
 # Getting started with the **Status Effect Framework**
