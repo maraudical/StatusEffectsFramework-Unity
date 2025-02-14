@@ -40,12 +40,12 @@
 
 1. Add the **Status Effect Framework** through the package manager
 > Note: [Install via git](https://maraudical.gitbook.io/status-effect-framework/setup) with this URL: `https://github.com/maraudical/StatusEffectsFramework-Unity.git`
-1. Import the **Examples** (highly recommended)
-1. Change any settings, group names, and preset statuses in **ProjectSettings**
-1. **Create** any status effects from the create menu
-1. Add the **StatusManager** component onto any object
-1. Implement any **StatusFloat/StatusInt/StatusBools** into scripts that will be affected
-1. Link the **StatusVariables** to the **StatusManager** and simply add or remove effects
+2. Import the **Examples** (highly recommended)
+3. Change any settings, group names, and preset statuses in **ProjectSettings**
+4. **Create** any status effects from the create menu
+5. Add the **StatusManager** component onto any object
+6. Implement any **StatusFloat/StatusInt/StatusBools** into scripts that will be affected
+7. Link the **StatusVariables** to the **StatusManager** and simply add or remove effects
 
 Check the [documentation](https://maraudical.gitbook.io/status-effect-framework/) for more information.
 
