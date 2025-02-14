@@ -1,5 +1,23 @@
 # Change Log:
 
+## 3.0.0
+- Feature: Support for Entities and NetCode for Entities
+- Enhancement: Updated samples to include Entities/Netcode for Entities/Netcode for GameObjects
+- Enhancement: Added OnBaseValueChanged and OnSignProtectedChanged events to all Status Variables
+- Enhancement: Cleaned up module sub asset management
+- Bug Fix: Cleaned up assembly defenitions for unused dependencies
+- Bug Fix: Cleaned up unused namespaces from scripts
+- Bug Fix: Status effect data editor refresh issues
+- Bug Fix: Name post processor not updating Ids in specific scenarios
+- Bug Fix: Incorrect ordering of Status Effect durations for infinite and predicate timings
+- Bug Fix: Max stacks not actually limiting stack count correctly
+- Bug Fix: Non-stacking behavior logic with predicates
+- Bug Fix: Conditional inherited timing when using events and predicates
+- Change: Addressables are no longer needed, instead a database of all status effect datas is created in the Resources folder
+- Change: Ids are now generated as Hash128 as opposed to strings
+- Change: File reorganization for samples and main project
+- Change: Renamed Entity to Player in samples to avoid Entities package confusion
+
 ## 2.0.1
 - Enhancement: Added stack count to conditionals
 - Enhancement: Added OnBaseValueChanged and OnSignProtectedChanged events to all Status Variables
