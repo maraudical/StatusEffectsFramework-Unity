@@ -3106,72 +3106,27 @@ MonoBehaviour:
   m_GameObject: {fileID: 1468421791}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe0c7c12ec83ad2479b77fcbcc006a15, type: 3}
+  m_Script: {fileID: 11500000, guid: efe239d6d0efaad43bd3e704cbbb2cc9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_StatusManager: {fileID: 1944042330}
-  m_ExamplePlayer: {fileID: 1944042331}
+  m_StatusManager: {fileID: 1944042328}
   m_EffectParent: {fileID: 1404795237}
   m_EffectPrefab: {fileID: 723449315551824524, guid: fa6d04fc069e4be49a5e002999f2fd02, type: 3}
   m_EffectDropdown: {fileID: 169864110}
   m_EffectAddButton: {fileID: 721252322}
   m_EffectRemoveButton: {fileID: 471569925}
   m_StatusEffectDatas:
-  - m_AssetGUID: 56d927ea90df83d498e37cfd7daba43b
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
-  - m_AssetGUID: 591a04ae4706a484db079a6920cb0c77
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
-  - m_AssetGUID: 264e7056bd762f5429a3bf88a78a1ac9
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
-  - m_AssetGUID: f073edcb1b2964b44b0b642b3eadbd6c
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
-  - m_AssetGUID: 591969f3c8c8d584aa4439f14851f307
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
-  - m_AssetGUID: 578af44cd2c054d41a5d07b10c0e6c46
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
-  - m_AssetGUID: cd8dff560a8ec0f42bba9df522186f42
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
-  - m_AssetGUID: b9bb507d747b7084da692397a0347a5c
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
-  - m_AssetGUID: a8a4a465308f3b84db05326b14956299
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
-  - m_AssetGUID: 18a263726b5153148a6fa7009499b560
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
-  - m_AssetGUID: e4a5e155861971143b3ec5973cc553fa
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
+  - {fileID: 11400000, guid: 56d927ea90df83d498e37cfd7daba43b, type: 2}
+  - {fileID: 11400000, guid: 591a04ae4706a484db079a6920cb0c77, type: 2}
+  - {fileID: 11400000, guid: 264e7056bd762f5429a3bf88a78a1ac9, type: 2}
+  - {fileID: 11400000, guid: f073edcb1b2964b44b0b642b3eadbd6c, type: 2}
+  - {fileID: 11400000, guid: 591969f3c8c8d584aa4439f14851f307, type: 2}
+  - {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+  - {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
+  - {fileID: 11400000, guid: b9bb507d747b7084da692397a0347a5c, type: 2}
+  - {fileID: 11400000, guid: a8a4a465308f3b84db05326b14956299, type: 2}
+  - {fileID: 11400000, guid: 18a263726b5153148a6fa7009499b560, type: 2}
+  - {fileID: 11400000, guid: e4a5e155861971143b3ec5973cc553fa, type: 2}
 --- !u!1 &1617620860
 GameObject:
   m_ObjectHideFlags: 0
@@ -4070,12 +4025,7 @@ MonoBehaviour:
     m_BaseValue: 0
     m_Value: 0
   m_Health: 0
-  StatusEffectData:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectGUID: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
+  m_StatusEffectData: {fileID: 0}
   Duration: 10
   Group:
     Value: 0
@@ -4279,7 +4229,7 @@ Transform:
   m_GameObject: {fileID: 2100598325}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.00002999202, y: 1.0000281, z: -0.000028900024}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4368,11 +4318,11 @@ CanvasRenderer:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 2100598328}
   - {fileID: 1394903090}
   - {fileID: 1853193949}
   - {fileID: 1237367206}
   - {fileID: 1051903346}
   - {fileID: 1617620864}
-  - {fileID: 1944042327}
   - {fileID: 1394987477}
+  - {fileID: 1944042327}
+  - {fileID: 2100598328}

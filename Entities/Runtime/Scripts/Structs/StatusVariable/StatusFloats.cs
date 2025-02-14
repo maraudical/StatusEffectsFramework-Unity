@@ -9,11 +9,11 @@ namespace StatusEffects.Entities
     public struct StatusFloats : IBufferElementData
     {
 #if NETCODE
-        [GhostField(SendData = false)]
+        [GhostField]
 #endif
         public Hash128 ComponentId;
 #if NETCODE
-        [GhostField(SendData = false)]
+        [GhostField]
 #endif
         public Hash128 Id;
 #if NETCODE

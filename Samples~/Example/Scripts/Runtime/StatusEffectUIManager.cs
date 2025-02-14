@@ -8,7 +8,6 @@ namespace StatusEffects.Example.UI
     public class StatusEffectUIManager : MonoBehaviour
     {
         [SerializeField] private StatusManager m_StatusManager;
-        [SerializeField] private ExamplePlayer m_ExamplePlayer;
         [SerializeField] private Transform m_EffectParent;
         [SerializeField] private GameObject m_EffectPrefab;
         [SerializeField] private Dropdown m_EffectDropdown;
@@ -19,8 +18,14 @@ namespace StatusEffects.Example.UI
 
         private Dictionary<StatusEffectData, StatusEffectUI> m_StatusEffectUIs;
 
+        private IStatusManager m_ShownStatusManager;
+        private IExamplePlayer m_ExamplePlayer;
+
         private void Awake()
         {
+            m_ShownStatusManager = m_StatusManager.GetComponents<IStatusManager>().First((m) => m is Component component && component.hideFlags == HideFlags.None);
+            m_ExamplePlayer = m_StatusManager.GetComponent<IExamplePlayer>();
+
             m_StatusEffectUIs = new();
 
             m_EffectDropdown.AddOptions(m_StatusEffectDatas.Select(data => new Dropdown.OptionData(data.name)).ToList());
@@ -30,7 +35,7 @@ namespace StatusEffects.Example.UI
 
         private void OnEnable()
         {
-            m_StatusManager.OnStatusEffect += OnStatusEffect;
+            m_ShownStatusManager.OnStatusEffect += OnStatusEffect;
 
             m_EffectDropdown.onValueChanged.AddListener(DropdownValueChanged);
             m_EffectAddButton.onClick.AddListener(AddButtonClicked);
@@ -39,14 +44,14 @@ namespace StatusEffects.Example.UI
 
         private void OnDisable()
         {
-            m_StatusManager.OnStatusEffect -= OnStatusEffect;
+            m_ShownStatusManager.OnStatusEffect -= OnStatusEffect;
 
             m_EffectDropdown.onValueChanged.RemoveListener(DropdownValueChanged);
             m_EffectAddButton.onClick.RemoveListener(AddButtonClicked);
             m_EffectRemoveButton.onClick.RemoveListener(RemoveButtonClicked);
         }
 
-        private void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int stacks)
+        private void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
         {
             // If there is no icon for the effect we ignore it.
             if (!statusEffect.Data.Icon)
@@ -56,7 +61,7 @@ namespace StatusEffects.Example.UI
             if (m_StatusEffectUIs.TryGetValue(statusEffect.Data, out StatusEffectUI statusEffectUI))
             {
                 // Add or remove the given stack count.
-                statusEffectUI.UpdateStack(statusEffect.Stacks);
+                statusEffectUI.UpdateStack(currentStacks);
                 // If the stack count after removing is below or equal to 0 then remove it.
                 if (statusEffectUI.Stacks <= 0)
                     RemoveUI(statusEffectUI);
@@ -65,7 +70,7 @@ namespace StatusEffects.Example.UI
             }
             // Otherwise we will instantiate a new UI prefab to the scene.
             if (action is StatusEffectAction.AddedStatusEffect or StatusEffectAction.AddedStacks)
-                AddUI(stacks);
+                AddUI(currentStacks);
 
             void AddUI(int stacks)
             {
@@ -90,12 +95,12 @@ namespace StatusEffects.Example.UI
 
         private void AddButtonClicked()
         {
-            m_StatusManager.AddStatusEffect(m_ExamplePlayer.StatusEffectData);
+            m_ShownStatusManager.AddStatusEffect(m_ExamplePlayer.StatusEffectData);
         }
 
         private void RemoveButtonClicked()
         {
-            m_StatusManager.RemoveStatusEffect(m_ExamplePlayer.StatusEffectData, 1);
+            m_ShownStatusManager.RemoveStatusEffect(m_ExamplePlayer.StatusEffectData, 1);
         }
     }
 

@@ -28,7 +28,7 @@ namespace StatusEffects
         [SerializeField] private int m_Stacks;
 
         private int m_PreviousStack;
-        private int? m_InstanceId;
+        private Hash128 m_InstanceId;
         private bool m_ModulesEnabled;
 
 #if UNITASK || UNITY_2023_1_OR_NEWER
@@ -48,15 +48,17 @@ namespace StatusEffects
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetInstanceID()
+        public Hash128 GetInstanceID()
         {
-            if (!m_InstanceId.HasValue)
-                SetInstanceID(Guid.NewGuid().GetHashCode());
+            if (!m_InstanceId.isValid)
+                SetInstanceID();
 
-            return m_InstanceId.Value;
+            return m_InstanceId;
         }
 
-        internal void SetInstanceID(int value)
+        internal void SetInstanceID() => SetInstanceID(Hash128.Compute(Guid.NewGuid().ToString("N")));
+
+        internal void SetInstanceID(Hash128 value)
         {
             m_InstanceId = value;
         }

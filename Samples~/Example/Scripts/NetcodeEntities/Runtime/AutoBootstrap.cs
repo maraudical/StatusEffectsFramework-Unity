@@ -1,3 +1,4 @@
+#if NETCODE_ENTITIES
 using Unity.NetCode;
 using UnityEngine;
 using UnityEngine.Scripting;
@@ -11,3 +12,4 @@ public class AutoBootstrap : ClientServerBootstrap
         return base.Initialize(defaultWorldName);
     }
 }
+#endif

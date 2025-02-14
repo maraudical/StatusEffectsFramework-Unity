@@ -2,10 +2,9 @@
     "name": "StatusEffectsFramework.Runtime",
     "rootNamespace": "",
     "references": [
-        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:df380645f10b7bc4b97d4f5eb6303d95",
         "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5",
-        "GUID:9e24947de15b9834991c9d8411ea37cf",
-        "GUID:df380645f10b7bc4b97d4f5eb6303d95"
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -1,8 +1,6 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
 using System.Threading;
-using Unity.Entities.Serialization;
-
 #elif UNITY_2023_1_OR_NEWER
 using StatusEffects.Extensions;
 using System.Threading;
@@ -99,7 +97,8 @@ namespace StatusEffects.Modules
             // automatically destroys itself when all particles die.
 
             // Give the vfx the name of the prefab so it can be queried later.
-            GameObject vfxGameObject = Instantiate(vfxInstance.Prefab, manager.transform).name = VfxInstance.Prefab.name;
+            GameObject vfxGameObject = Instantiate(vfxInstance.Prefab, manager.transform);
+            vfxGameObject.name = vfxInstance.Prefab.name;
 
             if (vfxInstance.InstantiateAgainWhenAddingStacks)
             {

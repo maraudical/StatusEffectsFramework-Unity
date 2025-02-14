@@ -43,7 +43,7 @@ RenderSettings:
 LightmapSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 13
-  m_BakeOnSceneLoad: 1
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -2803,7 +2803,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_StatusManager: {fileID: 1944042328}
-  m_ExamplePlayer: {fileID: 1944042329}
   m_EffectParent: {fileID: 1404795237}
   m_EffectPrefab: {fileID: 723449315551824524, guid: fa6d04fc069e4be49a5e002999f2fd02, type: 3}
   m_EffectDropdown: {fileID: 169864110}
@@ -3480,7 +3479,7 @@ MonoBehaviour:
     m_BaseValue: 0
     m_Value: 0
   m_Health: 0
-  StatusEffectData: {fileID: 0}
+  m_StatusEffectData: {fileID: 0}
   Duration: 10
   Group:
     Value: 0
@@ -3543,7 +3542,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10901, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 019f53c98616c28488d6d51393cf3373, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3649,5 +3648,5 @@ SceneRoots:
   - {fileID: 1237367206}
   - {fileID: 1051903346}
   - {fileID: 1617620864}
-  - {fileID: 1944042327}
   - {fileID: 1394987477}
+  - {fileID: 1944042327}

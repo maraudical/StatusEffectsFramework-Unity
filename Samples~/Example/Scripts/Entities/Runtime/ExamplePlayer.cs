@@ -6,20 +6,34 @@ using Unity.NetCode;
 
 namespace StatusEffects.Entities.Example
 {
-#if NETCODE_ENTITIES
-    [GhostComponent]
-#endif
     public struct ExamplePlayer : IComponentData
     {
         // This is important to look up StatusVariable
         // data from the dynamic buffer.
+#if NETCODE_ENTITIES
+        [GhostField]
+#endif
         public Hash128 ComponentId;
-        
+
+#if NETCODE_ENTITIES
+        [GhostField]
+#endif
         public StatusFloat MaxHealth;
+#if NETCODE_ENTITIES
+        [GhostField]
+#endif
         public StatusFloat Speed;
+#if NETCODE_ENTITIES
+        [GhostField]
+#endif
         public StatusInt CoinMultiplier;
+#if NETCODE_ENTITIES
+        [GhostField]
+#endif
         public StatusBool Stunned;
+#if NETCODE_ENTITIES
         [GhostField(Quantization = 1000)]
+#endif
         public float Health;
     }
 

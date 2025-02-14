@@ -1,4 +1,4 @@
-#if NETCODE_GAMEOBJECTS && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+#if NETCODE_GAMEOBJECTS && COLLECTIONS
 using UnityEditor;
 using StatusEffects.Example;
 using StatusEffects.Example.Inspector;

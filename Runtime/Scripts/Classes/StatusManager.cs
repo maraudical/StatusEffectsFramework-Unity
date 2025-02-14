@@ -22,7 +22,7 @@ namespace StatusEffects
     [AddComponentMenu("Status Effect/Status Manager")]
     public class StatusManager : MonoBehaviour, IStatusManager
     {
-        [HideInInspector] public event System.Action<StatusEffect, StatusEffectAction, int> OnStatusEffect;
+        [HideInInspector] public event System.Action<StatusEffect, StatusEffectAction, int, int> OnStatusEffect;
         event System.Action<StatusEffect> IStatusManager.ValueUpdate
         {
             add => ValueUpdate += value;
@@ -34,17 +34,14 @@ namespace StatusEffects
 
         internal System.Action<StatusEffect, bool> TimerOverride;
 
-        [SerializeField] private Dictionary<int, StatusEffect> m_Effects;
+        [SerializeField] private Dictionary<Hash128, StatusEffect> m_Effects;
 
 #if UNITY_EDITOR
         [SerializeField] private List<StatusEffect> m_EditorOnlyEffects;
 
 #endif
         #region Public Methods
-        /// <summary>
-        /// Gets a <see cref="StatusEffect"/>s by its <see cref="StatusEffect.GetInstanceID"/>.
-        /// </summary>
-        public bool GetStatusEffect(int instanceId, out StatusEffect statusEffect)
+        public bool GetStatusEffect(Hash128 instanceId, out StatusEffect statusEffect)
         {
             if (m_Effects == null)
             {
@@ -54,9 +51,7 @@ namespace StatusEffects
             
             return m_Effects.TryGetValue(instanceId, out statusEffect);
         }
-        /// <summary>
-        /// Returns the listed <see cref="StatusEffect"/>s in a <see cref="List{}"/> for the <see cref="StatusManager"/>.
-        /// </summary>
+        
 #nullable enable
         public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null)
 #nullable disable
@@ -67,9 +62,7 @@ namespace StatusEffects
                                    && (group == null ||(e.Data.Group & group) != 0)
                                    && (data  == null || e.Data == data));
         }
-        /// <summary>
-        /// Returns the first <see cref="StatusEffect"/>s that matches the given parameters. If none are found returns null.
-        /// </summary>
+
 #nullable enable
         public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null)
 #nullable disable
@@ -82,18 +75,12 @@ namespace StatusEffects
                                             && (group == null ||(e.Data.Group & group) != 0)
                                             && (data  == null || e.Data == data));
         }
-        /// <summary>
-        /// Adds a <see cref="StatusEffect"/> to this <see cref="StatusManager"/>. Returns null if no <see cref="StatusEffect"/> was added.
-        /// </summary>
+
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, int stacks = 1)
         {
             return AddStatusEffect(statusEffectData, StatusEffectTiming.Infinite, null, null, null, null, stacks);
         }
-        /// <summary>
-        /// Adds a <see cref="StatusEffect"/> to the <see cref="StatusManager"/>. 
-        /// The given <see cref="float"/> time will limit the duration of the 
-        /// effect in seconds. Returns null if no <see cref="StatusEffect"/> was added.
-        /// </summary>
+
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, int stacks = 1)
         {
             // Check for null values
@@ -109,13 +96,7 @@ namespace StatusEffects
 
             return statusEffect;
         }
-        /// <summary>
-        /// Adds a <see cref="StatusEffect"/> to the <see cref="StatusManager"/>. 
-        /// The given <see cref="float"/> time will limit the duration of the 
-        /// effect where each invocation of the <see cref="UnityEvent"/> 
-        /// will reduce the duration by the given interval. Returns null if no 
-        /// <see cref="StatusEffect"/> was added.
-        /// </summary>
+        
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, UnityEvent unityEvent, float interval = 1, int stacks = 1)
         {
             // Check for null values
@@ -133,12 +114,7 @@ namespace StatusEffects
 
             return statusEffect;
         }
-        /// <summary>
-        /// Adds a <see cref="StatusEffect"/> to a <see cref="StatusManager"/>. 
-        /// The StatusEffect will be removed when the given 
-        /// <see cref="System.Func{bool}"/> is true. Returns null if no 
-        /// <see cref="StatusEffect"/> was added.
-        /// </summary>
+        
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, System.Func<bool> predicate, int stacks = 1)
         {
             // Check for null values
@@ -156,9 +132,7 @@ namespace StatusEffects
 
             return statusEffect;
         }
-        /// <summary>
-        /// Removes a <see cref="StatusEffect"/> from a <see cref="MonoBehaviour"/>.
-        /// </summary>
+        
         public void RemoveStatusEffect(StatusEffect statusEffect)
         {
             if (statusEffect == null || m_Effects == null)
@@ -180,11 +154,9 @@ namespace StatusEffects
             // If a module exists it will be stopped.
             statusEffect.DisableModules(this);
             
-            OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStatusEffect, statusEffect.Stacks);
+            OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStatusEffect, statusEffect.Stacks, 0);
         }
-        /// <summary>
-        /// Removes all <see cref="StatusEffect"/> from a <see cref="MonoBehaviour"/>. If a stack count is given it will remove only the specified amount.
-        /// </summary>
+        
 #nullable enable
         public void RemoveStatusEffect(StatusEffectData statusEffectData, int? stacks = null)
 #nullable disable
@@ -200,10 +172,7 @@ namespace StatusEffects
                                                                                      .ThenBy(se => se.Timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate ? float.PositiveInfinity : se.Duration);
             IterateRemoval(leastToMostValueThenDuration, stacks);
         }
-        /// <summary>
-        /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
-        /// have the same <see cref="ComparableName"/>. If a stacks count is given it will remove only the specified amount.
-        /// </summary>
+        
         public void RemoveStatusEffect(ComparableName name, int? stacks = null)
         {
             if (m_Effects == null)
@@ -217,10 +186,7 @@ namespace StatusEffects
                                                                                      .ThenBy(se => se.Timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate ? float.PositiveInfinity : se.Duration);
             IterateRemoval(leastToMostValueThenDuration, stacks);
         }
-        /// <summary>
-        /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
-        /// are part of the given <see cref="StatusEffectGroup"/> group. If a stacks count is given it will remove only the specified amount.
-        /// </summary>
+        
         public void RemoveStatusEffect(StatusEffectGroup group, int? stacks = null)
         {
             if (m_Effects == null)
@@ -234,9 +200,7 @@ namespace StatusEffects
                                                                                      .ThenBy(se => se.Timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate ? float.PositiveInfinity : se.Duration);
             IterateRemoval(leastToMostValueThenDuration, stacks);
         }
-        /// <summary>
-        /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/>.
-        /// </summary>
+        
         public void RemoveAllStatusEffects()
         {
             if (m_Effects == null)
@@ -248,7 +212,7 @@ namespace StatusEffects
         /// <summary>
         /// Forcibly adds a <see cref="StatusEffect"/> regardless of whether it can or can't.
         /// </summary>
-        internal StatusEffect ForceAddStatusEffect(int instanceId, StatusEffectData statusEffectData, StatusEffectTiming timing, float duration, int stacks)
+        internal StatusEffect ForceAddStatusEffect(Hash128 instanceId, StatusEffectData statusEffectData, StatusEffectTiming timing, float duration, int stacks)
         {
             // Check for null values
             if (!statusEffectData)
@@ -260,9 +224,9 @@ namespace StatusEffects
             // initializing so we need to initialize all of the Status Variables
             if (m_Effects == null)
             {
-                m_Effects = new Dictionary<int, StatusEffect> { { statusEffect.GetInstanceID(), statusEffect } };
+                m_Effects = new() { { statusEffect.GetInstanceID(), statusEffect } };
 #if UNITY_EDITOR
-                m_EditorOnlyEffects = new List<StatusEffect> { statusEffect };
+                m_EditorOnlyEffects = new() { statusEffect };
 #endif
             }
             else
@@ -277,7 +241,7 @@ namespace StatusEffects
             // If a module exists it will be started.
             statusEffect.EnableModules(this);
 
-            OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.AddedStatusEffect, stacks);
+            OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.AddedStatusEffect, 0, stacks);
 
             // Begin a timer on the monobehaviour if it is a realtime timer.
             if (timing == StatusEffectTiming.Duration)
@@ -291,9 +255,9 @@ namespace StatusEffects
             ValueUpdate?.Invoke(statusEffect);
         }
 
-        internal void InvokeOnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int stacks)
+        internal void InvokeOnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
         {
-            OnStatusEffect?.Invoke(statusEffect, action, stacks);
+            OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
         }
         #endregion
 
@@ -317,7 +281,7 @@ namespace StatusEffects
 
                         ValueUpdate?.Invoke(statusEffect);
                         statusEffect.InvokeStackUpdate();
-                        OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStacks, currentRemoveCount);
+                        OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStacks, currentStackCount, statusEffect.Stacks);
 
                         break;
                     }
@@ -678,9 +642,14 @@ namespace StatusEffects
                 return null;
 
             RemoveStatusEffect(flagForRemoval);
+
+            int previousStacks = 0;
+            int currentStacks = stacks;
             // Add the status effect
             if (addedToStack)
             {
+                previousStacks = statusEffect.Stacks;
+                currentStacks += statusEffect.Stacks;
                 statusEffect.Stacks += stacks;
                 ValueUpdate?.Invoke(statusEffect);
                 statusEffect.InvokeStackUpdate();
@@ -694,9 +663,9 @@ namespace StatusEffects
                 // initializing so we need to initialize all of the Status Variables
                 if (m_Effects == null)
                 {
-                    m_Effects = new Dictionary<int, StatusEffect> { { statusEffect.GetInstanceID(), statusEffect } };
+                    m_Effects = new() { { statusEffect.GetInstanceID(), statusEffect } };
 #if UNITY_EDITOR
-                    m_EditorOnlyEffects = new List<StatusEffect> { statusEffect };
+                    m_EditorOnlyEffects = new() { statusEffect };
 #endif
                 }
                 else
@@ -712,7 +681,7 @@ namespace StatusEffects
             // If a module exists it will be started.
             statusEffect.EnableModules(this);
             
-            OnStatusEffect?.Invoke(statusEffect, action, stacks);
+            OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
             // Return the effect in case it is wanted for other reference.
             return statusEffect;
         }

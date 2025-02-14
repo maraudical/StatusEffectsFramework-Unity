@@ -1,9 +1,8 @@
-#if NETCODE_GAMEOBJECTS && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+#if NETCODE_GAMEOBJECTS && COLLECTIONS
 using StatusEffects.Example;
 using System;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
 using UnityEngine.Events;
 
 namespace StatusEffects.NetCode.GameObjects.Example
@@ -31,7 +30,13 @@ namespace StatusEffects.NetCode.GameObjects.Example
         // Instead of directly adding the StatusEffectData, it needs to be an
         // Addressable Asset Reference. This is so the network only needs to
         // sync the StatusEffectData scriptable object reference asset GUID.
-        public AssetReferenceT<StatusEffectData> StatusEffectData;
+        public StatusEffectData StatusEffectData
+        {
+            get => m_StatusEffectData;
+            set => m_StatusEffectData = value;
+        }
+        [Header("Debug Variables")]
+        [SerializeField] private StatusEffectData m_StatusEffectData;
         [SerializeField] private float Duration = 10;
         [SerializeField] private StatusEffectGroup Group;
         [SerializeField] private int Stack = 1;
@@ -59,9 +64,9 @@ namespace StatusEffects.NetCode.GameObjects.Example
             StatusManager.OnStatusEffect -= OnStatusEffect;
         }
 
-        private void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int stacks)
+        private void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
         {
-            Debug.Log($"{(action is StatusEffectAction.AddedStatusEffect or StatusEffectAction.AddedStacks ? "Added" : "Removed")} {stacks} stacks of the effect \"{statusEffect.Data.name}\"!");
+            Debug.Log($"{(action is StatusEffectAction.AddedStatusEffect or StatusEffectAction.AddedStacks ? "Added" : "Removed")} {Mathf.Abs(currentStacks - previousStacks)} stacks of the effect \"{statusEffect.Data.name}\"!");
         }
 
         private void Start()
@@ -76,12 +81,12 @@ namespace StatusEffects.NetCode.GameObjects.Example
         // manipulating of status effects is completely SERVER AUTHORITATIVE.
         // So invoking these methods will throw an error if not done from the
         // server.
-        public void DebugAddStatusEffect() { _ = StatusManager.AddStatusEffect(StatusEffectData, Stack); }
-        public void DebugAddStatusEffectTimed() { _ = StatusManager.AddStatusEffect(StatusEffectData, Duration, Stack); }
-        public void DebugAddStatusEffectTimedEvent() { _ = StatusManager.AddStatusEffect(StatusEffectData, Duration, Event, 1, Stack); }
+        public void DebugAddStatusEffect() { StatusManager.AddStatusEffect(StatusEffectData, Stack); }
+        public void DebugAddStatusEffectTimed() { StatusManager.AddStatusEffect(StatusEffectData, Duration, Stack); }
+        public void DebugAddStatusEffectTimedEvent() { StatusManager.AddStatusEffect(StatusEffectData, Duration, Event, 1, Stack); }
         public void InvokeEvent() { Event?.Invoke(); }
-        public void DebugAddStatusEffectPredicate() { _ = StatusManager.AddStatusEffect(StatusEffectData, () => PredicateBool, Stack); }
-        public void DebugRemoveStatusEffect() { _ = StatusManager.RemoveStatusEffect(StatusEffectData, Stack); }
+        public void DebugAddStatusEffectPredicate() { StatusManager.AddStatusEffect(StatusEffectData, () => PredicateBool, Stack); }
+        public void DebugRemoveStatusEffect() { StatusManager.RemoveStatusEffect(StatusEffectData, Stack); }
         public void DebugRemoveStatusEffectGroup() { StatusManager.RemoveStatusEffect(Group); }
     }
 }

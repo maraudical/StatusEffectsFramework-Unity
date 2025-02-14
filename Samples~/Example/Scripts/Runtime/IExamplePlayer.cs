@@ -7,6 +7,7 @@ namespace StatusEffects.Example
         public float Speed { get; }
         public int CoinMultiplier { get; }
         public bool Stunned { get; }
+        public StatusEffectData StatusEffectData { get; set; }
 
         public void DebugAddStatusEffect();
         public void DebugAddStatusEffectTimed();

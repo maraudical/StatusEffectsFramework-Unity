@@ -1,9 +1,12 @@
 {
   "name": "com.maraudical.sef",
-  "version": "2.0.1",
+  "version": "3.0.0",
   "displayName": "Status Effects Framework",
   "description": "A framework for implementing status effects into any game.",
   "license": "MIT",
+  "dependencies" : {
+	  "com.unity.render-pipelines.core": "12.1.15"
+  },
   "repository": {
 	"type": "git",
 	"url": "https://github.com/maraudical/StatusEffectsFramework-Unity.git"
@@ -13,6 +16,7 @@
   "keywords": [
 	"status",
 	"effect",
+	"effects",
 	"framework"
   ],
   "author": {
@@ -23,8 +27,8 @@
   "documentationUrl": "https://maraudical.gitbook.io/status-effect-framework/",
   "samples": [
   {
-	"displayName": "Effects Example",
-	"description": "Contains simple examples of a few effects as well as how to implement them into your own classes with example UI.",
+	"displayName": "Example",
+	"description": "Contains multiple examples of a few effects as well as how to implement them into your own classes with example UI. Also includes samples for Netcode for GameObjects, Entities, and Netcode for Entities so make sure to double check which scene is opened and any scripting defines.",
 	"path": "Samples~/Example"
   }
   ],

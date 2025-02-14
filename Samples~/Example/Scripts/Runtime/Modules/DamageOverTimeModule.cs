@@ -66,7 +66,7 @@ namespace StatusEffects.Modules
                 while (!token.IsCancellationRequested)
                 {
                     // Reduce health based on the Statu Effect base value
-                    player.Health -= statusEffect.Data.BaseValue * statusEffect.Stack;
+                    player.Health -= statusEffect.Data.BaseValue * statusEffect.Stacks;
                     // Wait for the interval before applying the damage again
                     await Awaitable.WaitForSecondsAsync(damageOverTimeInstance.IntervalSeconds);
                 }
@@ -80,7 +80,7 @@ namespace StatusEffects.Modules
                 for (; ; )
                 {
                     // Reduce health based on the Statu Effect base value
-                    player.Health -= statusEffect.Data.BaseValue * statusEffect.Stack;
+                    player.Health -= statusEffect.Data.BaseValue * statusEffect.Stacks;
                     // Wait for the interval before applying the damage again
                     yield return new WaitForSeconds(damageOverTimeInstance.IntervalSeconds);
                 }

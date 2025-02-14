@@ -52,8 +52,13 @@ namespace StatusEffects.Example
         public virtual bool Stunned => StatusStunned.Value;
 
         // The following is for debugging how effects are added/removed.
+        public StatusEffectData StatusEffectData
+        {
+            get => m_StatusEffectData;
+            set => m_StatusEffectData = value;
+        }
         [Header("Debug Variables")]
-        public StatusEffectData StatusEffectData;
+        [SerializeField] private StatusEffectData m_StatusEffectData;
         [SerializeField] private float Duration = 10;
         [SerializeField] private StatusEffectGroup Group;
         [SerializeField] private int Stack = 1;
@@ -86,9 +91,9 @@ namespace StatusEffects.Example
             StatusManager.OnStatusEffect -= OnStatusEffect;
         }
 
-        private void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int stacks)
+        private void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
         {
-            Debug.Log($"{(action is StatusEffectAction.AddedStatusEffect or StatusEffectAction.AddedStacks ? "Added" : "Removed")} {stacks} stacks of the effect \"{statusEffect.Data.name}\"!");
+            Debug.Log($"{(action is StatusEffectAction.AddedStatusEffect or StatusEffectAction.AddedStacks ? "Added" : "Removed")} {Mathf.Abs(currentStacks - previousStacks)} stacks of the effect \"{statusEffect.Data.name}\"!");
         }
 
         private void Start()

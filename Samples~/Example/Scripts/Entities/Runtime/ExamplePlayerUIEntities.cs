@@ -1,11 +1,13 @@
 #if ENTITIES
 using System;
 using System.Collections;
-using Unity.Collections;
 using Unity.Entities;
-using Unity.NetCode;
 using UnityEngine;
 using UnityEngine.UI;
+#if NETCODE_ENTITIES
+using Unity.Collections;
+using Unity.NetCode;
+#endif
 
 namespace StatusEffects.Entities.Example.UI
 {

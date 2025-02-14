@@ -1,7 +1,8 @@
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+#if NETCODE && COLLECTIONS
 using System;
 using Unity.Collections;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace StatusEffects.NetCode.GameObjects
 {
@@ -11,24 +12,24 @@ namespace StatusEffects.NetCode.GameObjects
     /// </summary>
     public struct NetworkStatusEffect : INetworkSerializable, IEquatable<NetworkStatusEffect>
     {
-        public FixedString128Bytes AssetGuid;
+        public FixedString64Bytes Id;
         public StatusEffectTiming Timing;
         public float Duration;
-        public int Stack;
-        public int InstanceId;
+        public int Stacks;
+        public FixedString64Bytes InstanceId;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref AssetGuid);
+            serializer.SerializeValue(ref Id);
             serializer.SerializeValue(ref Timing);
             serializer.SerializeValue(ref Duration);
-            serializer.SerializeValue(ref Stack);
+            serializer.SerializeValue(ref Stacks);
             serializer.SerializeValue(ref InstanceId);
         }
 
         public override int GetHashCode()
         {
-            return InstanceId;
+            return InstanceId.GetHashCode();
         }
 
         public bool Equals(NetworkStatusEffect other)
@@ -36,13 +37,13 @@ namespace StatusEffects.NetCode.GameObjects
             return InstanceId == other.InstanceId;
         }
 
-        public NetworkStatusEffect(FixedString128Bytes assetGuid, StatusEffectTiming timing, float duration, int stack, int instanceId)
+        public NetworkStatusEffect(Hash128 id, StatusEffectTiming timing, float duration, int stacks, Hash128 instanceId)
         {
-            AssetGuid = assetGuid;
+            Id = id.ToString();
             Timing = timing;
             Duration = duration;
-            Stack = stack;
-            InstanceId = instanceId;
+            Stacks = stacks;
+            InstanceId = instanceId.ToString();
         }
     }
 }

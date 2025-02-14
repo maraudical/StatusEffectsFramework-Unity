@@ -1,4 +1,4 @@
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+#if NETCODE && COLLECTIONS
 using System;
 using System.Linq;
 using System.Threading.Tasks;

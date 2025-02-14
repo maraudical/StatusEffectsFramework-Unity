@@ -42,6 +42,15 @@ namespace StatusEffects.Entities.Example
                 // Check if it doesn't exists in the Dictionary (we are adding).
                 if (!m_EntityParticles.TryGetValue(entity, out m_Transform))
                 {
+#if NETCODE_ENTITIES
+                    // Special case where instantiate again vfx should no get
+                    // respawned after a client DCs and reconnects.
+                    if (vfx.InstantiateAgainWhenAddingStacks && module.PreviousStacks != 0)
+                    {
+                        m_EntityParticles.Add(entity, null);
+                        continue;
+                    }
+#endif
                     GameObject VfxObject = Object.Instantiate(vfx.Prefab) as GameObject;
 
                     m_Transform = VfxObject.transform;
@@ -90,7 +99,7 @@ namespace StatusEffects.Entities.Example
                 if (!m_EntityParticles.TryGetValue(entity, out m_Transform))
                     continue;
                 // Attempt to stop the particle system.
-                if (!vfx.InstantiateAgainWhenAddingStacks)
+                if (m_Transform && !vfx.InstantiateAgainWhenAddingStacks)
                     m_Transform.GetComponent<ParticleSystem>().Stop();
                 
                 m_EntityParticles.Remove(entity);

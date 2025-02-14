@@ -1,6 +1,9 @@
 #if ENTITIES
 using Unity.Burst;
 using Unity.Entities;
+#if NETCODE
+using Unity.NetCode;
+#endif
 
 namespace StatusEffects.Entities
 {
@@ -13,6 +16,9 @@ namespace StatusEffects.Entities
         /// to the <see cref="StatusInts"/> buffer since the last time this index 
         /// was set. You must manually set the value.
         /// </summary>
+#if NETCODE
+        [GhostField(SendData = false)]
+#endif
         public int CachedIndex;
 
         /// <summary>

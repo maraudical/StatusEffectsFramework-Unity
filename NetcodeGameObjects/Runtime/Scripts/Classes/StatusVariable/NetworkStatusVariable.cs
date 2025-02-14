@@ -1,5 +1,4 @@
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
-using StatusEffects;
+#if NETCODE && COLLECTIONS
 using Unity.Netcode;
 using UnityEngine;
 

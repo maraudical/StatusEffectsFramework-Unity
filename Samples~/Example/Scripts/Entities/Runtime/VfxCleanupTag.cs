@@ -1,3 +1,4 @@
+#if ENTITIES
 using Unity.Entities;
 
 namespace StatusEffects.Entities.Example
@@ -7,3 +8,4 @@ namespace StatusEffects.Entities.Example
         public bool InstantiateAgainWhenAddingStacks;
     }
 }
+#endif

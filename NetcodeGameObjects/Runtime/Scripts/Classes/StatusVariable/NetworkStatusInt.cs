@@ -1,4 +1,4 @@
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
+#if NETCODE && COLLECTIONS
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -148,7 +148,7 @@ namespace StatusEffects.NetCode.GameObjects
                     if (effect.StatusName != m_StatusName)
                         continue;
 
-                    effectValue = statusEffect.Stack * (effect.UseBaseValue ? (int)statusEffect.Data.BaseValue : effect.IntValue);
+                    effectValue = statusEffect.Stacks * (effect.UseBaseValue ? (int)statusEffect.Data.BaseValue : effect.IntValue);
 
                     switch (effect.ValueModifier)
                     {
