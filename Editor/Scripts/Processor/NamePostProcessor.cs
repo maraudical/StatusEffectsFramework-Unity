@@ -47,7 +47,7 @@ namespace StatusEffects.Inspector
                     if (name.Id != default)
                         if (s_NameIds.TryGetValue(name.Id, out m_NameReference))
                         {
-                            if (m_NameReference != name)
+                            if (!ReferenceEquals(m_NameReference, name))
                                 GenerateUntilAddable();
                         }
                         else

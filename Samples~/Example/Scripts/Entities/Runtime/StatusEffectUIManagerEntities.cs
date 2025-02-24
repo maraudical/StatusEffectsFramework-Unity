@@ -104,7 +104,8 @@ namespace StatusEffects.Entities.Example.UI
             if (!m_StatusEffectsQuery.TryGetSingletonBuffer(out m_StatusEffects, true))
                 return;
 
-            m_StatusReferences = m_StatusReferencesQuery.GetSingleton<StatusReferences>();
+            if (!m_StatusReferencesQuery.TryGetSingleton(out m_StatusReferences))
+                return;
             
             m_CurrentStackCounts.Clear();
             

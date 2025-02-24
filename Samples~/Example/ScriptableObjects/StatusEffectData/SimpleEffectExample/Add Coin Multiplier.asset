@@ -14,14 +14,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Id:
     serializedVersion: 2
-    Hash: 03bf51fff2498f420e1789c840631f35
+    Hash: f47eacd477961f46ea2cfe26cb0308fb
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 11400000, guid: b962d893a3a667d4480d17ac12f7c54c, type: 2}
   m_BaseValue: 1
   m_Icon: {fileID: 21300000, guid: 7c5e5f5e82bc3ee4e97adfe8bf6e8cd8, type: 3}
-  m_StatusEffectName: Add Coin Multiplier
-  m_Description: Adds coin multiplier.
+  m_StatusEffectName:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_Description:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_AllowEffectStacking: 1
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
@@ -38,3 +54,6 @@ MonoBehaviour:
   m_EnableIcon: 1
   m_EnableName: 1
   m_EnableDescription: 1
+  references:
+    version: 2
+    RefIds: []

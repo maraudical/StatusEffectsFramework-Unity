@@ -28,7 +28,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Id:
     serializedVersion: 2
-    Hash: 812bb745f202c3c6dba9e31d584e6af9
+    Hash: 8c3371b64358ed8305b6620bca944ef6
   m_Group:
     Value: 2
   m_ComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4, type: 2}
@@ -99,8 +99,8 @@ MonoBehaviour:
     Timing: 0
     Duration: 0
   m_Modules:
-  - Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
-    ModuleInstance: {fileID: -5225433083860107390}
+  - Module: {fileID: 0}
+    ModuleInstance: {fileID: 0}
   m_EnableIcon: 1
   m_EnableName: 1
   m_EnableDescription: 1

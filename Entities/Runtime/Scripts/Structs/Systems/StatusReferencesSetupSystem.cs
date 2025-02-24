@@ -21,7 +21,7 @@ namespace StatusEffects.Entities
         {
             var statusEffectDatas = StatusEffectDatabase.Get().Values.Values;
             
-            var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+            var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
             var references = commandBuffer.CreateEntity();
             commandBuffer.SetName(references, "Status References");
             commandBuffer.AddBuffer<ModulePrefabs>(references);
@@ -46,7 +46,7 @@ namespace StatusEffects.Entities
                 ref StatusEffectData statusEffectDataRoot = ref subBuilder.ConstructRoot<StatusEffectData>();
                 statusEffectDataRoot.Id = statusEffectData.Id;
                 statusEffectDataRoot.Group = statusEffectData.Group;
-                statusEffectDataRoot.ComparableName = statusEffectData.ComparableName.Id;
+                statusEffectDataRoot.ComparableName = statusEffectData.ComparableName ? statusEffectData.ComparableName.Id : default;
                 statusEffectDataRoot.BaseValue = statusEffectData.BaseValue;
                 statusEffectDataRoot.Icon = statusEffectData.Icon;
 #if LOCALIZED
@@ -140,9 +140,6 @@ namespace StatusEffects.Entities
             {
                 BlobAsset = statusEffectDataHashMapReferences,
             });
-
-            commandBuffer.Playback(EntityManager);
-            commandBuffer.Dispose();
 
             RequireForUpdate<ModulePrefabs>();
         }

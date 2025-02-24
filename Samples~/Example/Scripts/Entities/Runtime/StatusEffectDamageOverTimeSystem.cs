@@ -10,40 +10,26 @@ namespace StatusEffects.Entities.Example
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     public partial struct StatusEffectDamageOverTimeSystem : ISystem
     {
-        private ComponentLookup<ExamplePlayer> m_PlayerLookup;
-
         private EntityQuery m_EntityQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_PlayerLookup = state.GetComponentLookup<ExamplePlayer>();
-
-            var builder = new EntityQueryBuilder(Allocator.Temp).WithAll<DamageOverTimeEntityModule, Module>();
-            m_EntityQuery = state.GetEntityQuery(builder);
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<DamageOverTimeEntityModule, Module>().Build();
             state.RequireForUpdate(m_EntityQuery);
-            state.RequireForUpdate<DamageOverTimeEntityModule>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            m_PlayerLookup.Update(ref state);
-
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
-            var commandBufferParallel = commandBuffer.AsParallelWriter();
+            var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             
             new DamageOverTimeJob
             {
                 CommandBuffer = commandBufferParallel,
-                PlayerLookup = m_PlayerLookup,
+                PlayerLookup = SystemAPI.GetComponentLookup<ExamplePlayer>(),
                 TimeDelta = SystemAPI.Time.DeltaTime
             }.Schedule(m_EntityQuery);
-
-            state.Dependency.Complete();
-
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]

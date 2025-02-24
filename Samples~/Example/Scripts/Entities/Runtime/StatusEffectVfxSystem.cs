@@ -16,15 +16,12 @@ namespace StatusEffects.Entities.Example
         private Dictionary<Entity, Transform> m_EntityParticles;
         private Transform m_Transform;
 
-        private ComponentLookup<LocalToWorld> m_LocalToWorldLookup;
         private EntityQuery m_EntityQuery;
 
         protected override void OnCreate()
         {
             m_EntityParticles = new();
-
-            m_LocalToWorldLookup = GetComponentLookup<LocalToWorld>();
-
+            
             var builder = new EntityQueryBuilder(Allocator.Temp).WithAny<VfxEntityModule, VfxCleanupTag>();
             m_EntityQuery = GetEntityQuery(builder);
             RequireForUpdate(m_EntityQuery);
@@ -33,7 +30,7 @@ namespace StatusEffects.Entities.Example
         protected override void OnUpdate()
         {
             CompleteDependency();
-            m_LocalToWorldLookup.Update(this);
+            var localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>();
 
             var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
 
@@ -87,8 +84,8 @@ namespace StatusEffects.Entities.Example
                     m_EntityParticles[entity] = VfxObject.transform;
                 }
                 // Set position to current entity position.
-                if (m_Transform && m_LocalToWorldLookup.HasComponent(module.Parent))
-                    m_Transform.position = m_LocalToWorldLookup[module.Parent].Position;
+                if (m_Transform && localToWorldLookup.TryGetComponent(module.Parent, out var localToWorld))
+                    m_Transform.position = localToWorld.Position;
             }
             // Cleanup tags are used here because if the Module is destroyed by the server,
             // there is a high chance that the client will not enjoy the frame delay to

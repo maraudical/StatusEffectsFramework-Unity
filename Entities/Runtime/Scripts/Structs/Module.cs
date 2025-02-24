@@ -6,6 +6,9 @@ using Unity.NetCode;
 
 namespace StatusEffects.Entities
 {
+#if NETCODE
+    [GhostComponent]
+#endif
     public struct Module : IComponentData
     {
 #if NETCODE
@@ -28,27 +31,17 @@ namespace StatusEffects.Entities
 #if NETCODE
         // These are specific to the client as they are
         // for recieving immediately updated values via RPC.
-        [GhostField(SendData = false)]
         public int ReplicatedStacks;
 
-        [GhostField(SendData = false)]
         public int ReplicatedPreviousStacks;
 
-        [GhostField(SendData = false)]
         public bool IsReplicated;
 #endif
-
-#if NETCODE
+        
         // Sending is irrelivant since updates are
         // replicated through rpcs.
-        [GhostField(SendData = false)]
-#endif
         public bool IsBeingUpdated;
-#if NETCODE
-        // Sending is irrelivant since it gets destroyed
-        // before any clients will notice the change.
-        [GhostField(SendData = false)]
-#endif
+
         public bool IsBeingDestroyed;
     }
 }

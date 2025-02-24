@@ -10,23 +10,14 @@ namespace StatusEffects.Entities
     [BurstCompile]
     public partial struct ModuleCleanupSystem : ISystem
     {
-        private BufferLookup<Modules> m_ModulesLookup;
-        private ComponentLookup<Module> m_ModuleLookup;
-
         private EntityQuery m_ModulesCleanupQuery;
         private EntityQuery m_ModuleDestroyTagQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_ModulesLookup = state.GetBufferLookup<Modules>();
-            m_ModuleLookup = state.GetComponentLookup<Module>();
-
-            var builder = new EntityQueryBuilder(Allocator.Temp).WithAll<Modules>().WithAbsent<StatusEffects>();
-            m_ModulesCleanupQuery = state.GetEntityQuery(builder);
-
-            builder = new EntityQueryBuilder(Allocator.Temp).WithAll<Module, ModuleDestroyTag>();
-            m_ModuleDestroyTagQuery = state.GetEntityQuery(builder);
+            m_ModulesCleanupQuery = SystemAPI.QueryBuilder().WithAll<Modules>().WithAbsent<StatusEffects>().Build();
+            m_ModuleDestroyTagQuery = SystemAPI.QueryBuilder().WithAll<Module, ModuleDestroyTag>().Build();
 
             state.RequireForUpdate<Module>();
         }
@@ -34,11 +25,10 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            m_ModulesLookup.Update(ref state);
-            m_ModuleLookup.Update(ref state);
-
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
-            var commandBufferParallel = commandBuffer.AsParallelWriter();
+            var modulesLookup = SystemAPI.GetBufferLookup<Modules>();
+            var moduleLookup = SystemAPI.GetComponentLookup<Module>();
+            
+            var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
             NativeParallelMultiHashMap<Entity, int> modulesEntitiesIndexes = new NativeParallelMultiHashMap<Entity, int>(m_ModuleDestroyTagQuery.CalculateEntityCount(), Allocator.TempJob);
             NativeParallelMultiHashMap<Entity, int>.ParallelWriter modulesIndexesParallel = modulesEntitiesIndexes.AsParallelWriter();
@@ -47,7 +37,7 @@ namespace StatusEffects.Entities
             new ModuleValidateJob
             {
                 CommandBuffer = commandBufferParallel,
-                ModuleLookup = m_ModuleLookup
+                ModuleLookup = moduleLookup
             }.ScheduleParallel(m_ModulesCleanupQuery);
             // Cleanup occurs the frame after the parent entity is destroyed.
             new ModuleCleanupJob
@@ -59,8 +49,8 @@ namespace StatusEffects.Entities
             {
                 CommandBuffer = commandBufferParallel,
                 ModulesIndexes = modulesIndexesParallel,
-                ModulesLookup = m_ModulesLookup
-            }.ScheduleParallel();
+                ModulesLookup = modulesLookup
+            }.ScheduleParallel(m_ModuleDestroyTagQuery);
             
             state.Dependency.Complete();
 
@@ -71,10 +61,9 @@ namespace StatusEffects.Entities
             {
                 Entity key = uniqueModulesEntitiesIndexes.Item1[i];
                 
-                if (!m_ModulesLookup.HasBuffer(key))
+                if (!modulesLookup.TryGetBuffer(key, out var buffer))
                     continue;
-
-                var buffer = m_ModulesLookup[key];
+                
                 var enumerator = modulesEntitiesIndexes.GetValuesForKey(key);
                 var sortedIndexes = new NativeList<int>(buffer.Length, Allocator.Temp);
 
@@ -91,9 +80,6 @@ namespace StatusEffects.Entities
             
             uniqueModulesEntitiesIndexes.Item1.Dispose();
             modulesEntitiesIndexes.Dispose();
-
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]

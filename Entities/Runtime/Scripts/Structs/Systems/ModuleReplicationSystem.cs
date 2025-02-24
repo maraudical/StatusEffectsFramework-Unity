@@ -18,32 +18,26 @@ namespace StatusEffects.Entities
     [BurstCompile]
     public partial struct ModuleReplicationSystem : ISystem
     {
-        private ComponentLookup<Module> m_ModuleLookup;
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_ModuleLookup = state.GetComponentLookup<Module>();
-
-            var builder = new EntityQueryBuilder(Allocator.Temp).WithAll<ModuleReplicationCommand, ReceiveRpcCommandRequest>();
-            state.RequireForUpdate(state.GetEntityQuery(builder));
+            state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<ModuleReplicationCommand, ReceiveRpcCommandRequest>().Build());
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            m_ModuleLookup.Update(ref state);
+            var moduleLookup = SystemAPI.GetComponentLookup<Module>();
 
-            var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+            var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
 
             foreach (var (command, rpc, entity) in SystemAPI.Query<ModuleReplicationCommand, ReceiveRpcCommandRequest>().WithEntityAccess())
             {
                 commandBuffer.DestroyEntity(entity);
 
-                if (!m_ModuleLookup.EntityExists(command.Entity))
+                if (!moduleLookup.TryGetComponent(command.Entity, out Module module))
                     continue;
-
-                Module module = m_ModuleLookup[command.Entity];
+                
                 module.IsBeingUpdated = true;
                 module.IsReplicated = true;
                 module.ReplicatedStacks = command.Stacks;
@@ -51,8 +45,6 @@ namespace StatusEffects.Entities
                 commandBuffer.SetComponent(command.Entity, module);
                 commandBuffer.SetComponentEnabled<ModuleUpdateTag>(command.Entity, true);
             }
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
         }
     }
 }

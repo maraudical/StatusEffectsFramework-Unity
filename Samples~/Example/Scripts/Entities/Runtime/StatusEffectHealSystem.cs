@@ -14,45 +14,26 @@ namespace StatusEffects.Entities.Example
     [UpdateAfter(typeof(StatusEffectDamageOverTimeSystem))]
     public partial struct StatusEffectHealSystem : ISystem
     {
-        private ComponentLookup<ExamplePlayer> m_PlayerLookup;
-        private BufferLookup<StatusFloats> m_StatusFloatLookup;
-
         private EntityQuery m_EntityQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_PlayerLookup = state.GetComponentLookup<ExamplePlayer>();
-            m_StatusFloatLookup = state.GetBufferLookup<StatusFloats>();
-
-            var builder = new EntityQueryBuilder(Allocator.Temp).WithAll<HealEntityModule, Module, ModuleUpdateTag>();
-            m_EntityQuery = state.GetEntityQuery(builder);
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<HealEntityModule, Module, ModuleUpdateTag>().Build();
             state.RequireForUpdate(m_EntityQuery);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (m_EntityQuery.IsEmpty)
-                return;
-            
-            m_PlayerLookup.Update(ref state);
-            m_StatusFloatLookup.Update(ref state);
-
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
-            var commandBufferParallel = commandBuffer.AsParallelWriter();
+            var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             
             new HealJob
             {
                 CommandBuffer = commandBufferParallel,
-                PlayerLookup = m_PlayerLookup,
-                StatusFloatLookup = m_StatusFloatLookup
-            }.Schedule(m_EntityQuery);
-
-            state.Dependency.Complete();
-
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
+                PlayerLookup = SystemAPI.GetComponentLookup<ExamplePlayer>(),
+                StatusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>()
+            }.ScheduleParallel(m_EntityQuery);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -62,7 +43,7 @@ namespace StatusEffects.Entities.Example
             [ReadOnly]
             public ComponentLookup<ExamplePlayer> PlayerLookup;
             [ReadOnly]
-            public BufferLookup<StatusFloats> StatusFloatLookup;
+            public BufferLookup<StatusFloats> StatusFloatsLookup;
 
             public void Execute([EntityIndexInQuery] int sortKey, Entity entity, in HealEntityModule healModule, in Module module, in ModuleUpdateTag update)
             {
@@ -70,7 +51,7 @@ namespace StatusEffects.Entities.Example
                 
                 if (PlayerLookup.TryGetComponent(parentEntity, out ExamplePlayer player))
                 {
-                    var buffer = StatusFloatLookup[parentEntity];
+                    var buffer = StatusFloatsLookup[parentEntity];
                     int index = player.MaxHealth.CachedIndex >= 0 ? player.MaxHealth.CachedIndex : player.MaxHealth.GetBufferIndex(player.ComponentId, buffer);
 
                     if (module.IsBeingDestroyed)

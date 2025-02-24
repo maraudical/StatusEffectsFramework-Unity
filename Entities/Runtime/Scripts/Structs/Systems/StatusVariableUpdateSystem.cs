@@ -12,50 +12,32 @@ namespace StatusEffects.Entities
     [BurstCompile]
     public partial struct StatusVariableUpdateSystem : ISystem
     {
-        private BufferLookup<StatusFloats> m_StatusFloatLookup;
-        private BufferLookup<StatusInts> m_StatusIntLookup;
-        private BufferLookup<StatusBools> m_StatusBoolLookup;
-
         private EntityQuery m_StatusVariableUpdateQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_StatusFloatLookup = state.GetBufferLookup<StatusFloats>();
-            m_StatusIntLookup = state.GetBufferLookup<StatusInts>();
-            m_StatusBoolLookup = state.GetBufferLookup<StatusBools>();
-            
-            state.RequireForUpdate<StatusEffects>();
+            m_StatusVariableUpdateQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusVariableUpdate>().Build();
+            state.RequireForUpdate(m_StatusVariableUpdateQuery);
             state.RequireForUpdate<StatusReferences>();
         }
         
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            m_StatusFloatLookup.Update(ref state);
-            m_StatusIntLookup.Update(ref state);
-            m_StatusBoolLookup.Update(ref state);
-
             var references = SystemAPI.GetSingleton<StatusReferences>();
-
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
-            var commandBufferParallel = commandBuffer.AsParallelWriter();
+            var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
             // If any entities were actually changed we update their StatusVariables.
             // This is done at the start of frame before StatusEffects structural changes.
             new StatusVariableUpdateJob
             {
                 CommandBuffer = commandBufferParallel,
-                StatusFloatLookup = m_StatusFloatLookup,
-                StatusIntLookup = m_StatusIntLookup,
-                StatusBoolLookup = m_StatusBoolLookup,
+                StatusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>(),
+                StatusIntsLookup = SystemAPI.GetBufferLookup<StatusInts>(),
+                StatusBoolsLookup = SystemAPI.GetBufferLookup<StatusBools>(),
                 References = references
-            }.Schedule();
-
-            state.Dependency.Complete();
-
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
+            }.ScheduleParallel(m_StatusVariableUpdateQuery);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -63,11 +45,11 @@ namespace StatusEffects.Entities
         {
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
             [NativeDisableParallelForRestriction]
-            public BufferLookup<StatusFloats> StatusFloatLookup;
+            public BufferLookup<StatusFloats> StatusFloatsLookup;
             [NativeDisableParallelForRestriction]
-            public BufferLookup<StatusInts> StatusIntLookup;
+            public BufferLookup<StatusInts> StatusIntsLookup;
             [NativeDisableParallelForRestriction]
-            public BufferLookup<StatusBools> StatusBoolLookup;
+            public BufferLookup<StatusBools> StatusBoolsLookup;
             [ReadOnly]
             public StatusReferences References;
 
@@ -76,23 +58,23 @@ namespace StatusEffects.Entities
                 // We can guarantee that this entity has a StatusEffect buffer
                 // because if a StatusEffect was added to an entity that wasn't
                 // baked from a StatusManager it would throw an error before this.
-                if (StatusFloatLookup.HasBuffer(entity))
+                if (StatusFloatsLookup.HasBuffer(entity))
                 {
-                    var statusFloatBuffer = StatusFloatLookup[entity];
+                    var statusFloatBuffer = StatusFloatsLookup[entity];
                     for (int i = 0; i < statusFloatBuffer.Length; i++)
                         GetValue(ref statusFloatBuffer.ElementAt(i), statusEffects, References);
                 }
 
-                if (StatusIntLookup.HasBuffer(entity))
+                if (StatusIntsLookup.HasBuffer(entity))
                 {
-                    var statusIntBuffer = StatusIntLookup[entity];
+                    var statusIntBuffer = StatusIntsLookup[entity];
                     for (int i = 0; i < statusIntBuffer.Length; i++)
                         GetValue(ref statusIntBuffer.ElementAt(i), statusEffects, References);
                 }
 
-                if (StatusBoolLookup.HasBuffer(entity))
+                if (StatusBoolsLookup.HasBuffer(entity))
                 {
-                    var statusBoolBuffer = StatusBoolLookup[entity];
+                    var statusBoolBuffer = StatusBoolsLookup[entity];
                     for (int i = 0; i < statusBoolBuffer.Length; i++)
                         GetValue(ref statusBoolBuffer.ElementAt(i), statusEffects, References);
                 }

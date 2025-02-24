@@ -21,13 +21,9 @@ namespace StatusEffects.Entities
     [BurstCompile]
     public partial struct StatusManagerSystem : ISystem
     {
-        private ComponentLookup<Module> m_ModuleLookup;
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_ModuleLookup = state.GetComponentLookup<Module>();
-            
             state.RequireForUpdate<StatusEffects>();
             state.RequireForUpdate<StatusReferences>();
             state.RequireForUpdate<ModulePrefabs>();
@@ -36,33 +32,28 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            m_ModuleLookup.Update(ref state);
+            var moduleLookup = SystemAPI.GetComponentLookup<Module>();
 
             var references = SystemAPI.GetSingleton<StatusReferences>();
             var modulePrefabs = SystemAPI.GetSingletonBuffer<ModulePrefabs>();
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
-            var commandBufferParallel = commandBuffer.AsParallelWriter();
+            var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
             // Handle any add/remove requests.
             new StatusEffectRequestJob
             {
                 CommandBuffer = commandBufferParallel,
-                ModuleLookup = m_ModuleLookup,
+                ModuleLookup = moduleLookup,
                 References = references,
                 ModulePrefabs = modulePrefabs
             }.ScheduleParallel();
+
             // Update and check durations.
             new StatusEffectUpdateJob
             {
                 CommandBuffer = commandBufferParallel,
-                ModuleLookup = m_ModuleLookup,
+                ModuleLookup = moduleLookup,
                 TimeDelta = SystemAPI.Time.DeltaTime
             }.ScheduleParallel();
-
-            state.Dependency.Complete();
-
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]

@@ -15,29 +15,19 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var builder = new EntityQueryBuilder(Allocator.Temp).WithAllRW<Module>().WithAll<ModuleUpdateTag>();
-            m_EntityQuery = state.GetEntityQuery(builder);
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAllRW<Module>().WithAll<ModuleUpdateTag>().Build();
             state.RequireForUpdate(m_EntityQuery);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            if (m_EntityQuery.IsEmpty)
-                return;
-
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
-            var commandBufferParallel = commandBuffer.AsParallelWriter();
+            var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
             new ModuleUpdateJob
             {
                 CommandBuffer = commandBufferParallel,
             }.ScheduleParallel(m_EntityQuery);
-
-            state.Dependency.Complete();
-
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]

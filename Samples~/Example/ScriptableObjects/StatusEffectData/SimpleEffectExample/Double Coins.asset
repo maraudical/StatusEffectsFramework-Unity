@@ -14,14 +14,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Id:
     serializedVersion: 2
-    Hash: a1796008135362625d23fa0cbb5e322b
+    Hash: ec645e314756b2332d6c1fa4bff6fb9b
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 11400000, guid: ead4f201d7729054ebdfb401082d014e, type: 2}
   m_BaseValue: 1
   m_Icon: {fileID: 21300000, guid: 1b445584a856fae4ab0a91d4bf328f93, type: 3}
-  m_StatusEffectName: Double Coins
-  m_Description: Doubles the amount of coins gained.
+  m_StatusEffectName:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_Description:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_AllowEffectStacking: 0
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
@@ -38,3 +54,6 @@ MonoBehaviour:
   m_EnableIcon: 1
   m_EnableName: 1
   m_EnableDescription: 1
+  references:
+    version: 2
+    RefIds: []
