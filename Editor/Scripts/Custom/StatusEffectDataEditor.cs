@@ -18,7 +18,9 @@ namespace StatusEffects.Inspector
         private SerializedProperty m_ComparableName;
         private SerializedProperty m_BaseValue;
         private SerializedProperty m_Icon;
+        private SerializedProperty m_Color;
         private SerializedProperty m_StatusEffectName;
+        private SerializedProperty m_Acronym;
         private SerializedProperty m_Description;
         private SerializedProperty m_AllowEffectStacking;
         private SerializedProperty m_NonStackingBehaviour;
@@ -28,7 +30,9 @@ namespace StatusEffects.Inspector
         private SerializedProperty m_Modules;
 
         private SerializedProperty m_EnableIcon;
+        private SerializedProperty m_EnableColor;
         private SerializedProperty m_EnableName;
+        private SerializedProperty m_EnableAcronym;
         private SerializedProperty m_EnableDescription;
 
         private ReorderableList m_ModulesList;
@@ -47,9 +51,11 @@ namespace StatusEffects.Inspector
             m_ComparableName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.ComparableName)}");
             m_BaseValue = serializedObject.FindProperty($"m_{nameof(StatusEffectData.BaseValue)}");
 
-            m_StatusEffectName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.StatusEffectName)}");
-            m_Description = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Description)}");
             m_Icon = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Icon)}");
+            m_Color = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Color)}");
+            m_StatusEffectName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.StatusEffectName)}");
+            m_Acronym = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Acronym)}");
+            m_Description = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Description)}");
 
             m_AllowEffectStacking = serializedObject.FindProperty($"m_{nameof(StatusEffectData.AllowEffectStacking)}");
             m_NonStackingBehaviour = serializedObject.FindProperty($"m_{nameof(StatusEffectData.NonStackingBehaviour)}");
@@ -61,7 +67,9 @@ namespace StatusEffects.Inspector
             m_Modules = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Modules)}");
 
             m_EnableIcon = serializedObject.FindProperty("m_EnableIcon");
+            m_EnableColor = serializedObject.FindProperty("m_EnableColor");
             m_EnableName = serializedObject.FindProperty("m_EnableName");
+            m_EnableAcronym = serializedObject.FindProperty("m_EnableAcronym");
             m_EnableDescription = serializedObject.FindProperty("m_EnableDescription");
 
             // Check if it is added to the database.
@@ -223,17 +231,27 @@ namespace StatusEffects.Inspector
             EditorGUILayout.LabelField("Optional Fields", EditorStyles.boldLabel);
             HorizontalLine();
             EditorGUILayout.BeginHorizontal();
-            m_EnableIcon.boolValue = EditorGUILayout.Toggle(m_EnableIcon.boolValue, GUILayout.MaxWidth(18));
+            m_EnableIcon.boolValue = EditorGUILayout.Toggle(m_EnableIcon.boolValue, GUILayout.MaxWidth(24));
             if (m_EnableIcon.boolValue)
                 EditorGUILayout.PropertyField(m_Icon);
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
-            m_EnableName.boolValue = EditorGUILayout.Toggle(m_EnableName.boolValue, GUILayout.MaxWidth(18));
+            m_EnableColor.boolValue = EditorGUILayout.Toggle(m_EnableColor.boolValue, GUILayout.MaxWidth(24));
+            if (m_EnableColor.boolValue)
+                EditorGUILayout.PropertyField(m_Color);
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal();
+            m_EnableName.boolValue = EditorGUILayout.Toggle(m_EnableName.boolValue, GUILayout.MaxWidth(24));
             if (m_EnableName.boolValue)
                 EditorGUILayout.PropertyField(m_StatusEffectName, new GUIContent("Name"));
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
-            m_EnableDescription.boolValue = EditorGUILayout.Toggle(m_EnableDescription.boolValue, GUILayout.MaxWidth(18));
+            m_EnableAcronym.boolValue = EditorGUILayout.Toggle(m_EnableAcronym.boolValue, GUILayout.MaxWidth(24));
+            if (m_EnableAcronym.boolValue)
+                EditorGUILayout.PropertyField(m_Acronym);
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal();
+            m_EnableDescription.boolValue = EditorGUILayout.Toggle(m_EnableDescription.boolValue, GUILayout.MaxWidth(24));
             if (m_EnableDescription.boolValue)
                 EditorGUILayout.PropertyField(m_Description);
             EditorGUILayout.EndHorizontal();

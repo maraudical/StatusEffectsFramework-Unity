@@ -54,11 +54,14 @@ namespace StatusEffects
         public ComparableName ComparableName => m_ComparableName;
         public float BaseValue => m_BaseValue;
         public Sprite Icon => m_Icon;
+        public Color Color => m_Color;
 #if LOCALIZED
         public LocalizedString StatusEffectName => m_StatusEffectName;
+        public LocalizedString Acronym => m_Acronym;
         public LocalizedString Description => m_Description;
 #else
         public string StatusEffectName => m_StatusEffectName;
+        public string Acronym => m_Acronym;
         public string Description => m_Description;
 #endif
         public bool AllowEffectStacking => m_AllowEffectStacking;
@@ -75,11 +78,14 @@ namespace StatusEffects
         [SerializeField] private ComparableName m_ComparableName;
         [SerializeField] private float m_BaseValue = 1f;
         [SerializeField] private Sprite m_Icon;
+        [SerializeField] private Color m_Color;
 #if LOCALIZED
         [SerializeField] private  LocalizedString m_StatusEffectName;
+        [SerializeField] private LocalizedString m_Acronym;
         [SerializeField] private  LocalizedString m_Description;
 #else
         [SerializeField] private string m_StatusEffectName;
+        [SerializeField] private string m_Acronym;
         [TextArea]
         [SerializeField] private string m_Description;
 #endif
@@ -98,10 +104,12 @@ namespace StatusEffects
 #if UNITY_EDITOR
 #pragma warning disable 0414
         [SerializeField] private bool m_EnableIcon = true;
+        [SerializeField] private bool m_EnableColor = true;
         [SerializeField] private bool m_EnableName = true;
         [SerializeField] private bool m_EnableDescription = true;
+        [SerializeField] private bool m_EnableAcronym = true;
 #pragma warning restore 0414
 #endif
-#endregion
+        #endregion
     }
 }

@@ -1,5 +1,6 @@
 #if ENTITIES
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 using Hash128 = Unity.Entities.Hash128;
 
@@ -12,13 +13,17 @@ namespace StatusEffects.Entities
         public Hash128 ComparableName;
         public float BaseValue;
         public UnityObjectRef<Sprite> Icon;
+        public float4 Color;
 #if LOCALIZED
         public BlobString StatusEffectNameTable;
         public BlobString StatusEffectNameEntry;
+        public BlobString AcronymTable;
+        public BlobString AcronymEntry;
         public BlobString DescriptionTable;
         public BlobString DescriptionEntry;
 #else
         public BlobString StatusEffectName;
+        public BlobString Acronym;
         public BlobString Description;
 #endif
         public bool AllowEffectStacking;

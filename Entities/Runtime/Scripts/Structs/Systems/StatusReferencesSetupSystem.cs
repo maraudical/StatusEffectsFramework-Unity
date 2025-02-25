@@ -49,13 +49,18 @@ namespace StatusEffects.Entities
                 statusEffectDataRoot.ComparableName = statusEffectData.ComparableName ? statusEffectData.ComparableName.Id : default;
                 statusEffectDataRoot.BaseValue = statusEffectData.BaseValue;
                 statusEffectDataRoot.Icon = statusEffectData.Icon;
+                UnityEngine.Color color = statusEffectData.Color;
+                statusEffectDataRoot.Color = new(color.r, color.g, color.b, color.a);
 #if LOCALIZED
                 subBuilder.AllocateString(ref statusEffectDataRoot.StatusEffectNameTable, statusEffectData.StatusEffectName.TableReference.ToString());
                 subBuilder.AllocateString(ref statusEffectDataRoot.StatusEffectNameEntry, statusEffectData.StatusEffectName.TableEntryReference.ToString());
-                subBuilder.AllocateString(ref statusEffectDataRoot.DescriptionTable, statusEffectData.StatusEffectName.TableReference.ToString());
-                subBuilder.AllocateString(ref statusEffectDataRoot.DescriptionEntry, statusEffectData.StatusEffectName.TableReference.ToString());
+                subBuilder.AllocateString(ref statusEffectDataRoot.AcronymTable, statusEffectData.Acronym.TableReference.ToString());
+                subBuilder.AllocateString(ref statusEffectDataRoot.AcronymEntry, statusEffectData.Acronym.TableReference.ToString());
+                subBuilder.AllocateString(ref statusEffectDataRoot.DescriptionTable, statusEffectData.Description.TableReference.ToString());
+                subBuilder.AllocateString(ref statusEffectDataRoot.DescriptionEntry, statusEffectData.Description.TableReference.ToString());
 #else
                 subBuilder.AllocateString(ref statusEffectDataRoot.StatusEffectName, statusEffectData.StatusEffectName);
+                subBuilder.AllocateString(ref statusEffectDataRoot.Acronym, statusEffectData.Acronym);
                 subBuilder.AllocateString(ref statusEffectDataRoot.Description, statusEffectData.Description);
 #endif
                 statusEffectDataRoot.AllowEffectStacking = statusEffectData.AllowEffectStacking;
