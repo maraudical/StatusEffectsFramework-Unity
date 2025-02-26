@@ -4,27 +4,38 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
-#if NETCODE
-using Unity.NetCode;
-#endif
+using UnityEngine.Rendering;
 
 namespace StatusEffects.Entities
 {
     [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation | WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
-#if NETCODE
-    [CreateAfter(typeof(DefaultVariantSystemGroup))]
-#endif
+    
     public partial class StatusReferencesSetupSystem : SystemBase
     {
+        public EntityQuery m_RequestQuery;
+
         protected override void OnCreate()
         {
+            EntityManager.CreateEntity(typeof(StatusReferencesSetupRequest));
+
+            m_RequestQuery = SystemAPI.QueryBuilder().WithAll<StatusReferencesSetupRequest>().Build();
+            RequireForUpdate(m_RequestQuery);
+        }
+
+        protected override void OnUpdate() 
+        {
+            bool foundSingleton = SystemAPI.TryGetSingleton<StatusReferences>(out var references);
+
             var statusEffectDatas = StatusEffectDatabase.Get().Values.Values;
-            
-            var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
-            var references = commandBuffer.CreateEntity();
-            commandBuffer.SetName(references, "Status References");
-            commandBuffer.AddBuffer<ModulePrefabs>(references);
+            var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+
+            commandBuffer.DestroyEntity(m_RequestQuery, EntityQueryCaptureMode.AtPlayback);
+
+            var referencesEntity = commandBuffer.CreateEntity();
+            UnityEngine.Debug.Log("creating count " + statusEffectDatas.Count);
+            commandBuffer.SetName(referencesEntity, "Status References");
+            commandBuffer.AddBuffer<ModulePrefabs>(referencesEntity);
 
             BlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>> statusEffectDataHashMapReferences;
             // Setup status effect datas
@@ -35,10 +46,30 @@ namespace StatusEffects.Entities
             global::StatusEffects.Condition condition;
             int moduleIndex = 0;
 
+            // Dispose of old blobs after copying
+            if (foundSingleton)
+            {
+                UnityEngine.Debug.Log("destroying previous");
+                var buffer = SystemAPI.GetSingletonBuffer<ModulePrefabs>();
+                for (int i = buffer.Length - 1; i >= 0; i--)
+                    commandBuffer.AppendToBuffer(referencesEntity, buffer[i]);
+
+                var statusEffectDataBlobs = references.BlobAsset.Value.GetValueArray(Allocator.Temp);
+                foreach (var blob in statusEffectDataBlobs)
+                {
+                    statusEffectDataHashMap.Add(blob.Value.Id, blob);
+                    if (blob.Value.ModulePrefabIndex >= 0)
+                        moduleIndex++;
+                }
+
+                references.BlobAsset.Dispose();
+                commandBuffer.DestroyEntity(SystemAPI.GetSingletonEntity<StatusReferences>());
+            }
+
             foreach (var statusEffectData in statusEffectDatas)
             {
                 // Rare case where data is null. This should never happen.
-                if (!statusEffectData)
+                if (!statusEffectData || statusEffectDataHashMap.ContainsKey(statusEffectData.Id))
                     continue;
 
                 var subBuilder = new BlobBuilder(Allocator.Temp);
@@ -107,7 +138,7 @@ namespace StatusEffects.Entities
                 // Modules just stores the buffer index for the module. This is
                 // because we cannot store Entity references directly on a blob asset.
                 IList<ModuleContainer> entityModules = statusEffectData.Modules.Where((m) => m.Module is IEntityModule).ToList();
-                
+
                 if (entityModules.Count > 0)
                 {
                     var moduleEntity = commandBuffer.CreateEntity();
@@ -124,7 +155,7 @@ namespace StatusEffects.Entities
                         // instantiated as children of the entity they effect.
                         (entityModule.Module as IEntityModule).ModifyCommandBuffer(ref commandBuffer, moduleEntity, entityModule.ModuleInstance);
 
-                    commandBuffer.AppendToBuffer(references, new ModulePrefabs() { Entity = moduleEntity });
+                    commandBuffer.AppendToBuffer(referencesEntity, new ModulePrefabs() { Entity = moduleEntity });
                     statusEffectDataRoot.ModulePrefabIndex = moduleIndex;
                     moduleIndex++;
                 }
@@ -140,53 +171,25 @@ namespace StatusEffects.Entities
 
             statusEffectDataHashMapReferences = builder.CreateBlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>>(Allocator.Persistent);
             builder.Dispose();
-            
-            commandBuffer.AddComponent(references, new StatusReferences
+
+            commandBuffer.AddComponent(referencesEntity, new StatusReferences
             {
                 BlobAsset = statusEffectDataHashMapReferences,
             });
 
-            RequireForUpdate<ModulePrefabs>();
-        }
-
-        protected override void OnUpdate() 
-        {
-#if NETCODE
-            var prefabs = SystemAPI.GetSingletonBuffer<ModulePrefabs>().Reinterpret<Entity>().ToNativeArray(Allocator.Temp);
-            var blobAssets = SystemAPI.GetSingleton<StatusReferences>().BlobAsset.Value.GetValueArray(Allocator.Temp);
-
-            foreach (var blobAsset in blobAssets)
-            {
-                ref var data = ref blobAsset.Value;
-
-                if (data.ModulePrefabIndex < 0)
-                    continue;
-
-                GhostPrefabCreation.ConvertToGhostPrefab(EntityManager, prefabs[data.ModulePrefabIndex], new GhostPrefabCreation.Config()
-                {
-                    Name = data.Id.ToString(),
-                    DefaultGhostMode = GhostMode.Interpolated,
-                    SupportedGhostModes = GhostModeMask.Interpolated,
-                    OptimizationMode = GhostOptimizationMode.Static
-                });
-            }
-
-            blobAssets.Dispose();
-#endif
-            Enabled = false;
+            commandBuffer.Playback(EntityManager);
+            commandBuffer.Dispose();
         }
 
         protected override void OnDestroy()
         {
-            var references = SystemAPI.GetSingleton<StatusReferences>();
-
-            var statusEffectDatas = references.BlobAsset.Value.GetValueArray(Allocator.Temp);
-            foreach (var reference in statusEffectDatas)
-                reference.Dispose();
-            references.BlobAsset.Dispose();
-            // Now in case this isn't being destroyed due
-            // to exiting play mode we destroy the singleton.
-            EntityManager.DestroyEntity(GetEntityQuery(typeof(StatusReferences)));
+            if (SystemAPI.TryGetSingleton<StatusReferences>(out var references))
+            {
+                var statusEffectDataBlobs = references.BlobAsset.Value.GetValueArray(Allocator.Temp);
+                foreach (var blob in statusEffectDataBlobs)
+                    blob.Dispose();
+                references.BlobAsset.Dispose();
+            }
         }
     }
 }

@@ -52,16 +52,16 @@ namespace StatusEffects.Entities.Example
                 if (PlayerLookup.TryGetComponent(parentEntity, out ExamplePlayer player))
                 {
                     var buffer = StatusFloatsLookup[parentEntity];
-                    int index = player.MaxHealth.CachedIndex >= 0 ? player.MaxHealth.CachedIndex : player.MaxHealth.GetBufferIndex(player.ComponentId, buffer);
+                    player.MaxHealth.GetValue(player.ComponentId, buffer, out var maxHealth);
 
                     if (module.IsBeingDestroyed)
                     {
-                        player.Health = math.min(player.Health, buffer[index].Value);
+                        player.Health = math.min(player.Health, maxHealth);
                     }
                     else
                     {
                         player.Health += module.BaseValue * math.max(0, module.Stacks - module.PreviousStacks);
-                        player.Health = math.min(player.Health, buffer[index].Value);
+                        player.Health = math.min(player.Health, maxHealth);
                     }
                     CommandBuffer.SetComponent(sortKey, parentEntity, player);
                 }

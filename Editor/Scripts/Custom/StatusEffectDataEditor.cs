@@ -13,6 +13,7 @@ namespace StatusEffects.Inspector
     public class StatusEffectDataEditor : Editor
     {
         private SerializedProperty m_Id;
+        private SerializedProperty m_AutomaticallyAddToDatabase;
 
         private SerializedProperty m_Group;
         private SerializedProperty m_ComparableName;
@@ -37,6 +38,7 @@ namespace StatusEffects.Inspector
 
         private ReorderableList m_ModulesList;
 
+        private StatusEffectDatabase m_Database;
         private StatusEffectData m_Data;
         private Condition m_Condition; 
 
@@ -46,6 +48,7 @@ namespace StatusEffects.Inspector
         {
             // Retrieve properties
             m_Id = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Id)}");
+            m_AutomaticallyAddToDatabase = serializedObject.FindProperty($"m_{nameof(StatusEffectData.AutomaticallyAddToDatabase)}");
 
             m_Group = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Group)}");
             m_ComparableName = serializedObject.FindProperty($"m_{nameof(StatusEffectData.ComparableName)}");
@@ -73,7 +76,7 @@ namespace StatusEffects.Inspector
             m_EnableDescription = serializedObject.FindProperty("m_EnableDescription");
 
             // Check if it is added to the database.
-            StatusEffectDatabase database = StatusEffectDatabase.Get();
+            m_Database = StatusEffectDatabase.Get();
             UnityEngine.Object target;
             string path;
             IEnumerable<ModuleInstance> modules;
@@ -92,10 +95,10 @@ namespace StatusEffects.Inspector
 
                 StatusEffectData data = target as StatusEffectData;
 
-                if (!database.Values.ContainsKey(data.Id))
+                if (!EditorApplication.isPlaying && !m_Database.ContainsKey(data.Id))
                 {
-                    database.Values.Add(data.Id, data);
-                    EditorUtility.SetDirty(database);
+                    m_Database.Add(data.Id, data);
+                    EditorUtility.SetDirty(m_Database);
                 }
 
                 modules = data.Modules.Select(m => m.ModuleInstance);
@@ -115,7 +118,7 @@ namespace StatusEffects.Inspector
 
                 AssetDatabase.SaveAssetIfDirty(target);
             }
-            AssetDatabase.SaveAssetIfDirty(database);
+            AssetDatabase.SaveAssetIfDirty(m_Database);
             // Setup the reorderable module list
             m_ModulesList = new ReorderableList(serializedObject, m_Modules, true, true, true, true);
 
@@ -216,6 +219,34 @@ namespace StatusEffects.Inspector
             EditorGUI.BeginDisabledGroup(true);
             EditorGUILayout.PropertyField(m_Id);
             EditorGUI.EndDisabledGroup();
+            EditorGUI.BeginChangeCheck();
+            EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying);
+            EditorGUILayout.PropertyField(m_AutomaticallyAddToDatabase);
+            EditorGUI.EndDisabledGroup();
+            if (EditorGUI.EndChangeCheck())
+            {
+                foreach (var target in targets)
+                {
+                    StatusEffectData data = target as StatusEffectData;
+                    if (m_AutomaticallyAddToDatabase.boolValue)
+                    {
+                        if (!m_Database.Values.ContainsKey(data.Id))
+                        {
+                            m_Database.Values.Add(data.Id, data);
+                            EditorUtility.SetDirty(m_Database);
+                        }
+                    }
+                    else
+                    {
+                        if (m_Database.Values.ContainsKey(data.Id))
+                        {
+                            m_Database.Values.Remove(data.Id);
+                            EditorUtility.SetDirty(m_Database);
+                        }
+                    }
+                }
+                AssetDatabase.SaveAssetIfDirty(m_Database);
+            }
 
             EditorGUILayout.BeginVertical("groupbox");
             EditorGUILayout.LabelField("Required Fields", EditorStyles.boldLabel);

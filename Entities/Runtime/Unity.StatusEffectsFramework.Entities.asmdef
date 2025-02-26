@@ -1,5 +1,5 @@
 {
-    "name": "Unity.StatusEffectFramework.Entities",
+    "name": "Unity.StatusEffectsFramework.Entities",
     "rootNamespace": "",
     "references": [
         "GUID:c1d753aaef5f86c4488844bae8cb6730",

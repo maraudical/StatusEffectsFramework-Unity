@@ -14,13 +14,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Id:
     serializedVersion: 2
-    Hash: 048d1b5176b7d4d7bec3649bfa71e7ca
+    Hash: 959b0abcb4cdccaee85735b84f62585f
+  m_AutomaticallyAddToDatabase: 1
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 11400000, guid: 737bd34f77eb0bd46b81025fa5eea595, type: 2}
   m_BaseValue: 1
   m_Icon: {fileID: 21300000, guid: 23a1d4ae45ef4084ea0ac463612c59c5, type: 3}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_StatusEffectName:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_Acronym:
     m_TableReference:
       m_TableCollectionName: 
     m_TableEntryReference:
@@ -79,8 +90,10 @@ MonoBehaviour:
     Duration: 0
   m_Modules: []
   m_EnableIcon: 1
-  m_EnableName: 1
-  m_EnableDescription: 1
+  m_EnableColor: 0
+  m_EnableName: 0
+  m_EnableDescription: 0
+  m_EnableAcronym: 0
   references:
     version: 2
     RefIds: []

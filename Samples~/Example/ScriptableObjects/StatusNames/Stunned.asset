@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6e1678e45818256438f115bbc0b7e551, type: 3}
-  m_Name: 
+  m_Name: Stunned
   m_EditorClassIdentifier: 
   m_Id:
     serializedVersion: 2

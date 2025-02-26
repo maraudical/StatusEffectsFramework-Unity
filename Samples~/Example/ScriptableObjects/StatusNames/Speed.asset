@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1952bb7798360141a4082e1bc843eeb, type: 3}
-  m_Name: 
+  m_Name: Speed
   m_EditorClassIdentifier: 
   m_Id:
     serializedVersion: 2

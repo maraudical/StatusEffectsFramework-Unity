@@ -27,8 +27,9 @@ namespace StatusEffects.Entities
         {
             var modulesLookup = SystemAPI.GetBufferLookup<Modules>();
             var moduleLookup = SystemAPI.GetComponentLookup<Module>();
-            
-            var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+
+            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
+            var commandBufferParallel = commandBuffer.AsParallelWriter();
 
             NativeParallelMultiHashMap<Entity, int> modulesEntitiesIndexes = new NativeParallelMultiHashMap<Entity, int>(m_ModuleDestroyTagQuery.CalculateEntityCount(), Allocator.TempJob);
             NativeParallelMultiHashMap<Entity, int>.ParallelWriter modulesIndexesParallel = modulesEntitiesIndexes.AsParallelWriter();
@@ -52,7 +53,7 @@ namespace StatusEffects.Entities
                 ModulesLookup = modulesLookup
             }.ScheduleParallel(m_ModuleDestroyTagQuery);
             
-            state.Dependency.Complete();
+            state.CompleteDependency();
 
             // Cleanup modules.
             var uniqueModulesEntitiesIndexes = modulesEntitiesIndexes.GetUniqueKeyArray(Allocator.Temp);
@@ -80,6 +81,9 @@ namespace StatusEffects.Entities
             
             uniqueModulesEntitiesIndexes.Item1.Dispose();
             modulesEntitiesIndexes.Dispose();
+            
+            commandBuffer.Playback(state.EntityManager);
+            commandBuffer.Dispose();
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -126,7 +130,10 @@ namespace StatusEffects.Entities
 
             void Execute([EntityIndexInQuery] int sortKey, Entity entity, in Module module, in ModuleDestroyTag tag)
             {
-                var buffer = ModulesLookup[module.Parent].Reinterpret<Entity>();
+                if (!ModulesLookup.TryGetBuffer(module.Parent, out var modulesBuffer))
+                    return;
+
+                var buffer = modulesBuffer.Reinterpret<Entity>();
                 for (var i = 0; i < buffer.Length; i++)
                     if (buffer[i] == entity)
                     {

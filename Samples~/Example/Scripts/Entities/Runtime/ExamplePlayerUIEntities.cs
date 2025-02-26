@@ -20,11 +20,6 @@ namespace StatusEffects.Entities.Example.UI
         [SerializeField] private Text m_Speed;
         [SerializeField] private Text m_CoinMultiplier;
         [SerializeField] private Text m_Stunned;
-
-        private int m_MaxHealthIndex;
-        private int m_SpeedIndex;
-        private int m_CoinMultiplierIndex;
-        private int m_StunnedIndex;
         
         private float m_BaseMaxHealth;
         private float m_BaseSpeed;
@@ -66,15 +61,15 @@ namespace StatusEffects.Entities.Example.UI
             m_StatusIntBuffer = m_Manager.GetBuffer<StatusInts>(entity);
             m_StatusBoolBuffer = m_Manager.GetBuffer<StatusBools>(entity);
 
-            m_MaxHealthIndex = player.MaxHealth.GetBufferIndex(player.ComponentId, m_StatusFloatBuffer);
-            m_SpeedIndex = player.Speed.GetBufferIndex(player.ComponentId, m_StatusFloatBuffer);
-            m_CoinMultiplierIndex = player.CoinMultiplier.GetBufferIndex(player.ComponentId, m_StatusIntBuffer);
-            m_StunnedIndex = player.Stunned.GetBufferIndex(player.ComponentId, m_StatusBoolBuffer);
+            player.MaxHealth.Get(player.ComponentId, m_StatusFloatBuffer, out var maxHealth);
+            player.Speed.Get(player.ComponentId, m_StatusFloatBuffer, out var speed);
+            player.CoinMultiplier.Get(player.ComponentId, m_StatusIntBuffer, out var coinMultiplier);
+            player.Stunned.Get(player.ComponentId, m_StatusBoolBuffer, out var stunned);
             
-            m_BaseMaxHealth = m_StatusFloatBuffer[m_MaxHealthIndex].BaseValue;
-            m_BaseSpeed = m_StatusFloatBuffer[m_SpeedIndex].BaseValue;
-            m_BaseCoinMultiplier = m_StatusIntBuffer[m_CoinMultiplierIndex].BaseValue;
-            m_BaseStunned = m_StatusBoolBuffer[m_StunnedIndex].BaseValue;
+            m_BaseMaxHealth = maxHealth.BaseValue;
+            m_BaseSpeed = speed.BaseValue;
+            m_BaseCoinMultiplier = coinMultiplier.BaseValue;
+            m_BaseStunned = stunned.BaseValue;
         }
 
         private void Update()
@@ -93,10 +88,10 @@ namespace StatusEffects.Entities.Example.UI
             m_StatusIntBuffer = m_Manager.GetBuffer<StatusInts>(entity);
             m_StatusBoolBuffer = m_Manager.GetBuffer<StatusBools>(entity);
 
-            float maxHealth = m_StatusFloatBuffer[m_MaxHealthIndex].Value;
-            float speed = m_StatusFloatBuffer[m_SpeedIndex].Value;
-            int coinMultiplier = m_StatusIntBuffer[m_CoinMultiplierIndex].Value;
-            bool stunned = m_StatusBoolBuffer[m_StunnedIndex].Value;
+            player.MaxHealth.GetValue(player.ComponentId, m_StatusFloatBuffer, out var maxHealth);
+            player.Speed.GetValue(player.ComponentId, m_StatusFloatBuffer, out var speed);
+            player.CoinMultiplier.GetValue(player.ComponentId, m_StatusIntBuffer, out var coinMultiplier);
+            player.Stunned.GetValue(player.ComponentId, m_StatusBoolBuffer, out var stunned);
 
             m_Health.text = player.Health.ToString("0.0");
             m_Health.color = GetColor(m_BaseMaxHealth, player.Health);

@@ -1,5 +1,19 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-3842918022963997680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Prefab: {fileID: 3165632045659492785, guid: 596723451463a6443aff5842e68ee3c3, type: 3}
+  InstantiateAgainWhenAddingStacks: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -14,13 +28,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Id:
     serializedVersion: 2
-    Hash: a24784e255c85f2cb46e3c3601b041f1
+    Hash: df7d9052e5e72f736d7a69cbd220e7bf
+  m_AutomaticallyAddToDatabase: 1
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 11400000, guid: e368dafc221f5f747b79ba4f5224fbbc, type: 2}
   m_BaseValue: 1
   m_Icon: {fileID: 21300000, guid: 7f42b93c2e803aa46a1788d0dc7e553c, type: 3}
+  m_Color: {r: 0, g: 0, b: 0, a: 0}
   m_StatusEffectName:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_Acronym:
     m_TableReference:
       m_TableCollectionName: 
     m_TableEntryReference:
@@ -51,25 +76,13 @@ MonoBehaviour:
     Priority: 0
   m_Conditions: []
   m_Modules:
-  - Module: {fileID: 0}
-    ModuleInstance: {fileID: 0}
+  - Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
+    ModuleInstance: {fileID: -3842918022963997680}
   m_EnableIcon: 1
-  m_EnableName: 1
-  m_EnableDescription: 1
+  m_EnableColor: 0
+  m_EnableName: 0
+  m_EnableDescription: 0
+  m_EnableAcronym: 0
   references:
     version: 2
     RefIds: []
---- !u!114 &7093634434402278396
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Prefab: {fileID: 3165632045659492785, guid: 596723451463a6443aff5842e68ee3c3, type: 3}
-  InstantiateAgainWhenAddingStacks: 1

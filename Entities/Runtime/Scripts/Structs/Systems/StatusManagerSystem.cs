@@ -32,11 +32,14 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            state.CompleteDependency(); // Modules may have been written to.
+
             var moduleLookup = SystemAPI.GetComponentLookup<Module>();
 
             var references = SystemAPI.GetSingleton<StatusReferences>();
             var modulePrefabs = SystemAPI.GetSingletonBuffer<ModulePrefabs>();
-            var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
+            var commandBufferParallel = commandBuffer.AsParallelWriter();
 
             // Handle any add/remove requests.
             new StatusEffectRequestJob
@@ -54,6 +57,11 @@ namespace StatusEffects.Entities
                 ModuleLookup = moduleLookup,
                 TimeDelta = SystemAPI.Time.DeltaTime
             }.ScheduleParallel();
+
+            state.CompleteDependency();
+
+            commandBuffer.Playback(state.EntityManager);
+            commandBuffer.Dispose();
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]

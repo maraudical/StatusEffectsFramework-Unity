@@ -13,11 +13,11 @@ namespace StatusEffects.Inspector
         {
             m_Database = StatusEffectDatabase.Get();
 
-            for (int i = m_Database.Values.Count - 1; i >= 0; i--)
+            for (int i = m_Database.HiddenValues.Count - 1; i >= 0; i--)
             {
-                var kvp = m_Database.Values.ElementAt(i);
+                var kvp = m_Database.HiddenValues.ElementAt(i);
                 if (kvp.Value == null || kvp.Key != kvp.Value.Id)
-                    m_Database.Values.Remove(kvp.Key);
+                    m_Database.HiddenValues.Remove(kvp.Key);
             }
 
             if (didDomainReload)
@@ -46,14 +46,14 @@ namespace StatusEffects.Inspector
                 if (asset is StatusEffectData data)
                 {
                     if (data.Id != default)
-                        if (m_Database.Values.TryGetValue(data.Id, out m_StatusEffectDataReference))
+                        if (m_Database.TryGetValue(data.Id, out m_StatusEffectDataReference))
                         {
                             if (m_StatusEffectDataReference != data)
                                 GenerateUntilAddable();
                         }
                         else
                         {
-                            m_Database.Values.Add(data.Id, data);
+                            m_Database.Add(data.Id, data);
                             EditorUtility.SetDirty(m_Database);
                         }
                     else
@@ -62,7 +62,7 @@ namespace StatusEffects.Inspector
                     void GenerateUntilAddable()
                     {
                         data.GenerateId();
-                        if (!m_Database.Values.TryAdd(data.Id, data))
+                        if (!m_Database.TryAdd(data.Id, data))
                         {
                             GenerateUntilAddable();
                             return;

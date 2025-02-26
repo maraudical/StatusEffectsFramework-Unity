@@ -50,6 +50,7 @@ namespace StatusEffects
 
 #endif
         #region Public Properties
+        internal bool AutomaticallyAddToDatabase => m_AutomaticallyAddToDatabase;
         public StatusEffectGroup Group => m_Group;
         public ComparableName ComparableName => m_ComparableName;
         public float BaseValue => m_BaseValue;
@@ -73,6 +74,8 @@ namespace StatusEffects
         #endregion
 
         #region Private Fields
+        [Tooltip("Unless you are trying to do something with Addressables and loading new Status Effect Data at runtime you can leave this checked on.")]
+        [SerializeField] private bool m_AutomaticallyAddToDatabase = true;
         [SerializeField] private StatusEffectGroup m_Group;
         [Tooltip("This name can be used to categorize a series of Status Effects. For example, \"Poison\" may be used on multiple different poison effects.")]
         [SerializeField] private ComparableName m_ComparableName;

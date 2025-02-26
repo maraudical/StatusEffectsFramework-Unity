@@ -29,7 +29,7 @@ namespace StatusEffects.Entities
         {
             var moduleLookup = SystemAPI.GetComponentLookup<Module>();
 
-            var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
 
             foreach (var (command, rpc, entity) in SystemAPI.Query<ModuleReplicationCommand, ReceiveRpcCommandRequest>().WithEntityAccess())
             {
@@ -45,6 +45,9 @@ namespace StatusEffects.Entities
                 commandBuffer.SetComponent(command.Entity, module);
                 commandBuffer.SetComponentEnabled<ModuleUpdateTag>(command.Entity, true);
             }
+
+            commandBuffer.Playback(state.EntityManager);
+            commandBuffer.Dispose();
         }
     }
 }
