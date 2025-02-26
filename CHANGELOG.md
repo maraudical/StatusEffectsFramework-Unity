@@ -1,5 +1,17 @@
 # Change Log:
 
+## 3.1.0
+- Feature: Added acronym and color fields to the optional section of Status Effects
+- Feature: Added status references setup requests if dynamically adding new status effects in ECS
+- Enhancement: Added more status effect database utilities
+- Enhancement: More methods for ECS status variables
+- Bug Fix: Fixed comparable name missing reference error
+- Bug Fix: Fixed name processor not checking references properly
+- Bug Fix: Fixed assembly definition naming
+- Bug Fix: Samples scriptable object fixes
+- Change: Updated some ECS syntax to a more recent version
+- Change: Cleaned up baker dependencies
+
 ## 3.0.0
 - Feature: Support for Entities and NetCode for Entities
 - Enhancement: Updated samples to include Entities/Netcode for Entities/Netcode for GameObjects

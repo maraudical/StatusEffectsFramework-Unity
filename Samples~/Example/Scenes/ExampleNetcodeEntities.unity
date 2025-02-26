@@ -364,10 +364,10 @@ MonoBehaviour:
   AutoLoadScene: 1
   _SceneGUID:
     Value:
-      x: 2291810320
-      y: 1256507307
-      z: 1128450203
-      w: 2330387170
+      x: 0
+      y: 0
+      z: 0
+      w: 0
 --- !u!4 &285473706
 Transform:
   m_ObjectHideFlags: 0
@@ -3153,55 +3153,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1802881629}
   m_CullTransparentMesh: 1
---- !u!1 &1822356354
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1822356356}
-  - component: {fileID: 1822356355}
-  m_Layer: 0
-  m_Name: GameObject
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1822356355
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1822356354}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9d9737e996733a243b2b8635a9b12742, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Next: 0
-  SceneName: ExampleNetcodeEntities
-  Delete: 0
-  AddAndRefreshData: 0
-  Data: {fileID: 11400000, guid: bcd5ddf120804f849972669baf953519, type: 2}
---- !u!4 &1822356356
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1822356354}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 1
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1853193947
 GameObject:
   m_ObjectHideFlags: 0
@@ -3566,5 +3517,4 @@ SceneRoots:
   - {fileID: 1051903346}
   - {fileID: 1617620864}
   - {fileID: 1394987477}
-  - {fileID: 1822356356}
   - {fileID: 285473706}

@@ -1,6 +1,6 @@
 {
   "name": "com.maraudical.sef",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "displayName": "Status Effects Framework",
   "description": "A framework for implementing status effects into any game.",
   "license": "MIT",
