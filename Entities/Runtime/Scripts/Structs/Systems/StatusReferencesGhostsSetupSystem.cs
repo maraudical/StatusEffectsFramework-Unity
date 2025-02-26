@@ -26,11 +26,8 @@ namespace StatusEffects.Entities
 
         protected override void OnUpdate() 
         {
-            UnityEngine.Debug.Log("ghosts creating");
-
             var prefabs = m_RequestQuery.GetSingletonBuffer<ModulePrefabs>().Reinterpret<Entity>().ToNativeArray(Allocator.Temp);
             var blobAssets = SystemAPI.GetSingleton<StatusReferences>().BlobAsset.Value.GetValueArray(Allocator.Temp);
-            UnityEngine.Debug.Log("GETTING " + SystemAPI.GetSingletonEntity<StatusReferences>().ToString());
 
             foreach (var blobAsset in blobAssets)
             {
@@ -38,8 +35,7 @@ namespace StatusEffects.Entities
 
                 if (data.ModulePrefabIndex < 0 || m_ConvertedGhostPrefabIds.Contains(data.Id))
                     continue;
-
-                UnityEngine.Debug.Log("converting to ghost: " + prefabs[data.ModulePrefabIndex]);
+                
                 GhostPrefabCreation.ConvertToGhostPrefab(EntityManager, prefabs[data.ModulePrefabIndex], new GhostPrefabCreation.Config()
                 {
                     Name = data.Id.ToString(),

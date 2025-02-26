@@ -33,7 +33,7 @@ namespace StatusEffects.Entities
             commandBuffer.DestroyEntity(m_RequestQuery, EntityQueryCaptureMode.AtPlayback);
 
             var referencesEntity = commandBuffer.CreateEntity();
-            UnityEngine.Debug.Log("creating count " + statusEffectDatas.Count);
+            
             commandBuffer.SetName(referencesEntity, "Status References");
             commandBuffer.AddBuffer<ModulePrefabs>(referencesEntity);
 
@@ -49,7 +49,6 @@ namespace StatusEffects.Entities
             // Dispose of old blobs after copying
             if (foundSingleton)
             {
-                UnityEngine.Debug.Log("destroying previous");
                 var buffer = SystemAPI.GetSingletonBuffer<ModulePrefabs>();
                 for (int i = buffer.Length - 1; i >= 0; i--)
                     commandBuffer.AppendToBuffer(referencesEntity, buffer[i]);
