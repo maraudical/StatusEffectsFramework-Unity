@@ -96,6 +96,7 @@ namespace StatusEffects.Entities
             m_CachedLength = default;
         }
 
+        public static implicit operator StatusInt(UnityEngine.Hash128 value) => new StatusInt(value);
         public static implicit operator StatusInt(Hash128 value) => new StatusInt(value);
         public static implicit operator StatusInt(global::StatusEffects.StatusInt value) => new StatusInt(value != null && value.StatusName ? value.StatusName.Id : default);
     }
