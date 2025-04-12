@@ -54,7 +54,7 @@ MonoBehaviour:
   m_MaxStacks: -1
   m_Effects:
   - StatusName: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
-    ValueModifier: 1
+    ValueModifier: 2
     UseBaseValue: 1
     FloatValue: 0
     IntValue: 1

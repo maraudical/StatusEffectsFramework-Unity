@@ -23,13 +23,14 @@ namespace StatusEffects.Entities.Example
         public void OnUpdate(ref SystemState state)
         {
             var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            
-            new DamageOverTimeJob
+
+            var damageOverTimeJob = new DamageOverTimeJob
             {
                 CommandBuffer = commandBufferParallel,
                 PlayerLookup = SystemAPI.GetComponentLookup<ExamplePlayer>(),
                 TimeDelta = SystemAPI.Time.DeltaTime
-            }.Schedule(m_EntityQuery);
+            };
+            state.Dependency = damageOverTimeJob.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -40,7 +41,7 @@ namespace StatusEffects.Entities.Example
             public ComponentLookup<ExamplePlayer> PlayerLookup;
             public float TimeDelta;
 
-            public void Execute([EntityIndexInQuery] int sortKey, ref DamageOverTimeEntityModule damageOverTime, in Module module)
+            public void Execute([ChunkIndexInQuery] int sortKey, ref DamageOverTimeEntityModule damageOverTime, in Module module)
             {
                 Entity entity = module.Parent;
                 

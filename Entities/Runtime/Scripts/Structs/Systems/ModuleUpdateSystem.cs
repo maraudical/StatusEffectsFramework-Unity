@@ -5,45 +5,46 @@ using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation | WorldSystemFilterFlags.ServerSimulation)]
+    [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation)]
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
+    [UpdateAfter(typeof(BeginStatusEffectEntityCommandBufferSystem))]
     [BurstCompile]
     public partial struct ModuleUpdateSystem : ISystem
     {
-        private EntityQuery m_EntityQuery;
+        private EntityQuery m_ModuleUpdateQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAllRW<Module>().WithAll<ModuleUpdateTag>().Build();
-            state.RequireForUpdate(m_EntityQuery);
+            m_ModuleUpdateQuery = SystemAPI.QueryBuilder().WithAll<Module, ModuleUpdateTag>().Build();
+            state.RequireForUpdate(m_ModuleUpdateQuery);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
-            var commandBufferParallel = commandBuffer.AsParallelWriter();
+            var commandBufferParallel = SystemAPI.GetSingletonRW<BeginStatusEffectEntityCommandBufferSystem.Singleton>().ValueRW.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
-            new ModuleUpdateJob
+            var moduleUpdateJob = new ModuleUpdateJob
             {
                 CommandBuffer = commandBufferParallel,
-            }.ScheduleParallel(m_EntityQuery);
-
-            state.CompleteDependency();
-
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
+                ModuleLookup = SystemAPI.GetComponentLookup<Module>(true)
+            };
+            state.Dependency = moduleUpdateJob.ScheduleParallelByRef(m_ModuleUpdateQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
+        [WithAll(typeof(Module), typeof(ModuleUpdateTag))]
         public partial struct ModuleUpdateJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
+            [ReadOnly] public ComponentLookup<Module> ModuleLookup;
 
-            void Execute([EntityIndexInQuery] int sortKey, Entity entity, ref Module module, in ModuleUpdateTag tag)
+            void Execute([ChunkIndexInQuery] int sortKey, Entity entity)
             {
+                var module = ModuleLookup.GetRefRO(entity).ValueRO;
                 module.IsBeingUpdated = false;
+                CommandBuffer.SetComponent(sortKey, entity, module);
                 CommandBuffer.SetComponentEnabled<ModuleUpdateTag>(sortKey, entity, false);
             }
         }

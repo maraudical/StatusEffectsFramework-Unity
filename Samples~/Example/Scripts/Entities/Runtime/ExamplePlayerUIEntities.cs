@@ -88,6 +88,7 @@ namespace StatusEffects.Entities.Example.UI
             m_StatusIntBuffer = m_Manager.GetBuffer<StatusInts>(entity);
             m_StatusBoolBuffer = m_Manager.GetBuffer<StatusBools>(entity);
 
+            // May want to check for structural changes to the Status Buffers but in this example it is assumed there aren't any.
             player.MaxHealth.GetValue(player.ComponentId, m_StatusFloatBuffer, out var maxHealth);
             player.Speed.GetValue(player.ComponentId, m_StatusFloatBuffer, out var speed);
             player.CoinMultiplier.GetValue(player.ComponentId, m_StatusIntBuffer, out var coinMultiplier);

@@ -2,6 +2,7 @@
 using System;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 #if NETCODE
@@ -18,13 +19,24 @@ namespace StatusEffects.Entities
     /// <see cref="SimulationSystemGroup"/>.
     /// </summary>
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
+    [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
     [BurstCompile]
     public partial struct StatusManagerSystem : ISystem
     {
+        private EntityQuery m_RequestQuery;
+        private EntityQuery m_UpdateQuery;
+
+        private ComponentLookup<Module> m_ModuleLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate<StatusEffects>();
+            m_RequestQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffectRequests, StatusEffects>().WithAll<Modules>().Build();
+            m_UpdateQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().Build();
+
+            m_ModuleLookup = SystemAPI.GetComponentLookup<Module>(true);
+
+            state.RequireForUpdate(m_UpdateQuery);
             state.RequireForUpdate<StatusReferences>();
             state.RequireForUpdate<ModulePrefabs>();
         }
@@ -32,36 +44,33 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            state.CompleteDependency(); // Modules may have been written to.
-
-            var moduleLookup = SystemAPI.GetComponentLookup<Module>();
+            m_ModuleLookup.Update(ref state);
 
             var references = SystemAPI.GetSingleton<StatusReferences>();
             var modulePrefabs = SystemAPI.GetSingletonBuffer<ModulePrefabs>();
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
-            var commandBufferParallel = commandBuffer.AsParallelWriter();
+            var commandBufferParallel = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
             // Handle any add/remove requests.
-            new StatusEffectRequestJob
+            if (!m_RequestQuery.IsEmpty)
             {
-                CommandBuffer = commandBufferParallel,
-                ModuleLookup = moduleLookup,
-                References = references,
-                ModulePrefabs = modulePrefabs
-            }.ScheduleParallel();
+                var statusEffectRequestJob = new StatusEffectRequestJob
+                {
+                    CommandBuffer = commandBufferParallel,
+                    ModuleLookup = m_ModuleLookup,
+                    References = references,
+                    ModulePrefabs = modulePrefabs
+                };
+                state.Dependency = statusEffectRequestJob.ScheduleParallelByRef(m_RequestQuery, state.Dependency);
+            }
 
             // Update and check durations.
-            new StatusEffectUpdateJob
+            var statusEffectUpdateJob = new StatusEffectUpdateJob
             {
                 CommandBuffer = commandBufferParallel,
-                ModuleLookup = moduleLookup,
+                ModuleLookup = m_ModuleLookup,
                 TimeDelta = SystemAPI.Time.DeltaTime
-            }.ScheduleParallel();
-
-            state.CompleteDependency();
-
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
+            };
+            state.Dependency = statusEffectUpdateJob.ScheduleParallelByRef(m_UpdateQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -75,7 +84,7 @@ namespace StatusEffects.Entities
             [ReadOnly]
             public DynamicBuffer<ModulePrefabs> ModulePrefabs;
 
-            void Execute([EntityIndexInQuery] int sortKey, Entity entity, ref DynamicBuffer<StatusEffectRequests> statusEffectRequests, ref DynamicBuffer<StatusEffects> statusEffects, in DynamicBuffer<Modules> modules)
+            void Execute([ChunkIndexInQuery] int sortKey, Entity entity, ref DynamicBuffer<StatusEffectRequests> statusEffectRequests, ref DynamicBuffer<StatusEffects> statusEffects, in DynamicBuffer<Modules> modules)
             {
                 // If nothing to change then continue.
                 if (statusEffectRequests.Length <= 0)
@@ -710,7 +719,7 @@ namespace StatusEffects.Entities
             [ReadOnly]
             public float TimeDelta;
 
-            void Execute([EntityIndexInQuery] int sortKey, Entity entity, ref DynamicBuffer<StatusEffects> statusEffects)
+            void Execute([ChunkIndexInQuery] int sortKey, Entity entity, ref DynamicBuffer<StatusEffects> statusEffects)
             {
                 // If nothing to change then continue.
                 if (statusEffects.Length <= 0)

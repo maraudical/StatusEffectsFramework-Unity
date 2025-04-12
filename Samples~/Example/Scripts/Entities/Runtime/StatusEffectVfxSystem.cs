@@ -10,29 +10,28 @@ namespace StatusEffects.Entities.Example
 {
     [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation | WorldSystemFilterFlags.ClientSimulation)]
     // Order last because we sync position after all other simulations.
-    [UpdateInGroup(typeof(LateSimulationSystemGroup))]
+    [UpdateBefore(typeof(TransformSystemGroup))]
     public partial class StatusEffectVfxSystem : SystemBase
     {
         private Dictionary<Entity, Transform> m_EntityParticles;
         private Transform m_Transform;
-
-        private EntityQuery m_EntityQuery;
+        
+        private ComponentLookup<LocalToWorld> m_LocalToWorldLookup;
 
         protected override void OnCreate()
         {
             m_EntityParticles = new();
-            
-            var builder = new EntityQueryBuilder(Allocator.Temp).WithAny<VfxEntityModule, VfxCleanupTag>();
-            m_EntityQuery = GetEntityQuery(builder);
-            RequireForUpdate(m_EntityQuery);
+
+            m_LocalToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
+
+            RequireForUpdate(SystemAPI.QueryBuilder().WithAny<VfxEntityModule, VfxCleanupTag>().Build());
         }
 
         protected override void OnUpdate()
         {
-            CompleteDependency();
-            var localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>();
+            m_LocalToWorldLookup.Update(this);
 
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
+            var commandBuffer = SystemAPI.GetSingletonRW<EndSimulationEntityCommandBufferSystem.Singleton>().ValueRW.CreateCommandBuffer(World.Unmanaged);
 
             foreach ((VfxEntityModule vfx, Module module, Entity entity) in SystemAPI.Query<VfxEntityModule, Module>().WithEntityAccess())
             {
@@ -84,7 +83,7 @@ namespace StatusEffects.Entities.Example
                     m_EntityParticles[entity] = VfxObject.transform;
                 }
                 // Set position to current entity position.
-                if (m_Transform && localToWorldLookup.TryGetComponent(module.Parent, out var localToWorld))
+                if (m_Transform && m_LocalToWorldLookup.TryGetComponent(module.Parent, out var localToWorld))
                     m_Transform.position = localToWorld.Position;
             }
             // Cleanup tags are used here because if the Module is destroyed by the server,
@@ -103,9 +102,6 @@ namespace StatusEffects.Entities.Example
 
                 commandBuffer.RemoveComponent<VfxCleanupTag>(entity);
             }
-
-            commandBuffer.Playback(EntityManager);
-            commandBuffer.Dispose();
         }
     }
 }

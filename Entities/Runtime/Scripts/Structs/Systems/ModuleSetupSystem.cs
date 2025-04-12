@@ -1,11 +1,11 @@
 #if ENTITIES
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
+    [UpdateAfter(typeof(BeginStatusEffectEntityCommandBufferSystem))]
     [UpdateBefore(typeof(ModuleCleanupSystem))]
     [BurstCompile]
     // Cannot add cleanup components during baking process so it is done here instead.
@@ -23,18 +23,13 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
-            var commandBufferParallel = commandBuffer.AsParallelWriter();
+            var commandBufferParallel = SystemAPI.GetSingletonRW<EndStatusEffectEntityCommandBufferSystem.Singleton>().ValueRW.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
-            new StatusSetupJob
+            var statusSetupJob = new StatusSetupJob
             {
                 CommandBuffer = commandBufferParallel,
-            }.ScheduleParallel(m_StatusSetupQuery);
-
-            state.CompleteDependency();
-
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
+            };
+            state.Dependency = statusSetupJob.ScheduleParallelByRef(m_StatusSetupQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -42,7 +37,7 @@ namespace StatusEffects.Entities
         {
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
 
-            void Execute([EntityIndexInQuery] int sortKey, Entity entity)
+            void Execute([ChunkIndexInQuery] int sortKey, Entity entity)
             {
                 CommandBuffer.AddBuffer<Modules>(sortKey, entity);
             }

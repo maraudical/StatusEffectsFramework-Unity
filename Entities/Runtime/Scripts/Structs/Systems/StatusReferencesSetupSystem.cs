@@ -4,13 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
-using UnityEngine.Rendering;
 
 namespace StatusEffects.Entities
 {
-    [WorldSystemFilter(WorldSystemFilterFlags.LocalSimulation | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation | WorldSystemFilterFlags.ServerSimulation)]
+    [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation)]
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
-    
+    [UpdateAfter(typeof(BeginStatusEffectEntityCommandBufferSystem))]
     public partial class StatusReferencesSetupSystem : SystemBase
     {
         public EntityQuery m_RequestQuery;
@@ -20,15 +19,18 @@ namespace StatusEffects.Entities
             EntityManager.CreateEntity(typeof(StatusReferencesSetupRequest));
 
             m_RequestQuery = SystemAPI.QueryBuilder().WithAll<StatusReferencesSetupRequest>().Build();
+
             RequireForUpdate(m_RequestQuery);
         }
 
         protected override void OnUpdate() 
         {
-            bool foundSingleton = SystemAPI.TryGetSingleton<StatusReferences>(out var references);
-
             var statusEffectDatas = StatusEffectDatabase.Get().Values.Values;
-            var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+
+            if (statusEffectDatas.Count <= 0)
+                return;
+
+            var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
 
             commandBuffer.DestroyEntity(m_RequestQuery, EntityQueryCaptureMode.AtPlayback);
 
@@ -45,6 +47,8 @@ namespace StatusEffects.Entities
             global::StatusEffects.Effect effect;
             global::StatusEffects.Condition condition;
             int moduleIndex = 0;
+
+            bool foundSingleton = SystemAPI.TryGetSingleton<StatusReferences>(out var references);
 
             // Dispose of old blobs after copying
             if (foundSingleton)
@@ -175,9 +179,6 @@ namespace StatusEffects.Entities
             {
                 BlobAsset = statusEffectDataHashMapReferences,
             });
-
-            commandBuffer.Playback(EntityManager);
-            commandBuffer.Dispose();
         }
 
         protected override void OnDestroy()

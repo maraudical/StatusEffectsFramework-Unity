@@ -45,10 +45,14 @@ namespace StatusEffects.Inspector
 
             position.height = m_FieldSize;
             position.y -= k_TopFix;
+            float width = position.width;
+            position.width = property.isExpanded ? width : EditorGUIUtility.labelWidth;
             
             GUI.color = !m_StatusName.objectReferenceValue && !property.isExpanded ? Color.red : Color.white;
             property.isExpanded = EditorGUI.Foldout(position, property.isExpanded, label, true);
             GUI.color = Color.white;
+
+            position.width = width;
 
             EditorGUI.BeginProperty(position, label, property);
 
@@ -59,7 +63,7 @@ namespace StatusEffects.Inspector
                 EditorGUI.indentLevel = m_Indent + 1;
                 position.y += m_FieldSize + m_Padding;
                 GUI.color = !m_StatusName.objectReferenceValue ? Color.red : Color.white;
-                EditorGUI.BeginDisabledGroup(Application.isPlaying);
+                EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying);
                 EditorGUI.PropertyField(position, m_StatusName);
                 EditorGUI.EndDisabledGroup();
                 GUI.color = Color.white;
@@ -67,7 +71,7 @@ namespace StatusEffects.Inspector
 
                 EditorGUI.BeginChangeCheck();
                 EditorGUI.PropertyField(position, m_BaseValue);
-                if (EditorGUI.EndChangeCheck() && Application.isPlaying)
+                if (EditorGUI.EndChangeCheck() && EditorApplication.isPlaying)
                 {
                     MethodInfo baseValueUpdate = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                     foreach (var statusVariable in property.serializedObject.targetObjects)
@@ -83,7 +87,7 @@ namespace StatusEffects.Inspector
                     EditorGUI.BeginChangeCheck();
                     EditorGUI.PropertyField(m_Offset, m_SignProtected, GUIContent.none);
                     GUI.Label(m_Offset, new GUIContent("", k_SignProtectedTooltip));
-                    if (EditorGUI.EndChangeCheck() && Application.isPlaying)
+                    if (EditorGUI.EndChangeCheck() && EditorApplication.isPlaying)
                     {
                         MethodInfo signProtectedUpdate = property.GetPropertyType().GetMethod("SignProtectedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                         foreach (var statusVariable in property.serializedObject.targetObjects)
@@ -103,14 +107,14 @@ namespace StatusEffects.Inspector
                     m_Offset = new Rect(m_PropertyPosition.x, m_PropertyPosition.y, m_PropertyPosition.width, m_PropertyPosition.height);
 
                 EditorGUI.BeginDisabledGroup(true);
-                EditorGUI.PropertyField(m_Offset, Application.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
+                EditorGUI.PropertyField(m_Offset, EditorApplication.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
                 EditorGUI.EndDisabledGroup();
             }
             else
             {
-                EditorGUI.BeginDisabledGroup(true);
+                EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying);
                 m_PropertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(" "));
-                EditorGUI.PropertyField(m_PropertyPosition, Application.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
+                EditorGUI.PropertyField(m_PropertyPosition, EditorApplication.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
                 EditorGUI.EndDisabledGroup();
             }
 

@@ -9,6 +9,7 @@ namespace StatusEffects.Entities
 {
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
     [UpdateAfter(typeof(StatusManagerSystem))]
+    [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
     [BurstCompile]
     public partial struct StatusVariableUpdateSystem : ISystem
     {
@@ -26,18 +27,19 @@ namespace StatusEffects.Entities
         public void OnUpdate(ref SystemState state)
         {
             var references = SystemAPI.GetSingleton<StatusReferences>();
-            var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            var commandBufferParallel = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
             // If any entities were actually changed we update their StatusVariables.
             // This is done at the start of frame before StatusEffects structural changes.
-            new StatusVariableUpdateJob
+            var statusVariableUpdateJob = new StatusVariableUpdateJob
             {
                 CommandBuffer = commandBufferParallel,
                 StatusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>(),
                 StatusIntsLookup = SystemAPI.GetBufferLookup<StatusInts>(),
                 StatusBoolsLookup = SystemAPI.GetBufferLookup<StatusBools>(),
                 References = references
-            }.ScheduleParallel(m_StatusVariableUpdateQuery);
+            };
+            state.Dependency = statusVariableUpdateJob.ScheduleByRef(m_StatusVariableUpdateQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -53,7 +55,7 @@ namespace StatusEffects.Entities
             [ReadOnly]
             public StatusReferences References;
 
-            public void Execute([EntityIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<StatusEffects> statusEffects, in StatusVariableUpdate statusVariableUpdate)
+            public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<StatusEffects> statusEffects, in StatusVariableUpdate statusVariableUpdate)
             {
                 // We can guarantee that this entity has a StatusEffect buffer
                 // because if a StatusEffect was added to an entity that wasn't
@@ -91,6 +93,12 @@ namespace StatusEffects.Entities
                 float additiveValue = 0;
                 float multiplicativeValue = 1;
                 float postAdditiveValue = 0;
+                int minimumPriority = -1;
+                float minimumValue = float.NegativeInfinity;
+                int maximumPriority = -1;
+                float maximumValue = float.PositiveInfinity;
+                int overwritePriority = -1;
+                float overwriteValue = 0;
 
                 float effectValue;
                 
@@ -118,14 +126,41 @@ namespace StatusEffects.Entities
                             case ValueModifier.PostAdditive:
                                 postAdditiveValue += effectValue;
                                 break;
+                            case ValueModifier.Minimum:
+                                if (minimumPriority < effect.Priority)
+                                {
+                                    minimumPriority = effect.Priority;
+                                    minimumValue = effectValue;
+                                }
+                                else if (minimumPriority == effect.Priority)
+                                    minimumValue = math.max(minimumValue, effectValue);
+                                break;
+                            case ValueModifier.Maximum:
+                                if (maximumPriority < effect.Priority)
+                                {
+                                    maximumPriority = effect.Priority;
+                                    maximumValue = effectValue;
+                                }
+                                else if (maximumPriority == effect.Priority)
+                                    maximumValue = math.min(maximumValue, effectValue);
+                                break;
+                            case ValueModifier.Overwrite:
+                                if (overwritePriority <= effect.Priority)
+                                {
+                                    overwritePriority = effect.Priority;
+                                    overwriteValue = effectValue;
+                                }
+                                break;
                         }
                     }
                 }
-
-                if (statusFloat.SignProtected)
-                    statusFloat.Value = math.clamp((statusFloat.BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, positive ? 0 : float.NegativeInfinity, positive ? float.PositiveInfinity : 0);
+                
+                if (overwritePriority >= 0)
+                    statusFloat.Value = math.clamp(overwriteValue, overwritePriority <= minimumPriority ? minimumValue : float.NegativeInfinity, overwritePriority <= maximumPriority ? maximumValue : float.PositiveInfinity);
+                else if (statusFloat.SignProtected)
+                    statusFloat.Value = math.clamp((statusFloat.BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, math.max(positive ? 0 : float.NegativeInfinity, minimumValue), math.min(positive ? float.PositiveInfinity : 0, maximumValue));
                 else
-                    statusFloat.Value = (statusFloat.BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
+                    statusFloat.Value = math.clamp((statusFloat.BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, minimumValue, maximumValue);
             }
 
             // Copied from regular StatusInt.GetValue() with burstable types and math.
@@ -137,6 +172,12 @@ namespace StatusEffects.Entities
                 int additiveValue = 0;
                 int multiplicativeValue = 1;
                 int postAdditiveValue = 0;
+                int minimumPriority = -1;
+                int minimumValue = int.MinValue;
+                int maximumPriority = -1;
+                int maximumValue = int.MaxValue;
+                int overwritePriority = -1;
+                int overwriteValue = 0;
 
                 int effectValue;
 
@@ -164,14 +205,41 @@ namespace StatusEffects.Entities
                             case ValueModifier.PostAdditive:
                                 postAdditiveValue += effectValue;
                                 break;
+                            case ValueModifier.Minimum:
+                                if (minimumPriority < effect.Priority)
+                                {
+                                    minimumPriority = effect.Priority;
+                                    minimumValue = effectValue;
+                                }
+                                else if (minimumPriority == effect.Priority)
+                                    minimumValue = math.max(minimumValue, effectValue);
+                                break;
+                            case ValueModifier.Maximum:
+                                if (maximumPriority < effect.Priority)
+                                {
+                                    maximumPriority = effect.Priority;
+                                    maximumValue = effectValue;
+                                }
+                                else if (maximumPriority == effect.Priority)
+                                    maximumValue = math.min(maximumValue, effectValue);
+                                break;
+                            case ValueModifier.Overwrite:
+                                if (overwritePriority <= effect.Priority)
+                                {
+                                    overwritePriority = effect.Priority;
+                                    overwriteValue = effectValue;
+                                }
+                                break;
                         }
                     }
                 }
 
-                if (statusInt.SignProtected)
-                    statusInt.Value = math.clamp((statusInt.BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, positive ? 0 : int.MinValue, positive ? int.MaxValue : 0);
+                if (overwritePriority >= 0)
+                    statusInt.Value = math.clamp(overwriteValue, overwritePriority <= minimumPriority ? minimumValue : int.MinValue, overwritePriority <= maximumPriority ? maximumValue : int.MaxValue);
+                else if (statusInt.SignProtected)
+                    statusInt.Value = math.clamp((statusInt.BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, math.max(positive ? 0 : int.MinValue, minimumValue), math.min(positive ? int.MaxValue : 0, maximumValue));
                 else
-                    statusInt.Value = (statusInt.BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
+                    statusInt.Value = math.clamp((statusInt.BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, minimumValue, maximumValue);
             }
 
             // Copied from regular StatusBool.GetValue() with burstable types and math.

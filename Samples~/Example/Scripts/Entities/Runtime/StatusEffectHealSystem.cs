@@ -27,13 +27,15 @@ namespace StatusEffects.Entities.Example
         public void OnUpdate(ref SystemState state)
         {
             var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            
-            new HealJob
+
+            var healJob = new HealJob
             {
                 CommandBuffer = commandBufferParallel,
                 PlayerLookup = SystemAPI.GetComponentLookup<ExamplePlayer>(),
-                StatusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>()
-            }.ScheduleParallel(m_EntityQuery);
+                StatusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>(),
+                LastSystemVersion = state.LastSystemVersion
+            };
+            state.Dependency = healJob.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -45,14 +47,16 @@ namespace StatusEffects.Entities.Example
             [ReadOnly]
             public BufferLookup<StatusFloats> StatusFloatsLookup;
 
-            public void Execute([EntityIndexInQuery] int sortKey, Entity entity, in HealEntityModule healModule, in Module module, in ModuleUpdateTag update)
+            public uint LastSystemVersion;
+
+            public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in HealEntityModule healModule, in Module module, in ModuleUpdateTag update)
             {
                 Entity parentEntity = module.Parent;
                 
                 if (PlayerLookup.TryGetComponent(parentEntity, out ExamplePlayer player))
                 {
                     var buffer = StatusFloatsLookup[parentEntity];
-                    player.MaxHealth.GetValue(player.ComponentId, buffer, out var maxHealth);
+                    player.MaxHealth.GetValue(player.ComponentId, buffer, out var maxHealth, StatusFloatsLookup.DidChange(parentEntity, LastSystemVersion));
 
                     if (module.IsBeingDestroyed)
                     {

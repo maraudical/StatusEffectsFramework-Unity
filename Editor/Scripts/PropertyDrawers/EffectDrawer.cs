@@ -11,6 +11,7 @@ namespace StatusEffects.Inspector
         private SerializedProperty m_UseBaseValue;
         private SerializedProperty m_Primary;
         private SerializedProperty m_Secondary;
+        private SerializedProperty m_Tertiary;
 
         private Rect m_PropertyPosition;
         private Rect m_Offset;
@@ -62,6 +63,9 @@ namespace StatusEffects.Inspector
 
             m_Secondary = m_StatusNameType == typeof(StatusNameBool) ? property.FindPropertyRelative(nameof(Effect.Priority))
                                                                      : property.FindPropertyRelative(nameof(Effect.ValueModifier));
+            
+            m_Tertiary = m_StatusNameType == typeof(StatusNameBool) ||(m_Secondary.enumValueFlag & (int)(ValueModifier.Overwrite | ValueModifier.Minimum | ValueModifier.Maximum)) == 0 ? null
+                                                                    : property.FindPropertyRelative(nameof(Effect.Priority));
 
             EditorGUI.BeginProperty(position, label, property);
 
@@ -82,6 +86,12 @@ namespace StatusEffects.Inspector
                 EditorGUI.PropertyField(position, m_Secondary, new GUIContent(m_Secondary.displayName));
             }
             position.y += m_FieldSize + m_Padding;
+
+            if (m_Tertiary != null && !m_TypeDifference)
+            {
+                EditorGUI.PropertyField(position, m_Tertiary, new GUIContent(m_Tertiary.displayName));
+                position.y += m_FieldSize + m_Padding;
+            }
 
             if (m_TypeDifference)
             {
@@ -106,7 +116,29 @@ namespace StatusEffects.Inspector
 
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            return (m_FieldSize + m_Padding) * k_FieldCount + m_Padding;
+            m_TypeDifference = false;
+
+            m_StatusName = property.FindPropertyRelative(nameof(Effect.StatusName));
+
+            for (int i = 0; i < m_MultiObjectCount; i++)
+            {
+                m_StatusNameReference = (m_StatusName.GetParent(property.serializedObject.targetObjects[i]) as Effect).StatusName;
+                m_StatusNameTypeDummy = m_StatusNameReference is StatusNameBool ? typeof(StatusNameBool)
+                                      : m_StatusNameReference is StatusNameInt ? typeof(StatusNameInt)
+                                                                                : typeof(StatusNameFloat);
+
+                if (i > 0 && m_StatusNameTypeDummy != m_StatusNameType)
+                {
+                    m_TypeDifference = true;
+                    break;
+                }
+
+                m_StatusNameType = m_StatusNameTypeDummy;
+            }
+
+            bool extraField = !m_TypeDifference && m_StatusNameType != typeof(StatusNameBool) && ((ValueModifier)property.FindPropertyRelative(nameof(Effect.ValueModifier)).enumValueFlag & (ValueModifier.Overwrite | ValueModifier.Minimum | ValueModifier.Maximum)) != 0;
+
+            return (m_FieldSize + m_Padding) * (k_FieldCount + (extraField ? 1 : 0)) + m_Padding;
         }
     }
 }

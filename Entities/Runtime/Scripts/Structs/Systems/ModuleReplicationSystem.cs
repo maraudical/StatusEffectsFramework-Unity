@@ -1,6 +1,5 @@
 #if ENTITIES && NETCODE
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 
@@ -15,27 +14,36 @@ namespace StatusEffects.Entities
 
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation)]
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
+    [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
     [BurstCompile]
     public partial struct ModuleReplicationSystem : ISystem
     {
+        private EntityQuery m_ModuleReplicationQuery;
+
+        private ComponentLookup<Module> m_ModulesLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<ModuleReplicationCommand, ReceiveRpcCommandRequest>().Build());
+            m_ModuleReplicationQuery = SystemAPI.QueryBuilder().WithAll<ModuleReplicationCommand, ReceiveRpcCommandRequest>().Build();
+
+            m_ModulesLookup = SystemAPI.GetComponentLookup<Module>();
+
+            state.RequireForUpdate(m_ModuleReplicationQuery);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var moduleLookup = SystemAPI.GetComponentLookup<Module>();
+            m_ModulesLookup.Update(ref state);
 
-            var commandBuffer = new EntityCommandBuffer(Allocator.TempJob);
+            var commandBuffer = SystemAPI.GetSingletonRW<EndStatusEffectEntityCommandBufferSystem.Singleton>().ValueRW.CreateCommandBuffer(state.WorldUnmanaged);
 
             foreach (var (command, rpc, entity) in SystemAPI.Query<ModuleReplicationCommand, ReceiveRpcCommandRequest>().WithEntityAccess())
             {
                 commandBuffer.DestroyEntity(entity);
 
-                if (!moduleLookup.TryGetComponent(command.Entity, out Module module))
+                if (!m_ModulesLookup.TryGetComponent(command.Entity, out Module module))
                     continue;
                 
                 module.IsBeingUpdated = true;
@@ -45,9 +53,6 @@ namespace StatusEffects.Entities
                 commandBuffer.SetComponent(command.Entity, module);
                 commandBuffer.SetComponentEnabled<ModuleUpdateTag>(command.Entity, true);
             }
-
-            commandBuffer.Playback(state.EntityManager);
-            commandBuffer.Dispose();
         }
     }
 }

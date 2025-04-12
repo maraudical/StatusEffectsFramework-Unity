@@ -21,10 +21,6 @@ namespace StatusEffects.Entities
         [GhostField(SendData = false)]
 #endif
         private int m_CachedIndex;
-#if NETCODE
-        [GhostField(SendData = false)]
-#endif
-        private int m_CachedLength;
 
         /// <summary>
         /// Attempt to retrieve the <see cref="StatusBools"/> value for this <see cref="StatusBool"/>.
@@ -33,11 +29,11 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public bool GetValue(Hash128 componentId, DynamicBuffer<StatusBools> buffer, out bool value, bool structuralChange = false)
         {
-            GetIndex(componentId, buffer, structuralChange);
+            int index = GetIndex(componentId, buffer, structuralChange);
 
-            if (m_CachedIndex >= 0)
+            if (index >= 0)
             {
-                value = buffer[m_CachedIndex].Value;
+                value = buffer[index].Value;
                 return true;
             }
 
@@ -52,11 +48,11 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public bool Get(Hash128 componentId, DynamicBuffer<StatusBools> buffer, out StatusBools value, bool structuralChange = false)
         {
-            GetIndex(componentId, buffer, structuralChange);
+            int index = GetIndex(componentId, buffer, structuralChange);
 
-            if (m_CachedIndex >= 0)
+            if (index >= 0)
             {
-                value = buffer[m_CachedIndex];
+                value = buffer[index];
                 return true;
             }
 
@@ -70,7 +66,7 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public int GetIndex(Hash128 componentId, DynamicBuffer<StatusBools> buffer, bool structuralChange = false)
         {
-            if (structuralChange || m_CachedIndex < 0 || m_CachedLength != buffer.Length)
+            if (structuralChange || m_CachedIndex < 0)
             {
                 m_CachedIndex = -1;
 
@@ -80,7 +76,6 @@ namespace StatusEffects.Entities
                     if (statusBool.ComponentId == componentId && statusBool.Id == Id)
                     {
                         m_CachedIndex = i;
-                        m_CachedLength = buffer.Length;
                         break;
                     }
                 }
@@ -93,7 +88,6 @@ namespace StatusEffects.Entities
         {
             Id = id;
             m_CachedIndex = -1;
-            m_CachedLength = default;
         }
 
         public static implicit operator StatusBool(UnityEngine.Hash128 value) => new StatusBool(value);

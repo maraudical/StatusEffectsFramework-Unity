@@ -11,6 +11,7 @@ namespace StatusEffects.Entities
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation | WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
     [UpdateBefore(typeof(StatusReferencesSetupSystem))]
+    [UpdateAfter(typeof(BeginStatusEffectEntityCommandBufferSystem))]
     public partial class StatusReferencesGhostsSetupSystem : SystemBase
     {
         public List<Hash128> m_ConvertedGhostPrefabIds;

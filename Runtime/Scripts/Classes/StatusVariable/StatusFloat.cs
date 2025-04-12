@@ -98,6 +98,12 @@ namespace StatusEffects
             float additiveValue = 0;
             float multiplicativeValue = 1;
             float postAdditiveValue = 0;
+            int minimumPriority = -1;
+            float minimumValue = float.NegativeInfinity;
+            int maximumPriority = -1;
+            float maximumValue = float.PositiveInfinity;
+            int overwritePriority = -1;
+            float overwriteValue = 0;
 
             float effectValue;
 
@@ -121,15 +127,41 @@ namespace StatusEffects
                         case ValueModifier.PostAdditive:
                             postAdditiveValue += effectValue;
                             break;
-
+                        case ValueModifier.Minimum:
+                            if (minimumPriority < effect.Priority)
+                            {
+                                minimumPriority = effect.Priority;
+                                minimumValue = effectValue;
+                            }
+                            else if (minimumPriority == effect.Priority)
+                                minimumValue = Mathf.Max(minimumValue, effectValue);
+                            break;
+                        case ValueModifier.Maximum:
+                            if (maximumPriority < effect.Priority)
+                            {
+                                maximumPriority = effect.Priority;
+                                maximumValue = effectValue;
+                            }
+                            else if (maximumPriority == effect.Priority)
+                                maximumValue = Mathf.Min(maximumValue, effectValue);
+                            break;
+                        case ValueModifier.Overwrite:
+                            if (overwritePriority <= effect.Priority)
+                            {
+                                overwritePriority = effect.Priority;
+                                overwriteValue = effectValue;
+                            }
+                            break;
                     }
                 }
             }
-            
-            if (m_SignProtected)
-                return Mathf.Clamp((m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, positive ? 0 : float.NegativeInfinity, positive ? float.PositiveInfinity : 0);
+
+            if (overwritePriority >= 0)
+                return Mathf.Clamp(overwriteValue, overwritePriority <= minimumPriority ? minimumValue : float.NegativeInfinity, overwritePriority <= maximumPriority ? maximumValue : float.PositiveInfinity);
+            else if (m_SignProtected)
+                return Mathf.Clamp((m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, Mathf.Max(positive ? 0 : float.NegativeInfinity, minimumValue), Mathf.Min(positive ? float.PositiveInfinity : 0, maximumValue));
             else
-                return (m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue;
+                return Mathf.Clamp((m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, minimumValue, maximumValue);
         }
 
         protected void UpdateValue()
