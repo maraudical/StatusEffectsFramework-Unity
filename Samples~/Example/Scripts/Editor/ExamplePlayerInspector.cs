@@ -1,54 +1,78 @@
 #if UNITY_EDITOR
 using System;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace StatusEffects.Example.Inspector
 {
     public static class ExamplePlayerInspector
     {
-        public static void DrawInspector(Action baseOnInspectorGUI, IExamplePlayer player)
+        public static VisualElement DrawInspector(SerializedObject serializedObject, IExamplePlayer player)
         {
-            EditorGUILayout.HelpBox("Please view the code in this script for example implementation!", MessageType.Info);
-            EditorGUILayout.Space(1);
+            var root = new VisualElement();
 
-            baseOnInspectorGUI?.Invoke();
+            var helpBox = new HelpBox() { text = "Please view the code in this script for example implementation!", messageType = HelpBoxMessageType.Info };
+            helpBox.style.marginBottom = 10;
 
-            GUIStyle style = new GUIStyle(EditorStyles.largeLabel);
-            style.alignment = TextAnchor.MiddleCenter;
-            style.fontSize = 16;
-            style.fontStyle = FontStyle.Bold;
+            root.Add(helpBox);
 
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel(nameof(player.Health));
-            EditorGUI.BeginDisabledGroup(!EditorApplication.isPlaying);
-            player.Health = EditorGUILayout.FloatField(player.Health);
-            EditorGUI.EndDisabledGroup();
-            EditorGUILayout.EndHorizontal();
+            var iterator = serializedObject.GetIterator();
 
-            EditorGUILayout.Space(10);
+            if (iterator.NextVisible(true))
+            {
+                do
+                {
+                    var propertyField = new PropertyField(iterator.Copy()) { name = "property-field: " + iterator.propertyPath };
 
-            EditorGUILayout.LabelField("Debug Buttons", style);
-            EditorGUILayout.BeginVertical("groupbox");
-            if (GUILayout.Button("Add Effect"))
-                player.DebugAddStatusEffect();
-            if (GUILayout.Button("Add Effect Timed"))
-                player.DebugAddStatusEffectTimed();
-            EditorGUILayout.Space(10);
-            if (GUILayout.Button("Add Effect Timed Event"))
-                player.DebugAddStatusEffectTimedEvent();
-            if (GUILayout.Button("Invoke Event"))
-                player.InvokeEvent();
-            EditorGUILayout.Space(10);
-            if (GUILayout.Button("Add Effect Predicate"))
-                player.DebugAddStatusEffectPredicate();
-            EditorGUILayout.EndVertical();
-            EditorGUILayout.BeginVertical("groupbox");
-            if (GUILayout.Button("Remove Effect"))
-                player.DebugRemoveStatusEffect();
-            if (GUILayout.Button("Remove Effect Group"))
-                player.DebugRemoveStatusEffectGroup();
-            EditorGUILayout.EndVertical();
+                    if (iterator.propertyPath == "m_Script" && serializedObject.targetObject != null)
+                        propertyField.SetEnabled(value: false);
+
+                    root.Add(propertyField);
+                }
+                while (iterator.NextVisible(false));
+            }
+
+            root.Add(new PropertyField() { bindingPath = nameof(IExamplePlayer.Health), enabledSelf = EditorApplication.isPlaying });
+
+            var debugLabel = new Label() { text = "<b>Debug Buttons" };
+            debugLabel.style.marginTop = 10;
+            debugLabel.style.marginLeft = 3;
+            debugLabel.style.paddingLeft = 1;
+            debugLabel.AddToClassList("unity-label");
+
+            root.Add(debugLabel);
+
+            Button addEffect = new Button() { text = "Add Effect" };
+            addEffect.clicked += player.DebugAddStatusEffect;
+            root.Add(addEffect);
+
+            Button addEffectTimed = new Button() { text = "Add Effect Timed" };
+            addEffectTimed.clicked += player.DebugAddStatusEffectTimed;
+            root.Add(addEffectTimed);
+
+            Button addEffectTimedEvent = new Button() { text = "Add Effect Timed Event" };
+            addEffectTimedEvent.clicked += player.DebugAddStatusEffectTimedEvent;
+            root.Add(addEffectTimedEvent);
+
+            Button invokeEvent = new Button() { text = "Invoke Event" };
+            invokeEvent.clicked += player.InvokeEvent;
+            root.Add(invokeEvent);
+
+            Button addEffectPredicate = new Button() { text = "Add Effect Predicate" };
+            addEffectPredicate.clicked += player.DebugAddStatusEffectPredicate;
+            root.Add(addEffectPredicate);
+
+            Button removeEffect = new Button() { text = "Remove Effect" };
+            removeEffect.clicked += player.DebugRemoveStatusEffect;
+            root.Add(removeEffect);
+
+            Button removeEffectGroup = new Button() { text = "Remove Effect Group" };
+            removeEffectGroup.clicked += player.DebugRemoveStatusEffectGroup;
+            root.Add(removeEffectGroup);
+
+            return root;
         }
     }
 }

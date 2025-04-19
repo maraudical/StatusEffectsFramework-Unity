@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEditor;
-using UnityEngine;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
 
 namespace StatusEffects.Inspector
 {
@@ -7,34 +9,58 @@ namespace StatusEffects.Inspector
     [CanEditMultipleObjects]
     public class StatusEffectSettingsEditor : Editor
     {
-        private bool m_GroupFoldout = true;
+        public VisualTreeAsset VisualTree;
 
-        private SerializedProperty m_Groups;
-
-        public override void OnInspectorGUI()
+        public override VisualElement CreateInspectorGUI()
         {
-            serializedObject.Update();
-            EditorGUIUtility.labelWidth = 215;
-            int defaultIndent = EditorGUI.indentLevel;
-            EditorGUI.indentLevel = 1;
-            EditorGUIUtility.labelWidth = 0;
-            EditorGUILayout.Space();
-            EditorGUILayout.BeginVertical("groupbox");
-            m_Groups = serializedObject.FindProperty(nameof(StatusEffectSettings.Groups));
-            m_GroupFoldout = EditorGUILayout.Foldout(m_GroupFoldout, m_Groups.displayName);
-            if (m_GroupFoldout)
+            var root = new VisualElement();
+
+            VisualTree.CloneTree(root);
+            
+            var groupList = root.Q<ListView>("group-list");
+
+            var groupsProperty = serializedObject.FindProperty(nameof(StatusEffectSettings.Groups));
+
+            groupList.headerTitle = groupsProperty.displayName;
+            groupList.viewDataKey = groupsProperty.displayName;
+            groupList.makeItem = () => 
             {
-                EditorGUI.indentLevel++;
-                for (int i = 0; i < m_Groups.arraySize; i++)
+                return new PropertyField();
+            };
+            groupList.bindItem = (existingElement, index) =>
+            {
+                var propertyField = existingElement as PropertyField;
+                propertyField.label = $"Group {index}";
+                propertyField.BindProperty(groupsProperty.FindPropertyRelative($"Array.data[{index}]"));
+            };
+            groupList.BindProperty(groupsProperty);
+            
+
+            return root;
+        }
+
+        [SettingsProvider]
+        public static SettingsProvider CreateStatusEffectSettingsProvider()
+        {
+            // First parameter is the path in the Settings window.
+            // Second parameter is the scope of this setting: it only appears in the Project Settings window.
+            var provider = new SettingsProvider("Project/StatusEffectSettings", SettingsScope.Project)
+            {
+                // By default the last token of the path is used as display name if no label is provided.
+                label = "Status Effect Settings",
+                // activateHandler is called when the user clicks on the Settings item in the Settings window.
+                activateHandler = (searchContext, root) =>
                 {
-                    // draw every element of the array
-                    EditorGUILayout.PropertyField(m_Groups.GetArrayElementAtIndex(i));
-                }
-                EditorGUI.indentLevel--;
-            }
-            EditorGUILayout.EndVertical();
-            EditorGUI.indentLevel = defaultIndent;
-            serializedObject.ApplyModifiedProperties();
+                    var settings = CreateEditor(StatusEffectSettings.GetOrCreateSettings()).CreateInspectorGUI();
+                    settings.style.marginLeft = 10;
+                    root.Add(settings);
+                },
+
+                // Populate the search keywords to enable smart search filtering and label highlighting:
+                keywords = new HashSet<string>(new[] { "Status", "Effect", "Group", "Stack" })
+            };
+
+            return provider;
         }
     }
 }

@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEngine.UIElements;
 
 namespace StatusEffects.Example.Inspector
 {
@@ -7,9 +8,9 @@ namespace StatusEffects.Example.Inspector
     [CanEditMultipleObjects]
     public class ExamplePlayerEditor : Editor
     {
-        public override void OnInspectorGUI()
+        public override VisualElement CreateInspectorGUI()
         {
-            ExamplePlayerInspector.DrawInspector(base.OnInspectorGUI, target as IExamplePlayer);
+            return ExamplePlayerInspector.DrawInspector(serializedObject, target as IExamplePlayer);
         }
     }
 }

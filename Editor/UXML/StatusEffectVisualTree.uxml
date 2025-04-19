@@ -1,0 +1,10 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle[UNSUPPORTED_IN_UI_BUILDER]" />
+    <engine:VisualElement name="status-effect" class="mask-field-size" style="flex-direction: row; margin-right: 5px; flex-grow: 1; margin-top: 2px; margin-bottom: 2px;">
+        <editor:ObjectField binding-path="Data" name="status-effect-data-reference" enabled="false" style="flex-grow: 1; flex-shrink: 1;" />
+        <engine:Label text="Label" name="duration-label" style="-unity-text-align: middle-right; min-width: 67px; padding-right: 0;" />
+        <editor:PropertyField binding-path="m_Duration" name="duration" enabled="false" style="width: 42px; flex-shrink: 0;" />
+        <engine:Label text="Stacks:" name="stacks-label" style="-unity-text-align: middle-right; min-width: 50px; padding-right: 0;" />
+        <editor:PropertyField binding-path="m_Stacks" name="stacks" enabled="false" style="min-width: 42px; flex-shrink: 0;" />
+    </engine:VisualElement>
+</engine:UXML>

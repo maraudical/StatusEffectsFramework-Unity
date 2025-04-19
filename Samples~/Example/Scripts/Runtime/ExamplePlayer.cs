@@ -63,7 +63,7 @@ namespace StatusEffects.Example
         [SerializeField] private bool PredicateBool;
         // See the DebugAddStatusEffectTimedEvent method for how events can
         // be used to update the duration of an effect.
-        private UnityEvent Event;
+        private UnityEvent Event = new();
 
         private void Awake()
         {

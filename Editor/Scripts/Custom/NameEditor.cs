@@ -1,23 +1,19 @@
 using UnityEditor;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
 
 namespace StatusEffects.Inspector
 {
     [CustomEditor(typeof(Name), editorForChildClasses: true)]
     public class NameEditor : Editor
     {
-        private SerializedProperty m_Id;
-
-        private void OnEnable()
+        public override VisualElement CreateInspectorGUI()
         {
-            m_Id = serializedObject.FindProperty($"m_{nameof(Name.Id)}");
-        }
+            VisualElement root = new();
 
-        public override void OnInspectorGUI()
-        {
-            serializedObject.Update();
-            EditorGUI.BeginDisabledGroup(true);
-            EditorGUILayout.PropertyField(m_Id);
-            EditorGUI.EndDisabledGroup();
+            root.Add(new PropertyField() { bindingPath = $"m_{nameof(Name.Id)}", enabledSelf = false });
+
+            return root;
         }
     }
 }

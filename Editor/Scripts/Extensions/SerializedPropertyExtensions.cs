@@ -7,7 +7,7 @@ using UnityEditor;
 
 namespace StatusEffects.Inspector
 {
-    public static class SerializedPropertyExtensions
+    internal static class SerializedPropertyExtensions
     {
         // The following was taken from: https://discussions.unity.com/t/get-the-instance-the-serializedproperty-belongs-to-in-a-custompropertydrawer/66954/2
         public static object GetParent(this SerializedProperty property, UnityEngine.Object targetObject)

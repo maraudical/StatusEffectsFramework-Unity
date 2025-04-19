@@ -1,144 +1,168 @@
 using System;
 using UnityEditor;
-using UnityEngine;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
 
 namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(Effect))]
     public class EffectDrawer : PropertyDrawer
     {
-        private SerializedProperty m_StatusName;
-        private SerializedProperty m_UseBaseValue;
-        private SerializedProperty m_Primary;
-        private SerializedProperty m_Secondary;
-        private SerializedProperty m_Tertiary;
+        public VisualTreeAsset VisualTree;
 
-        private Rect m_PropertyPosition;
-        private Rect m_Offset;
+        
 
-        private StatusName m_StatusNameReference;
-        private Type m_StatusNameType;
-        private Type m_StatusNameTypeDummy;
-        private int m_MultiObjectCount;
-        private bool m_TypeDifference;
-        private GUIStyle m_Style;
-        private Color m_Color;
-
-        private readonly float m_FieldSize = EditorGUIUtility.singleLineHeight;
-        private readonly float m_Padding = EditorGUIUtility.standardVerticalSpacing;
-        private const float k_HorizontalPadding = 3;
-        private const int k_FieldCount = 3;
-        private const int k_ToggleSize = 15;
-
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
-            m_Style = GUI.skin.label;
-            m_Style.alignment = TextAnchor.MiddleCenter;
+            StatusName statusNameReference;
+            Type statusNameType;
+            Type statusNameTypeDummy;
 
-            m_MultiObjectCount = property.serializedObject.targetObjects.Length;
-            m_TypeDifference = false;
+            var root = new VisualElement();
 
-            m_StatusName = property.FindPropertyRelative(nameof(Effect.StatusName));
-            m_UseBaseValue = property.FindPropertyRelative(nameof(Effect.UseBaseValue));
+            VisualTree.CloneTree(root);
 
-            for (int i = 0; i < m_MultiObjectCount; i++)
-            {
-                m_StatusNameReference = (m_StatusName.GetParent(property.serializedObject.targetObjects[i]) as Effect).StatusName;
-                m_StatusNameTypeDummy = m_StatusNameReference is StatusNameBool ? typeof(StatusNameBool)
-                                      : m_StatusNameReference is StatusNameInt  ? typeof(StatusNameInt)
-                                                                                : typeof(StatusNameFloat);
+            var statusName = root.Q<PropertyField>("status-name");
+            var typeDifferenceContainer = root.Q("type-difference-container");
+            var valueModifier = root.Q<PropertyField>("value-modifier");
+            var priority = root.Q<PropertyField>("priority");
+            var useBaseValue = root.Q<PropertyField>("use-base-value");
+            var usingBaseValueContainer = root.Q<TextField>("using-base-value-container");
+            var valuesContainer = root.Q("values-container");
+            var floatValue = root.Q<PropertyField>("float-value");
+            var intValue = root.Q<PropertyField>("int-value");
+            var boolValue = root.Q<PropertyField>("bool-value");
 
-                if (i > 0 && m_StatusNameTypeDummy != m_StatusNameType)
-                {
-                    m_TypeDifference = true;
-                    break;
-                }
-                
-                m_StatusNameType = m_StatusNameTypeDummy;
-            }
-
-            m_Primary = m_StatusNameType == typeof(StatusNameBool) ? property.FindPropertyRelative(nameof(Effect.BoolValue))
-                      : m_StatusNameType == typeof(StatusNameInt)  ? property.FindPropertyRelative(nameof(Effect.IntValue))
-                                                                   : property.FindPropertyRelative(nameof(Effect.FloatValue));
-
-            m_Secondary = m_StatusNameType == typeof(StatusNameBool) ? property.FindPropertyRelative(nameof(Effect.Priority))
-                                                                     : property.FindPropertyRelative(nameof(Effect.ValueModifier));
+            var statusNameProperty = property.FindPropertyRelative($"m_{nameof(Effect.StatusName)}");
+            var useBaseValueProperty = property.FindPropertyRelative($"m_{nameof(Effect.UseBaseValue)}");
+            var valueModifierProperty = property.FindPropertyRelative($"m_{nameof(Effect.ValueModifier)}");
             
-            m_Tertiary = m_StatusNameType == typeof(StatusNameBool) ||(m_Secondary.enumValueFlag & (int)(ValueModifier.Overwrite | ValueModifier.Minimum | ValueModifier.Maximum)) == 0 ? null
-                                                                    : property.FindPropertyRelative(nameof(Effect.Priority));
+            statusName.RegisterValueChangeCallback(StatusNameChanged);
 
-            EditorGUI.BeginProperty(position, label, property);
+            valueModifier.RegisterValueChangeCallback(ValueModifierChanged);
 
-            position.height = m_FieldSize;
-            position.y += m_Padding;
+            useBaseValue.RegisterValueChangeCallback(UseBaseValueChanged);
+            useBaseValue.RegisterCallbackOnce<GeometryChangedEvent>(UseBaseValueGeometryChanged);
 
-            EditorGUI.PropertyField(position, m_StatusName, new GUIContent(m_StatusName.displayName));
-            position.y += m_FieldSize + m_Padding;
+            usingBaseValueContainer.RegisterCallbackOnce<GeometryChangedEvent>(UsingBaseValueTextGeometryChanged);
 
-            if (m_TypeDifference)
+            floatValue.RegisterCallbackOnce<GeometryChangedEvent>(FloatGeometryChanged);
+            
+            intValue.RegisterCallbackOnce<GeometryChangedEvent>(IntGeometryChanged);
+            
+            boolValue.RegisterCallbackOnce<GeometryChangedEvent>(BoolGeometryChanged);
+
+            return root;
+
+            void IgnoreExcept(VisualElement root, string exception)
             {
-                m_Color = GUI.color;
-                GUI.color = Color.yellow;
-                EditorGUI.LabelField(position, "Cannot display information due", m_Style);
-            }
-            else
-            {
-                EditorGUI.PropertyField(position, m_Secondary, new GUIContent(m_Secondary.displayName));
-            }
-            position.y += m_FieldSize + m_Padding;
-
-            if (m_Tertiary != null && !m_TypeDifference)
-            {
-                EditorGUI.PropertyField(position, m_Tertiary, new GUIContent(m_Tertiary.displayName));
-                position.y += m_FieldSize + m_Padding;
-            }
-
-            if (m_TypeDifference)
-            {
-                EditorGUI.LabelField(position, "to Status Name type difference.", m_Style);
-                GUI.color = m_Color;
-            }
-            else
-            {
-                m_PropertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(m_Primary.displayName));
-                m_Offset = new Rect(m_PropertyPosition.x, m_PropertyPosition.y, k_ToggleSize, m_PropertyPosition.height);
-                EditorGUI.PropertyField(m_Offset, m_UseBaseValue, GUIContent.none);
-
-                m_Offset = new Rect(m_PropertyPosition.x + k_ToggleSize + k_HorizontalPadding, m_PropertyPosition.y, m_PropertyPosition.width - k_ToggleSize - k_HorizontalPadding, m_PropertyPosition.height);
-                if (!m_UseBaseValue.boolValue)
-                    EditorGUI.PropertyField(m_Offset, m_Primary, GUIContent.none);
-                else
-                    EditorGUI.LabelField(m_Offset, "Using Base Value");
-            }
-
-            EditorGUI.EndProperty();
-        }
-
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        {
-            m_TypeDifference = false;
-
-            m_StatusName = property.FindPropertyRelative(nameof(Effect.StatusName));
-
-            for (int i = 0; i < m_MultiObjectCount; i++)
-            {
-                m_StatusNameReference = (m_StatusName.GetParent(property.serializedObject.targetObjects[i]) as Effect).StatusName;
-                m_StatusNameTypeDummy = m_StatusNameReference is StatusNameBool ? typeof(StatusNameBool)
-                                      : m_StatusNameReference is StatusNameInt ? typeof(StatusNameInt)
-                                                                                : typeof(StatusNameFloat);
-
-                if (i > 0 && m_StatusNameTypeDummy != m_StatusNameType)
+                if (root.name == exception)
                 {
-                    m_TypeDifference = true;
-                    break;
+                    root.pickingMode = PickingMode.Position;
+                    return;
                 }
 
-                m_StatusNameType = m_StatusNameTypeDummy;
+                root.pickingMode = PickingMode.Ignore;
+
+                foreach(var child in root.Children())
+                    IgnoreExcept(child, exception);
             }
 
-            bool extraField = !m_TypeDifference && m_StatusNameType != typeof(StatusNameBool) && ((ValueModifier)property.FindPropertyRelative(nameof(Effect.ValueModifier)).enumValueFlag & (ValueModifier.Overwrite | ValueModifier.Minimum | ValueModifier.Maximum)) != 0;
+            void UseBaseValueGeometryChanged(GeometryChangedEvent changeEvent)
+            {
+                IgnoreExcept(useBaseValue, "unity-checkmark");
+            }
 
-            return (m_FieldSize + m_Padding) * (k_FieldCount + (extraField ? 1 : 0)) + m_Padding;
+            void UsingBaseValueTextGeometryChanged(GeometryChangedEvent changeEvent)
+            {
+                var element = usingBaseValueContainer.Q("unity-text-input");
+                AdjustElement(element);
+            }
+
+            void FloatGeometryChanged(GeometryChangedEvent changeEvent)
+            {
+                var element = floatValue.Q("unity-text-input");
+                AdjustElement(element);
+            }
+
+            void IntGeometryChanged(GeometryChangedEvent changeEvent)
+            {
+                var element = intValue.Q("unity-text-input");
+                AdjustElement(element);
+            }
+
+            void BoolGeometryChanged(GeometryChangedEvent changeEvent)
+            {
+                var element = boolValue.Q("unity-checkmark")?.parent;
+                AdjustElement(element);
+            }
+
+            void AdjustElement(VisualElement element)
+            {
+                if (element != null)
+                {
+                    element.style.marginRight = 18;
+                    var styleTranslate = element.style.translate;
+                    var translate = styleTranslate.value;
+                    translate.x = 18;
+                    styleTranslate.value = translate;
+                    element.style.translate = styleTranslate;
+                }
+            }
+
+            void StatusNameChanged(SerializedPropertyChangeEvent changeEvent)
+            {
+                bool typeDifference = ValidateStatusNameType();
+                typeDifferenceContainer.style.display = !typeDifference? DisplayStyle.Flex : DisplayStyle.None;
+                bool isFloat = statusNameType == typeof(StatusNameFloat);
+                bool isInt = statusNameType == typeof(StatusNameInt);
+                bool isBool = statusNameType == typeof(StatusNameBool);
+                valueModifier.style.display = !isBool ? DisplayStyle.Flex : DisplayStyle.None;
+                ValueModifierChanged(default);
+                floatValue.style.display = isFloat ? DisplayStyle.Flex : DisplayStyle.None;
+                intValue.style.display = isInt ? DisplayStyle.Flex : DisplayStyle.None;
+                boolValue.style.display = isBool ? DisplayStyle.Flex : DisplayStyle.None;
+                usingBaseValueContainer.label = isBool ? boolValue.label : isInt ? intValue.label : floatValue.label;
+            }
+
+            void ValueModifierChanged(SerializedPropertyChangeEvent evt)
+            {
+                bool typeDifference = ValidateStatusNameType();
+                bool isBool = statusNameType == typeof(StatusNameBool);
+                bool numberWithPriority = (valueModifierProperty.enumValueFlag & (int)(ValueModifier.Overwrite | ValueModifier.Minimum | ValueModifier.Maximum)) != 0;
+                priority.style.display = isBool || numberWithPriority ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+
+            void UseBaseValueChanged(SerializedPropertyChangeEvent evt)
+            {
+                valuesContainer.style.display = useBaseValueProperty.boolValue ? DisplayStyle.None : DisplayStyle.Flex;
+                usingBaseValueContainer.style.display = useBaseValueProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+
+            bool ValidateStatusNameType()
+            {
+                int count = property.serializedObject.targetObjects.Length;
+                var typeDifference = false;
+                statusNameType = null;
+
+                for (int i = 0; i < count; i++)
+                {
+                    statusNameReference = (statusNameProperty.GetParent(property.serializedObject.targetObjects[i]) as Effect).StatusName;
+                    statusNameTypeDummy = statusNameReference is StatusNameBool ? typeof(StatusNameBool)
+                                          : statusNameReference is StatusNameInt ? typeof(StatusNameInt)
+                                                                                    : typeof(StatusNameFloat);
+
+                    if (i > 0 && statusNameTypeDummy != statusNameType)
+                    {
+                        typeDifference = true;
+                        break;
+                    }
+
+                    statusNameType = statusNameTypeDummy;
+                }
+
+                return typeDifference;
+            }
         }
     }
 }

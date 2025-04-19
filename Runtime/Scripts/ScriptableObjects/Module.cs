@@ -3,6 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 #elif UNITY_2023_1_OR_NEWER
 using System.Threading;
+using System.Threading.Tasks;
 #else
 using System.Collections;
 #endif
@@ -22,7 +23,7 @@ namespace StatusEffects.Modules
         /// <see cref="StatusManager"/> after the cancellation you need to 
         /// check if it is null.
         /// </summary>
-        public abstract UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token);
+        public virtual UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token) { return UniTask.CompletedTask; }
 #elif UNITY_2023_1_OR_NEWER
         /// <summary>
         /// This will run as an <see cref="Awaitable"/> when the effect starts. 
@@ -33,16 +34,16 @@ namespace StatusEffects.Modules
         /// <see cref="StatusManager"/> after the cancellation you need to 
         /// check if it is null.
         /// </summary>
-        public abstract Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token);
+        public async virtual Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token) { await Task.CompletedTask; return; }
 #else
         /// <summary>
         /// This will run as an <see cref="IEnumerator"/> coroutine when the effect starts.
         /// </summary>
-        public abstract IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance);
+        public virtual IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) { yield break; }
         /// <summary>
         /// Use this callback to do something when the effect ends.
         /// </summary>
-        public abstract void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance);
+        public virtual void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) { }
 #endif
     }
 }

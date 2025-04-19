@@ -1,0 +1,7 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle" />
+    <engine:VisualElement name="status-group" class="mask-field-size" style="flex-direction: row;">
+        <editor:MaskField name="mask-field" label="Mask" style="flex-shrink: 1; flex-grow: 1;" />
+        <engine:Button name="settings-button" focusable="false" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-right: -1px;" />
+    </engine:VisualElement>
+</engine:UXML>

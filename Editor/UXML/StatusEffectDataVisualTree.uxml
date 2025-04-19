@@ -1,0 +1,52 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle" />
+    <editor:PropertyField name="id" binding-path="m_Id" enabled="false" />
+    <editor:PropertyField name="automatically-add-to-database" binding-path="m_AutomaticallyAddToDatabase" />
+    <engine:VisualElement name="required-fields-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+        <engine:Label text="Required Fields" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px;" />
+        <engine:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;" />
+        <editor:PropertyField binding-path="m_Group" name="group" />
+        <editor:PropertyField binding-path="m_ComparableName" name="comparable-name" />
+        <engine:VisualElement name="base-value-error" style="flex-grow: 1;" />
+        <editor:PropertyField binding-path="m_BaseValue" name="base-value" />
+    </engine:VisualElement>
+    <engine:VisualElement name="optional-fields-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+        <engine:Label text="Optional Fields" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px;" />
+        <engine:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;" />
+        <engine:ToggleButtonGroup allow-empty-selection="true" value="11111" is-multiple-selection="true" name="optional-field-toggles">
+            <engine:Button text="Icon" name="icon-toggle" style="width: 20%; text-overflow: ellipsis;" />
+            <engine:Button text="Color" name="color-toggle" style="width: 20%; text-overflow: ellipsis;" />
+            <engine:Button text="Name" name="name-toggle" style="width: 20%; text-overflow: ellipsis;" />
+            <engine:Button text="Acronym" name="acronym-toggle" style="width: 20%; text-overflow: ellipsis;" />
+            <engine:Button text="Description&#10;" name="description-toggle" style="text-overflow: ellipsis; width: 20%;" />
+        </engine:ToggleButtonGroup>
+        <editor:PropertyField binding-path="m_Icon" name="icon" />
+        <editor:PropertyField binding-path="m_Color" name="color" />
+        <editor:PropertyField binding-path="m_StatusEffectName" name="name" label="Name" />
+        <editor:PropertyField binding-path="m_Acronym" name="acronym" />
+        <editor:PropertyField binding-path="m_Description" name="description" />
+    </engine:VisualElement>
+    <engine:VisualElement name="stacking-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+        <engine:Label text="Stacking" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px;" />
+        <engine:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;" />
+        <editor:PropertyField binding-path="m_AllowEffectStacking" name="allow-effect-stacking" />
+        <editor:PropertyField binding-path="m_NonStackingBehaviour" name="non-stacking-behaviour" />
+        <editor:PropertyField binding-path="m_MaxStacks" name="max-stacks" />
+    </engine:VisualElement>
+    <engine:VisualElement name="effects-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+        <engine:Label text="Effects" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px;" />
+        <engine:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;" />
+        <engine:ListView binding-path="m_Effects" virtualization-method="DynamicHeight" show-add-remove-footer="true" reorder-mode="Animated" reorderable="true" show-alternating-row-backgrounds="All" show-border="true" show-bound-collection-size="false" name="effects-list" selection-type="Multiple" />
+    </engine:VisualElement>
+    <engine:VisualElement name="conditions-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+        <engine:Label text="Conditions" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px;" />
+        <engine:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;" />
+        <engine:VisualElement name="conditions-warning" style="flex-grow: 1;" />
+        <engine:ListView virtualization-method="DynamicHeight" show-add-remove-footer="true" reorder-mode="Animated" reorderable="true" show-alternating-row-backgrounds="All" show-border="true" show-bound-collection-size="false" name="conditions-list" binding-path="m_Conditions" selection-type="Multiple" />
+    </engine:VisualElement>
+    <engine:VisualElement name="modules-container" enabled="true" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+        <engine:Label text="Modules" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px;" />
+        <engine:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;" />
+        <engine:ListView virtualization-method="DynamicHeight" show-add-remove-footer="true" reorder-mode="Animated" reorderable="true" show-alternating-row-backgrounds="All" show-border="true" show-bound-collection-size="false" name="modules-list" binding-path="m_Modules" selection-type="Multiple" />
+    </engine:VisualElement>
+</engine:UXML>

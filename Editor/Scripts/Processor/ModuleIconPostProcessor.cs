@@ -1,3 +1,4 @@
+//#EXCLUDEFROMPROCESSING#
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,7 +24,7 @@ namespace StatusEffects.Inspector
                     if (!scriptText.Contains("namespace StatusEffects.Modules"))
                         continue;
 
-                    if (scriptText.Contains("ModuleIconPostProcessor : AssetPostprocessor"))
+                    if (scriptText.Substring(0, 25).Contains("//#EXCLUDEFROMPROCESSING#"))
                         continue;
 
                     if (scriptText.Contains(": ModuleInstance"))

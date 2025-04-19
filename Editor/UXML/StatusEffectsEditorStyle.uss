@@ -1,0 +1,60 @@
+.error-icon {
+    background-image: var(--unity-icons-console_entry_error_small);
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-slice-scale: 0.2px;
+    -unity-slice-left: 1;
+    -unity-slice-top: 1;
+    -unity-slice-right: 1;
+    -unity-slice-bottom: 1;
+}
+
+.mask-field-size {
+    max-height: 21px;
+}
+
+.box-group {
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-left-color: var(--unity-colors-inspector_titlebar-border);
+    border-bottom-color: var(--unity-colors-inspector_titlebar-border);
+    border-top-color: var(--unity-colors-inspector_titlebar-border);
+    border-right-color: var(--unity-colors-inspector_titlebar-border);
+    background-color: var(--unity-colors-toolbar_button-background-hover);
+}
+
+.standard-field-size {
+    max-height: var(--unity-metrics-single_line-height);
+}
+
+.dark-box-group {
+    border-top-color: var(--unity-colors-inspector_titlebar-border);
+    border-right-color: var(--unity-colors-inspector_titlebar-border);
+    border-bottom-color: var(--unity-colors-inspector_titlebar-border);
+    border-left-color: var(--unity-colors-inspector_titlebar-border);
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    background-color: var(--unity-colors-box-background);
+}
+
+.header-text-color {
+    color: var(--unity-colors-default-text-hover);
+}
+
+.line-color {
+    border-left-color: var(--unity-colors-input_field_placeholder-text);
+    border-right-color: var(--unity-colors-input_field_placeholder-text);
+    border-top-color: var(--unity-colors-input_field_placeholder-text);
+    border-bottom-color: var(--unity-colors-input_field_placeholder-text);
+}

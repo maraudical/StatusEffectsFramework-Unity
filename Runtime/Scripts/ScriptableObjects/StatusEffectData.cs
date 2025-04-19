@@ -9,7 +9,7 @@ using UnityEngine.Localization;
 
 namespace StatusEffects
 {
-    [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effect Framework/Status Effect Data", order = 1)]
+    [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effect Framework/Status Effect Data", order = -5)]
     public class StatusEffectData : ScriptableObject
     {
         public Hash128 Id => m_Id;
@@ -103,14 +103,14 @@ namespace StatusEffects
         [Tooltip("Conditionals will be checked when a Status Effect is added. This way you can automatically add or remove other effects with ease.")]
         [SerializeField] private List<Condition> m_Conditions = new();
         [Tooltip("Modules will apply additional functionality to a Status Effect. This is not required.")]
-        [SerializeField] private List<ModuleContainer> m_Modules = new();
+        [SerializeField] internal List<ModuleContainer> m_Modules = new();
 #if UNITY_EDITOR
 #pragma warning disable 0414
-        [SerializeField] private bool m_EnableIcon = true;
-        [SerializeField] private bool m_EnableColor = true;
-        [SerializeField] private bool m_EnableName = true;
-        [SerializeField] private bool m_EnableDescription = true;
-        [SerializeField] private bool m_EnableAcronym = true;
+        [SerializeField] private bool m_EnableIcon = false;
+        [SerializeField] private bool m_EnableColor = false;
+        [SerializeField] private bool m_EnableName = false;
+        [SerializeField] private bool m_EnableDescription = false;
+        [SerializeField] private bool m_EnableAcronym = false;
 #pragma warning restore 0414
 #endif
         #endregion

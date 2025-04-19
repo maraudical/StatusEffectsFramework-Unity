@@ -1,0 +1,17 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle" />
+    <editor:PropertyField binding-path="m_StatusName" name="status-name" />
+    <engine:VisualElement name="type-difference-container" style="flex-grow: 1;">
+        <editor:PropertyField binding-path="m_ValueModifier" name="value-modifier" />
+        <editor:PropertyField binding-path="m_Priority" name="priority" />
+        <engine:VisualElement name="value-container" style="flex-grow: 1;">
+            <engine:TextField label="Text Field" placeholder-text="Using Base Value" name="using-base-value-container" enabled="false" focusable="false" class="unity-base-field__aligned" />
+            <engine:VisualElement name="values-container" style="flex-grow: 1;">
+                <editor:PropertyField name="float-value" binding-path="m_FloatValue" label="Float Value" style="flex-grow: 1;" />
+                <editor:PropertyField name="int-value" binding-path="m_IntValue" label="Int Value" style="flex-grow: 1;" />
+                <editor:PropertyField name="bool-value" binding-path="m_BoolValue" label="Bool Value" style="flex-grow: 1;" />
+            </engine:VisualElement>
+            <editor:PropertyField name="use-base-value" binding-path="m_UseBaseValue" label=" " style="flex-grow: 1; position: absolute; top: 0; right: 0; left: 0; bottom: 0; flex-wrap: nowrap; flex-direction: column-reverse;" />
+        </engine:VisualElement>
+    </engine:VisualElement>
+</engine:UXML>

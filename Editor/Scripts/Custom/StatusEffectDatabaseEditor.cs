@@ -1,27 +1,24 @@
 using UnityEditor;
-using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace StatusEffects.Inspector
 {
     [CustomEditor(typeof(StatusEffectDatabase))]
-    [CanEditMultipleObjects]
     public class StatusEffectDatabaseEditor : Editor
     {
-        public override void OnInspectorGUI()
+        public VisualTreeAsset VisualTree;
+
+        public override VisualElement CreateInspectorGUI()
         {
-            serializedObject.Update();
-            EditorGUIUtility.labelWidth = 215;
-            EditorGUIUtility.labelWidth = 0;
-            EditorGUILayout.Space();
-            EditorGUILayout.BeginVertical("groupbox");
-            EditorGUILayout.HelpBox("Do not reset this object using the context menu! It may break status effects!", MessageType.Warning);
-            int defaultIndent = EditorGUI.indentLevel;
-            EditorGUI.indentLevel = 1;
-            EditorGUI.BeginDisabledGroup(true);
-            DrawPropertiesExcluding(serializedObject, new string[] { "m_Script" });
-            EditorGUI.EndDisabledGroup();
-            EditorGUILayout.EndVertical();
-            EditorGUI.indentLevel = defaultIndent;
+            var root = new VisualElement();
+
+            VisualTree.CloneTree(root);
+
+            var helpBox = new HelpBox() { text = "Do not reset this object using the context menu! It may break status effects!", messageType = HelpBoxMessageType.Warning };
+
+            root.Q("warning-container").Add(helpBox);
+
+            return root;
         }
     }
 }
