@@ -1,0 +1,26 @@
+<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle" />
+    <engine:VisualElement name="condition" class="mask-field-size" style="flex-direction: row;">
+        <engine:Label text="If" name="if-label" style="-unity-text-align: middle-center; padding-left: 0; padding-right: 1px;" />
+        <editor:PropertyField name="searchable-configurable" binding-path="m_SearchableConfigurable" style="min-width: 56px;" />
+        <editor:PropertyField binding-path="m_SearchableData" name="searchable-data" style="min-width: 92px; flex-grow: 1;" />
+        <editor:PropertyField binding-path="m_SearchableComparableName" name="searchable-comparable-name" style="min-width: 92px; flex-grow: 1;" />
+        <editor:PropertyField binding-path="m_SearchableGroup" name="searchable-group" style="min-width: 92px; flex-grow: 1;" />
+        <engine:Label text="is" name="is-label" style="-unity-text-align: middle-center; padding-left: 7px; padding-right: 1px;" />
+        <engine:EnumField name="existence" type="StatusEffects.Inspector.ConditionDrawer+Existence, Unity.StatusEffectsFramework.Editor" include-obsolete-values="true" />
+        <engine:Label text="then" name="then-label" style="-unity-text-align: middle-center; padding-left: 7px; padding-right: 1px;" />
+        <engine:EnumField name="configurability" type="StatusEffects.Inspector.ConditionDrawer+Configurability, Unity.StatusEffectsFramework.Editor" />
+        <editor:PropertyField binding-path="m_Stacks" name="stacks" style="flex-shrink: 0; margin-right: 0; margin-left: -5px;" />
+        <engine:EnumField type="StatusEffects.Inspector.ConditionDrawer+ScaleOption, Unity.StatusEffectsFramework.Editor" name="scale-option" />
+        <engine:EnumField type="StatusEffects.Inspector.ConditionDrawer+RemoveOption, Unity.StatusEffectsFramework.Editor" name="remove-option" />
+        <engine:Label text="stacks" name="stacks-label" style="-unity-text-align: middle-center; padding-left: 7px; margin-right: -4px; padding-right: 0;" />
+        <engine:Label text="of" name="of-label" style="-unity-text-align: middle-center; padding-left: 7px; padding-right: 1px;" />
+        <editor:PropertyField name="action-configurable" binding-path="m_ActionConfigurable" style="min-width: 56px; flex-shrink: 0;" />
+        <editor:PropertyField binding-path="m_ActionData" name="action-data" style="min-width: 92px; flex-grow: 1;" />
+        <editor:PropertyField binding-path="m_ActionComparableName" name="action-comparable-name" style="min-width: 92px; flex-grow: 1;" />
+        <editor:PropertyField binding-path="m_ActionGroup" name="action-group" style="min-width: 92px; flex-grow: 1;" />
+        <editor:PropertyField name="duration" binding-path="m_Duration" style="flex-shrink: 0;" />
+        <editor:PropertyField name="timing" binding-path="m_Timing" style="flex-shrink: 0;" />
+        <engine:Label text="—" name="dash-label" style="-unity-text-align: middle-center; padding-left: 7px; padding-right: 1px; opacity: 0.5;" />
+    </engine:VisualElement>
+</engine:UXML>

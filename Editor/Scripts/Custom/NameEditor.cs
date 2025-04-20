@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 namespace StatusEffects.Inspector
 {
     [CustomEditor(typeof(Name), editorForChildClasses: true)]
-    public class NameEditor : Editor
+    internal class NameEditor : Editor
     {
         public override VisualElement CreateInspectorGUI()
         {

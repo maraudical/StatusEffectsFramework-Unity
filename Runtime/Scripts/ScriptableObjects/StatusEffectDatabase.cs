@@ -31,16 +31,20 @@ namespace StatusEffects
 #if UNITY_EDITOR
             if (EditorApplication.isPlaying)
             {
-                Values.Add(key, value);
+                if (!Values.TryAdd(key, value))
+                    Values[key] = value;
             }
             else
             {
-                HiddenValues.Add(key, value);
+                if (!HiddenValues.TryAdd(key, value))
+                    HiddenValues[key] = value;
                 if (value.AutomaticallyAddToDatabase)
-                    Values.Add(key, value);
+                    if (!Values.TryAdd(key, value))
+                        Values[key] = value;
             }
 #else
-            Values.Add(key, value);
+             if (!Values.TryAdd(key, value))
+                Values[key] = value;
 #endif
         }
 
@@ -55,7 +59,7 @@ namespace StatusEffects
             {
                 bool added = HiddenValues.TryAdd(key, value);
                 if (added && value.AutomaticallyAddToDatabase)
-                    Values.Add(key, value);
+                    Values.TryAdd(key, value);
                 return added;
             }
 #else

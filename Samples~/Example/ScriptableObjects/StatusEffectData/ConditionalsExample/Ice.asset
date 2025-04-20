@@ -67,51 +67,51 @@ MonoBehaviour:
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
   m_Effects:
-  - StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
-    ValueModifier: 2
-    UseBaseValue: 1
-    FloatValue: 0
-    IntValue: 0
-    BoolValue: 0
-    Priority: 0
+  - m_StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
+    m_ValueModifier: 2
+    m_Priority: 0
+    m_UseBaseValue: 1
+    m_FloatValue: 0
+    m_IntValue: 0
+    m_BoolValue: 0
   m_Conditions:
-  - SearchableConfigurable: 1
-    SearchableData: {fileID: 0}
-    SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
-    SearchableGroup:
+  - m_SearchableConfigurable: 1
+    m_SearchableData: {fileID: 0}
+    m_SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
+    m_SearchableGroup:
       Value: 0
-    Exists: 1
-    Add: 0
-    Scaled: 1
-    UseStacks: 0
-    Stacks: 1
-    ActionConfigurable: 1
-    ActionData: {fileID: 11400000}
-    ActionComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4, type: 2}
-    ActionGroup:
+    m_Exists: 1
+    m_Add: 0
+    m_Scaled: 1
+    m_UseStacks: 0
+    m_Stacks: 1
+    m_ActionConfigurable: 1
+    m_ActionData: {fileID: 11400000}
+    m_ActionComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4, type: 2}
+    m_ActionGroup:
       Value: 0
-    Timing: 0
-    Duration: 0
-  - SearchableConfigurable: 1
-    SearchableData: {fileID: 0}
-    SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
-    SearchableGroup:
+    m_Timing: 0
+    m_Duration: 0
+  - m_SearchableConfigurable: 1
+    m_SearchableData: {fileID: 0}
+    m_SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
+    m_SearchableGroup:
       Value: 0
-    Exists: 1
-    Add: 0
-    Scaled: 1
-    UseStacks: 0
-    Stacks: 1
-    ActionConfigurable: 1
-    ActionData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    ActionComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
-    ActionGroup:
+    m_Exists: 1
+    m_Add: 0
+    m_Scaled: 1
+    m_UseStacks: 0
+    m_Stacks: 1
+    m_ActionConfigurable: 1
+    m_ActionData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    m_ActionComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
+    m_ActionGroup:
       Value: 0
-    Timing: 0
-    Duration: 0
+    m_Timing: 0
+    m_Duration: 0
   m_Modules:
-  - Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
-    ModuleInstance: {fileID: -8765197957851947557}
+  - m_Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
+    m_ModuleInstance: {fileID: -8765197957851947557}
   m_EnableIcon: 1
   m_EnableColor: 0
   m_EnableName: 0

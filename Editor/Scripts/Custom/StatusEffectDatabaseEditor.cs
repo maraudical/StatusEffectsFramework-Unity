@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 namespace StatusEffects.Inspector
 {
     [CustomEditor(typeof(StatusEffectDatabase))]
-    public class StatusEffectDatabaseEditor : Editor
+    internal class StatusEffectDatabaseEditor : Editor
     {
         public VisualTreeAsset VisualTree;
 

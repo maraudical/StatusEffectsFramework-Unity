@@ -11,7 +11,7 @@ namespace StatusEffects.Inspector
 {
     [CustomEditor(typeof(StatusEffectData))]
     [CanEditMultipleObjects]
-    public class StatusEffectDataEditor : Editor
+    internal class StatusEffectDataEditor : Editor
     {
         public VisualTreeAsset VisualTree;
         public PropertyField AutomaticallyAddToDatabase;

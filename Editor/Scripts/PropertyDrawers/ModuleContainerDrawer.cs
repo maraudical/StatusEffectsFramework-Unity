@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(ModuleContainer))]
-    public class ModuleContainerDrawer : PropertyDrawer
+    internal class ModuleContainerDrawer : PropertyDrawer
     {
         private UnityEngine.Object m_Target;
         private object m_ModuleReference;

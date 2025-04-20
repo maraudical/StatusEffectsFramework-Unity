@@ -5,7 +5,7 @@ namespace StatusEffects.Inspector
 {
     [CustomEditor(typeof(StatusManager))]
     [CanEditMultipleObjects]
-    public class StatusManagerEditor : Editor
+    internal class StatusManagerEditor : Editor
     {
         public VisualTreeAsset VisualTree;
         

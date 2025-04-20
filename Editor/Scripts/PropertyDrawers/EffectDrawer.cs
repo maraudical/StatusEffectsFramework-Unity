@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(Effect))]
-    public class EffectDrawer : PropertyDrawer
+    internal class EffectDrawer : PropertyDrawer
     {
         public VisualTreeAsset VisualTree;
 
@@ -51,6 +51,8 @@ namespace StatusEffects.Inspector
             intValue.RegisterCallbackOnce<GeometryChangedEvent>(IntGeometryChanged);
             
             boolValue.RegisterCallbackOnce<GeometryChangedEvent>(BoolGeometryChanged);
+
+            StatusNameChanged(default);
 
             return root;
 
@@ -113,7 +115,7 @@ namespace StatusEffects.Inspector
             void StatusNameChanged(SerializedPropertyChangeEvent changeEvent)
             {
                 bool typeDifference = ValidateStatusNameType();
-                typeDifferenceContainer.style.display = !typeDifference? DisplayStyle.Flex : DisplayStyle.None;
+                typeDifferenceContainer.style.display = !typeDifference ? DisplayStyle.Flex : DisplayStyle.None;
                 bool isFloat = statusNameType == typeof(StatusNameFloat);
                 bool isInt = statusNameType == typeof(StatusNameInt);
                 bool isBool = statusNameType == typeof(StatusNameBool);
@@ -149,8 +151,8 @@ namespace StatusEffects.Inspector
                 {
                     statusNameReference = (statusNameProperty.GetParent(property.serializedObject.targetObjects[i]) as Effect).StatusName;
                     statusNameTypeDummy = statusNameReference is StatusNameBool ? typeof(StatusNameBool)
-                                          : statusNameReference is StatusNameInt ? typeof(StatusNameInt)
-                                                                                    : typeof(StatusNameFloat);
+                                        : statusNameReference is StatusNameInt  ? typeof(StatusNameInt)
+                                                                                : typeof(StatusNameFloat);
 
                     if (i > 0 && statusNameTypeDummy != statusNameType)
                     {

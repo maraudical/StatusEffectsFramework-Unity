@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(StatusEffect))]
-    public class StatusEffectDrawer : PropertyDrawer
+    internal class StatusEffectDrawer : PropertyDrawer
     {
         public VisualTreeAsset VisualTree;
 
