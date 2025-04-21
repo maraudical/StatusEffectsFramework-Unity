@@ -1,4 +1,3 @@
-#if UNITY_2023_1_OR_NEWER && !UNITASK
 using System;
 using System.Threading;
 using UnityEngine;
@@ -20,4 +19,3 @@ namespace StatusEffects.Extensions
         }
     }
 }
-#endif

@@ -17,10 +17,8 @@ namespace StatusEffects.Templates
                 k_EntityModuleScriptContent
 #elif UNITASK
                 k_UniTaskModuleScriptContent
-#elif UNITY_2023_1_OR_NEWER
-                k_ModuleScriptContent
 #else
-                k_LegacyModuleScriptContent
+                k_ModuleScriptContent
 #endif
                 );
         }
@@ -70,6 +68,7 @@ namespace StatusEffects.Templates
 
         const string k_ModuleScriptContent =
 @"using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace StatusEffects.Modules
@@ -80,29 +79,7 @@ namespace StatusEffects.Modules
     {
         public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
-            
-        }
-    }
-}";
-
-        const string k_LegacyModuleScriptContent =
-@"using System.Collections;
-using UnityEngine;
-
-namespace StatusEffects.Modules
-{
-    [CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
-    //[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
-    public class #SCRIPTNAME# : Module
-    {
-        public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
-        {
-            
-        }
-
-        public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) 
-        {
-            
+            await Task.CompletedTask; return;
         }
     }
 }";
@@ -118,9 +95,9 @@ namespace StatusEffects.Modules
     //[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
     public class #SCRIPTNAME# : Module
     {
-        public override async UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
+        public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
-            
+            await UniTask.CompletedTask;
         }
     }
 }";

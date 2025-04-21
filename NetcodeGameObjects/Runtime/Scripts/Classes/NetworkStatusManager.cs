@@ -215,36 +215,26 @@ namespace StatusEffects.NetCode.GameObjects
 #if UNITASK
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
             TimedEffect(statusEffect.TimedTokenSource.Token).Forget();
-#elif UNITY_2023_1_OR_NEWER
+#else
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
             _ = TimedEffect(statusEffect.TimedTokenSource.Token);
-#else
-            statusEffect.TimedCoroutine = StartCoroutine(TimedEffect());
 #endif
             // Timer method
 #if UNITASK
             async UniTask TimedEffect(CancellationToken token)
-#elif UNITY_2023_1_OR_NEWER
-            async Awaitable TimedEffect(CancellationToken token)
 #else
-            IEnumerator TimedEffect()
+            async Awaitable TimedEffect(CancellationToken token)
 #endif
             {
                 float startTime = NetworkManager.ServerTime.TimeAsFloat;
                 float startDuration = statusEffect.Duration;
                 // Basic decreasing timer.
-                while (statusEffect.Duration > 0
-#if UNITASK || UNITY_2023_1_OR_NEWER
-                   && !token.IsCancellationRequested
-#endif
-                   )
+                while (statusEffect.Duration > 0 && !token.IsCancellationRequested)
                 {
 #if UNITASK
                     await UniTask.NextFrame(token);
-#elif UNITY_2023_1_OR_NEWER
-                    await Awaitable.NextFrameAsync(token);
 #else
-                    yield return null;
+                    await Awaitable.NextFrameAsync(token);
 #endif
                     statusEffect.Duration = startDuration - NetworkManager.ServerTime.TimeAsFloat + startTime;
                 }
@@ -252,12 +242,10 @@ namespace StatusEffects.NetCode.GameObjects
                 if (!IsServer)
                     return;
 
-#if UNITASK || UNITY_2023_1_OR_NEWER
-                if (!token.IsCancellationRequested)
-#endif
                 // Once it has ended remove the given effect.
-                if (remove)
-                    RemoveStatusEffect(statusEffect);
+                if (!token.IsCancellationRequested)
+                    if (remove)
+                        RemoveStatusEffect(statusEffect);
             }
         }
         #endregion

@@ -1,11 +1,9 @@
 #if UNITASK
 using System.Threading;
 using Cysharp.Threading.Tasks;
-#elif UNITY_2023_1_OR_NEWER
+#else
 using System.Threading;
 using System.Threading.Tasks;
-#else
-using System.Collections;
 #endif
 using UnityEngine;
 
@@ -23,8 +21,8 @@ namespace StatusEffects.Modules
         /// <see cref="StatusManager"/> after the cancellation you need to 
         /// check if it is null.
         /// </summary>
-        public virtual UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token) { return UniTask.CompletedTask; }
-#elif UNITY_2023_1_OR_NEWER
+        public virtual async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token) { await UniTask.CompletedTask; }
+#else
         /// <summary>
         /// This will run as an <see cref="Awaitable"/> when the effect starts. 
         /// Note that you will need to implement the token cancellation in your 
@@ -34,16 +32,7 @@ namespace StatusEffects.Modules
         /// <see cref="StatusManager"/> after the cancellation you need to 
         /// check if it is null.
         /// </summary>
-        public async virtual Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token) { await Task.CompletedTask; return; }
-#else
-        /// <summary>
-        /// This will run as an <see cref="IEnumerator"/> coroutine when the effect starts.
-        /// </summary>
-        public virtual IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) { yield break; }
-        /// <summary>
-        /// Use this callback to do something when the effect ends.
-        /// </summary>
-        public virtual void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) { }
+        public virtual async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token) { await Task.CompletedTask; return; }
 #endif
     }
 }

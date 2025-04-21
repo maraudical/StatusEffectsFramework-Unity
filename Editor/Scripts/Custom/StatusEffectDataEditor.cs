@@ -14,23 +14,6 @@ namespace StatusEffects.Inspector
     internal class StatusEffectDataEditor : Editor
     {
         public VisualTreeAsset VisualTree;
-        public PropertyField AutomaticallyAddToDatabase;
-        public HelpBox BaseValueError;
-        public PropertyField BaseValue;
-        public ToggleButtonGroup OptionalFieldToggles;
-        public List<PropertyField> OptionalFields;
-        public PropertyField AllowEffectStacking;
-        public PropertyField NonStackingBehaviour;
-        public PropertyField MaxStacks;
-        public HelpBox ConditionsWarning;
-        public ListView ConditionsList;
-        public ListView ModulesList;
-
-        private SerializedProperty m_BaseValue;
-        private List<SerializedProperty> m_OptionalProperties;
-        private SerializedProperty m_AllowEffectStacking;
-        private SerializedProperty m_Conditions;
-        private SerializedProperty m_Modules;
 
         private StatusEffectDatabase m_Database;
         private StatusEffectData m_Data;
@@ -79,11 +62,11 @@ namespace StatusEffects.Inspector
 
             VisualTree.CloneTree(root);
 
-            AutomaticallyAddToDatabase = root.Q<PropertyField>("automatically-add-to-database");
-            BaseValueError = new HelpBox() { text = "Base value cannot be 0!", messageType = HelpBoxMessageType.Error };
-            BaseValue = root.Q<PropertyField>("base-value");
-            OptionalFieldToggles = root.Q<ToggleButtonGroup>("optional-field-toggles");
-            OptionalFields = new()
+            var automaticallyAddToDatabase = root.Q<PropertyField>("automatically-add-to-database");
+            var baseValueError = new HelpBox() { text = "Base value cannot be 0!", messageType = HelpBoxMessageType.Error };
+            var baseValue = root.Q<PropertyField>("base-value");
+            var optionalFieldToggles = root.Q<ToggleButtonGroup>("optional-field-toggles");
+            List<PropertyField> optionalFields = new()
             {
                 root.Q<PropertyField>("icon"),
                 root.Q<PropertyField>("color"),
@@ -91,18 +74,18 @@ namespace StatusEffects.Inspector
                 root.Q<PropertyField>("acronym"),
                 root.Q<PropertyField>("description")
             };
-            AllowEffectStacking = root.Q<PropertyField>("allow-effect-stacking");
-            NonStackingBehaviour = root.Q<PropertyField>("non-stacking-behaviour");
-            MaxStacks = root.Q<PropertyField>("max-stacks");
-            ConditionsWarning = new HelpBox() { text = "Do not recursively add status datas! " +
-                                                       "Avoid adding a status data to itself! " +
-                                                       "Make sure there aren't two that add each other!", 
-                                                messageType = HelpBoxMessageType.Warning };
-            ConditionsList = root.Q<ListView>("conditions-list");
-            ModulesList = root.Q<ListView>("modules-list");
+            var allowEffectStacking = root.Q<PropertyField>("allow-effect-stacking");
+            var nonStackingBehaviour = root.Q<PropertyField>("non-stacking-behaviour");
+            var maxStacks = root.Q<PropertyField>("max-stacks");
+            var ConditionsWarning = new HelpBox() { text = "Do not recursively add status datas! " +
+                                                           "Avoid adding a status data to itself! " +
+                                                           "Make sure there aren't two that add each other!", 
+                                                    messageType = HelpBoxMessageType.Warning };
+            var conditionsList = root.Q<ListView>("conditions-list");
+            var modulesList = root.Q<ListView>("modules-list");
 
-            m_BaseValue = serializedObject.FindProperty($"m_{nameof(StatusEffectData.BaseValue)}");
-            m_OptionalProperties = new()
+            var baseValueProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.BaseValue)}");
+            List<SerializedProperty> optionalProperties = new()
             {
                 serializedObject.FindProperty("m_EnableIcon"),
                 serializedObject.FindProperty("m_EnableColor"),
@@ -110,49 +93,49 @@ namespace StatusEffects.Inspector
                 serializedObject.FindProperty("m_EnableAcronym"),
                 serializedObject.FindProperty("m_EnableDescription"),
             };
-            m_AllowEffectStacking = serializedObject.FindProperty($"m_{nameof(StatusEffectData.AllowEffectStacking)}");
-            m_Conditions = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Conditions)}");
-            m_Modules = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Modules)}");
+            var allowEffectStackingProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.AllowEffectStacking)}");
+            var conditionsProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Conditions)}");
+            var modulesProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Modules)}");
 
-            AutomaticallyAddToDatabase.RegisterCallback<ChangeEvent<bool>>(AutomaticallyAddToDatabaseChanged);
+            automaticallyAddToDatabase.RegisterCallback<ChangeEvent<bool>>(AutomaticallyAddToDatabaseChanged);
             
-            root.Q("base-value-error").Add(BaseValueError);
+            root.Q("base-value-error").Add(baseValueError);
 
             BaseValueChanged(default);
-            BaseValue.RegisterValueChangeCallback(BaseValueChanged);
+            baseValue.RegisterValueChangeCallback(BaseValueChanged);
 
             int bitMask = 0;
-            for (int i = 0; i < m_OptionalProperties.Count; i++)
+            for (int i = 0; i < optionalProperties.Count; i++)
             {
-                bool value = m_OptionalProperties[i].boolValue;
+                bool value = optionalProperties[i].boolValue;
                 bitMask |= value ? 1 << i : 0;
-                OptionalFields[i].style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+                optionalFields[i].style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
             }
-            OptionalFieldToggles.SetValueWithoutNotify(new ToggleButtonGroupState(Convert.ToUInt64(bitMask), m_OptionalProperties.Count));
-            OptionalFieldToggles.RegisterValueChangedCallback(OptionalFieldTogglesChanged);
+            optionalFieldToggles.SetValueWithoutNotify(new ToggleButtonGroupState(Convert.ToUInt64(bitMask), optionalProperties.Count));
+            optionalFieldToggles.RegisterValueChangedCallback(OptionalFieldTogglesChanged);
 
             AllowEffectStackingChanged(default);
-            AllowEffectStacking.RegisterValueChangeCallback(AllowEffectStackingChanged);
+            allowEffectStacking.RegisterValueChangeCallback(AllowEffectStackingChanged);
 
             root.Q("conditions-warning").Add(ConditionsWarning);
 
             ConditionChanged(default);
-            ConditionsList.makeItem = () =>
+            conditionsList.makeItem = () =>
             {
                 return new PropertyField();
             };
-            ConditionsList.bindItem = (existingElement, index) =>
+            conditionsList.bindItem = (existingElement, index) =>
             {
                 var propertyField = existingElement as PropertyField;
-                propertyField.BindProperty(m_Conditions.FindPropertyRelative($"Array.data[{index}]"));
+                propertyField.BindProperty(conditionsProperty.FindPropertyRelative($"Array.data[{index}]"));
                 propertyField.RegisterValueChangeCallback(ConditionChanged);
             };
 
             bool isPlaying = EditorApplication.isPlaying;
-            ModulesList.enabledSelf = !isPlaying;
-            ModulesList.showAddRemoveFooter = !isPlaying;
-            ModulesList.onAdd += ModulesAdded;
-            ModulesList.itemsRemoved += ModulesRemoved;
+            modulesList.SetEnabled(!isPlaying);
+            modulesList.showAddRemoveFooter = !isPlaying;
+            modulesList.onAdd += ModulesAdded;
+            modulesList.itemsRemoved += ModulesRemoved;
 
             return root;
 
@@ -183,7 +166,7 @@ namespace StatusEffects.Inspector
 
             void BaseValueChanged(SerializedPropertyChangeEvent changeEvent)
             {
-                BaseValueError.style.display = m_BaseValue.floatValue == 0 ? DisplayStyle.Flex : DisplayStyle.None;
+                baseValueError.style.display = baseValueProperty.floatValue == 0 ? DisplayStyle.Flex : DisplayStyle.None;
             }
 
             void OptionalFieldTogglesChanged(ChangeEvent<ToggleButtonGroupState> changeEvent)
@@ -191,18 +174,18 @@ namespace StatusEffects.Inspector
                 for (int i = 0; i < changeEvent.newValue.length; i++)
                 {
                     bool value = changeEvent.newValue[i];
-                    OptionalFields[i].style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
-                    m_OptionalProperties[i].boolValue = value;
+                    optionalFields[i].style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+                    optionalProperties[i].boolValue = value;
                 }
 
                 serializedObject.ApplyModifiedProperties();
             }
-
+            
             void AllowEffectStackingChanged(SerializedPropertyChangeEvent changeEvent)
             {
-                bool multipleValues = m_AllowEffectStacking.hasMultipleDifferentValues;
-                NonStackingBehaviour.style.display = !m_AllowEffectStacking.boolValue && !multipleValues ? DisplayStyle.Flex : DisplayStyle.None;
-                MaxStacks.style.display = m_AllowEffectStacking.boolValue && !multipleValues ? DisplayStyle.Flex : DisplayStyle.None;
+                bool multipleValues = allowEffectStackingProperty.hasMultipleDifferentValues;
+                nonStackingBehaviour.style.display = !allowEffectStackingProperty.boolValue && !multipleValues ? DisplayStyle.Flex : DisplayStyle.None;
+                maxStacks.style.display = allowEffectStackingProperty.boolValue && !multipleValues ? DisplayStyle.Flex : DisplayStyle.None;
             }
 
             void ConditionChanged(SerializedPropertyChangeEvent changeEvent)
@@ -211,7 +194,7 @@ namespace StatusEffects.Inspector
 
                 m_Data = target as StatusEffectData;
 
-                for (int i = 0; i < m_Conditions.arraySize; i++)
+                for (int i = 0; i < conditionsProperty.arraySize; i++)
                 {
                     m_Condition = m_Data.Conditions.ElementAtOrDefault(i);
 

@@ -2,6 +2,7 @@
 using UnityEditor;
 using StatusEffects.Example;
 using StatusEffects.Example.Inspector;
+using UnityEngine.UIElements;
 
 namespace StatusEffects.NetCode.GameObjects.Example.Inspector
 {
@@ -9,9 +10,9 @@ namespace StatusEffects.NetCode.GameObjects.Example.Inspector
     [CanEditMultipleObjects]
     public class NetworkExamplePlayerEditor : Editor
     {
-        public override void OnInspectorGUI()
+        public override VisualElement CreateInspectorGUI()
         {
-            ExamplePlayerInspector.DrawInspector(base.OnInspectorGUI, target as IExamplePlayer);
+            return ExamplePlayerInspector.DrawInspector(serializedObject, target as IExamplePlayer); ;
         }
     }
 }

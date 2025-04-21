@@ -1,11 +1,9 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
 using System.Threading;
-#elif UNITY_2023_1_OR_NEWER
+#else
 using StatusEffects.Extensions;
 using System.Threading;
-#else
-using System.Collections;
 #endif
 using System.Collections.Generic;
 using System.Linq;
@@ -138,12 +136,8 @@ namespace StatusEffects
             if (statusEffect == null || m_Effects == null)
                 return;
             // Stop the timer
-#if UNITASK || UNITY_2023_1_OR_NEWER
             statusEffect.TimedTokenSource?.Cancel();
-#else
-            if (statusEffect.TimedCoroutine != null)
-                StopCoroutine(statusEffect.TimedCoroutine);
-#endif
+
             // Remove the effects for a given monobehaviour.
             m_Effects.Remove(statusEffect.GetInstanceID());
 #if UNITY_EDITOR
@@ -299,45 +293,33 @@ namespace StatusEffects
 #if UNITASK
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
             TimedEffect(statusEffect.TimedTokenSource.Token).Forget();
-#elif UNITY_2023_1_OR_NEWER
+#else
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
             _ = TimedEffect(statusEffect.TimedTokenSource.Token);
-#else
-            statusEffect.TimedCoroutine = StartCoroutine(TimedEffect());
 #endif
             // Timer method
 #if UNITASK
             async UniTask TimedEffect(CancellationToken token)
-#elif UNITY_2023_1_OR_NEWER
-            async Awaitable TimedEffect(CancellationToken token)
 #else
-            IEnumerator TimedEffect()
+            async Awaitable TimedEffect(CancellationToken token)
 #endif
             {
                 float startTime = Time.time;
                 float startDuration = statusEffect.Duration;
                 // Basic decreasing timer.
-                while (statusEffect.Duration > 0
-#if UNITASK || UNITY_2023_1_OR_NEWER
-                   && !token.IsCancellationRequested
-#endif
-                   )
+                while (statusEffect.Duration > 0 && !token.IsCancellationRequested)
                 {
 #if UNITASK
                     await UniTask.NextFrame(token);
-#elif UNITY_2023_1_OR_NEWER
-                    await Awaitable.NextFrameAsync(token);
 #else
-                    yield return null;
+                    await Awaitable.NextFrameAsync(token);;
 #endif
                     statusEffect.Duration = startDuration - Time.time + startTime;
                 }
-#if UNITASK || UNITY_2023_1_OR_NEWER
-                if (!token.IsCancellationRequested)
-#endif
                 // Once it has ended remove the given effect.
-                if (remove)
-                    RemoveStatusEffect(statusEffect);
+                if (!token.IsCancellationRequested)
+                    if (remove)
+                        RemoveStatusEffect(statusEffect);
             }
         }
 
@@ -380,28 +362,22 @@ namespace StatusEffects
 #if UNITASK
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
             TimedEffect(statusEffect.TimedTokenSource.Token).Forget();
-#elif UNITY_2023_1_OR_NEWER
+#else
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
             _ = TimedEffect(statusEffect.TimedTokenSource.Token);
-#else
-            statusEffect.TimedCoroutine = StartCoroutine(TimedEffect());
 #endif
             // Timer method
 #if UNITASK
             async UniTask TimedEffect(CancellationToken token)
-#elif UNITY_2023_1_OR_NEWER
-            async Awaitable TimedEffect(CancellationToken token)
 #else
-            IEnumerator TimedEffect()
+            async Awaitable TimedEffect(CancellationToken token)
 #endif
             {
                 // Wait until the predicate is true.
 #if UNITASK
                 await UniTask.WaitUntil(predicate, cancellationToken: token);
-#elif UNITY_2023_1_OR_NEWER
-                await AwaitableExtensions.WaitUntil(predicate, token);
 #else
-                yield return new WaitUntil(predicate);
+                await AwaitableExtensions.WaitUntil(predicate, token);
 #endif
                 // Remove the given effect.
                 if (remove)

@@ -220,7 +220,6 @@ namespace StatusEffects.NetCode.GameObjects
                 if (!CanClientWrite(NetworkStatusManager.NetworkManager.LocalClientId))
                 {
                     m_BaseValue = m_PreviousBaseValue;
-                    LogWritePermissionError(NetworkStatusManager);
                     return;
                 }
 

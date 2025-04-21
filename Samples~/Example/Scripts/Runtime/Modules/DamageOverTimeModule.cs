@@ -1,11 +1,7 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
-using System.Threading;
-#elif UNITY_2023_1_OR_NEWER
-using System.Threading;
-#else
-using System.Collections;
 #endif
+using System.Threading;
 using UnityEngine;
 using StatusEffects.Example;
 #if ENTITIES
@@ -44,7 +40,7 @@ namespace StatusEffects.Modules
     {
 #endif
 #if UNITASK
-        public override async UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
+        public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
             DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
 
@@ -57,7 +53,7 @@ namespace StatusEffects.Modules
                     await UniTask.WaitForSeconds(damageOverTimeInstance.IntervalSeconds);
                 }
         }
-#elif UNITY_2023_1_OR_NEWER
+#else
         public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
             DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
@@ -71,22 +67,6 @@ namespace StatusEffects.Modules
                     await Awaitable.WaitForSecondsAsync(damageOverTimeInstance.IntervalSeconds);
                 }
         }
-#else
-        public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
-        {
-            DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
-
-            if (manager.TryGetComponent(out IExamplePlayer player))
-                for (; ; )
-                {
-                    // Reduce health based on the Statu Effect base value
-                    player.Health -= statusEffect.Data.BaseValue * statusEffect.Stacks;
-                    // Wait for the interval before applying the damage again
-                    yield return new WaitForSeconds(damageOverTimeInstance.IntervalSeconds);
-                }
-        }
-
-        public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) { }
 #endif
     }
 }

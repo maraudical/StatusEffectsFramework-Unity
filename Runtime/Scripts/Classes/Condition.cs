@@ -1,9 +1,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.Serialization;
-#if NETCODE && ADDRESSABLES && (UNITY_2023_1_OR_NEWER || UNITASK)
-using UnityEngine.AddressableAssets;
-#endif
 
 namespace StatusEffects
 {

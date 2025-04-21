@@ -281,7 +281,6 @@ namespace StatusEffects.NetCode.GameObjects
                 if (!CanClientWrite(NetworkStatusManager.NetworkManager.LocalClientId))
                 {
                     m_BaseValue = m_PreviousBaseValue;
-                    LogWritePermissionError(NetworkStatusManager);
                     return;
                 }
 
@@ -306,7 +305,6 @@ namespace StatusEffects.NetCode.GameObjects
                 if (!CanClientWrite(NetworkStatusManager.NetworkManager.LocalClientId))
                 {
                     m_SignProtected = m_PreviousSignProtected;
-                    LogWritePermissionError(NetworkStatusManager);
                     return;
                 }
 

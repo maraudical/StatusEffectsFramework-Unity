@@ -3,7 +3,6 @@ using System.IO;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
 using System.Linq;
-using static UnityEngine.Rendering.DebugUI;
 using System.Threading.Tasks;
 
 
@@ -21,7 +20,7 @@ namespace StatusEffects
         public int Count => Values.Count;
 
         public SerializedDictionary<Hash128, StatusEffectData> Values;
-
+        
 #if UNITY_EDITOR
         [SerializeField, HideInInspector] internal SerializedDictionary<Hash128, StatusEffectData> HiddenValues;
 

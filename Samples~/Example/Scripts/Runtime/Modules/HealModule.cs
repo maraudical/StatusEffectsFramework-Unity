@@ -1,18 +1,15 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
-using System.Threading;
-#elif UNITY_2023_1_OR_NEWER
-using StatusEffects.Extensions;
-using System.Threading;
 #else
-using System.Collections;
+using StatusEffects.Extensions;
 #endif
-using UnityEngine;
-using StatusEffects.Example;
 #if ENTITIES
 using StatusEffects.Entities;
 using Unity.Entities;
 #endif
+using System.Threading;
+using UnityEngine;
+using StatusEffects.Example;
 
 namespace StatusEffects.Modules
 {
@@ -31,7 +28,7 @@ namespace StatusEffects.Modules
     {
 #endif
 #if UNITASK
-        public override async UniTask EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
+        public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
             if (!manager.TryGetComponent(out IExamplePlayer player))
                 return;
@@ -49,7 +46,7 @@ namespace StatusEffects.Modules
             // Clamp health after status effect ends
             player.Health = Mathf.Min(player.Health, player.MaxHealth);
         }
-#elif UNITY_2023_1_OR_NEWER
+#else
         public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
             if (!manager.TryGetComponent(out IExamplePlayer player))
@@ -67,27 +64,6 @@ namespace StatusEffects.Modules
                 return;
             // Clamp health after status effect ends
             player.Health = Mathf.Min(player.Health, player.MaxHealth);
-        }
-#else
-        public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
-        {
-            if (manager.TryGetComponent(out IExamplePlayer player))
-            {
-                // Add health according to status effect
-                player.Health += statusEffect.Data.BaseValue;
-                player.Health = Mathf.Min(player.Health, player.MaxHealth);
-
-                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(player, statusEffect, previous, stack);
-            }
-
-            yield return null;
-        }
-
-        public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
-        {
-            if (manager.TryGetComponent(out IExamplePlayer player))
-                // Clamp health after status effect ends
-                player.Health = Mathf.Min(player.Health, player.MaxHealth);                         
         }
 #endif
 
