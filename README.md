@@ -24,6 +24,7 @@
   <img src="https://lh3.googleusercontent.com/d/1i5KJzpKfZPVLDhR9hp_YK5QNYaQVMLOs" height="120" alt="sample_3">
   <img src="https://lh3.googleusercontent.com/d/1OlgaSd-CtsFp2_IMs-vCco6BkUJcknQw" height="120" alt="sample_4">
 </p>
+
 - Easy to implement framework for **any** game
 - **Unlimited** customizability with each effect
 - Float, int, and bool variables that **dynamically** update with effects
