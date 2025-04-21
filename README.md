@@ -20,6 +20,10 @@
 </p><br>
 
 # Features
+<p align="center">
+  <img src="https://lh3.googleusercontent.com/d/1i5KJzpKfZPVLDhR9hp_YK5QNYaQVMLOs" height="120" alt="sample_3">
+  <img src="https://lh3.googleusercontent.com/d/1OlgaSd-CtsFp2_IMs-vCco6BkUJcknQw" height="120" alt="sample_4">
+</p>
 - Easy to implement framework for **any** game
 - **Unlimited** customizability with each effect
 - Float, int, and bool variables that **dynamically** update with effects
@@ -27,11 +31,6 @@
 - Conditional adding/removing when effects are applied in tandem to other effects
 - Create modules to add additional functionality as required
 - Fully compatible with many common packages (see below)
-
-<p align="center">
-  <img src="https://lh3.googleusercontent.com/d/1i5KJzpKfZPVLDhR9hp_YK5QNYaQVMLOs" height="120" alt="sample_3">
-  <img src="https://lh3.googleusercontent.com/d/1OlgaSd-CtsFp2_IMs-vCco6BkUJcknQw" height="120" alt="sample_4">
-</p><br>
 
 # Supported versions
 - Unity 6 or newer
