@@ -1,6 +1,7 @@
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.UIElements;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace StatusEffects.Inspector
@@ -46,6 +47,7 @@ namespace StatusEffects.Inspector
                 baseValue.RegisterValueChangeCallback(BaseValueChanged);
 
             valueLabel.text = valueProperty.displayName;
+            valueLabel.style.unityFontStyleAndWeight = isPlaying ? FontStyle.Bold : FontStyle.Normal;
 
             value.BindProperty(isPlaying ? valueProperty : baseValueProperty);
             value.RegisterCallbackOnce<GeometryChangedEvent>(GeometryChanged);

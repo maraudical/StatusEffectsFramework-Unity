@@ -81,7 +81,7 @@ namespace StatusEffects
         [SerializeField] private ComparableName m_ComparableName;
         [SerializeField] private float m_BaseValue = 1f;
         [SerializeField] private Sprite m_Icon;
-        [SerializeField] private Color m_Color;
+        [SerializeField] private Color m_Color = Color.white;
 #if LOCALIZED
         [SerializeField] private  LocalizedString m_StatusEffectName;
         [SerializeField] private LocalizedString m_Acronym;

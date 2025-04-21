@@ -50,6 +50,7 @@ namespace StatusEffects.Inspector
             baseValue.RegisterValueChangeCallback(BaseValueChanged);
             
             valueLabel.text = valueProperty.displayName;
+            valueLabel.style.unityFontStyleAndWeight = isPlaying ? FontStyle.Bold : FontStyle.Normal;
 
             signProtected.RegisterValueChangeCallback(SignProtectedChanged);
             signProtected.RegisterCallbackOnce<GeometryChangedEvent>(SignProtectedGeometryChanged);

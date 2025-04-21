@@ -15,8 +15,8 @@
 </p><br>
 
 <p align="center">
-  <img src="https://drive.google.com/uc?id=1bUVXb2KGp71c3v7f1Tmcv3sfW2ksJ5Oi" height="400" alt="sample_1">
-  <img src="https://drive.google.com/uc?id=1VFKSCil3bBtSU-83rKXC2W9HEfqWbM2g" height="400" alt="sample_2">
+  <img src="https://lh3.googleusercontent.com/d/1Ey370s3VJhzscF5lsbye_34b_QyBF2hG" height="400" alt="sample_1">
+  <img src="https://lh3.googleusercontent.com/d/1IEHkzuikR0t7cVxs071cd7ODANL6nONd" height="400" alt="sample_2">
 </p><br>
 
 # Features
@@ -27,6 +27,11 @@
 - Conditional adding/removing when effects are applied in tandem to other effects
 - Create modules to add additional functionality as required
 - Fully compatible with many common packages (see below)
+
+<p align="center">
+  <img src="https://lh3.googleusercontent.com/d/1i5KJzpKfZPVLDhR9hp_YK5QNYaQVMLOs" height="200" alt="sample_3">
+  <img src="https://lh3.googleusercontent.com/d/1OlgaSd-CtsFp2_IMs-vCco6BkUJcknQw" height="200" alt="sample_4">
+</p><br>
 
 # Supported versions
 - Unity 6 or newer
