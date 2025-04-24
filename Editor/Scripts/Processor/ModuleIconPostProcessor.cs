@@ -24,7 +24,7 @@ namespace StatusEffects.Inspector
                     if (!scriptText.Contains("namespace StatusEffects.Modules"))
                         continue;
 
-                    if (scriptText.Substring(0, 25).Contains("//#EXCLUDEFROMPROCESSING#"))
+                    if (scriptText.Substring(0, 30).Contains("#EXCLUDEFROMPROCESSING#"))
                         continue;
 
                     if (scriptText.Contains(": ModuleInstance"))

@@ -1,9 +1,11 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
 using System.Threading;
-#else
+#elif UNITY_2023_1_OR_NEWER
 using StatusEffects.Extensions;
 using System.Threading;
+#else
+using System.Collections;
 #endif
 using System.Collections.Generic;
 using System.Linq;
@@ -136,7 +138,12 @@ namespace StatusEffects
             if (statusEffect == null || m_Effects == null)
                 return;
             // Stop the timer
+#if UNITASK || UNITY_2023_1_OR_NEWER
             statusEffect.TimedTokenSource?.Cancel();
+#else
+            if (statusEffect.TimedCoroutine != null)
+                StopCoroutine(statusEffect.TimedCoroutine);
+#endif
 
             // Remove the effects for a given monobehaviour.
             m_Effects.Remove(statusEffect.GetInstanceID());
@@ -293,33 +300,46 @@ namespace StatusEffects
 #if UNITASK
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
             TimedEffect(statusEffect.TimedTokenSource.Token).Forget();
-#else
+#elif UNITY_2023_1_OR_NEWER
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
             _ = TimedEffect(statusEffect.TimedTokenSource.Token);
+#else
+            statusEffect.TimedCoroutine = StartCoroutine(TimedEffect());
 #endif
+
             // Timer method
 #if UNITASK
             async UniTask TimedEffect(CancellationToken token)
-#else
+#elif UNITY_2023_1_OR_NEWER
             async Awaitable TimedEffect(CancellationToken token)
+#else
+            IEnumerator TimedEffect()
 #endif
             {
                 float startTime = Time.time;
                 float startDuration = statusEffect.Duration;
                 // Basic decreasing timer.
-                while (statusEffect.Duration > 0 && !token.IsCancellationRequested)
+                while (statusEffect.Duration > 0
+#if UNITASK || UNITY_2023_1_OR_NEWER
+                   && !token.IsCancellationRequested
+#endif
+                   )
                 {
 #if UNITASK
                     await UniTask.NextFrame(token);
+#elif UNITY_2023_1_OR_NEWER
+                    await Awaitable.NextFrameAsync(token);
 #else
-                    await Awaitable.NextFrameAsync(token);;
+                    yield return null;
 #endif
                     statusEffect.Duration = startDuration - Time.time + startTime;
                 }
                 // Once it has ended remove the given effect.
+#if UNITASK || UNITY_2023_1_OR_NEWER
                 if (!token.IsCancellationRequested)
-                    if (remove)
-                        RemoveStatusEffect(statusEffect);
+#endif
+                if (remove)
+                    RemoveStatusEffect(statusEffect);
             }
         }
 
@@ -362,22 +382,28 @@ namespace StatusEffects
 #if UNITASK
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
             TimedEffect(statusEffect.TimedTokenSource.Token).Forget();
-#else
+#elif UNITY_2023_1_OR_NEWER
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
             _ = TimedEffect(statusEffect.TimedTokenSource.Token);
+#else
+            statusEffect.TimedCoroutine = StartCoroutine(TimedEffect());
 #endif
             // Timer method
 #if UNITASK
             async UniTask TimedEffect(CancellationToken token)
-#else
+#elif UNITY_2023_1_OR_NEWER
             async Awaitable TimedEffect(CancellationToken token)
+#else
+            IEnumerator TimedEffect()
 #endif
             {
                 // Wait until the predicate is true.
 #if UNITASK
                 await UniTask.WaitUntil(predicate, cancellationToken: token);
-#else
+#elif UNITY_2023_1_OR_NEWER
                 await AwaitableExtensions.WaitUntil(predicate, token);
+#else
+                yield return new WaitUntil(predicate);
 #endif
                 // Remove the given effect.
                 if (remove)

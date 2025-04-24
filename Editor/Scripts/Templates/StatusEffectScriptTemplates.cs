@@ -17,8 +17,10 @@ namespace StatusEffects.Templates
                 k_EntityModuleScriptContent
 #elif UNITASK
                 k_UniTaskModuleScriptContent
-#else
+#elif UNITY_2023_1_OR_NEWER
                 k_ModuleScriptContent
+#else
+                k_LegacyModuleScriptContent
 #endif
                 );
         }
@@ -66,6 +68,24 @@ namespace StatusEffects.Templates
             return content;
         }
 
+        const string k_UniTaskModuleScriptContent =
+@"using Cysharp.Threading.Tasks;
+using System.Threading;
+using UnityEngine;
+
+namespace StatusEffects.Modules
+{
+    [CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
+    //[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
+    public class #SCRIPTNAME# : Module
+    {
+        public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
+        {
+            await UniTask.CompletedTask;
+        }
+    }
+}";
+
         const string k_ModuleScriptContent =
 @"using System.Threading;
 using System.Threading.Tasks;
@@ -84,9 +104,8 @@ namespace StatusEffects.Modules
     }
 }";
 
-        const string k_UniTaskModuleScriptContent =
-@"using Cysharp.Threading.Tasks;
-using System.Threading;
+        const string k_LegacyModuleScriptContent =
+@"using System.Collections;
 using UnityEngine;
 
 namespace StatusEffects.Modules
@@ -95,9 +114,14 @@ namespace StatusEffects.Modules
     //[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
     public class #SCRIPTNAME# : Module
     {
-        public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
+        public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
         {
-            await UniTask.CompletedTask;
+            yield break;
+        }
+
+        public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
+        {
+            
         }
     }
 }";

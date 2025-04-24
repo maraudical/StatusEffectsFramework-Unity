@@ -39,7 +39,7 @@
 # Other support
 - Unity - Localization
 - Unity - Awaitable
-- Unity - Netcode for GameObjects (1.8.0+)
+- Unity - Netcode for GameObjects
 - Unity - Entities
 - Unity - Netcode for Entities
 - Cysharp - UniTask

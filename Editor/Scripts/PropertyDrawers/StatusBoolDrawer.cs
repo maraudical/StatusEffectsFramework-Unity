@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -122,6 +123,82 @@ namespace StatusEffects.Inspector
                     errorIcon.style.display = DisplayStyle.None;
                 }
             }
+        }
+
+        private SerializedProperty m_StatusName;
+        private SerializedProperty m_BaseValue;
+        private SerializedProperty m_Value;
+
+        private readonly float m_FieldSize = EditorGUIUtility.singleLineHeight;
+        private readonly float m_Padding = EditorGUIUtility.standardVerticalSpacing;
+        private const float k_TopFix = 0.035f;
+        private const int k_FieldCount = 4;
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            m_StatusName = property.FindPropertyRelative($"m_{nameof(StatusFloat.StatusName)}");
+            m_BaseValue = property.FindPropertyRelative($"m_{nameof(StatusFloat.BaseValue)}");
+            m_Value = property.FindPropertyRelative($"m_{nameof(StatusFloat.Value)}");
+
+            position.height = m_FieldSize;
+            position.y -= k_TopFix;
+            float width = position.width;
+            position.width = property.isExpanded ? width : EditorGUIUtility.labelWidth;
+
+            GUI.color = !m_StatusName.objectReferenceValue && !property.isExpanded ? Color.red : Color.white;
+            property.isExpanded = EditorGUI.Foldout(position, property.isExpanded, label, true);
+            GUI.color = Color.white;
+
+            position.width = width;
+
+            EditorGUI.BeginProperty(position, label, property);
+
+            int indent = EditorGUI.indentLevel;
+
+            if (property.isExpanded)
+            {
+                EditorGUI.indentLevel = indent + 1;
+                position.y += m_FieldSize + m_Padding;
+                GUI.color = !m_StatusName.objectReferenceValue ? Color.red : Color.white;
+                EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying);
+                EditorGUI.PropertyField(position, m_StatusName);
+                EditorGUI.EndDisabledGroup();
+                GUI.color = Color.white;
+                position.y += m_FieldSize + m_Padding;
+
+                EditorGUI.BeginChangeCheck();
+                EditorGUI.PropertyField(position, m_BaseValue);
+                if (EditorGUI.EndChangeCheck() && EditorApplication.isPlaying)
+                {
+                    MethodInfo baseValueUpdate = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+                    foreach (var statusVariable in property.serializedObject.targetObjects)
+                        baseValueUpdate.Invoke(m_Value.GetParent(statusVariable), null);
+                }
+                position.y += m_FieldSize + m_Padding;
+
+                Rect propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(m_Value.displayName));
+                EditorGUI.indentLevel = indent;
+
+                EditorGUI.BeginDisabledGroup(true);
+                EditorGUI.PropertyField(propertyPosition, EditorApplication.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
+                EditorGUI.EndDisabledGroup();
+            }
+            else
+            {
+                EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying);
+                Rect propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(" "));
+                EditorGUI.PropertyField(propertyPosition, EditorApplication.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
+                EditorGUI.EndDisabledGroup();
+            }
+
+            EditorGUI.indentLevel = indent;
+
+            EditorGUI.EndProperty();
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return (m_FieldSize + m_Padding) * (property.isExpanded ? k_FieldCount : 1) - m_Padding;
         }
     }
 }

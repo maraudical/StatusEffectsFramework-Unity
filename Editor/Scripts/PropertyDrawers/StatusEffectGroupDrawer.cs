@@ -42,5 +42,24 @@ namespace StatusEffects.Inspector
                 Selection.activeObject = StatusEffectSettings.GetOrCreateSettings();
             }
         }
+
+        private SerializedProperty m_Value;
+        private StatusEffectSettings m_Settings;
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            if (!m_Settings)
+                m_Settings = StatusEffectSettings.GetOrCreateSettings();
+
+            m_Value = property.FindPropertyRelative(nameof(StatusEffectGroup.Value));
+            EditorGUI.BeginProperty(position, label, property);
+            bool restoreShowMixedValue = EditorGUI.showMixedValue;
+            EditorGUI.showMixedValue = m_Value.hasMultipleDifferentValues;
+            int maskValue = EditorGUI.MaskField(position, label, m_Value.intValue, m_Settings.Groups.Where(g => !string.IsNullOrEmpty(g)).ToArray());
+            if (maskValue != m_Value.intValue)
+                m_Value.intValue = maskValue;
+            EditorGUI.showMixedValue = restoreShowMixedValue;
+            EditorGUI.EndProperty();
+        }
     }
 }

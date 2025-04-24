@@ -1,9 +1,11 @@
 #if UNITASK
 using System.Threading;
 using Cysharp.Threading.Tasks;
-#else
+#elif UNITY_2023_1_OR_NEWER
 using System.Threading;
 using System.Threading.Tasks;
+#else
+using System.Collections;
 #endif
 using UnityEngine;
 
@@ -22,7 +24,7 @@ namespace StatusEffects.Modules
         /// check if it is null.
         /// </summary>
         public virtual async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token) { await UniTask.CompletedTask; }
-#else
+#elif UNITY_2023_1_OR_NEWER
         /// <summary>
         /// This will run as an <see cref="Awaitable"/> when the effect starts. 
         /// Note that you will need to implement the token cancellation in your 
@@ -33,6 +35,15 @@ namespace StatusEffects.Modules
         /// check if it is null.
         /// </summary>
         public virtual async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token) { await Task.CompletedTask; return; }
+#else
+        /// <summary>
+        /// This will run as an <see cref="IEnumerator"/> coroutine when the effect starts.
+        /// </summary>
+        public virtual IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) { yield break; }
+        /// <summary>
+        /// Use this callback to do something when the effect ends.
+        /// </summary>
+        public virtual void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) { }
 #endif
     }
 }

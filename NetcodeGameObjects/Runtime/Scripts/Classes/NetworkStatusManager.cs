@@ -1,13 +1,17 @@
 #if NETCODE && COLLECTIONS
 #if UNITASK
 using Cysharp.Threading.Tasks;
+using System.Threading;
+#elif UNITY_2023_1_OR_NEWER
+using System.Threading;
+#else
+using System.Collections;
 #endif
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 
 using EventType = Unity.Netcode.NetworkListEvent<StatusEffects.NetCode.GameObjects.NetworkStatusEffect>.EventType;
@@ -215,26 +219,36 @@ namespace StatusEffects.NetCode.GameObjects
 #if UNITASK
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
             TimedEffect(statusEffect.TimedTokenSource.Token).Forget();
-#else
+#elif UNITY_2023_1_OR_NEWER
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
             _ = TimedEffect(statusEffect.TimedTokenSource.Token);
+#else
+            statusEffect.TimedCoroutine = StartCoroutine(TimedEffect());
 #endif
             // Timer method
 #if UNITASK
             async UniTask TimedEffect(CancellationToken token)
-#else
+#elif UNITY_2023_1_OR_NEWER
             async Awaitable TimedEffect(CancellationToken token)
+#else
+            IEnumerator TimedEffect()
 #endif
             {
                 float startTime = NetworkManager.ServerTime.TimeAsFloat;
                 float startDuration = statusEffect.Duration;
                 // Basic decreasing timer.
-                while (statusEffect.Duration > 0 && !token.IsCancellationRequested)
+                while (statusEffect.Duration > 0
+#if UNITASK || UNITY_2023_1_OR_NEWER
+                   && !token.IsCancellationRequested
+#endif
+                   )
                 {
 #if UNITASK
                     await UniTask.NextFrame(token);
-#else
+#elif UNITY_2023_1_OR_NEWER
                     await Awaitable.NextFrameAsync(token);
+#else
+                    yield return null;
 #endif
                     statusEffect.Duration = startDuration - NetworkManager.ServerTime.TimeAsFloat + startTime;
                 }
@@ -243,9 +257,11 @@ namespace StatusEffects.NetCode.GameObjects
                     return;
 
                 // Once it has ended remove the given effect.
+#if UNITASK || UNITY_2023_1_OR_NEWER
                 if (!token.IsCancellationRequested)
-                    if (remove)
-                        RemoveStatusEffect(statusEffect);
+#endif
+                if (remove)
+                    RemoveStatusEffect(statusEffect);
             }
         }
         #endregion

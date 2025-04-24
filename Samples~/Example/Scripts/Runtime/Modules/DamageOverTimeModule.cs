@@ -1,7 +1,11 @@
 #if UNITASK
 using Cysharp.Threading.Tasks;
-#endif
 using System.Threading;
+#elif UNITY_2023_1_OR_NEWER
+using System.Threading;
+#else
+using System.Collections;
+#endif
 using UnityEngine;
 using StatusEffects.Example;
 #if ENTITIES
@@ -53,7 +57,7 @@ namespace StatusEffects.Modules
                     await UniTask.WaitForSeconds(damageOverTimeInstance.IntervalSeconds);
                 }
         }
-#else
+#elif UNITY_2023_1_OR_NEWER
         public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
             DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
@@ -67,6 +71,22 @@ namespace StatusEffects.Modules
                     await Awaitable.WaitForSecondsAsync(damageOverTimeInstance.IntervalSeconds);
                 }
         }
+#else
+        public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
+        {
+            DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
+
+            if (manager.TryGetComponent(out IExamplePlayer player))
+                for (; ; )
+                {
+                    // Reduce health based on the Statu Effect base value
+                    player.Health -= statusEffect.Data.BaseValue * statusEffect.Stacks;
+                    // Wait for the interval before applying the damage again
+                    yield return new WaitForSeconds(damageOverTimeInstance.IntervalSeconds);
+                }
+        }
+
+        public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) { }
 #endif
     }
 }
