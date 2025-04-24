@@ -1,15 +1,18 @@
+#if UNITY_2023_1_OR_NEWER
 using System.Collections.Generic;
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
+#endif
 using System.Linq;
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(StatusEffectGroup))]
     internal class StatusEffectGroupDrawer : PropertyDrawer
     {
+#if UNITY_2023_1_OR_NEWER
         public VisualTreeAsset VisualTree;
 
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
@@ -43,6 +46,7 @@ namespace StatusEffects.Inspector
             }
         }
 
+#endif
         private SerializedProperty m_Value;
         private StatusEffectSettings m_Settings;
 

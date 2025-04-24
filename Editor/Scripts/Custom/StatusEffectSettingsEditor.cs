@@ -44,10 +44,10 @@ namespace StatusEffects.Inspector
         {
             // First parameter is the path in the Settings window.
             // Second parameter is the scope of this setting: it only appears in the Project Settings window.
-            var provider = new SettingsProvider("Project/StatusEffectSettings", SettingsScope.Project)
+            var provider = new SettingsProvider("Project/StatusEffectFramework", SettingsScope.Project)
             {
                 // By default the last token of the path is used as display name if no label is provided.
-                label = "Status Effect Settings",
+                label = "Status Effect Framework",
                 // activateHandler is called when the user clicks on the Settings item in the Settings window.
                 activateHandler = (searchContext, root) =>
                 {
@@ -57,7 +57,7 @@ namespace StatusEffects.Inspector
                 },
 
                 // Populate the search keywords to enable smart search filtering and label highlighting:
-                keywords = new HashSet<string>(new[] { "Status", "Effect", "Group", "Stack" })
+                keywords = new HashSet<string>(new[] { "Status", "Effect", "Group", "Stack", "Framework" })
             };
 
             return provider;

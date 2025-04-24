@@ -98,24 +98,24 @@ namespace StatusEffects.Example
             PredicateBool = false;
         }
         // Default adding of status effect is infinite.
-        public void DebugAddStatusEffect() { StatusManager.AddStatusEffect(StatusEffectData, Stack); }
+        public void DebugAddStatusEffect() { StatusManager?.AddStatusEffect(StatusEffectData, Stack); }
         // But you can set an effect duration.
-        public void DebugAddStatusEffectTimed() { StatusManager.AddStatusEffect(StatusEffectData, Duration, Stack); }
+        public void DebugAddStatusEffectTimed() { StatusManager?.AddStatusEffect(StatusEffectData, Duration, Stack); }
         // Additionally you can have the duration update of System.Action
         // events where each invoke reduces duration by 1. This could be used
         // for games that are more round based or don't work in realtime.
-        public void DebugAddStatusEffectTimedEvent() { StatusManager.AddStatusEffect(StatusEffectData, Duration, Event, 1, Stack); }
+        public void DebugAddStatusEffectTimedEvent() { StatusManager?.AddStatusEffect(StatusEffectData, Duration, Event, 1, Stack); }
         // Just calls the example action.
         public void InvokeEvent() { Event?.Invoke(); }
         // Set a predicate that when true disables the effect. In this example
         // if _predicateBool is set to true the effect is removed.
-        public void DebugAddStatusEffectPredicate() { StatusManager.AddStatusEffect(StatusEffectData, () => PredicateBool, Stack); }
+        public void DebugAddStatusEffectPredicate() { StatusManager?.AddStatusEffect(StatusEffectData, () => PredicateBool, Stack); }
         // Default removing of a status effect. There are multiple overrides
         // such as using status effect string names or the StatusEffect
         // reference itself instead.
-        public void DebugRemoveStatusEffect() { StatusManager.RemoveStatusEffect(StatusEffectData, Stack); }
+        public void DebugRemoveStatusEffect() { StatusManager?.RemoveStatusEffect(StatusEffectData, Stack); }
         // Removes all effects that fall under a specific group. Additionally
         // you can remove the group parameter and just remove all effects.
-        public void DebugRemoveStatusEffectGroup() { StatusManager.RemoveStatusEffect(Group); }
+        public void DebugRemoveStatusEffectGroup() { StatusManager?.RemoveStatusEffect(Group); }
     }
 }

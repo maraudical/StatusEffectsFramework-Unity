@@ -34,7 +34,8 @@
 - Fully compatible with many common packages (see below)
 
 # Supported versions
-- Unity 6 or newer
+- Unity 2021.3 or newer
+- Unity 6 for full feature support
 
 # Other support
 - Unity - Localization

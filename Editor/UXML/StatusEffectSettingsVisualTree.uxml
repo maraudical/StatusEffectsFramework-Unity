@@ -1,6 +1,6 @@
-<engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle" />
-    <engine:Label text="Status Effect Settings" style="margin-top: 2px; font-size: 19px; -unity-font-style: bold;" />
-    <engine:VisualElement name="top-spacer" style="flex-grow: 0; min-height: 8px;" />
-    <engine:ListView show-border="true" name="group-list" show-alternating-row-backgrounds="All" virtualization-method="DynamicHeight" show-foldout-header="true" header-title="List View" allow-add="false" allow-remove="false" show-add-remove-footer="false" show-bound-collection-size="false" selection-type="None" />
-</engine:UXML>
+    <ui:Label text="Status Effect Framework" style="margin-top: 2px; font-size: 19px; -unity-font-style: bold;" />
+    <ui:VisualElement name="top-spacer" style="flex-grow: 0; min-height: 8px;" />
+    <ui:ListView show-border="true" name="group-list" show-alternating-row-backgrounds="All" virtualization-method="DynamicHeight" show-foldout-header="true" header-title="List View" allow-add="false" allow-remove="false" show-add-remove-footer="false" show-bound-collection-size="false" selection-type="None" />
+</ui:UXML>

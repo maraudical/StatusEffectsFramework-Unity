@@ -11,7 +11,9 @@ namespace StatusEffects.Inspector
         {
             VisualElement root = new();
 
-            root.Add(new PropertyField() { bindingPath = $"m_{nameof(Name.Id)}", enabledSelf = false });
+            var id = new PropertyField() { bindingPath = $"m_{nameof(Name.Id)}" };
+            id.SetEnabled(false);
+            root.Add(id);
 
             return root;
         }

@@ -1,4 +1,5 @@
 //#EXCLUDEFROMPROCESSING#
+#if UNITY_2023_1_OR_NEWER
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -17,10 +18,8 @@ namespace StatusEffects.Templates
                 k_EntityModuleScriptContent
 #elif UNITASK
                 k_UniTaskModuleScriptContent
-#elif UNITY_2023_1_OR_NEWER
-                k_ModuleScriptContent
 #else
-                k_LegacyModuleScriptContent
+                k_ModuleScriptContent
 #endif
                 );
         }
@@ -104,28 +103,6 @@ namespace StatusEffects.Modules
     }
 }";
 
-        const string k_LegacyModuleScriptContent =
-@"using System.Collections;
-using UnityEngine;
-
-namespace StatusEffects.Modules
-{
-    [CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
-    //[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
-    public class #SCRIPTNAME# : Module
-    {
-        public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
-        {
-            yield break;
-        }
-
-        public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
-        {
-            
-        }
-    }
-}";
-
         const string k_EntityModuleScriptContent =
 @"using StatusEffects.Entities;
 using Unity.Entities;
@@ -164,3 +141,4 @@ namespace StatusEffects.Modules
 }";
     }
 }
+#endif

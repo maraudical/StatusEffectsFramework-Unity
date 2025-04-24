@@ -1,9 +1,11 @@
+#if UNITY_2023_1_OR_NEWER
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
+#endif
 using System;
 using System.Reflection;
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace StatusEffects.Inspector
 {
@@ -11,8 +13,6 @@ namespace StatusEffects.Inspector
     [CustomPropertyDrawer(typeof(StatusInt))]
     internal class StatusNumberDrawer : PropertyDrawer
     {
-        public VisualTreeAsset VisualTree;
-
         private MethodInfo m_MethodInfo;
 
         private const string k_SignProtectedTooltip =
@@ -21,6 +21,9 @@ namespace StatusEffects.Inspector
         "positive, the value will be prevented from going below 0. " +
         "If the base value is negative, the value will be prevented " +
         "from going above 0.";
+
+#if UNITY_2023_1_OR_NEWER
+        public VisualTreeAsset VisualTree;
 
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
@@ -192,6 +195,7 @@ namespace StatusEffects.Inspector
             }
         }
 
+#endif
         private SerializedProperty m_StatusName;
         private SerializedProperty m_BaseValue;
         private SerializedProperty m_SignProtected;
@@ -242,9 +246,9 @@ namespace StatusEffects.Inspector
                 EditorGUI.PropertyField(position, m_BaseValue);
                 if (EditorGUI.EndChangeCheck() && EditorApplication.isPlaying)
                 {
-                    MethodInfo baseValueUpdate = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+                    m_MethodInfo = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                     foreach (var statusVariable in property.serializedObject.targetObjects)
-                        baseValueUpdate.Invoke(m_Value.GetParent(statusVariable), null);
+                        m_MethodInfo.Invoke(m_Value.GetParent(statusVariable), null);
                 }
                 position.y += m_FieldSize + m_Padding;
 
@@ -256,9 +260,9 @@ namespace StatusEffects.Inspector
                 GUI.Label(offset, new GUIContent("", k_SignProtectedTooltip));
                 if (EditorGUI.EndChangeCheck() && EditorApplication.isPlaying)
                 {
-                    MethodInfo signProtectedUpdate = property.GetPropertyType().GetMethod("SignProtectedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+                    m_MethodInfo = property.GetPropertyType().GetMethod("SignProtectedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                     foreach (var statusVariable in property.serializedObject.targetObjects)
-                        signProtectedUpdate.Invoke(m_Value.GetParent(statusVariable), null);
+                        m_MethodInfo.Invoke(m_Value.GetParent(statusVariable), null);
                 }
                 if (m_SignProtected.boolValue)
                 {

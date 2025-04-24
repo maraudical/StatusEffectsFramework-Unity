@@ -32,7 +32,9 @@ namespace StatusEffects.Example.Inspector
                 while (iterator.NextVisible(false));
             }
 
-            root.Add(new PropertyField() { bindingPath = nameof(IExamplePlayer.Health), enabledSelf = EditorApplication.isPlaying });
+            var health = new PropertyField() { bindingPath = nameof(IExamplePlayer.Health)};
+            health.SetEnabled(EditorApplication.isPlaying);
+            root.Add(health);
 
             var debugLabel = new Label() { text = "<b>Debug Buttons" };
             debugLabel.style.marginTop = 10;

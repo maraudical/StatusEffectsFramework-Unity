@@ -1,18 +1,20 @@
-using System;
+#if UNITY_2023_1_OR_NEWER
+using UnityEditor.UIElements;
+using UnityEngine.UIElements;
+#endif
 using System.Reflection;
 using UnityEditor;
-using UnityEditor.UIElements;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(StatusBool))]
     internal class StatusBoolDrawer : PropertyDrawer
     {
-        public VisualTreeAsset VisualTree;
-
         private MethodInfo m_MethodInfo;
+
+#if UNITY_2023_1_OR_NEWER
+        public VisualTreeAsset VisualTree;
 
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
@@ -125,6 +127,7 @@ namespace StatusEffects.Inspector
             }
         }
 
+#endif
         private SerializedProperty m_StatusName;
         private SerializedProperty m_BaseValue;
         private SerializedProperty m_Value;
@@ -170,9 +173,9 @@ namespace StatusEffects.Inspector
                 EditorGUI.PropertyField(position, m_BaseValue);
                 if (EditorGUI.EndChangeCheck() && EditorApplication.isPlaying)
                 {
-                    MethodInfo baseValueUpdate = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
+                    m_MethodInfo = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                     foreach (var statusVariable in property.serializedObject.targetObjects)
-                        baseValueUpdate.Invoke(m_Value.GetParent(statusVariable), null);
+                        m_MethodInfo.Invoke(m_Value.GetParent(statusVariable), null);
                 }
                 position.y += m_FieldSize + m_Padding;
 

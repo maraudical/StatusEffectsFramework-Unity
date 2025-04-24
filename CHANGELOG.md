@@ -1,10 +1,9 @@
 # Change Log:
 
 ## 4.0.0
-- Major Change: All inspectors have been upgraded to UI Toolkit. This has improved inspector performance dramatically, however due to the features used the new minimum version is now Unity 6. Some module method names have also changed so please check for errors if upgrading from previous versions. If you would like to use the Status Effect Framework for a previous Unity version you can still download any previous persion of the package, although new features and stability will be limited. Please note that the Coroutine support for legacy Unity versions is being removed because of the new minimum version requirements. This simplified part of the codebase however now only Awaitables and UniTask is available for Module implementation, until Unity provides better feature support for Awaitables it is highly recommended to be using UniTask for simplicity and performance.
-
 - Feature: Added 3 new value modifiers: Minimum, Maximum, and Overwrite
-- Feature: Added scripting templates for Modules and Module Instances
+- Feature: Added scripting templates for Modules and Module Instances for Unity 6 and newer
+- Enhancement: All custom inspectors now use UI Toolkit Visual Elements for Unity 6 and newer
 - Enhancement: Status Variable editor foldout value editable when not in play mode
 - Bug: Fixed Status References Setup bug when 0 Status Effect Datas
 - Bug: Fixed small bug with UnityEvent in player sample which would result in a null object reference

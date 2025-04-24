@@ -1,17 +1,20 @@
-using System;
-using UnityEditor;
+#if UNITY_2023_1_OR_NEWER
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
+#else
+using UnityEngine;
+#endif
+using System;
+using UnityEditor;
 
 namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(Effect))]
     internal class EffectDrawer : PropertyDrawer
     {
+#if UNITY_2023_1_OR_NEWER
         public VisualTreeAsset VisualTree;
-
         
-
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
             StatusName statusNameReference;
@@ -166,5 +169,138 @@ namespace StatusEffects.Inspector
                 return typeDifference;
             }
         }
+#else
+        private SerializedProperty m_StatusName;
+        private SerializedProperty m_UseBaseValue;
+        private SerializedProperty m_Primary;
+        private SerializedProperty m_Secondary;
+        private SerializedProperty m_Tertiary;
+
+        private StatusName m_StatusNameReference;
+        private Type m_StatusNameType;
+        private Type m_StatusNameTypeDummy;
+        private GUIStyle m_Style;
+
+        private readonly float m_FieldSize = EditorGUIUtility.singleLineHeight;
+        private readonly float m_Padding = EditorGUIUtility.standardVerticalSpacing;
+        private const float k_HorizontalPadding = 3;
+        private const int k_FieldCount = 3;
+        private const int k_ToggleSize = 15;
+
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            m_Style = GUI.skin.label;
+            m_Style.alignment = TextAnchor.MiddleCenter;
+
+            int multiObjectCount = property.serializedObject.targetObjects.Length;
+            bool typeDifference = false;
+
+            m_StatusName = property.FindPropertyRelative($"m_{nameof(Effect.StatusName)}");
+            m_UseBaseValue = property.FindPropertyRelative($"m_{nameof(Effect.UseBaseValue)}");
+
+            for (int i = 0; i < multiObjectCount; i++)
+            {
+                m_StatusNameReference = (m_StatusName.GetParent(property.serializedObject.targetObjects[i]) as Effect).StatusName;
+                m_StatusNameTypeDummy = m_StatusNameReference is StatusNameBool ? typeof(StatusNameBool)
+                                      : m_StatusNameReference is StatusNameInt  ? typeof(StatusNameInt)
+                                                                                : typeof(StatusNameFloat);
+
+                if (i > 0 && m_StatusNameTypeDummy != m_StatusNameType)
+                {
+                    typeDifference = true;
+                    break;
+                }
+
+                m_StatusNameType = m_StatusNameTypeDummy;
+            }
+
+            m_Primary = m_StatusNameType == typeof(StatusNameBool) ? property.FindPropertyRelative($"m_{nameof(Effect.BoolValue)}")
+                      : m_StatusNameType == typeof(StatusNameInt)  ? property.FindPropertyRelative($"m_{nameof(Effect.IntValue)}")
+                                                                   : property.FindPropertyRelative($"m_{nameof(Effect.FloatValue)}");
+
+            m_Secondary = m_StatusNameType == typeof(StatusNameBool) ? property.FindPropertyRelative($"m_{nameof(Effect.Priority)}")
+                                                                     : property.FindPropertyRelative($"m_{nameof(Effect.ValueModifier)}");
+
+            m_Tertiary = m_StatusNameType == typeof(StatusNameBool) || (m_Secondary.enumValueFlag & (int)(ValueModifier.Overwrite | ValueModifier.Minimum | ValueModifier.Maximum)) == 0 ? null
+                                                                    : property.FindPropertyRelative($"m_{nameof(Effect.Priority)}");
+
+            EditorGUI.BeginProperty(position, label, property);
+
+            position.height = m_FieldSize;
+            position.y += m_Padding;
+
+            EditorGUI.PropertyField(position, m_StatusName, new GUIContent(m_StatusName.displayName));
+            position.y += m_FieldSize + m_Padding;
+
+
+            var color = GUI.color;
+
+            if (typeDifference)
+            {
+                GUI.color = Color.yellow;
+                EditorGUI.LabelField(position, "Cannot display information due", m_Style);
+            }
+            else
+            {
+                EditorGUI.PropertyField(position, m_Secondary, new GUIContent(m_Secondary.displayName));
+            }
+            position.y += m_FieldSize + m_Padding;
+
+            if (m_Tertiary != null && !typeDifference)
+            {
+                EditorGUI.PropertyField(position, m_Tertiary, new GUIContent(m_Tertiary.displayName));
+                position.y += m_FieldSize + m_Padding;
+            }
+
+            if (typeDifference)
+            {
+                EditorGUI.LabelField(position, "to Status Name type difference.", m_Style);
+            }
+            else
+            {
+                var propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(m_Primary.displayName));
+                var offset = new Rect(propertyPosition.x, propertyPosition.y, k_ToggleSize, propertyPosition.height);
+                EditorGUI.PropertyField(offset, m_UseBaseValue, GUIContent.none);
+
+                offset = new Rect(propertyPosition.x + k_ToggleSize + k_HorizontalPadding, propertyPosition.y, propertyPosition.width - k_ToggleSize - k_HorizontalPadding, propertyPosition.height);
+                if (!m_UseBaseValue.boolValue)
+                    EditorGUI.PropertyField(offset, m_Primary, GUIContent.none);
+                else
+                    EditorGUI.LabelField(offset, "Using Base Value");
+            }
+
+            GUI.color = color;
+
+            EditorGUI.EndProperty();
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            int multiObjectCount = property.serializedObject.targetObjects.Length;
+            var typeDifference = false;
+
+            m_StatusName = property.FindPropertyRelative($"m_{nameof(Effect.StatusName)}");
+
+            for (int i = 0; i < multiObjectCount; i++)
+            {
+                m_StatusNameReference = (m_StatusName.GetParent(property.serializedObject.targetObjects[i]) as Effect).StatusName;
+                m_StatusNameTypeDummy = m_StatusNameReference is StatusNameBool ? typeof(StatusNameBool)
+                                      : m_StatusNameReference is StatusNameInt  ? typeof(StatusNameInt)
+                                                                                : typeof(StatusNameFloat);
+
+                if (i > 0 && m_StatusNameTypeDummy != m_StatusNameType)
+                {
+                    typeDifference = true;
+                    break;
+                }
+
+                m_StatusNameType = m_StatusNameTypeDummy;
+            }
+
+            bool extraField = !typeDifference && m_StatusNameType != typeof(StatusNameBool) && ((ValueModifier)property.FindPropertyRelative($"m_{nameof(Effect.ValueModifier)}").enumValueFlag & (ValueModifier.Overwrite | ValueModifier.Minimum | ValueModifier.Maximum)) != 0;
+
+            return (m_FieldSize + m_Padding) * (k_FieldCount + (extraField ? 1 : 0)) + m_Padding;
+        }
+#endif
     }
 }

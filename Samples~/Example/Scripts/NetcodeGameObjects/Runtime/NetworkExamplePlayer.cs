@@ -81,13 +81,13 @@ namespace StatusEffects.NetCode.GameObjects.Example
         // manipulating of status effects is completely SERVER AUTHORITATIVE.
         // So invoking these methods will throw an error if not done from the
         // server.
-        public void DebugAddStatusEffect() { StatusManager.AddStatusEffect(StatusEffectData, Stack); }
-        public void DebugAddStatusEffectTimed() { StatusManager.AddStatusEffect(StatusEffectData, Duration, Stack); }
-        public void DebugAddStatusEffectTimedEvent() { StatusManager.AddStatusEffect(StatusEffectData, Duration, Event, 1, Stack); }
+        public void DebugAddStatusEffect() { StatusManager?.AddStatusEffect(StatusEffectData, Stack); }
+        public void DebugAddStatusEffectTimed() { StatusManager?.AddStatusEffect(StatusEffectData, Duration, Stack); }
+        public void DebugAddStatusEffectTimedEvent() { StatusManager?.AddStatusEffect(StatusEffectData, Duration, Event, 1, Stack); }
         public void InvokeEvent() { Event?.Invoke(); }
-        public void DebugAddStatusEffectPredicate() { StatusManager.AddStatusEffect(StatusEffectData, () => PredicateBool, Stack); }
-        public void DebugRemoveStatusEffect() { StatusManager.RemoveStatusEffect(StatusEffectData, Stack); }
-        public void DebugRemoveStatusEffectGroup() { StatusManager.RemoveStatusEffect(Group); }
+        public void DebugAddStatusEffectPredicate() { StatusManager?.AddStatusEffect(StatusEffectData, () => PredicateBool, Stack); }
+        public void DebugRemoveStatusEffect() { StatusManager?.RemoveStatusEffect(StatusEffectData, Stack); }
+        public void DebugRemoveStatusEffectGroup() { StatusManager?.RemoveStatusEffect(Group); }
     }
 }
 #endif
