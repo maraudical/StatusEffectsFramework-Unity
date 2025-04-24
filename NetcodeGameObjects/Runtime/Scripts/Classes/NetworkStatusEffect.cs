@@ -1,4 +1,4 @@
-#if NETCODE && COLLECTIONS
+#if NETCODE
 using System;
 using Unity.Collections;
 using Unity.Netcode;

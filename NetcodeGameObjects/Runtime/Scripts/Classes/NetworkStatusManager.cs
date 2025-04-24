@@ -1,4 +1,4 @@
-#if NETCODE && COLLECTIONS
+#if NETCODE
 #if UNITASK
 using Cysharp.Threading.Tasks;
 using System.Threading;

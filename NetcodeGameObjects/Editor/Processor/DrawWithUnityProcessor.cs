@@ -1,4 +1,4 @@
-#if ODIN_INSPECTOR
+#if NETCODE && ODIN_INSPECTOR
 using Sirenix.OdinInspector.Editor;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;

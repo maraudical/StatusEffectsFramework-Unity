@@ -19,11 +19,6 @@
             "name": "com.unity.netcode.gameobjects",
             "expression": "1.8",
             "define": "NETCODE"
-        },
-        {
-            "name": "com.unity.collections",
-            "expression": "1.8",
-            "define": "COLLECTIONS"
         }
     ],
     "noEngineReferences": false
