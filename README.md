@@ -48,8 +48,8 @@
 # Getting started with the **Status Effect Framework**
 
 1. Add the **Status Effect Framework** through the package manager
-> Note: [Install via git](https://maraudical.gitbook.io/status-effect-framework/setup) with this URL: 
-```
+> [Install via git](https://maraudical.gitbook.io/status-effect-framework/setup) with this URL: 
+>```
 https://github.com/maraudical/StatusEffectsFramework-Unity.git
 ```
 2. Import the **Examples** (highly recommended)
