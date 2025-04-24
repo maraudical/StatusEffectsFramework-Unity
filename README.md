@@ -50,8 +50,8 @@
 1. Add the **Status Effect Framework** through the package manager
 > [Install via git](https://maraudical.gitbook.io/status-effect-framework/setup) with this URL: 
 >```
-https://github.com/maraudical/StatusEffectsFramework-Unity.git
-```
+>https://github.com/maraudical/StatusEffectsFramework-Unity.git
+>```
 2. Import the **Examples** (highly recommended)
 3. Change any settings, group names, and preset statuses in **ProjectSettings**
 4. **Create** any status effects from the create menu
