@@ -27,8 +27,7 @@ namespace StatusEffects.Modules
 
             commandBuffer.AddComponent(entity, new DamageOverTimeEntityModule()
             {
-                InvervalSeconds = damageOverTimeInstance.IntervalSeconds,
-                CurrentSeconds = 0
+                InvervalSeconds = damageOverTimeInstance.IntervalSeconds
             });
         }
 
@@ -82,8 +81,6 @@ namespace StatusEffects.Modules
                     yield return new WaitForSeconds(damageOverTimeInstance.IntervalSeconds);
                 }
         }
-
-        public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) { }
 #endif
     }
 }

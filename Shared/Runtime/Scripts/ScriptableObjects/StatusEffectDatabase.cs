@@ -4,8 +4,7 @@ using UnityEngine.Rendering;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
-
+using System.Collections.ObjectModel;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -15,11 +14,12 @@ namespace StatusEffects
     // Create a new type of Database Asset.
     public class StatusEffectDatabase : ScriptableObject
     {
-        public const string k_MyCustomDatabasePath = "Assets/Resources/StatusEffectDatabase.asset";
+        private const string k_MyCustomDatabasePath = "Assets/Resources/StatusEffectDatabase.asset";
         
         public int Count => Values.Count;
+        public ReadOnlyDictionary<Hash128, StatusEffectData> ReadOnlyDictionary => new(Values);
 
-        public SerializedDictionary<Hash128, StatusEffectData> Values;
+        [SerializeField] internal SerializedDictionary<Hash128, StatusEffectData> Values;
         
 #if UNITY_EDITOR
         [SerializeField, HideInInspector] internal SerializedDictionary<Hash128, StatusEffectData> HiddenValues;

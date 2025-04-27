@@ -39,7 +39,6 @@
 
 # Other support
 - Unity - Localization
-- Unity - Awaitable
 - Unity - Netcode for GameObjects
 - Unity - Entities
 - Unity - Netcode for Entities

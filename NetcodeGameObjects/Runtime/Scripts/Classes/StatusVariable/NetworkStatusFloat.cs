@@ -10,9 +10,9 @@ namespace StatusEffects.NetCode.GameObjects
     [Serializable]
     public class NetworkStatusFloat : NetworkStatusVariable
     {
-        [SerializeField] public event Action<float, float> OnValueChanged;
-        [SerializeField] public event Action<float, float> OnBaseValueChanged;
-        [SerializeField] public event Action<bool, bool> OnSignProtectedChanged;
+        public event Action<float, float> OnValueChanged;
+        public event Action<float, float> OnBaseValueChanged;
+        public event Action<bool, bool> OnSignProtectedChanged;
 
         public StatusNameFloat StatusName => m_StatusName;
         public float BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }

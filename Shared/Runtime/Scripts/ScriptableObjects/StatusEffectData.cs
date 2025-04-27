@@ -41,7 +41,7 @@ namespace StatusEffects
         /// <summary>
         /// This will be called automatically from a post processor.
         /// </summary>
-        public void GenerateId()
+        internal void GenerateId()
         {
             m_Id = Hash128.Compute(Guid.NewGuid().ToString("N"));
             UnityEditor.EditorUtility.SetDirty(this);

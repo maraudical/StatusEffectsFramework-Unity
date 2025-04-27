@@ -95,15 +95,12 @@ namespace StatusEffects.Modules
             VfxInstance vfxInstance = moduleInstance as VfxInstance;
             // Make sure the particle system stop action is set to destroy so it
             // automatically destroys itself when all particles die.
-
             // Give the vfx the name of the prefab so it can be queried later.
             GameObject vfxGameObject = Instantiate(vfxInstance.Prefab, manager.transform);
             vfxGameObject.name = vfxInstance.Prefab.name;
 
             if (vfxInstance.InstantiateAgainWhenAddingStacks)
-            {
                 statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
-            }
 
             yield break;
         }

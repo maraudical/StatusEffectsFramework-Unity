@@ -8,8 +8,8 @@ namespace StatusEffects
     [Serializable]
     public class StatusBool : StatusVariable
     {
-        [SerializeField] public event Action<bool, bool> OnValueChanged;
-        [SerializeField] public event Action<bool, bool> OnBaseValueChanged;
+        public event Action<bool, bool> OnValueChanged;
+        public event Action<bool, bool> OnBaseValueChanged;
 
         public StatusNameBool StatusName => m_StatusName;
         public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }

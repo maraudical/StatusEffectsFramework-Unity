@@ -95,38 +95,21 @@ namespace StatusEffects.Entities
         }
 
         /// <summary>
-        /// Remove all of <see cref="StatusEffects"/> given 
-        /// either a <see cref="Hash128"/> ID, a 
-        /// <see cref="StatusEffectGroup"/>, or nothing.
-        /// </summary>
-        public StatusEffectRequests(StatusEffectRemovalType removalType, Hash128 id = default, StatusEffectGroup group = default)
-        {
-            Type = StatusEffectRequestType.RemoveAll;
-            RemovalType = removalType;
-            Group = group;
-            Id = id;
-            Timing = default;
-            Duration = default;
-            Interval = default;
-            Stacks = default;
-            EventId = default;
-        }
-
-        /// <summary>
         /// Remove any number of <see cref="StatusEffects"/> given 
         /// either a <see cref="Hash128"/> ID, a 
-        /// <see cref="StatusEffectGroup"/>, or nothing.
+        /// <see cref="StatusEffectGroup"/>, or nothing. If stacks 
+        /// is negative it will remove all of them.
         /// </summary>
-        public StatusEffectRequests(StatusEffectRemovalType removalType, Hash128 id = default, StatusEffectGroup group = default, int stacks = 1)
+        public StatusEffectRequests(StatusEffectRemovalType removalType, Hash128 id = default, StatusEffectGroup group = default, int stacks = -1)
         {
-            Type = StatusEffectRequestType.Remove;
+            Type = stacks < 0 ? StatusEffectRequestType.RemoveAll : StatusEffectRequestType.Remove;
             RemovalType = removalType;
             Group = group;
             Id = id;
             Timing = default;
             Duration = default;
             Interval = default;
-            Stacks = stacks;
+            Stacks = stacks < 0 ? default : stacks;
             EventId = default;
         }
     }

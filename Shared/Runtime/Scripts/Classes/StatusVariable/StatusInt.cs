@@ -8,9 +8,9 @@ namespace StatusEffects
     [Serializable]
     public class StatusInt : StatusVariable
     {
-        [SerializeField] public event Action<int, int> OnValueChanged;
-        [SerializeField] public event Action<int, int> OnBaseValueChanged;
-        [SerializeField] public event Action<bool, bool> OnSignProtectedChanged;
+        public event Action<int, int> OnValueChanged;
+        public event Action<int, int> OnBaseValueChanged;
+        public event Action<bool, bool> OnSignProtectedChanged;
 
         public StatusNameInt StatusName => m_StatusName;
         public int BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
