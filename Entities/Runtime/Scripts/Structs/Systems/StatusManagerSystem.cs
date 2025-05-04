@@ -48,7 +48,7 @@ namespace StatusEffects.Entities
 
             var references = SystemAPI.GetSingleton<StatusReferences>();
             var modulePrefabs = SystemAPI.GetSingletonBuffer<ModulePrefabs>();
-            var commandBufferParallel = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            var commandBufferParallel = SystemAPI.GetSingleton<BeginStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
             // Handle any add/remove requests.
             if (!m_RequestQuery.IsEmpty)
