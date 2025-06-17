@@ -23,8 +23,6 @@ namespace StatusEffects.Entities
             m_ModuleDestroyQuery = SystemAPI.QueryBuilder().WithAll<Module, ModuleDestroyTag>().Build();
 
             m_ModulesLookup = SystemAPI.GetBufferLookup<Modules>();
-
-            state.RequireForUpdate<Module>();
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]

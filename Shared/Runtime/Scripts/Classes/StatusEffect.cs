@@ -57,7 +57,7 @@ namespace StatusEffects
             return m_InstanceId;
         }
 
-        internal void SetInstanceID() => SetInstanceID(Hash128.Compute(Guid.NewGuid().ToString("N")));
+        internal void SetInstanceID() => SetInstanceID(Hash128Extensions.Id());
 
         internal void SetInstanceID(Hash128 value)
         {

@@ -36,7 +36,7 @@ namespace StatusEffects
         /// </summary>
         public void GenerateId()
         {
-            m_Id = Hash128.Compute(Guid.NewGuid().ToString("N"));
+            m_Id = Hash128Extensions.Id();
             UnityEditor.EditorUtility.SetDirty(this);
             UnityEditor.AssetDatabase.SaveAssetIfDirty(this);
         }

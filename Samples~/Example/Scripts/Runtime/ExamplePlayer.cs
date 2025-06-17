@@ -17,7 +17,7 @@ namespace StatusEffects.Example
             , IEntityStatus
     {
         public Hash128 ComponentId => m_ComponentId;
-        private Hash128 m_ComponentId = new Hash128(Guid.NewGuid().ToString("N"));
+        private Hash128 m_ComponentId = Hash128Extensions.BurstId();
 
         public void OnBake(Entity entity, StatusManagerBaker baker)
         {
@@ -116,6 +116,6 @@ namespace StatusEffects.Example
         public void DebugRemoveStatusEffect() { StatusManager?.RemoveStatusEffect(StatusEffectData, Stack); }
         // Removes all effects that fall under a specific group. Additionally
         // you can remove the group parameter and just remove all effects.
-        public void DebugRemoveStatusEffectGroup() { StatusManager?.RemoveStatusEffect(Group); }
+        public void DebugRemoveStatusEffectGroup() {StatusManager?.RemoveAllStatusEffects(); /*StatusManager?.RemoveStatusEffect(Group);*/ }
     }
 }
