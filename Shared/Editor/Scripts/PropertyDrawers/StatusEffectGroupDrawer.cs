@@ -10,13 +10,20 @@ using UnityEngine;
 namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(StatusEffectGroup))]
-    internal class StatusEffectGroupDrawer : PropertyDrawer
+    internal class StatusEffectGroupDrawer :
+#if EDITOR_ATTRIBUTES
+        EditorAttributes.Editor.PropertyDrawerBase
+#else
+        PropertyDrawer
+#endif
     {
 #if UNITY_2023_1_OR_NEWER
         public VisualTreeAsset VisualTree;
 
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
+            base.CreatePropertyGUI(property);
+
             var root = new VisualElement();
 
             VisualTree.CloneTree(root);
@@ -34,9 +41,24 @@ namespace StatusEffects.Inspector
             maskField.choicesMasks = choices.Keys.ToList();
             maskField.AddToClassList("unity-base-field__aligned");
             maskField.BindProperty(valueProperty);
-
+            
             settingsButton.iconImage = new Background { texture = EditorGUIUtility.IconContent("_Popup").image as Texture2D };
             settingsButton.clicked += Clicked;
+#if EDITOR_ATTRIBUTES
+
+            var maskLabel = maskField.Q<Label>();
+
+            ExecuteLater(root, () =>
+            {
+                var color = maskLabel.style.color;
+                
+                if (color.keyword is not StyleKeyword.Null)
+                {
+                    maskField.Q(className: MaskField.inputUssClassName).style.backgroundColor = color.value / 3f;
+                    settingsButton.Q<Image>(className: Button.imageUSSClassName).tintColor = color.value;
+                }
+            }, 50);
+#endif
 
             return root;
 

@@ -1,5 +1,5 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle" />
+    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Shared/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle" />
     <engine:Foldout text="Property Name" value="false" name="foldout">
         <engine:VisualElement name="error-icon" class="error-icon" style="width: 13px; height: 13px; visibility: visible; overflow: visible; position: absolute; display: flex; left: -12px; top: 4px;" />
         <editor:PropertyField binding-path="m_StatusName" name="status-name" />
@@ -11,5 +11,6 @@
             <editor:PropertyField name="sign-protected" binding-path="m_SignProtected" label=" " style="flex-grow: 1; position: absolute; top: 0; right: 0; left: 0; bottom: 0; flex-wrap: nowrap; flex-direction: column-reverse;" />
         </engine:VisualElement>
     </engine:Foldout>
-    <editor:PropertyField name="header-property" label=" " style="position: absolute; top: 0; right: 0; bottom: 0; left: 35%;" />
+    <editor:PropertyField name="header-property-object" label=" " binding-path="m_StatusName" style="position: absolute; top: 0; right: 0; bottom: 0; left: 35%;" />
+    <editor:PropertyField name="header-property-value" label=" " style="position: absolute; top: 0; right: 0; bottom: 0; left: 35%;" />
 </engine:UXML>

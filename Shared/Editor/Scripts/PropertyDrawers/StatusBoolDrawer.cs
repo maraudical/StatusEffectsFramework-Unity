@@ -9,7 +9,12 @@ using UnityEngine;
 namespace StatusEffects.Inspector
 {
     [CustomPropertyDrawer(typeof(StatusBool))]
-    internal class StatusBoolDrawer : PropertyDrawer
+    internal class StatusBoolDrawer :
+#if EDITOR_ATTRIBUTES
+        EditorAttributes.Editor.PropertyDrawerBase
+#else
+        PropertyDrawer
+#endif
     {
         private MethodInfo m_MethodInfo;
 
@@ -23,9 +28,11 @@ namespace StatusEffects.Inspector
             VisualTree.CloneTree(root);
 
             var foldout = root.Q<Foldout>("foldout");
+            var foldoutLabel = root.Q<Label>(className: "unity-foldout__text");
             var unityCheckmark = root.Q("unity-checkmark");
             var errorIcon = root.Q("error-icon");
-            var headerProperty = root.Q<PropertyField>("header-property");
+            var headerPropertyObject = root.Q<PropertyField>("header-property-object");
+            var headerPropertyValue = root.Q<PropertyField>("header-property-value");
             var statusName = root.Q<PropertyField>("status-name");
             var baseValue = root.Q<PropertyField>("base-value");
             var valueLabel = root.Q<Label>("value-label");
@@ -41,7 +48,9 @@ namespace StatusEffects.Inspector
 
             bool isPlaying = EditorApplication.isPlaying;
 
-            headerProperty.SetEnabled(!isPlaying);
+            headerPropertyObject.SetEnabled(!isPlaying);
+            headerPropertyValue.SetEnabled(!isPlaying);
+            headerPropertyValue.BindProperty(isPlaying ? valueProperty : baseValueProperty);
 
             statusName.SetEnabled(!isPlaying);
             statusName.RegisterValueChangeCallback(StatusNameChanged);
@@ -54,6 +63,47 @@ namespace StatusEffects.Inspector
 
             value.BindProperty(isPlaying ? valueProperty : baseValueProperty);
             value.RegisterCallbackOnce<GeometryChangedEvent>(GeometryChanged);
+
+            foldoutLabel.AddManipulator(new ContextualMenuManipulator((ContextualMenuPopulateEvent @event) =>
+            {
+                @event.menu.AppendAction("Copy Property Path", (action) => EditorGUIUtility.systemCopyBuffer = property.propertyPath);
+
+                @event.menu.AppendSeparator();
+
+                @event.menu.AppendAction("Copy", (action) => EditorGUIUtility.systemCopyBuffer = EditorJsonUtility.ToJson(property.boxedValue), property.hasMultipleDifferentValues ? DropdownMenuAction.Status.Disabled : DropdownMenuAction.Status.Normal);
+
+                bool canParse = true;
+
+                try
+                {
+                    EditorJsonUtility.FromJsonOverwrite(EditorGUIUtility.systemCopyBuffer, new());
+                }
+                catch
+                {
+                    canParse = false;
+                }
+
+                @event.menu.AppendAction("Paste", (action) =>
+                {
+                    foreach (var target in property.serializedObject.targetObjects)
+                    {
+                        StatusBool pastedValue = new(false);
+                        EditorJsonUtility.FromJsonOverwrite(EditorGUIUtility.systemCopyBuffer, pastedValue);
+                        property.GetParent(target).SetValue(property.name, pastedValue);
+                        EditorUtility.SetDirty(target);
+                        AssetDatabase.SaveAssetIfDirty(target);
+                    }
+                }, canParse ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled);
+
+                @event.menu.AppendSeparator();
+            }));
+#if EDITOR_ATTRIBUTES
+            
+            ExecuteLater(root, () =>
+            {
+                EvaluateProperties();
+            }, 50);
+#endif
 
             return root;
 
@@ -88,17 +138,23 @@ namespace StatusEffects.Inspector
                     if (foldout.value)
                     {
                         unityCheckmark.RemoveFromClassList("error-icon");
-                        headerProperty.style.display = DisplayStyle.None;
+                        headerPropertyObject.style.display = DisplayStyle.None;
+                        headerPropertyValue.style.display = DisplayStyle.None;
+#if EDITOR_ATTRIBUTES
+                        unityCheckmark.style.unityBackgroundImageTintColor = valueLabel.style.color.keyword is not StyleKeyword.Null ? valueLabel.style.color : Color.white;
+#endif
                     }
                     else
                     {
                         unityCheckmark.AddToClassList("error-icon");
-                        headerProperty.style.display = DisplayStyle.Flex;
+                        headerPropertyObject.style.display = DisplayStyle.Flex;
+                        headerPropertyValue.style.display = DisplayStyle.None;
+#if EDITOR_ATTRIBUTES
+                        unityCheckmark.style.unityBackgroundImageTintColor = Color.white;
+#endif
                     }
 
                     foldout.RemoveFromClassList("standard-field-size");
-
-                    headerProperty.BindProperty(statusNameProperty);
 
                     errorIcon.style.display = DisplayStyle.Flex;
                 }
@@ -107,20 +163,20 @@ namespace StatusEffects.Inspector
                     if (foldout.value)
                     {
                         foldout.RemoveFromClassList("standard-field-size");
-                        headerProperty.style.display = DisplayStyle.None;
+                        headerPropertyObject.style.display = DisplayStyle.None;
+                        headerPropertyValue.style.display = DisplayStyle.None;
                     }
                     else
                     {
                         foldout.AddToClassList("standard-field-size");
-                        headerProperty.style.display = DisplayStyle.Flex;
+                        headerPropertyObject.style.display = DisplayStyle.None;
+                        headerPropertyValue.style.display = DisplayStyle.Flex;
                     }
 
                     unityCheckmark.RemoveFromClassList("error-icon");
-
-                    if (EditorApplication.isPlaying)
-                        headerProperty.BindProperty(valueProperty);
-                    else
-                        headerProperty.BindProperty(baseValueProperty);
+#if EDITOR_ATTRIBUTES
+                    unityCheckmark.style.unityBackgroundImageTintColor = valueLabel.style.color.keyword is not StyleKeyword.Null ? valueLabel.style.color : Color.white;
+#endif
 
                     errorIcon.style.display = DisplayStyle.None;
                 }
