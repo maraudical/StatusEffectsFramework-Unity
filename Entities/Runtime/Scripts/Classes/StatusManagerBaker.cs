@@ -9,6 +9,7 @@ namespace StatusEffects.Entities
         {
             var entity = GetEntity(TransformUsageFlags.None);
             AddComponent<StatusVariableUpdate>(entity);
+            AddComponent<PredictedDestroy>(entity);
             AddBuffer<StatusEffects>(entity);
             AddBuffer<StatusEffectRequests>(entity);
             AddBuffer<StatusFloats>(entity);

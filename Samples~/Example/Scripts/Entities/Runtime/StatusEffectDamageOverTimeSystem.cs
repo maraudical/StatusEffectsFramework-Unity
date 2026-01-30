@@ -2,6 +2,7 @@
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using static StatusEffects.Modules.DamageOverTimeModule;
 
 namespace StatusEffects.Entities.Example
@@ -22,13 +23,10 @@ namespace StatusEffects.Entities.Example
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var commandBufferParallel = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-
             var damageOverTimeJob = new DamageOverTimeJob
             {
-                CommandBuffer = commandBufferParallel,
-                PlayerLookup = SystemAPI.GetComponentLookup<ExamplePlayer>(),
-                TimeDelta = SystemAPI.Time.DeltaTime
+                TimeDelta = SystemAPI.Time.DeltaTime,
+                PlayerLookup = SystemAPI.GetComponentLookup<ExamplePlayer>()
             };
             state.Dependency = damageOverTimeJob.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
         }
@@ -36,23 +34,23 @@ namespace StatusEffects.Entities.Example
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         partial struct DamageOverTimeJob : IJobEntity
         {
-            public EntityCommandBuffer.ParallelWriter CommandBuffer;
-            [ReadOnly]
-            public ComponentLookup<ExamplePlayer> PlayerLookup;
             public float TimeDelta;
+            [NativeDisableParallelForRestriction]
+            public ComponentLookup<ExamplePlayer> PlayerLookup;
 
             public void Execute([ChunkIndexInQuery] int sortKey, ref DamageOverTimeEntityModule damageOverTime, in Module module)
             {
-                Entity entity = module.Parent;
-                
-                if (PlayerLookup.TryGetComponent(entity, out ExamplePlayer player))
+                Entity targetEntity = module.Target;
+
+                if (PlayerLookup.TryGetRefRW(targetEntity, out var playerRW))
                 {
+                    ref var player = ref playerRW.ValueRW;
                     damageOverTime.CurrentSeconds -= TimeDelta;
                     while (damageOverTime.CurrentSeconds <= 0)
                     {
                         damageOverTime.CurrentSeconds += damageOverTime.InvervalSeconds;
                         player.Health -= module.BaseValue * module.Stacks;
-                        CommandBuffer.SetComponent(sortKey, entity, player);
+                        player.Health = math.max(player.Health, 0);
                     }
                 }
             }

@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using UnityEditor;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     internal static class SerializedPropertyExtensions
     {

@@ -2,22 +2,20 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     public class StatusEffectDataPostProcessor : AssetPostprocessor
     {
-        private static StatusEffectDatabase m_Database;
-        private static StatusEffectData m_StatusEffectDataReference;
-
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths, bool didDomainReload)
         {
-            m_Database = StatusEffectDatabase.Get();
-
-            for (int i = m_Database.HiddenValues.Count - 1; i >= 0; i--)
+            var database = StatusEffectDatabase.Get();
+            StatusEffectData statusEffectData;
+            
+            for (int i = database.HiddenValues.Count - 1; i >= 0; i--)
             {
-                var kvp = m_Database.HiddenValues.ElementAt(i);
+                var kvp = database.HiddenValues.ElementAt(i);
                 if (kvp.Value == null || kvp.Key != kvp.Value.Id)
-                    m_Database.HiddenValues.Remove(kvp.Key);
+                    database.HiddenValues.Remove(kvp.Key);
             }
 
             if (didDomainReload)
@@ -33,8 +31,8 @@ namespace StatusEffects.Inspector
                 foreach (string assetPath in importedAssets)
                     ValidateAsset(assetPath);
             }
-
-            AssetDatabase.SaveAssetIfDirty(m_Database);
+            
+            AssetDatabase.SaveAssetIfDirty(database);
 
             void ValidateAsset(string assetPath)
             {
@@ -43,32 +41,32 @@ namespace StatusEffects.Inspector
                 if (asset == null)
                     return;
 
-                if (asset is StatusEffectData data)
-                {
-                    if (data.Id != default)
-                        if (m_Database.TryGetValue(data.Id, out m_StatusEffectDataReference))
-                        {
-                            if (m_StatusEffectDataReference != data)
-                                GenerateUntilAddable();
-                        }
-                        else
-                        {
-                            m_Database.Add(data.Id, data);
-                            EditorUtility.SetDirty(m_Database);
-                        }
-                    else
-                        GenerateUntilAddable();
-
-                    void GenerateUntilAddable()
+                if (asset is not StatusEffectData data)
+                    return;
+                
+                if (data.Id != default)
+                    if (database.TryGetValue(data.Id, out statusEffectData))
                     {
-                        data.GenerateId();
-                        if (!m_Database.TryAdd(data.Id, data))
-                        {
+                        if (statusEffectData != data)
                             GenerateUntilAddable();
-                            return;
-                        }
-                        EditorUtility.SetDirty(m_Database);
                     }
+                    else
+                    {
+                        database.Add(data.Id, data);
+                        EditorUtility.SetDirty(database);
+                    }
+                else
+                    GenerateUntilAddable();
+
+                void GenerateUntilAddable()
+                {
+                    data.GenerateId();
+                    if (!database.TryAdd(data.Id, data))
+                    {
+                        GenerateUntilAddable();
+                        return;
+                    }
+                    EditorUtility.SetDirty(database);
                 }
             }
         }

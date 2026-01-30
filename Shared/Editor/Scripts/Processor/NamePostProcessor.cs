@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     public class NamePostProcessor : AssetPostprocessor
     {

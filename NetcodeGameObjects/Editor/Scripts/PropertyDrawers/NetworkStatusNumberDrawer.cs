@@ -1,8 +1,8 @@
 #if NETCODE
-using StatusEffects.Inspector;
+using StatusEffects.Editor;
 using UnityEditor;
 
-namespace StatusEffects.NetCode.GameObjects.Inspector
+namespace StatusEffects.NetCode.GameObjects.Editor
 {
     [CustomPropertyDrawer(typeof(NetworkStatusFloat))]
     [CustomPropertyDrawer(typeof(NetworkStatusInt))]

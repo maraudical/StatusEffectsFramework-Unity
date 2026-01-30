@@ -1,6 +1,5 @@
 #if NETCODE_ENTITIES
 using Unity.NetCode;
-using UnityEngine;
 using UnityEngine.Scripting;
 
 [Preserve]

@@ -1,64 +1,73 @@
-#if UNITY_2023_1_OR_NEWER
+using System;
 using System.Collections.Generic;
-using UnityEditor.UIElements;
-using UnityEngine.UIElements;
-#endif
 using System.Linq;
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     [CustomPropertyDrawer(typeof(StatusEffectGroup))]
-    internal class StatusEffectGroupDrawer :
-#if EDITOR_ATTRIBUTES
-        EditorAttributes.Editor.PropertyDrawerBase
-#else
-        PropertyDrawer
-#endif
+    internal class StatusEffectGroupDrawer : PropertyDrawer
     {
-#if UNITY_2023_1_OR_NEWER
-        public VisualTreeAsset VisualTree;
-
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
-            base.CreatePropertyGUI(property);
-
-            var root = new VisualElement();
-
-            VisualTree.CloneTree(root);
-
-            var maskField = root.Q<MaskField>("mask-field");
-            var settingsButton = root.Q<Button>("settings-button");
-
             var valueProperty = property.FindPropertyRelative(nameof(StatusEffectGroup.Value));
 
-            Dictionary<int, string> choices = StatusEffectSettings.GetOrCreateSettings().Groups.Select((g, index)=> new KeyValuePair<int, string>(index, g))
+            Dictionary<int, string> choices = StatusEffectSettings.GetOrCreateSettings().Groups.Select((g, index) => new KeyValuePair<int, string>(index, g))
                                                                                                .Where(kvp => !string.IsNullOrEmpty(kvp.Value))
                                                                                                .ToDictionary(kvp => 1 << kvp.Key, kvp => kvp.Value);
+
+            var root = new VisualElement();
+            root.style.flexDirection = FlexDirection.Row;
+            root.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
+            root.AddToClassList(StatusEffectsStyleSheet.MaskFieldSizeClassName);
+
+            var maskField = new MaskField();
+            maskField.style.flexGrow = 1;
+            maskField.style.flexShrink = 1;
             maskField.label = property.displayName;
             maskField.choices = choices.Values.ToList();
             maskField.choicesMasks = choices.Keys.ToList();
-            maskField.AddToClassList("unity-base-field__aligned");
+            maskField.AddToClassList(BaseField<Enum>.alignedFieldUssClassName);
             maskField.BindProperty(valueProperty);
-            
+            root.Add(maskField);
+
+            var settingsButton = new Button();
+            settingsButton.style.marginRight = -2;
+            settingsButton.style.paddingLeft = 0;
+            settingsButton.style.paddingRight = 0;
+            settingsButton.style.paddingTop = 0;
+            settingsButton.style.paddingBottom = 0;
+            settingsButton.focusable = false;
+#if UNITY_2023_1_OR_NEWER
             settingsButton.iconImage = new Background { texture = EditorGUIUtility.IconContent("_Popup").image as Texture2D };
+#else
+            settingsButton.style.backgroundImage = EditorGUIUtility.IconContent("_Popup").image as Texture2D;
+            settingsButton.RegisterCallback<GeometryChangedEvent>(GeometryChanged);
+
+            void GeometryChanged(GeometryChangedEvent changeEvent)
+            {
+                float size = settingsButton.resolvedStyle.height;
+                settingsButton.style.width = size;
+                settingsButton.style.backgroundSize = new BackgroundSize(size - 3, size - 3);
+            }
+#endif
             settingsButton.clicked += Clicked;
-#if EDITOR_ATTRIBUTES
+            root.Add(settingsButton);
 
             var maskLabel = maskField.Q<Label>();
 
-            ExecuteLater(root, () =>
+            settingsButton.schedule.Execute(() =>
             {
                 var color = maskLabel.style.color;
-                
+
                 if (color.keyword is not StyleKeyword.Null)
                 {
-                    maskField.Q(className: MaskField.inputUssClassName).style.backgroundColor = color.value / 3f;
                     settingsButton.Q<Image>(className: Button.imageUSSClassName).tintColor = color.value;
                 }
-            }, 50);
-#endif
+            }).StartingIn(50);
 
             return root;
 
@@ -68,7 +77,6 @@ namespace StatusEffects.Inspector
             }
         }
 
-#endif
         private SerializedProperty m_Value;
         private StatusEffectSettings m_Settings;
 

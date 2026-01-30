@@ -1,11 +1,10 @@
 {
     "name": "Unity.StatusEffectsFramework.Editor",
-    "rootNamespace": "",
+    "rootNamespace": "StatusEffects.Editor",
     "references": [
         "GUID:c1d753aaef5f86c4488844bae8cb6730",
         "GUID:df380645f10b7bc4b97d4f5eb6303d95",
-        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5",
-        "GUID:a42c64b2b45190347903076a017fce90"
+        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5"
     ],
     "includePlatforms": [
         "Editor"
@@ -36,11 +35,6 @@
             "name": "com.unity.entities",
             "expression": "",
             "define": "ENTITIES"
-        },
-        {
-            "name": "com.v0lt.editor-attributes",
-            "expression": "",
-            "define": "EDITOR_ATTRIBUTES"
         }
     ],
     "noEngineReferences": false

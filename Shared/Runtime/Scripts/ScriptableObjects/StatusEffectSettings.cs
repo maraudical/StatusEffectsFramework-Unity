@@ -9,10 +9,19 @@ namespace StatusEffects
     // Create a new type of Settings Asset.
     public class StatusEffectSettings : ScriptableObject
     {
-        public const string k_MyCustomSettingsPath = "Assets/Resources/StatusEffectSettings.asset";
+        public const string MyCustomSettingsPath = "Assets/Resources/StatusEffectSettings.asset";
         [Space]
         [NonReorderable]
-        public string[] Groups;
+        public string[] Groups = new string[32];
+
+        [SerializeField]
+        public string DefaultStatusDataPath = "ScriptableObjects/StatusEffectData";
+        [SerializeField]
+        public string DefaultStatusNamesPath = "ScriptableObjects/StatusNames";
+        [SerializeField]
+        public string DefaultComparableNamesPath = "ScriptableObjects/ComparableNames";
+        [SerializeField]
+        public string DefaultModulesPath = "ScriptableObjects/Modules";
 
         public static StatusEffectSettings GetOrCreateSettings()
         {
@@ -25,9 +34,8 @@ namespace StatusEffects
                 settings.Groups[0] = "Static";
                 settings.Groups[1] = "Negative";
                 settings.Groups[2] = "Positive";
-                Directory.CreateDirectory($"{Application.dataPath}/Resources");
-                AssetDatabase.CreateAsset(settings, k_MyCustomSettingsPath);
-                AssetDatabase.SaveAssets();
+                Directory.CreateDirectory(Path.Combine(Application.dataPath, "Resources"));
+                AssetDatabase.CreateAsset(settings, MyCustomSettingsPath);
             }
 #endif
             return settings;

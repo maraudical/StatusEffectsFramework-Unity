@@ -1,25 +1,16 @@
-#if UNITY_2023_1_OR_NEWER
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
-#endif
 using System;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     [CustomPropertyDrawer(typeof(StatusFloat))]
     [CustomPropertyDrawer(typeof(StatusInt))]
-    internal class StatusNumberDrawer :
-#if EDITOR_ATTRIBUTES
-        EditorAttributes.Editor.PropertyDrawerBase
-#else
-        PropertyDrawer
-#endif
+    internal class StatusNumberDrawer : PropertyDrawer
     {
-        private MethodInfo m_MethodInfo;
-
         private const string k_SignProtectedTooltip =
         "Toggles whether the value of this variable should limit " +
         "itself to being positive or negative. If the base value is " +
@@ -27,57 +18,111 @@ namespace StatusEffects.Inspector
         "If the base value is negative, the value will be prevented " +
         "from going above 0.";
 
-#if UNITY_2023_1_OR_NEWER
-        public VisualTreeAsset VisualTree;
+        private const string k_ValueTooltip = "The current value of this status variable. Will automatically update depending on status effects.";
+
+        private MethodInfo m_MethodInfo;
 
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
-            var root = new VisualElement();
-
-            VisualTree.CloneTree(root);
-
-            var foldout = root.Q<Foldout>("foldout");
-            var foldoutLabel = root.Q<Label>(className: "unity-foldout__text");
-            var unityCheckmark = root.Q("unity-checkmark");
-            var errorIcon = root.Q("error-icon");
-            var headerPropertyObject = root.Q<PropertyField>("header-property-object");
-            var headerPropertyValue = root.Q<PropertyField>("header-property-value");
-            var statusName = root.Q<PropertyField>("status-name");
-            var baseValue = root.Q<PropertyField>("base-value");
-            var valueLabel = root.Q<Label>("value-label");
-            var signLabel = root.Q<Label>("sign-label");
-            var signProtected = root.Q<PropertyField>("sign-protected");
-            var value = root.Q<PropertyField>("value");
-
             var statusNameProperty = property.FindPropertyRelative($"m_{nameof(StatusFloat.StatusName)}");
             var baseValueProperty = property.FindPropertyRelative($"m_{nameof(StatusFloat.BaseValue)}");
             var valueProperty = property.FindPropertyRelative($"m_{nameof(StatusFloat.Value)}");
             var signProtectedProperty = property.FindPropertyRelative($"m_{nameof(StatusFloat.SignProtected)}");
 
-            foldout.text = property.displayName;
-            foldout.viewDataKey = property.propertyPath + "-foldout";
-            foldout.RegisterValueChangedCallback(FoldoutChanged);
-
             bool isPlaying = EditorApplication.isPlaying;
 
-            headerPropertyObject.SetEnabled(!isPlaying);
-            headerPropertyValue.SetEnabled(!isPlaying);
-            headerPropertyValue.BindProperty(isPlaying ? valueProperty : baseValueProperty);
+            var foldout = new Foldout();
+            foldout.text = property.displayName;
+            foldout.value = false;
+            foldout.viewDataKey = property.propertyPath + "-foldout";
+            foldout.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
+            
+            var foldoutLabel = foldout.Q<Label>(className: Foldout.textUssClassName);
+            var unityCheckmark = foldout.Q(className: Foldout.checkmarkUssClassName);
 
+            var headerPropertyObject = new PropertyField(statusNameProperty, " ");
+            headerPropertyObject.style.position = Position.Absolute;
+            headerPropertyObject.style.left = Length.Percent(35);
+            headerPropertyObject.style.right = 0;
+            headerPropertyObject.style.top = 0;
+            headerPropertyObject.style.bottom = 0;
+            headerPropertyObject.SetEnabled(!isPlaying);
+            var headerPropertyValue = new PropertyField(isPlaying ? valueProperty : baseValueProperty, " ");
+            headerPropertyValue.style.position = Position.Absolute;
+            headerPropertyValue.style.left = Length.Percent(35);
+            headerPropertyValue.style.right = 0;
+            headerPropertyValue.style.top = 0;
+            headerPropertyValue.style.bottom = 0;
+            headerPropertyValue.SetEnabled(!isPlaying);
+            foldout.hierarchy.Add(headerPropertyObject);
+            foldout.hierarchy.Add(headerPropertyValue);
+
+            var errorIcon = new VisualElement();
+            errorIcon.AddToClassList(StatusEffectsStyleSheet.ErrorIconClassName);
+            errorIcon.style.position = Position.Absolute;
+            errorIcon.style.left = -12;
+            errorIcon.style.top = 4;
+            errorIcon.style.width = 13;
+            errorIcon.style.height = 13;
+            foldout.Add(errorIcon);
+
+            var statusName = new PropertyField(statusNameProperty);
             statusName.SetEnabled(!isPlaying);
+            foldout.Add(statusName);
+
+            var baseValue = new PropertyField(baseValueProperty);
+            foldout.Add(baseValue);
+
+            var valueContainer = new VisualElement();
+            valueContainer.style.flexDirection = FlexDirection.Row;
+            valueContainer.style.flexGrow = 1;
+            valueContainer.style.flexShrink = 1;
+            foldout.Add(valueContainer);
+
+            var valueLabel = new Label(valueProperty.displayName);
+            valueLabel.style.position = Position.Absolute;
+            valueLabel.style.paddingTop = 1;
+            valueLabel.style.paddingLeft = 4;
+            valueContainer.Add(valueLabel);
+
+            var value = new PropertyField(isPlaying ? valueProperty : baseValueProperty, " ");
+            value.style.flexGrow = 1;
+            value.style.flexShrink = 1;
+            value.SetEnabled(false);
+            value.tooltip = k_ValueTooltip;
+            valueContainer.Add(value);
+
+            var signProtected = new PropertyField(signProtectedProperty, " ");
+            signProtected.style.position = Position.Absolute;
+            signProtected.style.left = 0;
+            signProtected.style.right = 0;
+            signProtected.style.top = 0;
+            signProtected.style.bottom = 0;
+            signProtected.style.flexGrow = 1;
+            signProtected.style.flexShrink = 1;
+            signProtected.style.flexDirection = FlexDirection.ColumnReverse;
+            signProtected.tooltip = k_SignProtectedTooltip;
+            valueContainer.Add(signProtected);
+
+            var signLabel = new Label();
+            signLabel.style.unityTextAlign = TextAnchor.MiddleRight;
+            signLabel.style.position = Position.Absolute;
+            signLabel.style.left = 0;
+            signLabel.style.right = 0;
+            signLabel.style.top = 0;
+            signLabel.style.bottom = 0;
+            signLabel.pickingMode = PickingMode.Ignore;
+
+            foldout.RegisterValueChangedCallback(FoldoutChanged);
+            
             statusName.RegisterValueChangeCallback(StatusNameChanged);
 
             baseValue.RegisterValueChangeCallback(BaseValueChanged);
-            
-            valueLabel.text = valueProperty.displayName;
-            valueLabel.style.unityFontStyleAndWeight = isPlaying ? FontStyle.Bold : FontStyle.Normal;
 
-            signProtected.tooltip = k_SignProtectedTooltip;
+            value.RegisterCallback<GeometryChangedEvent>(ValueGeometryChanged);
+
             signProtected.RegisterValueChangeCallback(SignProtectedChanged);
-            signProtected.RegisterCallbackOnce<GeometryChangedEvent>(SignProtectedGeometryChanged);
-
-            value.BindProperty(isPlaying ? valueProperty : baseValueProperty);
-            value.RegisterCallbackOnce<GeometryChangedEvent>(ValueGeometryChanged);
+            signProtected.RegisterCallback<GeometryChangedEvent>(SignProtectedGeometryChanged);
 
             foldoutLabel.AddManipulator(new ContextualMenuManipulator((ContextualMenuPopulateEvent @event) =>
             {
@@ -121,15 +166,10 @@ namespace StatusEffects.Inspector
 
                 @event.menu.AppendSeparator();
             }));
-#if EDITOR_ATTRIBUTES
 
-            ExecuteLater(root, () =>
-            {
-                EvaluateProperties();
-            }, 50);
-#endif
+            unityCheckmark.schedule.Execute((state) => EvaluateProperties()).StartingIn(50);
 
-            return root;
+            return foldout;
 
             void IgnoreExcept(VisualElement root, string exception)
             {
@@ -147,11 +187,15 @@ namespace StatusEffects.Inspector
 
             void SignProtectedGeometryChanged(GeometryChangedEvent changeEvent)
             {
+                signProtected.UnregisterCallback<GeometryChangedEvent>(SignProtectedGeometryChanged);
                 IgnoreExcept(signProtected, "unity-checkmark");
+                signProtected.Q<Label>().Add(signLabel);
             }
 
             void ValueGeometryChanged(GeometryChangedEvent changeEvent)
             {
+                value.UnregisterCallback<GeometryChangedEvent>(ValueGeometryChanged);
+
                 var element = value.Q("unity-text-input");
                 if (element != null)
                 {
@@ -222,21 +266,17 @@ namespace StatusEffects.Inspector
                 {
                     if (foldout.value)
                     {
-                        unityCheckmark.RemoveFromClassList("error-icon");
+                        unityCheckmark.RemoveFromClassList(StatusEffectsStyleSheet.ErrorIconClassName);
                         headerPropertyObject.style.display = DisplayStyle.None;
                         headerPropertyValue.style.display = DisplayStyle.None;
-#if EDITOR_ATTRIBUTES
                         unityCheckmark.style.unityBackgroundImageTintColor = valueLabel.style.color.keyword is not StyleKeyword.Null ? valueLabel.style.color : Color.white;
-#endif
                     }
                     else
                     {
-                        unityCheckmark.AddToClassList("error-icon");
+                        unityCheckmark.AddToClassList(StatusEffectsStyleSheet.ErrorIconClassName);
                         headerPropertyObject.style.display = DisplayStyle.Flex;
                         headerPropertyValue.style.display = DisplayStyle.None;
-#if EDITOR_ATTRIBUTES
                         unityCheckmark.style.unityBackgroundImageTintColor = Color.white;
-#endif
 
                     }
 
@@ -255,17 +295,14 @@ namespace StatusEffects.Inspector
                         headerPropertyValue.style.display = DisplayStyle.Flex;
                     }  
 
-                    unityCheckmark.RemoveFromClassList("error-icon");
-#if EDITOR_ATTRIBUTES
+                    unityCheckmark.RemoveFromClassList(StatusEffectsStyleSheet.ErrorIconClassName);
                     unityCheckmark.style.unityBackgroundImageTintColor = valueLabel.style.color.keyword is not StyleKeyword.Null ? valueLabel.style.color : Color.white;
-#endif
 
                     errorIcon.style.display = DisplayStyle.None;
                 }
             }
         }
 
-#endif
         private SerializedProperty m_StatusName;
         private SerializedProperty m_BaseValue;
         private SerializedProperty m_SignProtected;

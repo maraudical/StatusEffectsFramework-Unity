@@ -11,7 +11,9 @@ namespace StatusEffects.Entities
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation | WorldSystemFilterFlags.ServerSimulation)]
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
     [UpdateBefore(typeof(StatusReferencesSetupSystem))]
+#if !NETCODE
     [UpdateAfter(typeof(BeginStatusEffectEntityCommandBufferSystem))]
+#endif
     public partial class StatusReferencesGhostsSetupSystem : SystemBase
     {
         public List<Hash128> m_ConvertedGhostPrefabIds;
@@ -22,13 +24,14 @@ namespace StatusEffects.Entities
             m_ConvertedGhostPrefabIds = new();
 
             m_RequestQuery = SystemAPI.QueryBuilder().WithAll<ModulePrefabs>().WithNone<StatusReferencesGhostsSetup>().Build();
+
             RequireForUpdate(m_RequestQuery);
         }
 
         protected override void OnUpdate() 
         {
-            var prefabs = m_RequestQuery.GetSingletonBuffer<ModulePrefabs>().Reinterpret<Entity>().ToNativeArray(Allocator.Temp);
-            var blobAssets = SystemAPI.GetSingleton<StatusReferences>().BlobAsset.Value.GetValueArray(Allocator.Temp);
+            using var prefabs = m_RequestQuery.GetSingletonBuffer<ModulePrefabs>().Reinterpret<Entity>().ToNativeArray(Allocator.Temp);
+            using var blobAssets = SystemAPI.GetSingleton<StatusReferences>().BlobAsset.Value.GetValueArray(Allocator.Temp);
 
             foreach (var blobAsset in blobAssets)
             {
@@ -47,8 +50,6 @@ namespace StatusEffects.Entities
 
                 m_ConvertedGhostPrefabIds.Add(data.Id);
             }
-
-            blobAssets.Dispose();
 
             EntityManager.AddComponentData<StatusReferencesGhostsSetup>(m_RequestQuery.GetSingletonEntity(), new());
         }

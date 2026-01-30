@@ -2,11 +2,11 @@
 using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace StatusEffects.Example.Inspector
+namespace StatusEffects.Example.Editor
 {
     [CustomEditor(typeof(ExamplePlayer))]
     [CanEditMultipleObjects]
-    public class ExamplePlayerEditor : Editor
+    public class ExamplePlayerEditor : UnityEditor.Editor
     {
         public override VisualElement CreateInspectorGUI()
         {

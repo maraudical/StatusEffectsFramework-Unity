@@ -1,63 +1,149 @@
-#if UNITY_2023_1_OR_NEWER
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
-#else
-using UnityEngine;
-#endif
 using System;
 using UnityEditor;
+using UnityEngine;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     [CustomPropertyDrawer(typeof(Condition))]
     internal class ConditionDrawer : PropertyDrawer
     {
-#if UNITY_2023_1_OR_NEWER
         public VisualTreeAsset VisualTree;
 
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
-            var root = new VisualElement();
-
-            VisualTree.CloneTree(root);
-
-            var searchableConfigurable = root.Q<PropertyField>("searchable-configurable");
-            var searchableData = root.Q<PropertyField>("searchable-data");
-            var searchableComparableName = root.Q<PropertyField>("searchable-comparable-name");
-            var searchableGroup = root.Q<PropertyField>("searchable-group");
-            var isLabel = root.Q<Label>("is-label");
-            var existence = root.Q<EnumField>("existence");
-            var thenLabel = root.Q<Label>("then-label");
-            var configurability = root.Q<EnumField>("configurability");
-            var stacks = root.Q<PropertyField>("stacks");
-            var scaleOption = root.Q<EnumField>("scale-option");
-            var removeOption = root.Q<EnumField>("remove-option");
-            var stacksLabel = root.Q<Label>("stacks-label");
-            var ofLabel = root.Q<Label>("of-label");
-            var actionConfigurable = root.Q<PropertyField>("action-configurable");
-            var actionData = root.Q<PropertyField>("action-data");
-            var actionComparableName = root.Q<PropertyField>("action-comparable-name");
-            var actionGroup = root.Q<PropertyField>("action-group");
-            var duration = root.Q<PropertyField>("duration");
-            var timing = root.Q<PropertyField>("timing");
-            var dashLabel = root.Q<Label>("dash-label");
-
             var searchableConfigurableProperty = property.FindPropertyRelative($"m_{nameof(Condition.SearchableConfigurable)}");
+            var searchableDataProperty = property.FindPropertyRelative($"m_{nameof(Condition.SearchableData)}");
+            var searchableComparableNameProperty = property.FindPropertyRelative($"m_{nameof(Condition.SearchableComparableName)}");
+            var searchableGroupProperty = property.FindPropertyRelative($"m_{nameof(Condition.SearchableGroup)}");
             var existsProperty = property.FindPropertyRelative($"m_{nameof(Condition.Exists)}");
             var addProperty = property.FindPropertyRelative($"m_{nameof(Condition.Add)}");
+            var stacksProperty = property.FindPropertyRelative($"m_{nameof(Condition.Stacks)}");
             var scaledProperty = property.FindPropertyRelative($"m_{nameof(Condition.Scaled)}");
             var useStacksProperty = property.FindPropertyRelative($"m_{nameof(Condition.UseStacks)}");
             var actionConfigurableProperty = property.FindPropertyRelative($"m_{nameof(Condition.ActionConfigurable)}");
+            var actionDataProperty = property.FindPropertyRelative($"m_{nameof(Condition.ActionData)}");
+            var actionComparableNameProperty = property.FindPropertyRelative($"m_{nameof(Condition.ActionComparableName)}");
+            var actionGroupProperty = property.FindPropertyRelative($"m_{nameof(Condition.ActionGroup)}");
+            var durationProperty = property.FindPropertyRelative($"m_{nameof(Condition.Duration)}");
             var timingProperty = property.FindPropertyRelative($"m_{nameof(Condition.Timing)}");
 
-            searchableConfigurable.label = string.Empty;
+            var root = new VisualElement();
+            root.style.flexDirection = FlexDirection.Row;
+            root.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
+            root.AddToClassList(StatusEffectsStyleSheet.MaskFieldSizeClassName);
+
+            var ifLabel = new Label("If");
+            ifLabel.style.paddingLeft = 0;
+            ifLabel.style.paddingRight = 1;
+            ifLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            root.Add(ifLabel);
+
+            var searchableConfigurable = new PropertyField(searchableConfigurableProperty, string.Empty);
+            searchableConfigurable.style.minWidth = 56;
+            root.Add(searchableConfigurable);
+
+            var searchableData = new PropertyField(searchableDataProperty, string.Empty);
+            searchableData.style.minWidth = 92;
+            searchableData.style.flexGrow = 1;
+            root.Add(searchableData);
+            
+            var searchableComparableName = new PropertyField(searchableComparableNameProperty, string.Empty);
+            searchableComparableName.style.minWidth = 92;
+            searchableComparableName.style.flexGrow = 1;
+            root.Add(searchableComparableName);
+            
+            var searchableGroup = new PropertyField(searchableGroupProperty, string.Empty);
+            searchableGroup.style.minWidth = 92;
+            searchableGroup.style.flexGrow = 1;
+            root.Add(searchableGroup);
+            
+            var isLabel = new Label("is");
+            isLabel.style.paddingLeft = 7;
+            isLabel.style.paddingRight = 1;
+            isLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            root.Add(isLabel);
+
+            var existence = new EnumField();
+            existence.Init(new Existence());
+            root.Add(existence);
+
+            var thenLabel = new Label("then");
+            thenLabel.style.paddingLeft = 7;
+            thenLabel.style.paddingRight = 1;
+            thenLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            root.Add(thenLabel);
+
+            var configurability = new EnumField();
+            configurability.Init(new Configurability());
+            root.Add(configurability);
+            
+            var stacks = new PropertyField(stacksProperty, string.Empty);
+            stacks.style.flexShrink = 0;
+            stacks.style.marginRight = 0;
+            stacks.style.marginLeft = 0;
+            root.Add(stacks);
+
+            var scaleOption = new EnumField();
+            scaleOption.Init(new ScaleOption());
+            root.Add(scaleOption);
+
+            var removeOption = new EnumField();
+            removeOption.Init(new RemoveOption());
+            root.Add(removeOption);
+
+            var stacksLabel = new Label("stacks");
+            stacksLabel.style.marginRight = -4;
+            stacksLabel.style.paddingLeft = 7;
+            stacksLabel.style.paddingRight = 0;
+            stacksLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            root.Add(stacksLabel);
+
+            var ofLabel = new Label("of");
+            ofLabel.style.paddingLeft = 7;
+            ofLabel.style.paddingRight = 1;
+            ofLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            root.Add(ofLabel);
+
+            var actionConfigurable = new PropertyField(actionConfigurableProperty, string.Empty);
+            actionConfigurable.style.minWidth = 56;
+            actionConfigurable.style.flexShrink = 0;
+            root.Add(actionConfigurable);
+
+            var actionData = new PropertyField(actionDataProperty, string.Empty);
+            actionData.style.minWidth = 92;
+            actionData.style.flexGrow = 1;
+            root.Add(actionData);
+
+            var actionComparableName = new PropertyField(actionComparableNameProperty, string.Empty);
+            actionComparableName.style.minWidth = 92;
+            actionComparableName.style.flexGrow = 1;
+            root.Add(actionComparableName);
+
+            var actionGroup = new PropertyField(actionGroupProperty, string.Empty);
+            actionGroup.style.minWidth = 92;
+            actionGroup.style.flexGrow = 1;
+            root.Add(actionGroup);
+            
+            var duration = new PropertyField(durationProperty, string.Empty);
+            duration.style.flexShrink = 0;
+            root.Add(duration);
+
+            var timing = new PropertyField(timingProperty, string.Empty);
+            timing.style.flexShrink = 0;
+            root.Add(timing);
+
+            var dashLabel = new Label("—");
+            dashLabel.style.paddingLeft = 7;
+            dashLabel.style.paddingRight = 1;
+            dashLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            dashLabel.style.opacity = 0.5f;
+            root.Add(dashLabel);
+
             searchableConfigurable.RegisterValueChangeCallback(SearchableConfigurableValueChanged);
 
-            searchableData.label = string.Empty;
-
-            searchableComparableName.label = string.Empty;
-
-            searchableGroup.RegisterCallbackOnce<GeometryChangedEvent>(SearchableGroupGeometryChanged);
+            searchableGroup.RegisterCallback<GeometryChangedEvent>(SearchableGroupGeometryChanged);
 
             existence.SetValueWithoutNotify((Existence)Convert.ToInt32(existsProperty.boolValue));
             existence.showMixedValue = existsProperty.hasMultipleDifferentValues;
@@ -67,6 +153,8 @@ namespace StatusEffects.Inspector
             configurability.showMixedValue = addProperty.hasMultipleDifferentValues;
             configurability.RegisterValueChangedCallback(ConfigurabilityValueChanged);
 
+            stacks.RegisterCallback<GeometryChangedEvent>(StacksGeometryChanged);
+
             scaleOption.SetValueWithoutNotify((ScaleOption)Convert.ToInt32(scaledProperty.boolValue));
             scaleOption.showMixedValue = scaledProperty.hasMultipleDifferentValues;
             scaleOption.RegisterValueChangedCallback(ScaleOptionValueChanged);
@@ -75,18 +163,12 @@ namespace StatusEffects.Inspector
             removeOption.showMixedValue = useStacksProperty.hasMultipleDifferentValues;
             removeOption.RegisterValueChangedCallback(RemoveOptionValueChanged);
 
-            actionConfigurable.label = string.Empty;
             actionConfigurable.RegisterValueChangeCallback(ActionConfigurableValueChanged);
 
-            actionData.label = string.Empty;
+            actionGroup.RegisterCallback<GeometryChangedEvent>(ActionGroupGeometryChanged);
 
-            actionComparableName.label = string.Empty;
+            duration.RegisterCallback<GeometryChangedEvent>(DurationGeometryChanged);
 
-            actionGroup.RegisterCallbackOnce<GeometryChangedEvent>(ActionGroupGeometryChanged);
-
-            duration.label = string.Empty;
-
-            timing.label = string.Empty;
             timing.RegisterValueChangeCallback(TimingValueChanged);
 
             EvaluateProperties();
@@ -100,7 +182,8 @@ namespace StatusEffects.Inspector
 
             void SearchableGroupGeometryChanged(GeometryChangedEvent changeEvent)
             {
-                searchableGroup.Q<MaskField>("mask-field").label = string.Empty;
+                searchableGroup.UnregisterCallback<GeometryChangedEvent>(SearchableGroupGeometryChanged);
+                searchableGroup.Q<MaskField>().label = string.Empty;
             }
 
             void ExistenceValueChanged(ChangeEvent<Enum> changeEvent)
@@ -114,6 +197,12 @@ namespace StatusEffects.Inspector
                 addProperty.boolValue = Convert.ToBoolean((int)(Configurability)changeEvent.newValue);
                 addProperty.serializedObject.ApplyModifiedProperties();
                 EvaluateProperties();
+            }
+
+            void StacksGeometryChanged(GeometryChangedEvent changeEvent)
+            {
+                stacks.UnregisterCallback<GeometryChangedEvent>(StacksGeometryChanged);
+                stacks.Q<IntegerField>().label = string.Empty;
             }
 
             void ScaleOptionValueChanged(ChangeEvent<Enum> changeEvent)
@@ -136,7 +225,14 @@ namespace StatusEffects.Inspector
 
             void ActionGroupGeometryChanged(GeometryChangedEvent changeEvent)
             {
-                actionGroup.Q<MaskField>("mask-field").label = string.Empty;
+                actionGroup.UnregisterCallback<GeometryChangedEvent>(ActionGroupGeometryChanged);
+                actionGroup.Q<MaskField>().label = string.Empty;
+            }
+
+            void DurationGeometryChanged(GeometryChangedEvent changeEvent)
+            {
+                duration.UnregisterCallback<GeometryChangedEvent>(DurationGeometryChanged);
+                duration.Q<FloatField>().label = string.Empty;
             }
 
             void TimingValueChanged(SerializedPropertyChangeEvent changeEvent)
@@ -179,227 +275,6 @@ namespace StatusEffects.Inspector
                 dashLabel.style.display = anyDifference ? DisplayStyle.Flex : DisplayStyle.None;
             }
         }
-#else
-        private SerializedProperty m_SearchableConfigurable;
-        private SerializedProperty m_SearchableReference;
-        private SerializedProperty m_Exists;
-        private SerializedProperty m_Add;
-        private SerializedProperty m_Scaled;
-        private SerializedProperty m_UseStacks;
-        private SerializedProperty m_Stacks;
-        private SerializedProperty m_ActionConfigurable;
-        private SerializedProperty m_ActionReference;
-        private SerializedProperty m_Duration;
-        private SerializedProperty m_Timing;
-
-        private readonly float m_FieldSize = EditorGUIUtility.singleLineHeight;
-
-        private const float k_MinimumSize = 40;
-
-        private const float k_Padding = 3;
-        private const float k_IfSize = 10;
-        private const float k_IsSize = 12;
-        private const float k_ExistsPropertySize = 70;
-        private const float k_ThenSize = 28;
-        private const float k_AddRemoveSize = 70;
-        private const float k_ScaledSize = 77;
-        private const float k_RemoveOptionStackSize = 98;
-        private const float k_RemoveOptionAllSize = 40;
-        private const float k_AddOptionSize = 70;
-        private const float k_StacksSize = 28;
-        private const float k_ConfigurableSize = 70;
-        private const float k_SecondsPropertySize = 28;
-        private const float k_TimingSize = 70;
-        private const float k_ExpandWindowSize = 115;
-
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        {
-            m_SearchableConfigurable = property.FindPropertyRelative($"m_{nameof(Condition.SearchableConfigurable)}");
-            m_SearchableReference = property.FindPropertyRelative(m_SearchableConfigurable.enumValueIndex == (int)ConditionalConfigurable.Data ? $"m_{nameof(Condition.SearchableData)}"
-                                                                : m_SearchableConfigurable.enumValueIndex == (int)ConditionalConfigurable.Name ? $"m_{nameof(Condition.SearchableComparableName)}"
-                                                                                                                                               : $"m_{nameof(Condition.SearchableGroup)}");
-            m_Exists = property.FindPropertyRelative($"m_{nameof(Condition.Exists)}");
-            m_Add = property.FindPropertyRelative($"m_{nameof(Condition.Add)}");
-            m_Scaled = property.FindPropertyRelative($"m_{nameof(Condition.Scaled)}");
-            m_UseStacks = property.FindPropertyRelative($"m_{nameof(Condition.UseStacks)}");
-            m_Stacks = property.FindPropertyRelative($"m_{nameof(Condition.Stacks)}");
-            m_ActionConfigurable = property.FindPropertyRelative($"m_{nameof(Condition.ActionConfigurable)}");
-            m_ActionReference = property.FindPropertyRelative(m_ActionConfigurable.enumValueIndex == (int)ConditionalConfigurable.Data || m_Add.boolValue ? $"m_{nameof(Condition.ActionData)}"
-                                                            : m_ActionConfigurable.enumValueIndex == (int)ConditionalConfigurable.Name ? $"m_{nameof(Condition.ActionComparableName)}"
-                                                                                                                                       : $"m_{nameof(Condition.ActionGroup)}");
-            m_Duration = property.FindPropertyRelative($"m_{nameof(Condition.Duration)}");
-            m_Timing = property.FindPropertyRelative($"m_{nameof(Condition.Timing)}");
-
-            var positionWidth = 0f;
-
-            if (position.width > 0)
-                positionWidth = position.width;
-
-            position.height = m_FieldSize;
-
-            float width = (position.width - k_IfSize
-                                          - k_ConfigurableSize
-                                          - k_IsSize
-                                          - k_ExistsPropertySize
-                                          - k_ThenSize
-                                          - k_AddRemoveSize
-                                          - (m_Add.boolValue || m_UseStacks.boolValue ? k_ScaledSize : 0)
-                                          - (m_Add.boolValue ? k_AddOptionSize : m_UseStacks.boolValue ? k_RemoveOptionStackSize : k_RemoveOptionAllSize)
-                                          - (m_Add.boolValue && m_Timing.enumValueIndex == (int)ConditionalTiming.Duration ? k_SecondsPropertySize : m_Add.boolValue ? 0 : k_ConfigurableSize)
-                                          - (m_Add.boolValue ? k_TimingSize : 0)
-                                          - k_Padding * (m_Add.boolValue && m_Timing.enumValueIndex == (int)ConditionalTiming.Duration ? 11 : m_Add.boolValue || m_UseStacks.boolValue ? 10 : 9));
-
-            float currentWidth = 0;
-            Rect offset = new Rect(position.position, new Vector2(Mathf.Max(k_MinimumSize, width / 2), position.height));
-
-            EditorGUI.BeginProperty(position, label, property);
-
-            if (!CheckForSpace(k_IfSize + k_ExpandWindowSize))
-                return;
-            EditorGUI.LabelField(new Rect(offset.position, new Vector2(k_IfSize, offset.height)), "If");
-            offset.x += k_IfSize + k_Padding;
-            currentWidth += k_IfSize + k_Padding;
-
-            if (!CheckForSpace(k_ConfigurableSize + k_ExpandWindowSize))
-                return;
-            EditorGUI.PropertyField(new Rect(offset.position, new Vector2(k_ConfigurableSize, offset.height)), m_SearchableConfigurable, GUIContent.none);
-            offset.x += k_ConfigurableSize + k_Padding;
-            currentWidth += k_ConfigurableSize + k_Padding;
-
-            if (!CheckForSpace(offset.size.x + k_ExpandWindowSize))
-                return;
-            EditorGUI.PropertyField(offset, m_SearchableReference, GUIContent.none);
-            offset.x += offset.width + k_Padding;
-            currentWidth += offset.width + k_Padding;
-
-            if (!CheckForSpace(k_IsSize + k_ExpandWindowSize))
-                return;
-            EditorGUI.LabelField(new Rect(offset.position, new Vector2(k_IsSize, offset.height)), "is");
-            offset.x += k_IsSize + k_Padding;
-            currentWidth += k_IsSize + k_Padding;
-
-            if (!CheckForSpace(k_ExistsPropertySize + k_ExpandWindowSize))
-                return;
-            var existence = (Existence)Convert.ToInt32(m_Exists.boolValue);
-            var restoreShowMixedValue = EditorGUI.showMixedValue;
-            EditorGUI.showMixedValue = m_Exists.hasMultipleDifferentValues;
-            var value = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(k_ExistsPropertySize, offset.height)), existence));
-            if (value != m_Exists.boolValue)
-                m_Exists.boolValue = value;
-            EditorGUI.showMixedValue = restoreShowMixedValue;
-            offset.x += k_ExistsPropertySize + k_Padding;
-            currentWidth += k_ExistsPropertySize + k_Padding;
-
-            if (!CheckForSpace(k_ThenSize + k_ExpandWindowSize))
-                return;
-            EditorGUI.LabelField(new Rect(offset.position, new Vector2(k_ThenSize, offset.height)), "then");
-            offset.x += k_ThenSize + k_Padding;
-            currentWidth += k_ThenSize + k_Padding;
-
-            if (!CheckForSpace(k_AddRemoveSize + k_ExpandWindowSize))
-                return;
-            var configurability = (Configurability)Convert.ToInt32(m_Add.boolValue);
-            restoreShowMixedValue = EditorGUI.showMixedValue;
-            EditorGUI.showMixedValue = m_Add.hasMultipleDifferentValues;
-            value = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(k_AddRemoveSize, offset.height)), configurability));
-            if (value != m_Add.boolValue)
-            {
-                m_Add.boolValue = value;
-                if (value)
-                    m_UseStacks.boolValue = true;
-            }
-            EditorGUI.showMixedValue = restoreShowMixedValue;
-            offset.x += k_AddRemoveSize + k_Padding;
-            currentWidth += k_AddRemoveSize + k_Padding;
-
-            if (m_Add.hasMultipleDifferentValues)
-            {
-                if (!CheckForSpace(k_ExpandWindowSize + 20))
-                    return;
-
-                EditorGUI.LabelField(new Rect(offset.position, new Vector2(positionWidth - currentWidth, offset.height)), "(Different add/remove)");
-                return;
-            }
-
-            if (m_Add.boolValue || m_UseStacks.boolValue)
-            {
-                if (!CheckForSpace(k_ScaledSize + k_ExpandWindowSize))
-                    return;
-                var scaleOption = (ScaleOption)Convert.ToInt32(m_Scaled.boolValue);
-                restoreShowMixedValue = EditorGUI.showMixedValue;
-                EditorGUI.showMixedValue = m_Scaled.hasMultipleDifferentValues;
-                value = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(k_ScaledSize, offset.height)), scaleOption));
-                if (value != m_Scaled.boolValue)
-                    m_Scaled.boolValue = value;
-                EditorGUI.showMixedValue = restoreShowMixedValue;
-                offset.x += k_ScaledSize + k_Padding;
-                currentWidth += k_ScaledSize + k_Padding;
-            }
-
-            if (!m_Add.boolValue)
-            {
-                if (!CheckForSpace((m_UseStacks.boolValue ? k_RemoveOptionStackSize : k_RemoveOptionAllSize) + k_ExpandWindowSize + 2))
-                    return;
-                if (m_UseStacks.boolValue)
-                {
-                    EditorGUI.PropertyField(new Rect(offset.position, new Vector2(k_StacksSize, offset.height)), m_Stacks, GUIContent.none);
-                    offset.x += k_StacksSize + k_Padding;
-                }
-                var removeOption = (RemoveOption)Convert.ToInt32(m_UseStacks.boolValue);
-                restoreShowMixedValue = EditorGUI.showMixedValue;
-                EditorGUI.showMixedValue = m_Add.hasMultipleDifferentValues;
-                value = Convert.ToBoolean(EditorGUI.EnumPopup(new Rect(offset.position, new Vector2(m_UseStacks.boolValue ? k_RemoveOptionStackSize - k_StacksSize - k_Padding : k_RemoveOptionAllSize, offset.height)), removeOption));
-                if (value != m_UseStacks.boolValue)
-                    m_UseStacks.boolValue = value;
-                EditorGUI.showMixedValue = restoreShowMixedValue;
-                offset.x += m_UseStacks.boolValue ? k_RemoveOptionStackSize - k_StacksSize : k_RemoveOptionAllSize + k_Padding;
-                EditorGUI.PropertyField(new Rect(offset.position, new Vector2(k_ConfigurableSize, offset.height)), m_ActionConfigurable, GUIContent.none);
-                offset.x += k_ConfigurableSize + k_Padding;
-            }
-            else
-            {
-                if (!CheckForSpace(k_AddOptionSize + k_ExpandWindowSize))
-                    return;
-                EditorGUI.PropertyField(new Rect(offset.position, new Vector2(k_StacksSize, offset.height)), m_Stacks, GUIContent.none);
-                offset.x += k_StacksSize + k_Padding;
-                EditorGUI.LabelField(new Rect(offset.position, new Vector2(k_AddOptionSize - k_StacksSize - k_Padding, offset.height)), "stacks");
-                offset.x += k_AddOptionSize - k_StacksSize;
-                currentWidth += k_AddOptionSize + k_Padding;
-
-                if (!CheckForSpace(offset.size.x + k_Padding + (m_Timing.enumValueIndex == (int)ConditionalTiming.Duration ? k_SecondsPropertySize + k_Padding + k_TimingSize : k_TimingSize) - 1))
-                    return;
-            }
-
-            EditorGUI.PropertyField(offset, m_ActionReference, GUIContent.none);
-
-            if (m_Add.boolValue)
-            {
-                offset.x += offset.width + k_Padding;
-
-                if (m_Timing.enumValueIndex == (int)ConditionalTiming.Duration)
-                {
-                    EditorGUI.PropertyField(new Rect(offset.position, new Vector2(k_SecondsPropertySize, offset.height)), m_Duration, GUIContent.none);
-                    offset.x += k_SecondsPropertySize + k_Padding;
-                }
-
-                EditorGUI.PropertyField(new Rect(offset.position, new Vector2(k_TimingSize, offset.height)), m_Timing, GUIContent.none);
-            }
-
-            EditorGUI.EndProperty();
-
-            bool CheckForSpace(float roomNeeded, bool debug = false)
-            {
-                if (currentWidth + roomNeeded > positionWidth)
-                {
-                    GUI.color = Color.yellow;
-                    EditorGUI.LabelField(new Rect(offset.position, new Vector2(positionWidth - currentWidth, offset.height)), "(Expand window...)");
-                    GUI.color = Color.white;
-                    return false;
-                }
-                return true;
-            }
-        }
-#endif
 
         public enum Existence
         {

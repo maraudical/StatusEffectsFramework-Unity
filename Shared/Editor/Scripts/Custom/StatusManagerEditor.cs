@@ -1,11 +1,11 @@
 using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     [CustomEditor(typeof(StatusManager))]
     [CanEditMultipleObjects]
-    internal class StatusManagerEditor : Editor
+    internal class StatusManagerEditor : UnityEditor.Editor
     {
         public VisualTreeAsset VisualTree;
         

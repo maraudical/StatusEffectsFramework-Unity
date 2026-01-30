@@ -18,25 +18,25 @@ namespace StatusEffects.Entities
     /// Any module related systems should most likely run in the 
     /// <see cref="SimulationSystemGroup"/>.
     /// </summary>
+#if NETCODE
+    [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
+#else
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
+#endif
     [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
     [BurstCompile]
     public partial struct StatusManagerSystem : ISystem
     {
         private EntityQuery m_RequestQuery;
-        private EntityQuery m_UpdateQuery;
-
-        private ComponentLookup<Module> m_ModuleLookup;
+        private EntityQuery m_StatusEffectQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_RequestQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffectRequests, StatusEffects>().WithAll<Modules>().Build();
-            m_UpdateQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().Build();
+            m_RequestQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects, Modules>().WithAllRW<StatusEffectRequests>().WithAll<Simulate>().Build();
+            m_StatusEffectQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects, Modules>().WithAll<Simulate>().Build();
 
-            m_ModuleLookup = SystemAPI.GetComponentLookup<Module>(true);
-
-            state.RequireForUpdate(m_UpdateQuery);
+            state.RequireForUpdate(m_StatusEffectQuery);
             state.RequireForUpdate<StatusReferences>();
             state.RequireForUpdate<ModulePrefabs>();
         }
@@ -44,52 +44,67 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            m_ModuleLookup.Update(ref state);
+            var moduleLookup = SystemAPI.GetComponentLookup<Module>(true);
+            var modulesLookup = SystemAPI.GetBufferLookup<Modules>();
 
             var references = SystemAPI.GetSingleton<StatusReferences>();
             var modulePrefabs = SystemAPI.GetSingletonBuffer<ModulePrefabs>();
             var commandBufferParallel = SystemAPI.GetSingleton<BeginStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+#if NETCODE
+            var isServer = state.WorldUnmanaged.IsServer();
+#endif
 
             // Handle any add/remove requests.
-            if (!m_RequestQuery.IsEmpty)
+            var statusEffectRequestJob = new StatusEffectRequestJob
             {
-                var statusEffectRequestJob = new StatusEffectRequestJob
-                {
-                    CommandBuffer = commandBufferParallel,
-                    ModuleLookup = m_ModuleLookup,
-                    References = references,
-                    ModulePrefabs = modulePrefabs
-                };
-                state.Dependency = statusEffectRequestJob.ScheduleParallelByRef(m_RequestQuery, state.Dependency);
-            }
+#if NETCODE
+                IsServer = isServer,
+#endif
+                References = references,
+                CommandBuffer = commandBufferParallel,
+                ModuleLookup = moduleLookup,
+                ModulesLookup = modulesLookup,
+                ModulePrefabs = modulePrefabs
+            };
+            state.Dependency = statusEffectRequestJob.ScheduleParallelByRef(m_RequestQuery, state.Dependency);
 
             // Update and check durations.
-            var statusEffectUpdateJob = new StatusEffectUpdateJob
+            var statusEffectJob = new StatusEffectJob
             {
+#if NETCODE
+                IsServer = isServer,
+#endif
+                TimeDelta = SystemAPI.Time.DeltaTime,
                 CommandBuffer = commandBufferParallel,
-                ModuleLookup = m_ModuleLookup,
-                TimeDelta = SystemAPI.Time.DeltaTime
+                ModuleLookup = moduleLookup,
+                ModulesLookup = modulesLookup,
             };
-            state.Dependency = statusEffectUpdateJob.ScheduleParallelByRef(m_UpdateQuery, state.Dependency);
+            state.Dependency = statusEffectJob.ScheduleParallelByRef(m_StatusEffectQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         public partial struct StatusEffectRequestJob : IJobEntity
         {
+#if NETCODE
+            public bool IsServer;
+#endif
+            public StatusReferences References;
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
             [ReadOnly]
             public ComponentLookup<Module> ModuleLookup;
-            [ReadOnly]
-            public StatusReferences References;
+            [NativeDisableParallelForRestriction]
+            public BufferLookup<Modules> ModulesLookup;
             [ReadOnly]
             public DynamicBuffer<ModulePrefabs> ModulePrefabs;
 
-            void Execute([ChunkIndexInQuery] int sortKey, Entity entity, ref DynamicBuffer<StatusEffectRequests> statusEffectRequests, ref DynamicBuffer<StatusEffects> statusEffects, in DynamicBuffer<Modules> modules)
+            void Execute([ChunkIndexInQuery] int sortKey, Entity entity, ref DynamicBuffer<StatusEffectRequests> statusEffectRequests, ref DynamicBuffer<StatusEffects> statusEffects)
             {
                 // If nothing to change then continue.
                 if (statusEffectRequests.Length <= 0)
                     return;
-                
+
+                var modules = ModulesLookup[entity];
+
                 NativeArray<StatusEffects>.ReadOnly unsortedStatusEffects = statusEffects.AsNativeArray().AsReadOnly();
                 NativeList<IndexedStatusEffect> statusEffectStackUpdates = new NativeList<IndexedStatusEffect>(unsortedStatusEffects.Length, Allocator.Temp);
 
@@ -639,16 +654,11 @@ namespace StatusEffects.Entities
                             CommandBuffer.AppendToBuffer(sortKey, entity, new Modules { Value = moduleEntity });
                             CommandBuffer.SetComponent(sortKey, moduleEntity, new Module
                             {
-                                Parent = entity,
+                                Target = entity,
                                 BaseValue = reference.Value.BaseValue,
                                 Stacks = indexedUpdate.Stacks,
                                 PreviousStacks = 0,
-                                IsBeingDestroyed = false,
-                                IsBeingUpdated = false
                             });
-                            CommandBuffer.SetComponentEnabled<ModuleUpdateTag>(sortKey, moduleEntity, true);
-                            CommandBuffer.SetComponentEnabled<ModuleDestroyTag>(sortKey, moduleEntity, false);
-                            CommandBuffer.SetComponentEnabled<ModuleCleanupTag>(sortKey, moduleEntity, false);
                         }
                         CommandBuffer.AppendToBuffer(sortKey, entity, new StatusEffects()
                         {
@@ -670,13 +680,24 @@ namespace StatusEffects.Entities
                         CommandBuffer.SetComponentEnabled<StatusVariableUpdate>(sortKey, entity, true);
                         if (updatingStatusEffectRef.Module != Entity.Null)
                         {
-                            Module module = ModuleLookup[updatingStatusEffectRef.Module];
-                            module.PreviousStacks = module.Stacks;
-                            module.IsBeingUpdated = true;
-                            module.IsBeingDestroyed = true;
-                            CommandBuffer.SetComponent(sortKey, updatingStatusEffectRef.Module, module);
-                            CommandBuffer.SetComponentEnabled<ModuleUpdateTag>(sortKey, updatingStatusEffectRef.Module, true);
-                            CommandBuffer.SetComponentEnabled<ModuleDestroyTag>(sortKey, updatingStatusEffectRef.Module, true);
+#if NETCODE
+                            if (IsServer)
+                            {
+#endif
+                                for (var i = modules.Length - 1; i >= 0; i--)
+                                    if (modules[i].Value == updatingStatusEffectRef.Module)
+                                    {
+                                        modules.RemoveAtSwapBack(i);
+                                        break;
+                                    }
+                                CommandBuffer.DestroyEntity(sortKey, updatingStatusEffectRef.Module);
+#if NETCODE
+                            }
+                            else
+                            {
+                                CommandBuffer.SetComponentEnabled<PredictedDestroy>(sortKey, updatingStatusEffectRef.Module, true);
+                            }
+#endif
                         }
                         statusEffects.RemoveAt(indexedUpdate.Index);
                     }
@@ -690,19 +711,7 @@ namespace StatusEffects.Entities
                             Module module = ModuleLookup[updatingStatusEffectRef.Module];
                             module.PreviousStacks = module.Stacks;
                             module.Stacks = updatingStatusEffectRef.Stacks;
-                            module.IsBeingUpdated = true;
                             CommandBuffer.SetComponent(sortKey, updatingStatusEffectRef.Module, module);
-                            CommandBuffer.SetComponentEnabled<ModuleUpdateTag>(sortKey, updatingStatusEffectRef.Module, true);
-#if NETCODE
-                            var request = CommandBuffer.CreateEntity(sortKey);
-                            CommandBuffer.AddComponent(sortKey, request, new ModuleReplicationCommand() 
-                            { 
-                                Entity = updatingStatusEffectRef.Module,
-                                Stacks = module.Stacks,
-                                PreviousStacks = module.PreviousStacks
-                            });
-                            CommandBuffer.AddComponent(sortKey, request, new SendRpcCommandRequest { TargetConnection = Entity.Null });
-#endif
                         }
                     }
                 }
@@ -711,20 +720,26 @@ namespace StatusEffects.Entities
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
-        public partial struct StatusEffectUpdateJob : IJobEntity
+        public partial struct StatusEffectJob : IJobEntity
         {
+#if NETCODE
+            public bool IsServer;
+#endif
+            public float TimeDelta;
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
             [ReadOnly]
             public ComponentLookup<Module> ModuleLookup;
-            [ReadOnly]
-            public float TimeDelta;
+            [NativeDisableParallelForRestriction]
+            public BufferLookup<Modules> ModulesLookup;
 
             void Execute([ChunkIndexInQuery] int sortKey, Entity entity, ref DynamicBuffer<StatusEffects> statusEffects)
             {
                 // If nothing to change then continue.
                 if (statusEffects.Length <= 0)
                     return;
-                
+
+                var modules = ModulesLookup[entity];
+
                 // Iterate in reverse to not skip any that get removed.
                 for (int i = statusEffects.Length - 1; i >= 0 ; i--)
                 {
@@ -737,31 +752,42 @@ namespace StatusEffects.Entities
                         case StatusEffectTiming.Duration:
                             statusEffect.Duration -= TimeDelta;
                             if (statusEffect.Duration <= 0)
-                                RemoveStatusEffect(ref statusEffect, ref statusEffects, entity, i, sortKey);
+                                RemoveStatusEffect(sortKey, entity, ref statusEffects, ref modules, i, statusEffect.Module);
                             break;
                         default: 
                             // Event and Predicate timings only check if duration has
                             // run out because user created systems should handle
                             // decrementing those StatusEffects.
                             if (statusEffect.Duration <= 0)
-                                RemoveStatusEffect(ref statusEffect, ref statusEffects, entity, i, sortKey);
+                                RemoveStatusEffect(sortKey, entity, ref statusEffects, ref modules, i, statusEffect.Module);
                             break;
                     }
                 }
             }
 
-            void RemoveStatusEffect(ref StatusEffects statusEffect, ref DynamicBuffer<StatusEffects> statusEffectBuffer, Entity entity, int index, int sortKey)
+            void RemoveStatusEffect(int sortKey, in Entity entity, ref DynamicBuffer<StatusEffects> statusEffectBuffer, ref DynamicBuffer<Modules> modules, int index, in Entity module)
             {
                 CommandBuffer.SetComponentEnabled<StatusVariableUpdate>(sortKey, entity, true);
-                if (statusEffect.Module != Entity.Null)
+                if (module != Entity.Null)
                 {
-                    Module module = ModuleLookup[statusEffect.Module];
-                    module.PreviousStacks = module.Stacks;
-                    module.IsBeingUpdated = true;
-                    module.IsBeingDestroyed = true;
-                    CommandBuffer.SetComponent(sortKey, statusEffect.Module, module);
-                    CommandBuffer.SetComponentEnabled<ModuleUpdateTag>(sortKey, statusEffect.Module, true);
-                    CommandBuffer.SetComponentEnabled<ModuleDestroyTag>(sortKey, statusEffect.Module, true);
+#if NETCODE
+                    if (IsServer)
+                    {
+#endif
+                        for (var i = modules.Length - 1; i >= 0; i--)
+                            if (modules[i].Value == module)
+                            {
+                                modules.RemoveAtSwapBack(i);
+                                break;
+                            }
+                        CommandBuffer.DestroyEntity(sortKey, module);
+#if NETCODE
+                    }
+                    else
+                    {
+                        CommandBuffer.SetComponentEnabled<PredictedDestroy>(sortKey, module, true);
+                    }
+#endif
                 }
                 statusEffectBuffer.RemoveAt(index);
             }

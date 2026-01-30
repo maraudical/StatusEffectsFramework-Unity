@@ -2,10 +2,10 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     [CustomEditor(typeof(Name), editorForChildClasses: true)]
-    internal class NameEditor : Editor
+    internal class NameEditor : UnityEditor.Editor
     {
         public override VisualElement CreateInspectorGUI()
         {

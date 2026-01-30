@@ -7,17 +7,20 @@ using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation)]
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
+#if !NETCODE
     [UpdateAfter(typeof(BeginStatusEffectEntityCommandBufferSystem))]
+#endif
     public partial class StatusReferencesSetupSystem : SystemBase
     {
+        public EntityQuery m_ReferencesQuery;
         public EntityQuery m_RequestQuery;
 
         protected override void OnCreate()
         {
             EntityManager.CreateEntity(typeof(StatusReferencesSetupRequest));
 
+            m_ReferencesQuery = SystemAPI.QueryBuilder().WithAll<StatusReferences>().Build();
             m_RequestQuery = SystemAPI.QueryBuilder().WithAll<StatusReferencesSetupRequest>().Build();
 
             RequireForUpdate(m_RequestQuery);
@@ -30,7 +33,7 @@ namespace StatusEffects.Entities
             if (statusEffectDatas.Count <= 0)
                 return;
 
-            var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
+            var commandBuffer = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
 
             commandBuffer.DestroyEntity(m_RequestQuery, EntityQueryCaptureMode.AtPlayback);
 
@@ -48,7 +51,7 @@ namespace StatusEffects.Entities
             global::StatusEffects.Condition condition;
             int moduleIndex = 0;
 
-            bool foundSingleton = SystemAPI.TryGetSingleton<StatusReferences>(out var references);
+            bool foundSingleton = m_ReferencesQuery.TryGetSingleton<StatusReferences>(out var references);
 
             // Dispose of old blobs after copying
             if (foundSingleton)
@@ -66,7 +69,7 @@ namespace StatusEffects.Entities
                 }
 
                 references.BlobAsset.Dispose();
-                commandBuffer.DestroyEntity(SystemAPI.GetSingletonEntity<StatusReferences>());
+                commandBuffer.DestroyEntity(m_ReferencesQuery, EntityQueryCaptureMode.AtPlayback);
             }
 
             foreach (var statusEffectData in statusEffectDatas)
@@ -148,9 +151,7 @@ namespace StatusEffects.Entities
                     commandBuffer.SetName(moduleEntity, $"{statusEffectData.name} Module");
                     commandBuffer.AddComponent<Prefab>(moduleEntity);
                     commandBuffer.AddComponent<Module>(moduleEntity);
-                    commandBuffer.AddComponent<ModuleUpdateTag>(moduleEntity);
-                    commandBuffer.AddComponent<ModuleDestroyTag>(moduleEntity);
-                    commandBuffer.AddComponent<ModuleCleanupTag>(moduleEntity);
+                    commandBuffer.AddComponent<PredictedDestroy>(moduleEntity);
                     foreach (var entityModule in entityModules)
                         // Call each modify command buffer on each module so that it adds
                         // whatever component/buffers it wants. This way, a custom system

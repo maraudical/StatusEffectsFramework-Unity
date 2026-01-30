@@ -1,6 +1,6 @@
 {
     "name": "Unity.StatusEffectsFramework.NetCode.GameObjects.Editor",
-    "rootNamespace": "",
+    "rootNamespace": "StatusEffects.NetCode.GameObjects.Editor",
     "references": [
         "GUID:80ad362050819f54ba03a46947ea083a",
         "GUID:972260d8c361d5b4d96267583f616920"

@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: a4e74205aa86edb49bdfc837ec91b42c
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_StyleSheet: {fileID: 7433441132597879392, guid: 7befcf8a126874340b67cd3c7b30f8e6, type: 3}
+  - m_StatusEffectDataIcon: {fileID: 4456449167576933126, guid: 699ac991a15aecf479159a78b2f8cd9f, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -15,11 +15,11 @@ namespace StatusEffects.Templates
 
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(0, ScriptableObject.CreateInstance<CreateScriptTemplateAssetsAction>(), "NewModuleScript.cs", icon,
 #if ENTITIES
-                k_EntityModuleScriptContent
+                EntityModuleScriptContent
 #elif UNITASK
-                k_UniTaskModuleScriptContent
+                UniTaskModuleScriptContent
 #else
-                k_ModuleScriptContent
+                ModuleScriptContent
 #endif
                 );
         }
@@ -29,7 +29,7 @@ namespace StatusEffects.Templates
         {
             Texture2D icon = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D;
 
-            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(0, ScriptableObject.CreateInstance<CreateScriptTemplateAssetsAction>(), "NewModuleInstanceScript.cs", icon, k_ModuleInstanceScriptContent);
+            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(0, ScriptableObject.CreateInstance<CreateScriptTemplateAssetsAction>(), "NewModuleInstanceScript.cs", icon, ModuleInstanceScriptContent);
         }
 
         internal class CreateScriptTemplateAssetsAction : UnityEditor.ProjectWindowCallback.EndNameEditAction
@@ -54,7 +54,7 @@ namespace StatusEffects.Templates
             }
         }
 
-        static Object CreateScriptAssetFromContent(string content, string targetPath, string displayName, string scriptName)
+        internal static Object CreateScriptAssetFromContent(string content, string targetPath, string displayName, string scriptName)
         {
             return ProjectWindowUtil.CreateScriptAssetWithContent(targetPath, PreprocessScriptTemplate(content, displayName, scriptName));
         }
@@ -67,7 +67,7 @@ namespace StatusEffects.Templates
             return content;
         }
 
-        const string k_UniTaskModuleScriptContent =
+        internal const string UniTaskModuleScriptContent =
 @"using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
@@ -85,7 +85,7 @@ namespace StatusEffects.Modules
     }
 }";
 
-        const string k_ModuleScriptContent =
+        internal const string ModuleScriptContent =
 @"using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -103,7 +103,7 @@ namespace StatusEffects.Modules
     }
 }";
 
-        const string k_EntityModuleScriptContent =
+        internal const string EntityModuleScriptContent =
 @"using StatusEffects.Entities;
 using Unity.Entities;
 using UnityEngine;
@@ -131,7 +131,7 @@ namespace StatusEffects.Modules
     }
 }";
 
-        const string k_ModuleInstanceScriptContent =
+        internal const string ModuleInstanceScriptContent =
 @"namespace StatusEffects.Modules
 {
     public class #SCRIPTNAME# : ModuleInstance

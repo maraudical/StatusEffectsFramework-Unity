@@ -1,87 +1,62 @@
-#if UNITY_2023_1_OR_NEWER
 using UnityEngine.UIElements;
-#else
-using UnityEngine;
-#endif
 using UnityEditor;
+using UnityEditor.UIElements;
+using UnityEngine;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     [CustomPropertyDrawer(typeof(StatusEffect))]
     internal class StatusEffectDrawer : PropertyDrawer
     {
-#if UNITY_2023_1_OR_NEWER
-        public VisualTreeAsset VisualTree;
-
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
-            var root = new VisualElement();
-
-            VisualTree.CloneTree(root);
-
-            var durationLabel = root.Q<Label>("duration-label");
-
+            var referenceProperty = property.FindPropertyRelative(nameof(StatusEffect.Data));
             var timingProperty = property.FindPropertyRelative(nameof(StatusEffect.Timing));
+            var durationProperty = property.FindPropertyRelative($"m_{nameof(StatusEffect.Duration)}");
+            var stacksProperty = property.FindPropertyRelative($"m_{nameof(StatusEffect.Stacks)}");
 
+            var root = new VisualElement();
+            root.style.flexDirection = FlexDirection.Row;
+            root.style.flexGrow = 1;
+            root.style.flexShrink = 1;
+            root.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
+            root.AddToClassList(StatusEffectsStyleSheet.MaskFieldSizeClassName);
+
+            var reference = new ObjectField();
+            reference.style.flexGrow = 1;
+            reference.style.flexShrink = 1;
+            reference.style.minWidth = 42;
+            reference.SetEnabled(false);
+            reference.BindProperty(referenceProperty);
+            root.Add(reference);
+
+            var durationLabel = new Label();
+            durationLabel.style.minWidth = 67;
+            durationLabel.style.paddingRight = 0;
+            durationLabel.style.unityTextAlign = TextAnchor.MiddleRight;
             durationLabel.text = $"{timingProperty.enumDisplayNames[timingProperty.enumValueIndex]}:";
+            root.Add(durationLabel);
+
+            var duration = new PropertyField(durationProperty, string.Empty);
+            duration.style.flexShrink = 0;
+            duration.style.width = 42;
+            duration.SetEnabled(false);
+            root.Add(duration);
+
+            var stacksLabel = new Label();
+            stacksLabel.style.minWidth = 50;
+            stacksLabel.style.paddingRight = 0;
+            stacksLabel.style.unityTextAlign = TextAnchor.MiddleRight;
+            stacksLabel.text = "Stacks:";
+            root.Add(stacksLabel);
+
+            var stacks = new PropertyField(stacksProperty, string.Empty);
+            stacks.style.flexShrink = 0;
+            stacks.style.width = 42;
+            stacks.SetEnabled(false);
+            root.Add(stacks);
 
             return root;
         }
-#else
-        private const float k_Padding = 3;
-        private const float k_TimingSize = 60;
-        private const float k_DurationSize = 40;
-        private const float k_StackLabelSize = 38;
-        private const float k_StackSize = 40;
-        private const float k_HorizontalFix = 5;
-        private const int k_FieldCount = 5;
-
-        private SerializedProperty m_Data;
-        private SerializedProperty m_Timing;
-        private SerializedProperty m_Duration;
-        private SerializedProperty m_Stack;
-
-        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
-        {
-            m_Data = property.FindPropertyRelative(nameof(StatusEffect.Data));
-            m_Timing = property.FindPropertyRelative(nameof(StatusEffect.Timing));
-            m_Duration = property.FindPropertyRelative($"m_{nameof(StatusEffect.Duration)}");
-            m_Stack = property.FindPropertyRelative($"m_{nameof(StatusEffect.Stacks)}");
-
-            EditorGUI.BeginProperty(position, label, property);
-
-            position.width -= k_TimingSize + k_DurationSize + k_StackLabelSize + k_StackSize + (k_FieldCount - 1) * k_Padding + k_HorizontalFix;
-
-            EditorGUI.BeginDisabledGroup(true);
-            EditorGUI.PropertyField(position, m_Data, GUIContent.none);
-            EditorGUI.EndDisabledGroup();
-
-            position.x += position.width + k_Padding;
-            position.width = k_TimingSize;
-
-            EditorGUI.LabelField(position, $"{m_Timing.enumDisplayNames[m_Timing.enumValueIndex]}:");
-
-            position.x += position.width + k_Padding;
-            position.width = k_DurationSize;
-
-            EditorGUI.BeginDisabledGroup(true);
-            EditorGUI.PropertyField(position, m_Duration, GUIContent.none);
-            EditorGUI.EndDisabledGroup();
-
-            position.x += position.width + k_Padding;
-            position.width = k_StackLabelSize;
-
-            EditorGUI.LabelField(position, $"{m_Stack.displayName}:");
-
-            position.x += position.width + k_Padding;
-            position.width = k_StackSize;
-
-            EditorGUI.BeginDisabledGroup(true);
-            EditorGUI.PropertyField(position, m_Stack, GUIContent.none);
-            EditorGUI.EndDisabledGroup();
-
-            EditorGUI.EndProperty();
-        }
-#endif
     }
 }

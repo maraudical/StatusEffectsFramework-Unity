@@ -4,7 +4,7 @@ using Sirenix.OdinInspector.Editor;
 using System.Collections.Generic;
 using System;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     public class StatusEffectGroupProcessor : OdinAttributeProcessor<StatusEffectGroup>
     {

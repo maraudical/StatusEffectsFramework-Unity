@@ -11,25 +11,19 @@ namespace StatusEffects.Entities
     public struct StatusInt
     {
         public Hash128 Id;
-        /// <summary>
-        /// Only use the cached index if there have not been any structural changes 
-        /// to the <see cref="StatusInts"/> buffer since the last time this index 
-        /// was set.
-        /// </summary>
-        public int CachedIndex => m_CachedIndex;
 #if NETCODE
         [GhostField(SendData = false)]
 #endif
         private int m_CachedIndex;
-
+        
         /// <summary>
         /// Attempt to retrieve the <see cref="StatusInts"/> value for this <see cref="StatusInt"/>.
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool GetValue(Hash128 componentId, DynamicBuffer<StatusInts> buffer, out int value, bool structuralChange = false)
+        public bool GetValue(in Hash128 componentId, in DynamicBuffer<StatusInts> buffer, out int value)
         {
-            int index = GetIndex(componentId, buffer, structuralChange);
+            int index = GetIndex(componentId, buffer);
 
             if (index >= 0)
             {
@@ -46,9 +40,9 @@ namespace StatusEffects.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool Get(Hash128 componentId, DynamicBuffer<StatusInts> buffer, out StatusInts value, bool structuralChange = false)
+        public bool Get(in Hash128 componentId, in DynamicBuffer<StatusInts> buffer, out StatusInts value)
         {
-            int index = GetIndex(componentId, buffer, structuralChange);
+            int index = GetIndex(componentId, buffer);
 
             if (index >= 0)
             {
@@ -64,23 +58,29 @@ namespace StatusEffects.Entities
         /// Attempt to retrieve the <see cref="StatusInts"/> index value for this <see cref="StatusInt"/>.
         /// </summary>
         [BurstCompile]
-        public int GetIndex(Hash128 componentId, DynamicBuffer<StatusInts> buffer, bool structuralChange = false)
+        public int GetIndex(in Hash128 componentId, in DynamicBuffer<StatusInts> buffer)
         {
-            if (structuralChange || m_CachedIndex < 0)
+            StatusInts statusInt;
+            int length = buffer.Length;
+            if (m_CachedIndex >= 0 && m_CachedIndex < buffer.Length)
             {
-                m_CachedIndex = -1;
+                statusInt = buffer[m_CachedIndex];
+                if (statusInt.ComponentId == componentId && statusInt.Id == Id)
+                    return m_CachedIndex;
+            }
 
-                for (int i = 0; i < buffer.Length; i++)
+            m_CachedIndex = -1;
+
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                statusInt = buffer[i];
+                if (statusInt.ComponentId == componentId && statusInt.Id == Id)
                 {
-                    var statusInt = buffer[i];
-                    if (statusInt.ComponentId == componentId && statusInt.Id == Id)
-                    {
-                        m_CachedIndex = i;
-                        break;
-                    }
+                    m_CachedIndex = i;
+                    break;
                 }
             }
-            
+
             return m_CachedIndex;
         }
 

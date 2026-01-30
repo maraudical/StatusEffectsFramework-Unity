@@ -1,6 +1,6 @@
 {
     "name": "Unity.StatusEffectsFramework.Example",
-    "rootNamespace": "",
+    "rootNamespace": "StatusEffects.Example",
     "references": [
         "GUID:c1d753aaef5f86c4488844bae8cb6730",
         "GUID:80ad362050819f54ba03a46947ea083a",

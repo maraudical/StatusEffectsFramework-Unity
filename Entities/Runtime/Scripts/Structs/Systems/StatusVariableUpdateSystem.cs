@@ -7,7 +7,11 @@ using Unity.Mathematics;
 
 namespace StatusEffects.Entities
 {
+#if NETCODE
+    [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
+#else
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
+#endif
     [UpdateAfter(typeof(StatusManagerSystem))]
     [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
     [BurstCompile]
@@ -18,7 +22,7 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_StatusVariableUpdateQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusVariableUpdate>().Build();
+            m_StatusVariableUpdateQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusVariableUpdate>().WithAll<Simulate>().Build();
             state.RequireForUpdate(m_StatusVariableUpdateQuery);
             state.RequireForUpdate<StatusReferences>();
         }
@@ -39,7 +43,7 @@ namespace StatusEffects.Entities
                 StatusBoolsLookup = SystemAPI.GetBufferLookup<StatusBools>(),
                 References = references
             };
-            state.Dependency = statusVariableUpdateJob.ScheduleByRef(m_StatusVariableUpdateQuery, state.Dependency);
+            state.Dependency = statusVariableUpdateJob.ScheduleParallelByRef(m_StatusVariableUpdateQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -60,26 +64,17 @@ namespace StatusEffects.Entities
                 // We can guarantee that this entity has a StatusEffect buffer
                 // because if a StatusEffect was added to an entity that wasn't
                 // baked from a StatusManager it would throw an error before this.
-                if (StatusFloatsLookup.HasBuffer(entity))
-                {
-                    var statusFloatBuffer = StatusFloatsLookup[entity];
+                if (StatusFloatsLookup.TryGetBuffer(entity, out var statusFloatBuffer))
                     for (int i = 0; i < statusFloatBuffer.Length; i++)
                         GetValue(ref statusFloatBuffer.ElementAt(i), statusEffects, References);
-                }
 
-                if (StatusIntsLookup.HasBuffer(entity))
-                {
-                    var statusIntBuffer = StatusIntsLookup[entity];
+                if (StatusIntsLookup.TryGetBuffer(entity, out var statusIntBuffer))
                     for (int i = 0; i < statusIntBuffer.Length; i++)
                         GetValue(ref statusIntBuffer.ElementAt(i), statusEffects, References);
-                }
 
-                if (StatusBoolsLookup.HasBuffer(entity))
-                {
-                    var statusBoolBuffer = StatusBoolsLookup[entity];
+                if (StatusBoolsLookup.TryGetBuffer(entity, out var statusBoolBuffer))
                     for (int i = 0; i < statusBoolBuffer.Length; i++)
                         GetValue(ref statusBoolBuffer.ElementAt(i), statusEffects, References);
-                }
 
                 CommandBuffer.SetComponentEnabled<StatusVariableUpdate>(sortKey, entity, false);
             }
@@ -243,11 +238,11 @@ namespace StatusEffects.Entities
             }
 
             // Copied from regular StatusBool.GetValue() with burstable types and math.
-            public void GetValue(ref StatusBools statusInt, in DynamicBuffer<StatusEffects> statusEffects, in StatusReferences references)
+            public void GetValue(ref StatusBools statusBool, in DynamicBuffer<StatusEffects> statusEffects, in StatusReferences references)
             {
                 Effect effect;
 
-                bool value = statusInt.BaseValue;
+                bool value = statusBool.BaseValue;
                 int priority = -1;
 
                 bool effectValue;
@@ -260,7 +255,7 @@ namespace StatusEffects.Entities
                     {
                         effect = data.Effects[i];
 
-                        if (effect.Id != statusInt.Id)
+                        if (effect.Id != statusBool.Id)
                             continue;
 
                         effectValue = effect.UseBaseValue ? Convert.ToBoolean(data.BaseValue) : effect.BoolValue;
@@ -273,7 +268,7 @@ namespace StatusEffects.Entities
                     }
                 }
 
-                statusInt.Value = value;
+                statusBool.Value = value;
             }
         }
     }

@@ -12,6 +12,10 @@
     max-height: 21px;
 }
 
+.standard-field-size {
+    max-height: var(--unity-metrics-single_line-height);
+}
+
 .box-group {
     border-top-width: 1px;
     border-right-width: 1px;
@@ -26,10 +30,6 @@
     border-top-color: var(--unity-colors-inspector_titlebar-border);
     border-right-color: var(--unity-colors-inspector_titlebar-border);
     background-color: var(--unity-colors-toolbar_button-background-hover);
-}
-
-.standard-field-size {
-    max-height: var(--unity-metrics-single_line-height);
 }
 
 .dark-box-group {
@@ -53,8 +53,12 @@
 }
 
 .line-color {
-    border-left-color: var(--unity-colors-input_field_placeholder-text);
-    border-right-color: var(--unity-colors-input_field_placeholder-text);
-    border-top-color: var(--unity-colors-input_field_placeholder-text);
-    border-bottom-color: var(--unity-colors-input_field_placeholder-text);
+    border-right-color: var(--unity-colors-input_field-border-hover);
+    border-top-color: var(--unity-colors-input_field-border-hover);
+    border-bottom-color: var(--unity-colors-input_field-border-hover);
+    border-left-color: var(--unity-colors-input_field-border-hover);
+}
+
+.background-color {
+    background-color: var(--unity-colors-headerbar-background);
 }

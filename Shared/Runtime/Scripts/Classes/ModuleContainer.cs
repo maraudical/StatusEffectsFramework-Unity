@@ -11,8 +11,8 @@ namespace StatusEffects.Modules
         public ModuleInstance ModuleInstance => m_ModuleInstance;
 
         [SerializeField, FormerlySerializedAs("Module")]
-        private Module m_Module;
+        internal Module m_Module;
         [SerializeField, FormerlySerializedAs("ModuleInstance")]
-        private ModuleInstance m_ModuleInstance;
+        internal ModuleInstance m_ModuleInstance;
     }
 }

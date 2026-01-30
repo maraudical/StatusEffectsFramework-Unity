@@ -1,6 +1,8 @@
 #if ENTITIES
 using Unity.Burst;
 using Unity.Entities;
+using Unity.Entities.UniversalDelegates;
+
 #if NETCODE
 using Unity.NetCode;
 #endif
@@ -11,12 +13,6 @@ namespace StatusEffects.Entities
     public struct StatusBool
     {
         public Hash128 Id;
-        /// <summary>
-        /// Only use the cached index if there have not been any structural changes 
-        /// to the <see cref="StatusBools"/> buffer since the last time this index 
-        /// was set. You must manually set the value.
-        /// </summary>
-        public int CachedIndex => m_CachedIndex;
 #if NETCODE
         [GhostField(SendData = false)]
 #endif
@@ -27,9 +23,9 @@ namespace StatusEffects.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool GetValue(Hash128 componentId, DynamicBuffer<StatusBools> buffer, out bool value, bool structuralChange = false)
+        public bool GetValue(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out bool value)
         {
-            int index = GetIndex(componentId, buffer, structuralChange);
+            int index = GetIndex(componentId, buffer);
 
             if (index >= 0)
             {
@@ -46,9 +42,9 @@ namespace StatusEffects.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool Get(Hash128 componentId, DynamicBuffer<StatusBools> buffer, out StatusBools value, bool structuralChange = false)
+        public bool Get(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out StatusBools value)
         {
-            int index = GetIndex(componentId, buffer, structuralChange);
+            int index = GetIndex(componentId, buffer);
 
             if (index >= 0)
             {
@@ -64,20 +60,26 @@ namespace StatusEffects.Entities
         /// Attempt to retrieve the <see cref="StatusBools"/> index value for this <see cref="StatusBool"/>.
         /// </summary>
         [BurstCompile]
-        public int GetIndex(Hash128 componentId, DynamicBuffer<StatusBools> buffer, bool structuralChange = false)
+        public int GetIndex(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer)
         {
-            if (structuralChange || m_CachedIndex < 0)
+            StatusBools statusBool;
+            int length = buffer.Length;
+            if (m_CachedIndex >= 0 && m_CachedIndex < buffer.Length)
             {
-                m_CachedIndex = -1;
+                statusBool = buffer[m_CachedIndex];
+                if (statusBool.ComponentId == componentId && statusBool.Id == Id)
+                    return m_CachedIndex;
+            }
+            
+            m_CachedIndex = -1;
 
-                for (int i = 0; i < buffer.Length; i++)
+            for (int i = 0; i < buffer.Length; i++)
+            {
+                statusBool = buffer[i];
+                if (statusBool.ComponentId == componentId && statusBool.Id == Id)
                 {
-                    var statusBool = buffer[i];
-                    if (statusBool.ComponentId == componentId && statusBool.Id == Id)
-                    {
-                        m_CachedIndex = i;
-                        break;
-                    }
+                    m_CachedIndex = i;
+                    break;
                 }
             }
 

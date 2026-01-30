@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace StatusEffects.Example.Inspector
+namespace StatusEffects.Example.Editor
 {
     public static class ExamplePlayerInspector
     {

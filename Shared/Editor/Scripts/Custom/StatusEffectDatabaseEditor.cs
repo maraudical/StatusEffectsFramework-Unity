@@ -1,22 +1,24 @@
 using UnityEditor;
+using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace StatusEffects.Inspector
+namespace StatusEffects.Editor
 {
     [CustomEditor(typeof(StatusEffectDatabase))]
-    internal class StatusEffectDatabaseEditor : Editor
+    internal class StatusEffectDatabaseEditor : UnityEditor.Editor
     {
-        public VisualTreeAsset VisualTree;
-
         public override VisualElement CreateInspectorGUI()
         {
+            var statusNameProperty = serializedObject.FindProperty(nameof(StatusEffectDatabase.Values));
+
             var root = new VisualElement();
-
-            VisualTree.CloneTree(root);
-
+            
             var helpBox = new HelpBox() { text = "Do not reset this object using the context menu! It may break status effects!", messageType = HelpBoxMessageType.Warning };
+            root.Add(helpBox);
 
-            root.Q("warning-container").Add(helpBox);
+            var values = new PropertyField(serializedObject.FindProperty("Values"));
+            values.SetEnabled(false);
+            root.Add(values);
 
             return root;
         }

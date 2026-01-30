@@ -137,7 +137,6 @@ namespace StatusEffects
                 database = CreateInstance<StatusEffectDatabase>();
                 Directory.CreateDirectory($"{Application.dataPath}/Resources");
                 AssetDatabase.CreateAsset(database, k_MyCustomDatabasePath);
-                AssetDatabase.SaveAssets();
             }
 #endif
             return database;
