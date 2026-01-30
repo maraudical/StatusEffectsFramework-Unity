@@ -31,6 +31,7 @@ namespace StatusEffects.Entities.Example
         {
             var healUpdateJob = new HealUpdateJob
             {
+                CommandBuffer = SystemAPI.GetSingletonRW<BeginSimulationEntityCommandBufferSystem.Singleton>().ValueRW.CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 PlayerLookup = SystemAPI.GetComponentLookup<ExamplePlayer>(),
                 StatusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>(true),
             };
@@ -38,36 +39,18 @@ namespace StatusEffects.Entities.Example
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
-        partial struct HealDestroyJob : IJobEntity
-        {
-            public ComponentLookup<ExamplePlayer> PlayerLookup;
-            [ReadOnly]
-            public BufferLookup<StatusFloats> StatusFloatsLookup;
-
-            public void Execute([ChunkIndexInQuery] int sortKey, Module module)
-            {
-                Entity targetEntity = module.Target;
-
-                if (PlayerLookup.TryGetRefRW(targetEntity, out var playerRW))
-                {
-                    ref var player = ref playerRW.ValueRW;
-                    var buffer = StatusFloatsLookup[targetEntity];
-                    player.MaxHealth.GetValue(player.ComponentId, buffer, out var maxHealth);
-                    player.Health = math.min(player.Health, maxHealth);
-                }
-            }
-        }
-
-        [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         partial struct HealUpdateJob : IJobEntity
         {
+            public EntityCommandBuffer.ParallelWriter CommandBuffer;
             [NativeDisableParallelForRestriction]
             public ComponentLookup<ExamplePlayer> PlayerLookup;
             [ReadOnly]
             public BufferLookup<StatusFloats> StatusFloatsLookup;
 
-            public void Execute(in Module module)
+            public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in Module module)
             {
+                CommandBuffer.AddComponent<HealCleanupComponent>(sortKey, entity);
+
                 Entity targetEntity = module.Target;
 
                 if (PlayerLookup.TryGetRefRW(targetEntity, out var playerRW))

@@ -18,19 +18,17 @@ namespace StatusEffects.Entities.Example
         private Dictionary<Entity, Transform> m_EntityParticles;
         private Transform m_Transform;
 
+        private EntityQuery m_VfxEntityModuleQuery;
         private EntityQuery m_VfxEntityModuleChangedQuery;
         private EntityQuery m_VfxCleanupTagQuery;
 
         protected override void OnCreate()
         {
             m_EntityParticles = new();
-
+            
             m_VfxEntityModuleChangedQuery = SystemAPI.QueryBuilder().WithAll<VfxEntityModule, Module>().Build();
             m_VfxEntityModuleChangedQuery.AddChangedVersionFilter(ComponentType.ReadOnly<Module>());
             m_VfxCleanupTagQuery = SystemAPI.QueryBuilder().WithAll<VfxCleanupComponent, ModuleCleanupComponent>().WithNone<Module>().Build();
-
-            RequireAnyForUpdate(m_VfxEntityModuleChangedQuery);
-            RequireAnyForUpdate(m_VfxCleanupTagQuery);
         }
 
         protected override void OnUpdate()
@@ -38,8 +36,7 @@ namespace StatusEffects.Entities.Example
             var localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
 
             var commandBuffer = SystemAPI.GetSingletonRW<BeginSimulationEntityCommandBufferSystem.Singleton>().ValueRW.CreateCommandBuffer(World.Unmanaged);
-            var changeMask = m_VfxEntityModuleChangedQuery.GetEntityQueryMask();
-
+            
             foreach ((VfxEntityModule vfx, Module module, Entity entity) in SystemAPI.Query<VfxEntityModule, Module>().WithEntityAccess())
             {
                 // Check if it doesn't exists in the Dictionary (we are adding).
@@ -85,7 +82,8 @@ namespace StatusEffects.Entities.Example
                 if (!m_EntityParticles.TryGetValue(entity, out m_Transform))
                     continue;
                 // Attempt to stop the particle system.
-                m_Transform?.GetComponent<ParticleSystem>()?.Stop();
+                if (m_Transform)
+                    m_Transform.GetComponent<ParticleSystem>()?.Stop();
                 
                 m_EntityParticles.Remove(entity);
             }

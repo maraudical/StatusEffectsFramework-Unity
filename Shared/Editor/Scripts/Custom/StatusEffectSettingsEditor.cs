@@ -18,7 +18,7 @@ namespace StatusEffects.Editor
     public class StatusEffectSettingsWindow : EditorWindow
     {
         [MenuItem("Tools/Status Effect Framework/Settings")]
-        public static void ShowMyEditor()
+        public static void OpenStatusEffectSettingsWindow()
         {
             EditorWindow window = GetWindow<StatusEffectSettingsWindow>();
             window.titleContent = new GUIContent("Status Effect Settings");
