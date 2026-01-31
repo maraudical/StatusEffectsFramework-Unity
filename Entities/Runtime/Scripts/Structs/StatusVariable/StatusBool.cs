@@ -1,8 +1,6 @@
 #if ENTITIES
 using Unity.Burst;
 using Unity.Entities;
-using Unity.Entities.UniversalDelegates;
-
 #if NETCODE
 using Unity.NetCode;
 #endif
@@ -23,11 +21,9 @@ namespace StatusEffects.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool GetValue(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out bool value)
+        public bool TryGetValue(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out bool value)
         {
-            int index = GetIndex(componentId, buffer);
-
-            if (index >= 0)
+            if (TryGetIndex(componentId, buffer, out int index))
             {
                 value = buffer[index].Value;
                 return true;
@@ -42,11 +38,9 @@ namespace StatusEffects.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool Get(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out StatusBools value)
+        public bool TryGetElement(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out StatusBools value)
         {
-            int index = GetIndex(componentId, buffer);
-
-            if (index >= 0)
+            if (TryGetIndex(componentId, buffer, out int index))
             {
                 value = buffer[index];
                 return true;
@@ -60,30 +54,32 @@ namespace StatusEffects.Entities
         /// Attempt to retrieve the <see cref="StatusBools"/> index value for this <see cref="StatusBool"/>.
         /// </summary>
         [BurstCompile]
-        public int GetIndex(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer)
+        public bool TryGetIndex(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out int index)
         {
             StatusBools statusBool;
             int length = buffer.Length;
-            if (m_CachedIndex >= 0 && m_CachedIndex < buffer.Length)
+            index = m_CachedIndex;
+            if (index >= 0 && index < buffer.Length)
             {
-                statusBool = buffer[m_CachedIndex];
+                statusBool = buffer[index];
                 if (statusBool.ComponentId == componentId && statusBool.Id == Id)
-                    return m_CachedIndex;
+                    return true;
             }
             
-            m_CachedIndex = -1;
+            index = -1;
 
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusBool = buffer[i];
                 if (statusBool.ComponentId == componentId && statusBool.Id == Id)
                 {
-                    m_CachedIndex = i;
+                    index = i;
                     break;
                 }
             }
 
-            return m_CachedIndex;
+            m_CachedIndex = index;
+            return index >= 0;
         }
 
         public StatusBool(Hash128 id)

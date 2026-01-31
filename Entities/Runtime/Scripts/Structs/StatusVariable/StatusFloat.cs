@@ -17,15 +17,13 @@ namespace StatusEffects.Entities
         private int m_CachedIndex;
 
         /// <summary>
-        /// Attempt to retrieve the <see cref="StatuFloats"/> value for this <see cref="StatusFloat"/>.
+        /// Attempt to retrieve the <see cref="StatusFloats"/> value for this <see cref="StatusFloat"/>.
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool GetValue(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out float value)
+        public bool TryGetValue(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out float value)
         {
-            int index = GetIndex(componentId, buffer);
-
-            if (index >= 0)
+            if (TryGetIndex(componentId, buffer, out int index))
             {
                 value = buffer[index].Value;
                 return true;
@@ -40,11 +38,9 @@ namespace StatusEffects.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool Get(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out StatusFloats value)
+        public bool TryGetElement(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out StatusFloats value)
         {
-            int index = GetIndex(componentId, buffer);
-
-            if (index >= 0)
+            if (TryGetIndex(componentId, buffer, out int index))
             {
                 value = buffer[index];
                 return true;
@@ -58,30 +54,32 @@ namespace StatusEffects.Entities
         /// Attempt to retrieve the <see cref="StatusFloats"/> index value for this <see cref="StatusFloat"/>.
         /// </summary>
         [BurstCompile]
-        public int GetIndex(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer)
+        public bool TryGetIndex(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out int index)
         {
             StatusFloats statusFloat;
             int length = buffer.Length;
-            if (m_CachedIndex >= 0 && m_CachedIndex < buffer.Length)
+            index = m_CachedIndex;
+            if (index >= 0 && index < buffer.Length)
             {
-                statusFloat = buffer[m_CachedIndex];
+                statusFloat = buffer[index];
                 if (statusFloat.ComponentId == componentId && statusFloat.Id == Id)
-                    return m_CachedIndex;
+                    return true;
             }
 
-            m_CachedIndex = -1;
+            index = -1;
 
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusFloat = buffer[i];
                 if (statusFloat.ComponentId == componentId && statusFloat.Id == Id)
                 {
-                    m_CachedIndex = i;
+                    index = i;
                     break;
                 }
             }
 
-            return m_CachedIndex;
+            m_CachedIndex = index;
+            return index >= 0;
         }
 
         public StatusFloat(Hash128 id)
