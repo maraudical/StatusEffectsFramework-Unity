@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -176,10 +175,13 @@ namespace StatusEffects.Editor
             var effectsList = root.Q<ListView>("effects-list");
             effectsList.BindProperty(effectsProperty);
 
-            var conditionsWarning = new HelpBox() { text = "Do not recursively add status datas! " +
+            var conditionsWarning = new HelpBox()
+            {
+                text = "Do not recursively add status datas! " +
                                                            "Avoid adding a status data to itself! " +
-                                                           "Make sure there aren't two that add each other!", 
-                                                    messageType = HelpBoxMessageType.Warning };
+                                                           "Make sure there aren't two that add each other!",
+                messageType = HelpBoxMessageType.Warning
+            };
             root.Q("conditions-warning").Add(conditionsWarning);
 
             var conditionsList = root.Q<ListView>("conditions-list");
@@ -207,7 +209,7 @@ namespace StatusEffects.Editor
             modulesList.itemsRemoved += ModulesRemoved;
             modulesList.BindProperty(modulesProperty);
 
-            
+
 
 #if UNITY_2023_1_OR_NEWER
             List<SerializedProperty> optionalProperties = new()
@@ -284,7 +286,7 @@ namespace StatusEffects.Editor
             {
                 baseValueError.style.display = baseValueProperty.floatValue == 0 ? DisplayStyle.Flex : DisplayStyle.None;
             }
-            
+
             void AllowEffectStackingChanged(SerializedPropertyChangeEvent changeEvent)
             {
                 bool multipleValues = allowEffectStackingProperty.hasMultipleDifferentValues;

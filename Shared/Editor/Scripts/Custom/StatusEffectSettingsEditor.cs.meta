@@ -4,7 +4,10 @@ MonoImporter:
   externalObjects: {}
   serializedVersion: 2
   defaultReferences:
-  - VisualTree: {fileID: 9197481963319205126, guid: d57de6634b7cee7418ed66ffda5849c5, type: 3}
+  - StatusEffectSettingsVisualTree: {fileID: 9197481963319205126, guid: be9d9c2222631844f9fc71080ce33ed1, type: 3}
+  - StatusEffectSettingsDataVisualTree: {fileID: 9197481963319205126, guid: d88aeb870bbde7c4eabe2063d54ea661, type: 3}
+  - StatusEffectSettingsNameVisualTree: {fileID: 9197481963319205126, guid: cb4a14c1c6c03e341a7b92ab337327ad, type: 3}
+  - StatusEffectSettingsModuleVisualTree: {fileID: 9197481963319205126, guid: 65264aa543bf57148b93cc19e7d2ee84, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

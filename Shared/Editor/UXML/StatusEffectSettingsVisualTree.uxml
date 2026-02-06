@@ -1,0 +1,31 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Shared/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle"/>
+    <ui:TabView view-data-key="sef-tabs">
+        <ui:Tab label="Datas" view-data-key="sef-datas" name="datas-tab">
+            <ui:VisualElement class="box-group" style="flex-grow: 1; flex-shrink: 0; border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; margin-bottom: -2px; padding-bottom: 1px;">
+                <uie:ToolbarSearchField style="flex-grow: 1; width: auto; margin-left: 2px;"/>
+            </ui:VisualElement>
+            <ui:ListView virtualization-method="DynamicHeight" selection-type="Multiple" show-add-remove-footer="true" show-alternating-row-backgrounds="All" show-border="true"/>
+        </ui:Tab>
+        <ui:Tab label="Names" view-data-key="sef-names" name="names-tab">
+            <ui:VisualElement class="box-group" style="flex-grow: 1; flex-shrink: 0; border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; margin-bottom: -2px; padding-bottom: 1px;">
+                <uie:ToolbarSearchField style="flex-grow: 1; width: auto; margin-left: 2px;"/>
+            </ui:VisualElement>
+            <ui:ListView virtualization-method="DynamicHeight" selection-type="Multiple" show-add-remove-footer="true" show-alternating-row-backgrounds="All" show-border="true"/>
+        </ui:Tab>
+        <ui:Tab label="Comparables" view-data-key="comparables" name="comparables-tab">
+            <ui:VisualElement class="box-group" style="flex-grow: 1; flex-shrink: 0; border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; margin-bottom: -2px; padding-bottom: 1px;">
+                <uie:ToolbarSearchField style="flex-grow: 1; width: auto; margin-left: 2px;"/>
+            </ui:VisualElement>
+            <ui:ListView virtualization-method="DynamicHeight" selection-type="Multiple" show-add-remove-footer="true" show-alternating-row-backgrounds="All" show-border="true"/>
+        </ui:Tab>
+        <ui:Tab label="Modules" view-data-key="sef-modules" name="modules-tab">
+            <ui:VisualElement class="box-group" style="flex-grow: 1; flex-shrink: 0; border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; margin-bottom: -2px; padding-bottom: 1px;">
+                <uie:ToolbarSearchField style="flex-grow: 1; width: auto; margin-left: 2px;"/>
+            </ui:VisualElement>
+            <ui:ListView virtualization-method="DynamicHeight" selection-type="Multiple" show-add-remove-footer="true" show-alternating-row-backgrounds="All" show-border="true"/>
+        </ui:Tab>
+        <ui:Tab label="Groups" view-data-key="sef-groups" name="groups-tab"/>
+        <ui:Tab label="Paths" view-data-key="sef-paths" name="paths-tab"/>
+    </ui:TabView>
+</ui:UXML>
