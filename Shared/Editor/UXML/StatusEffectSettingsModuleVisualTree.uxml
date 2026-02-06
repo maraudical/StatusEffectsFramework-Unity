@@ -1,0 +1,23 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Shared/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle"/>
+    <ui:Foldout value="false" name="foldout"/>
+    <ui:VisualElement name="foldout-row" style="flex-direction: row;">
+        <ui:VisualElement name="info" style="flex-grow: 1; flex-direction: row; justify-content: space-between;">
+            <ui:Image name="icon" style="width: 40px; height: 40px; padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px; background-size: contain;"/>
+            <ui:VisualElement style="flex-grow: 1;">
+                <ui:VisualElement name="name-container" style="flex-grow: 1; flex-direction: row;">
+                    <ui:Label text="Label" name="name" selectable="true" focusable="true" style="padding-right: 0; -unity-text-align: lower-left; -unity-font-style: bold;"/>
+                    <ui:VisualElement name="rename-icon" style="width: 15px; height: 15px; display: none; align-self: flex-end;"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="rename-container" style="flex-grow: 1; display: none; align-items: flex-end; flex-direction: row;">
+                    <ui:TextField name="rename-field" readonly="false" style="min-width: 15px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;"/>
+                </ui:VisualElement>
+                <ui:Label text="Label" name="subtext" class="header-text-color" style="font-size: 10px; opacity: 0.5; margin-bottom: 4px; padding-right: 0;"/>
+            </ui:VisualElement>
+            <ui:VisualElement name="button-container" style="flex-grow: 1; display: none; margin-right: 2px; margin-left: 2px; flex-direction: row-reverse;">
+                <ui:Button name="ping-button" style="width: 30px; height: 30px; align-self: center;"/>
+                <ui:Button name="script-button" style="width: 30px; height: 30px; align-self: center; padding-right: 2px; padding-top: 3px; padding-bottom: 3px; padding-left: 2px;"/>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

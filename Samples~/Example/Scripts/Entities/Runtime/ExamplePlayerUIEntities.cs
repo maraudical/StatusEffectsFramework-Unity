@@ -61,10 +61,11 @@ namespace StatusEffects.Entities.Example.UI
             m_StatusIntBuffer = m_Manager.GetBuffer<StatusInts>(entity);
             m_StatusBoolBuffer = m_Manager.GetBuffer<StatusBools>(entity);
 
-            player.MaxHealth.Get(player.ComponentId, m_StatusFloatBuffer, out var maxHealth);
-            player.Speed.Get(player.ComponentId, m_StatusFloatBuffer, out var speed);
-            player.CoinMultiplier.Get(player.ComponentId, m_StatusIntBuffer, out var coinMultiplier);
-            player.Stunned.Get(player.ComponentId, m_StatusBoolBuffer, out var stunned);
+            if (!player.MaxHealth.TryGetElement(player.ComponentId, m_StatusFloatBuffer, out var maxHealth)
+                || !player.Speed.TryGetElement(player.ComponentId, m_StatusFloatBuffer, out var speed)
+                || !player.CoinMultiplier.TryGetElement(player.ComponentId, m_StatusIntBuffer, out var coinMultiplier)
+                || !player.Stunned.TryGetElement(player.ComponentId, m_StatusBoolBuffer, out var stunned))
+                yield break;
             
             m_BaseMaxHealth = maxHealth.BaseValue;
             m_BaseSpeed = speed.BaseValue;
@@ -89,10 +90,11 @@ namespace StatusEffects.Entities.Example.UI
             m_StatusBoolBuffer = m_Manager.GetBuffer<StatusBools>(entity);
 
             // May want to check for structural changes to the Status Buffers but in this example it is assumed there aren't any.
-            player.MaxHealth.GetValue(player.ComponentId, m_StatusFloatBuffer, out var maxHealth);
-            player.Speed.GetValue(player.ComponentId, m_StatusFloatBuffer, out var speed);
-            player.CoinMultiplier.GetValue(player.ComponentId, m_StatusIntBuffer, out var coinMultiplier);
-            player.Stunned.GetValue(player.ComponentId, m_StatusBoolBuffer, out var stunned);
+            if (!player.MaxHealth.TryGetValue(player.ComponentId, m_StatusFloatBuffer, out var maxHealth)
+                || !player.Speed.TryGetValue(player.ComponentId, m_StatusFloatBuffer, out var speed)
+                || !player.CoinMultiplier.TryGetValue(player.ComponentId, m_StatusIntBuffer, out var coinMultiplier)
+                || !player.Stunned.TryGetValue(player.ComponentId, m_StatusBoolBuffer, out var stunned))
+                return;
 
             m_Health.text = player.Health.ToString("0.0");
             m_Health.color = GetColor(m_BaseMaxHealth, player.Health);

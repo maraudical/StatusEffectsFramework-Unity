@@ -15,7 +15,10 @@ namespace StatusEffects.Editor
             {
                 var kvp = database.HiddenValues.ElementAt(i);
                 if (kvp.Value == null || kvp.Key != kvp.Value.Id)
+                {
                     database.HiddenValues.Remove(kvp.Key);
+                    EditorUtility.SetDirty(database);
+                } 
             }
 
             if (didDomainReload)

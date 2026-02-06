@@ -57,7 +57,10 @@ namespace StatusEffects.Entities.Example
                 {
                     ref var player = ref playerRW.ValueRW;
                     var buffer = StatusFloatsLookup[targetEntity];
-                    player.MaxHealth.GetValue(player.ComponentId, buffer, out var maxHealth);
+
+                    if (!player.MaxHealth.TryGetValue(player.ComponentId, buffer, out var maxHealth))
+                        return;
+
                     player.Health += module.BaseValue * math.max(0, module.Stacks - module.PreviousStacks);
                     player.Health = math.min(player.Health, maxHealth);
                 }
@@ -108,7 +111,10 @@ namespace StatusEffects.Entities.Example
                 {
                     ref var player = ref playerRW.ValueRW;
                     var buffer = StatusFloatsLookup[targetEntity];
-                    player.MaxHealth.GetValue(player.ComponentId, buffer, out var maxHealth);
+
+                    if (!player.MaxHealth.TryGetValue(player.ComponentId, buffer, out var maxHealth))
+                        return;
+
                     player.Health = math.min(player.Health, maxHealth);
                 }
             }
