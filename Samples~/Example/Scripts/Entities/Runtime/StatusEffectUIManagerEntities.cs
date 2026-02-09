@@ -110,10 +110,10 @@ namespace StatusEffects.Entities.Example.UI
             m_CurrentStackCounts.Clear();
             
             foreach (var statusEffect in m_StatusEffects)
-                if (m_CurrentStackCounts.TryGetValue(statusEffect.Id, out int value))
-                    m_CurrentStackCounts[statusEffect.Id] = value + statusEffect.Stacks;
+                if (m_CurrentStackCounts.TryGetValue(statusEffect.StatusEffectDataId, out int value))
+                    m_CurrentStackCounts[statusEffect.StatusEffectDataId] = value + statusEffect.Stacks;
                 else
-                    m_CurrentStackCounts.Add(statusEffect.Id, statusEffect.Stacks);
+                    m_CurrentStackCounts.Add(statusEffect.StatusEffectDataId, statusEffect.Stacks);
 
             m_CombinedStatusEffects = m_CurrentStackCounts.Keys.Concat(m_StatusEffectUIs.Keys).ToHashSet();
             

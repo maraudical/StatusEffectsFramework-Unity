@@ -12,7 +12,6 @@ using UnityEngine.UIElements;
 using UnityEngine.UIElements.Experimental;
 using static StatusEffects.Editor.ModulePopup;
 using static StatusEffects.Editor.StatusNamePopup;
-using static UnityEditor.Progress;
 
 namespace StatusEffects.Editor
 {
@@ -316,7 +315,7 @@ namespace StatusEffects.Editor
 
                     if (!DeleteAssetsDialogue(paths))
                         return;
-
+                    Debug.Log("deleting " + paths.Count);
                     listView.viewController.RemoveItems(listView.selectedIndices.ToList());
                     listView.ClearSelection();
                     
@@ -534,8 +533,7 @@ namespace StatusEffects.Editor
                 var foldoutToggle = foldout.Q<Toggle>();
                 var modulePropertyCheck = CreateEditor(module).serializedObject.GetIterator();
                 modulePropertyCheck.NextVisible(true);
-                if (!modulePropertyCheck.NextVisible(true))
-                    foldout.Q("unity-checkmark").RemoveFromHierarchy();
+                foldoutToggle.style.display = modulePropertyCheck.NextVisible(true) ? DisplayStyle.Flex : DisplayStyle.None;
                 foldoutToggle.RegisterValueChangedCallback((changeEvent) =>
                 {
                     if (changeEvent.newValue)

@@ -3,6 +3,7 @@ using StatusEffects.Modules;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace StatusEffects.Entities
@@ -40,7 +41,6 @@ namespace StatusEffects.Entities
             var referencesEntity = commandBuffer.CreateEntity();
             
             commandBuffer.SetName(referencesEntity, "Status References");
-            commandBuffer.AddBuffer<ModulePrefabs>(referencesEntity);
 
             BlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>> statusEffectDataHashMapReferences;
             // Setup status effect datas
@@ -49,7 +49,6 @@ namespace StatusEffects.Entities
             var statusEffectDataHashMap = builder.AllocateHashMap(ref statusEffectDataHashMapRoot, statusEffectDatas.Count);
             global::StatusEffects.Effect effect;
             global::StatusEffects.Condition condition;
-            int moduleIndex = 0;
 
             bool foundSingleton = m_ReferencesQuery.TryGetSingleton<StatusReferences>(out var references);
 
@@ -143,25 +142,19 @@ namespace StatusEffects.Entities
                 }
                 // Modules just stores the buffer index for the module. This is
                 // because we cannot store Entity references directly on a blob asset.
-                IList<ModuleContainer> entityModules = statusEffectData.Modules.Where((m) => m.Module is IEntityModule).ToList();
-
-                if (entityModules.Count > 0)
+                List<ModuleContainer> entityModuleContainers = statusEffectData.Modules.Where((m) => m.Module is IEntityModule).ToList();
+                var modules = subBuilder.Allocate(ref statusEffectDataRoot.Modules, entityModuleContainers.Count);
+                
+                if (entityModuleContainers.Count > 0)
                 {
-                    var moduleEntity = commandBuffer.CreateEntity();
-                    commandBuffer.SetName(moduleEntity, $"{statusEffectData.name} Module");
-                    commandBuffer.AddComponent<Prefab>(moduleEntity);
-                    commandBuffer.AddComponent<Module>(moduleEntity);
-                    commandBuffer.AddComponent<PredictedDestroy>(moduleEntity);
-                    foreach (var entityModule in entityModules)
-                        // Call each modify command buffer on each module so that it adds
-                        // whatever component/buffers it wants. This way, a custom system
-                        // can be made to act on those components/buffers when they get
-                        // instantiated as children of the entity they effect.
-                        (entityModule.Module as IEntityModule).ModifyCommandBuffer(ref commandBuffer, moduleEntity, entityModule.ModuleInstance);
-
-                    commandBuffer.AppendToBuffer(referencesEntity, new ModulePrefabs() { Entity = moduleEntity });
-                    statusEffectDataRoot.ModulePrefabIndex = moduleIndex;
-                    moduleIndex++;
+                    for (int i = 0; i < modules.Length; i++)
+                    {
+                        var moduleContainer = entityModuleContainers[i];
+                        var entityModule = (IEntityModule)moduleContainer.Module;
+                        // NOTE I need to create a new hash map of module type -> module system type hashes
+                         TypeManager.GetTypeInfo(TypeManager.GetTypeIndex(entityModule.ModuleSystemType())).StableTypeHash;
+                        modules[i]
+                    }
                 }
                 else
                 {
@@ -179,6 +172,7 @@ namespace StatusEffects.Entities
             commandBuffer.AddComponent(referencesEntity, new StatusReferences
             {
                 BlobAsset = statusEffectDataHashMapReferences,
+                ModuleToSystemTypeMap = 
             });
         }
 

@@ -1,4 +1,5 @@
 #if ENTITIES
+using Unity.Burst;
 using Unity.Entities;
 #if NETCODE
 using Unity.NetCode;
@@ -6,16 +7,23 @@ using Unity.NetCode;
 
 namespace StatusEffects.Entities
 {
+    [BurstCompile]
     public struct StatusEffects : IBufferElementData
     {
 #if NETCODE
         [GhostField]
+        public NetworkTick TickAdded;
+#else
+        public double TimeAdded;
 #endif
-        public Entity Module;
 #if NETCODE
         [GhostField]
 #endif
-        public Hash128 Id;
+        public uint Id;
+#if NETCODE
+        [GhostField]
+#endif
+        public Hash128 StatusEffectDataId;
 #if NETCODE
         [GhostField]
 #endif
@@ -23,6 +31,10 @@ namespace StatusEffects.Entities
 #if NETCODE
         [GhostField(Quantization = 1000)]
 #endif
+        /// <summary>
+        /// The total duration until the status effect expires. Depending on the 
+        /// <see cref="StatusEffectTiming"/> this may be seconds or based on an event.
+        /// </summary>
         public float Duration;
 #if NETCODE
         [GhostField(Quantization = 1000)]
@@ -44,6 +56,34 @@ namespace StatusEffects.Entities
         [GhostField]
 #endif
         public Hash128 EventId;
+
+        [BurstCompile]
+        /// <summary>
+        /// Calculated remaining time until the status effect expires.
+        /// </summary>
+        public float TimeRemaining
+#if NETCODE   
+            (ClientServerTickRate tickRate, NetworkTime networkTime, bool isPredicted)
+        {
+            return Timing switch
+            {
+                StatusEffectTiming.Infinite => -1f,
+                StatusEffectTiming.Event or StatusEffectTiming.Predicate => Duration,
+                _ => isPredicted ? networkTime.PredictedTimeSinceTick(TickAdded, tickRate) 
+                                 : networkTime.InterpolatedTimeSinceTick(TickAdded, tickRate)
+            };
+        }
+#else
+            (TimeData timeData)
+        {
+            return Timing switch
+            {
+                StatusEffectTiming.Infinite => -1f,
+                StatusEffectTiming.Event or StatusEffectTiming.Predicate => Duration,
+                _ => Unity.Mathematics.math.max(Duration - timeData.ElapsedTime + TimeAdded)
+            };
+        } 
+#endif
     }
 }
 #endif

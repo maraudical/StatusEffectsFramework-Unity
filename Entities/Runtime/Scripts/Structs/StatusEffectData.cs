@@ -31,10 +31,7 @@ namespace StatusEffects.Entities
         public int MaxStacks;
         public BlobArray<Effect> Effects;
         public BlobArray<Condition> Conditions;
-        /// <summary>
-        /// <see cref="IBufferElementData"/> index for a <see cref="ModulePrefabs"/> on the <see cref="StatusReferences"/> singleton.
-        /// </summary>
-        public int ModulePrefabIndex;
+        public BlobArray<ComponentType> Modules;
     }
 }
 #endif

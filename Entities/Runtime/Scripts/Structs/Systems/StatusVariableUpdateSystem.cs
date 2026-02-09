@@ -99,7 +99,7 @@ namespace StatusEffects.Entities
                 
                 foreach (var statusEffect in statusEffects)
                 {
-                    ref StatusEffectData data = ref references.BlobAsset.Value[statusEffect.Id].Value;
+                    ref StatusEffectData data = ref references.BlobAsset.Value[statusEffect.StatusEffectDataId].Value;
 
                     for (int i = 0; i < data.Effects.Length; i++)
                     {
@@ -178,7 +178,7 @@ namespace StatusEffects.Entities
 
                 foreach (var statusEffect in statusEffects)
                 {
-                    ref StatusEffectData data = ref references.BlobAsset.Value[statusEffect.Id].Value;
+                    ref StatusEffectData data = ref references.BlobAsset.Value[statusEffect.StatusEffectDataId].Value;
 
                     for (int i = 0; i < data.Effects.Length; i++)
                     {
@@ -249,7 +249,7 @@ namespace StatusEffects.Entities
 
                 foreach (var statusEffect in statusEffects)
                 {
-                    ref StatusEffectData data = ref references.BlobAsset.Value[statusEffect.Id].Value;
+                    ref StatusEffectData data = ref references.BlobAsset.Value[statusEffect.StatusEffectDataId].Value;
 
                     for (int i = 0; i < data.Effects.Length; i++)
                     {

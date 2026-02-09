@@ -21,8 +21,8 @@ namespace StatusEffects.Entities.Example
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<HealEntityModule, Module>().Build();
-            m_EntityQuery.AddChangedVersionFilter(ComponentType.ReadOnly<Module>());
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<HealEntityModule, Modules>().Build();
+            m_EntityQuery.AddChangedVersionFilter(ComponentType.ReadOnly<Modules>());
             state.RequireForUpdate(m_EntityQuery);
         }
 
@@ -47,7 +47,7 @@ namespace StatusEffects.Entities.Example
             [ReadOnly]
             public BufferLookup<StatusFloats> StatusFloatsLookup;
 
-            public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in Module module)
+            public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in Modules module)
             {
                 CommandBuffer.AddComponent<HealCleanupComponent>(sortKey, entity);
 
@@ -80,7 +80,7 @@ namespace StatusEffects.Entities.Example
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<HealCleanupComponent, ModuleCleanupComponent>().WithNone<Module>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<HealCleanupComponent, ModuleCleanupComponent>().WithNone<Modules>().Build();
             state.RequireForUpdate(m_EntityQuery);
         }
 

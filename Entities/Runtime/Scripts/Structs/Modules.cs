@@ -1,11 +1,14 @@
 #if ENTITIES
+using Unity.Burst;
 using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    public struct Modules : ICleanupBufferElementData
+    [BurstCompile]
+    public struct Modules<T> : IBufferElementData where T : unmanaged
     {
-        public Entity Value;
+        public int Id;
+        public T Value;
     }
 }
 #endif

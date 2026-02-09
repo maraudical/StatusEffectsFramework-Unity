@@ -26,7 +26,7 @@ namespace StatusEffects.Entities
 
             HasModule = statusEffect.Module != Entity.Null;
  
-            Id = statusEffect.Id;
+            Id = statusEffect.StatusEffectDataId;
             Timing = statusEffect.Timing;
             Duration = statusEffect.Duration;
             Interval = statusEffect.Interval;

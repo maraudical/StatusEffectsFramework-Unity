@@ -16,7 +16,7 @@ namespace StatusEffects.Entities.Example
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<DamageOverTimeEntityModule, Module>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<DamageOverTimeEntityModule, Modules>().Build();
             state.RequireForUpdate(m_EntityQuery);
         }
 
@@ -38,7 +38,7 @@ namespace StatusEffects.Entities.Example
             [NativeDisableParallelForRestriction]
             public ComponentLookup<ExamplePlayer> PlayerLookup;
 
-            public void Execute([ChunkIndexInQuery] int sortKey, ref DamageOverTimeEntityModule damageOverTime, in Module module)
+            public void Execute([ChunkIndexInQuery] int sortKey, ref DamageOverTimeEntityModule damageOverTime, in Modules module)
             {
                 Entity targetEntity = module.Target;
 

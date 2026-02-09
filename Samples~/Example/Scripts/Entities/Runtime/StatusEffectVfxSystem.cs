@@ -17,8 +17,7 @@ namespace StatusEffects.Entities.Example
     {
         private Dictionary<Entity, Transform> m_EntityParticles;
         private Transform m_Transform;
-
-        private EntityQuery m_VfxEntityModuleQuery;
+        
         private EntityQuery m_VfxEntityModuleChangedQuery;
         private EntityQuery m_VfxCleanupTagQuery;
 
@@ -26,9 +25,9 @@ namespace StatusEffects.Entities.Example
         {
             m_EntityParticles = new();
             
-            m_VfxEntityModuleChangedQuery = SystemAPI.QueryBuilder().WithAll<VfxEntityModule, Module>().Build();
-            m_VfxEntityModuleChangedQuery.AddChangedVersionFilter(ComponentType.ReadOnly<Module>());
-            m_VfxCleanupTagQuery = SystemAPI.QueryBuilder().WithAll<VfxCleanupComponent, ModuleCleanupComponent>().WithNone<Module>().Build();
+            m_VfxEntityModuleChangedQuery = SystemAPI.QueryBuilder().WithAll<VfxEntityModule, Modules>().Build();
+            m_VfxEntityModuleChangedQuery.AddChangedVersionFilter(ComponentType.ReadOnly<Modules>());
+            m_VfxCleanupTagQuery = SystemAPI.QueryBuilder().WithAll<VfxCleanupComponent, ModuleCleanupComponent>().WithNone<Modules>().Build();
         }
 
         protected override void OnUpdate()
@@ -37,7 +36,7 @@ namespace StatusEffects.Entities.Example
 
             var commandBuffer = SystemAPI.GetSingletonRW<BeginSimulationEntityCommandBufferSystem.Singleton>().ValueRW.CreateCommandBuffer(World.Unmanaged);
             
-            foreach ((VfxEntityModule vfx, Module module, Entity entity) in SystemAPI.Query<VfxEntityModule, Module>().WithEntityAccess())
+            foreach ((VfxEntityModule vfx, Module module, Entity entity) in SystemAPI.Query<VfxEntityModule, Modules>().WithEntityAccess())
             {
                 // Check if it doesn't exists in the Dictionary (we are adding).
                 if (!m_EntityParticles.TryGetValue(entity, out m_Transform))
