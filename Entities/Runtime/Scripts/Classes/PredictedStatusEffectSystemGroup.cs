@@ -1,7 +1,8 @@
-#if ENTITIES
-using Unity.Collections.LowLevel.Unsafe;
+#if NETCODE
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace StatusEffects.Entities
 {
@@ -9,8 +10,8 @@ namespace StatusEffects.Entities
     /// The <see cref="EntityCommandBufferSystem"/> at the beginning of the <see cref="StatusEffectSystemGroup"/>.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.ThinClientSimulation)]
-    [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
-    public partial class BeginStatusEffectEntityCommandBufferSystem : EntityCommandBufferSystem
+    [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderFirst = true)]
+    public partial class BeginPredictedStatusEffectEntityCommandBufferSystem : EntityCommandBufferSystem
     {
         /// <summary>
         /// Call <see cref="SystemAPI.GetSingleton{T}"/> to get this component for this system, and then call
@@ -80,8 +81,8 @@ namespace StatusEffects.Entities
     /// The <see cref="EntityCommandBufferSystem"/> at the end of the <see cref="StatusEffectSystemGroup"/>.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.ThinClientSimulation)]
-    [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
-    public partial class EndStatusEffectEntityCommandBufferSystem : EntityCommandBufferSystem
+    [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
+    public partial class EndPredictedStatusEffectEntityCommandBufferSystem : EntityCommandBufferSystem
     {
         /// <summary>
         /// Call <see cref="SystemAPI.GetSingleton{T}"/> to get this component for this system, and then call
@@ -147,10 +148,9 @@ namespace StatusEffects.Entities
         }
     }
 
-    [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.Editor | WorldSystemFilterFlags.ThinClientSimulation)]
-    [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
-    [UpdateBefore(typeof(VariableRateSimulationSystemGroup))]
-    [UpdateBefore(typeof(FixedStepSimulationSystemGroup))]
-    public partial class StatusEffectSystemGroup : ComponentSystemGroup { }
+    [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.ThinClientSimulation)]
+    [UpdateInGroup(typeof(PredictedSimulationSystemGroup))]
+    [UpdateBefore(typeof(PredictedFixedStepSimulationSystemGroup))]
+    public partial class PredictedStatusEffectSystemGroup : ComponentSystemGroup { }
 }
 #endif

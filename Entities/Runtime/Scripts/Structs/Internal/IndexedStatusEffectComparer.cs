@@ -13,8 +13,8 @@ namespace StatusEffects.Entities
             if (m_UseIndex)
                 return x.Index.CompareTo(y.Index);
 
-            ref StatusEffectData dataX = ref m_References.BlobAsset.Value[x.Id].Value;
-            ref StatusEffectData dataY = ref m_References.BlobAsset.Value[y.Id].Value;
+            ref StatusEffectData dataX = ref m_References.IdToStatusEffectDataMap.Value[x.Id].Value;
+            ref StatusEffectData dataY = ref m_References.IdToStatusEffectDataMap.Value[y.Id].Value;
             // Compare base value.
             int comparison = dataX.BaseValue.CompareTo(dataY.BaseValue);
             if (comparison != 0)

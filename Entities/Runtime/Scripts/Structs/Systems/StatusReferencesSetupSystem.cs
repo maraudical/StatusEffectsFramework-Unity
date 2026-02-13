@@ -1,7 +1,10 @@
 #if ENTITIES
 using StatusEffects.Modules;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
+using Unity.Assertions;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -42,39 +45,21 @@ namespace StatusEffects.Entities
             
             commandBuffer.SetName(referencesEntity, "Status References");
 
-            BlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>> statusEffectDataHashMapReferences;
-            // Setup status effect datas
-            var builder = new BlobBuilder(Allocator.Temp);
-            ref var statusEffectDataHashMapRoot = ref builder.ConstructRoot<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>>();
-            var statusEffectDataHashMap = builder.AllocateHashMap(ref statusEffectDataHashMapRoot, statusEffectDatas.Count);
+            var idToStatusEffectDataMapBuilder = new BlobBuilder(Allocator.Temp);
+            ref var idToStatusEffectDataMapRoot = ref idToStatusEffectDataMapBuilder.ConstructRoot<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>>();
+            var idToStatusEffectDataMap = idToStatusEffectDataMapBuilder.AllocateHashMap(ref idToStatusEffectDataMapRoot, statusEffectDatas.Count);
+            var moduleToSystemTypeDictionary = new Dictionary<ulong, ulong>();
             global::StatusEffects.Effect effect;
             global::StatusEffects.Condition condition;
-
-            bool foundSingleton = m_ReferencesQuery.TryGetSingleton<StatusReferences>(out var references);
-
+            
             // Dispose of old blobs after copying
-            if (foundSingleton)
-            {
-                var buffer = SystemAPI.GetSingletonBuffer<ModulePrefabs>();
-                for (int i = buffer.Length - 1; i >= 0; i--)
-                    commandBuffer.AppendToBuffer(referencesEntity, buffer[i]);
+            OnDestroy();
 
-                var statusEffectDataBlobs = references.BlobAsset.Value.GetValueArray(Allocator.Temp);
-                foreach (var blob in statusEffectDataBlobs)
-                {
-                    statusEffectDataHashMap.Add(blob.Value.Id, blob);
-                    if (blob.Value.ModulePrefabIndex >= 0)
-                        moduleIndex++;
-                }
-
-                references.BlobAsset.Dispose();
-                commandBuffer.DestroyEntity(m_ReferencesQuery, EntityQueryCaptureMode.AtPlayback);
-            }
-
+            // Setup status effect datas
             foreach (var statusEffectData in statusEffectDatas)
             {
                 // Rare case where data is null. This should never happen.
-                if (!statusEffectData || statusEffectDataHashMap.ContainsKey(statusEffectData.Id))
+                if (!statusEffectData || idToStatusEffectDataMap.ContainsKey(statusEffectData.Id))
                     continue;
 
                 var subBuilder = new BlobBuilder(Allocator.Temp);
@@ -140,39 +125,49 @@ namespace StatusEffects.Entities
                         Duration = condition.Duration
                     };
                 }
+                
                 // Modules just stores the buffer index for the module. This is
                 // because we cannot store Entity references directly on a blob asset.
                 List<ModuleContainer> entityModuleContainers = statusEffectData.Modules.Where((m) => m.Module is IEntityModule).ToList();
                 var modules = subBuilder.Allocate(ref statusEffectDataRoot.Modules, entityModuleContainers.Count);
-                
+
                 if (entityModuleContainers.Count > 0)
                 {
                     for (int i = 0; i < modules.Length; i++)
-                    {
+                    unsafe {
                         var moduleContainer = entityModuleContainers[i];
                         var entityModule = (IEntityModule)moduleContainer.Module;
-                        // NOTE I need to create a new hash map of module type -> module system type hashes
-                         TypeManager.GetTypeInfo(TypeManager.GetTypeIndex(entityModule.ModuleSystemType())).StableTypeHash;
-                        modules[i]
+                        
+                        var moduleInfo = entityModule.CreateModuleInfo(moduleContainer.ModuleInstance);
+                        var systemTypeHash = TypeManager.GetTypeInfo(TypeManager.GetTypeIndex(entityModule.ModuleSystemType())).StableTypeHash;
+                        moduleToSystemTypeDictionary.TryAdd(moduleInfo.StableTypeHash, systemTypeHash);
+                        
+                        modules[i] = moduleInfo;
                     }
                 }
-                else
-                {
-                    // There weren't any modules.
-                    statusEffectDataRoot.ModulePrefabIndex = -1;
-                }
 
-                statusEffectDataHashMap.Add(statusEffectData.Id, subBuilder.CreateBlobAssetReference<StatusEffectData>(Allocator.Persistent));
+                idToStatusEffectDataMap.Add(statusEffectData.Id, subBuilder.CreateBlobAssetReference<StatusEffectData>(Allocator.Persistent));
                 subBuilder.Dispose();
             }
 
-            statusEffectDataHashMapReferences = builder.CreateBlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>>(Allocator.Persistent);
-            builder.Dispose();
+            var statusEffectDataMapBlob = idToStatusEffectDataMapBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>>(Allocator.Persistent);
+            idToStatusEffectDataMapBuilder.Dispose();
+            
+            // Copy module to system type dictionary to blob hash map
+            var moduleToSystemTypeMapBuilder = new BlobBuilder(Allocator.Temp);
+            ref var moduleToSystemTypeMapRoot = ref moduleToSystemTypeMapBuilder.ConstructRoot<BlobHashMap<ulong, ulong>>();
+            var moduleToSystemTypeMap = moduleToSystemTypeMapBuilder.AllocateHashMap(ref moduleToSystemTypeMapRoot, moduleToSystemTypeDictionary.Count);
+
+            foreach (var kvp in moduleToSystemTypeDictionary)
+                moduleToSystemTypeMap.Add(kvp.Key, kvp.Value);
+
+            var moduleToSystemTypeMapBlob = moduleToSystemTypeMapBuilder.CreateBlobAssetReference<BlobHashMap<ulong, ulong>>(Allocator.Persistent);
+            moduleToSystemTypeMapBuilder.Dispose();
 
             commandBuffer.AddComponent(referencesEntity, new StatusReferences
             {
-                BlobAsset = statusEffectDataHashMapReferences,
-                ModuleToSystemTypeMap = 
+                IdToStatusEffectDataMap = statusEffectDataMapBlob,
+                ModuleToSystemTypeMap = moduleToSystemTypeMapBlob
             });
         }
 
@@ -180,10 +175,19 @@ namespace StatusEffects.Entities
         {
             if (SystemAPI.TryGetSingleton<StatusReferences>(out var references))
             {
-                var statusEffectDataBlobs = references.BlobAsset.Value.GetValueArray(Allocator.Temp);
+                using var statusEffectDataBlobs = references.IdToStatusEffectDataMap.Value.GetValueArray(Allocator.Temp);
                 foreach (var blob in statusEffectDataBlobs)
+                {
+                    ref var statusEffectData = ref blob.Value;
+                    for (int i = 0; i < statusEffectData.Modules.Length; i++)
+                    unsafe {
+                        var modulePtr = statusEffectData.Modules[i];
+                        UnsafeUtility.Free(modulePtr.Ptr.ToPointer(), Allocator.Persistent);
+                    }
                     blob.Dispose();
-                references.BlobAsset.Dispose();
+                }
+                references.IdToStatusEffectDataMap.Dispose();
+                references.ModuleToSystemTypeMap.Dispose();
             }
         }
     }

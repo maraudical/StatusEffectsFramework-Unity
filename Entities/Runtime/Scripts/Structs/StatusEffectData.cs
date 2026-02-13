@@ -1,4 +1,5 @@
 #if ENTITIES
+using System;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -31,7 +32,7 @@ namespace StatusEffects.Entities
         public int MaxStacks;
         public BlobArray<Effect> Effects;
         public BlobArray<Condition> Conditions;
-        public BlobArray<ComponentType> Modules;
+        public BlobArray<ModuleInfo> Modules;
     }
 }
 #endif

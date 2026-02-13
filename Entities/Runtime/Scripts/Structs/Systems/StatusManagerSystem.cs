@@ -108,7 +108,7 @@ namespace StatusEffects.Entities
                             if (request.Stacks <= 0)
                                 return;
                             
-                            if (!references.BlobAsset.Value.TryGetValue(request.Id, out var reference))
+                            if (!references.IdToStatusEffectDataMap.Value.TryGetValue(request.Id, out var reference))
                                 return;
                             
                             // If the duration given is less than zero it won't be applied.
@@ -208,7 +208,7 @@ namespace StatusEffects.Entities
                                 {
                                     for (int x = 0; x < unsortedStatusEffects.Length; x++)
                                     {
-                                        if (!references.BlobAsset.Value.TryGetValue(unsortedStatusEffects[x].StatusEffectDataId, out var unsortedReferences))
+                                        if (!references.IdToStatusEffectDataMap.Value.TryGetValue(unsortedStatusEffects[x].StatusEffectDataId, out var unsortedReferences))
                                             continue;
                                         ref StatusEffectData unsortedData = ref unsortedReferences.Value;
                                         if (unsortedData.ComparableName == statusEffectData.ComparableName)
@@ -234,7 +234,7 @@ namespace StatusEffects.Entities
                                     goto CheckConditionals;
 
                                 IndexedStatusEffect oldStatusEffect = new IndexedStatusEffect(oldStatusEffectIndex, statusEffectBuffer.ElementAt(oldStatusEffectIndex));
-                                var oldReference = references.BlobAsset.Value[oldStatusEffect.Id];
+                                var oldReference = references.IdToStatusEffectDataMap.Value[oldStatusEffect.Id];
 
                                 switch (statusEffectData.NonStackingBehaviour)
                                 {
@@ -315,7 +315,7 @@ namespace StatusEffects.Entities
                                     case ConditionalConfigurable.Group:
                                         for (int x = 0; x < unsortedStatusEffects.Length; x++)
                                         {
-                                            if (!references.BlobAsset.Value.TryGetValue(unsortedStatusEffects[x].StatusEffectDataId, out var unsortedReference))
+                                            if (!references.IdToStatusEffectDataMap.Value.TryGetValue(unsortedStatusEffects[x].StatusEffectDataId, out var unsortedReference))
                                                 continue;
                                             ref StatusEffectData unsortedData = ref unsortedReference.Value;
                                             if ((unsortedData.Group & condition.SearchableGroup) != 0)
@@ -337,7 +337,7 @@ namespace StatusEffects.Entities
                                                 if (indexedUpdate.Stacks <= 0)
                                                     continue;
 
-                                                if (references.BlobAsset.Value.TryGetValue(indexedUpdate.Id, out var indexedReference) 
+                                                if (references.IdToStatusEffectDataMap.Value.TryGetValue(indexedUpdate.Id, out var indexedReference) 
                                                 && (indexedReference.Value.Group & condition.SearchableGroup) != 0)
                                                     exists = true;
                                             }
@@ -345,7 +345,7 @@ namespace StatusEffects.Entities
                                     case ConditionalConfigurable.Name:
                                         for (int x = 0; x < unsortedStatusEffects.Length; x++)
                                         {
-                                            if (!references.BlobAsset.Value.TryGetValue(unsortedStatusEffects[x].StatusEffectDataId, out var unsortedReference))
+                                            if (!references.IdToStatusEffectDataMap.Value.TryGetValue(unsortedStatusEffects[x].StatusEffectDataId, out var unsortedReference))
                                                 continue;
                                             ref StatusEffectData unsortedData = ref unsortedReference.Value;
                                             if (unsortedData.ComparableName == condition.SearchableComparableName)
@@ -367,7 +367,7 @@ namespace StatusEffects.Entities
                                                 if (indexedUpdate.Stacks <= 0)
                                                     continue;
 
-                                                if (references.BlobAsset.Value.TryGetValue(indexedUpdate.Id, out var indexedReference)
+                                                if (references.IdToStatusEffectDataMap.Value.TryGetValue(indexedUpdate.Id, out var indexedReference)
                                                 && (indexedReference.Value.ComparableName == condition.SearchableComparableName))
                                                     exists = true;
                                             }
@@ -506,7 +506,7 @@ namespace StatusEffects.Entities
                                     for (int x = 0; x < unsortedStatusEffects.Length; x++)
                                     {
                                         StatusEffects statusEffect = unsortedStatusEffects[x];
-                                        ref StatusEffectData statusEffectData = ref references.BlobAsset.Value[statusEffect.StatusEffectDataId].Value;
+                                        ref StatusEffectData statusEffectData = ref references.IdToStatusEffectDataMap.Value[statusEffect.StatusEffectDataId].Value;
                                         if ((statusEffectData.Group & request.Group) != 0)
                                             sortedStatusEffects.Add(new IndexedStatusEffect(x, statusEffect));
                                     }
@@ -523,7 +523,7 @@ namespace StatusEffects.Entities
                                     for (int x = 0; x < unsortedStatusEffects.Length; x++)
                                     {
                                         StatusEffects statusEffect = unsortedStatusEffects[x];
-                                        ref StatusEffectData statusEffectData = ref references.BlobAsset.Value[statusEffect.StatusEffectDataId].Value;
+                                        ref StatusEffectData statusEffectData = ref references.IdToStatusEffectDataMap.Value[statusEffect.StatusEffectDataId].Value;
                                         if (statusEffectData.ComparableName == request.Id)
                                             sortedStatusEffects.Add(new IndexedStatusEffect(x, statusEffect));
                                     }
@@ -634,7 +634,7 @@ namespace StatusEffects.Entities
                         CommandBuffer.SetComponentEnabled<StatusVariableUpdate>(sortKey, entity, true);
                         Entity moduleEntity = Entity.Null;
                         
-                        if (indexedUpdate.HasModule && References.BlobAsset.Value.TryGetValue(indexedUpdate.Id, out var reference))
+                        if (indexedUpdate.HasModule && References.IdToStatusEffectDataMap.Value.TryGetValue(indexedUpdate.Id, out var reference))
                         {
                             moduleEntity = CommandBuffer.Instantiate(sortKey, ModulePrefabs[reference.Value.ModulePrefabIndex].Entity);
                             CommandBuffer.AppendToBuffer(sortKey, entity, new Modules { Value = moduleEntity });

@@ -1,4 +1,5 @@
 #if ENTITIES
+using System;
 using Unity.Burst;
 using Unity.Entities;
 #if NETCODE
@@ -8,7 +9,7 @@ using Unity.NetCode;
 namespace StatusEffects.Entities
 {
     [BurstCompile]
-    public struct StatusEffects : IBufferElementData
+    public struct StatusEffects : IBufferElementData, IComparable<StatusEffects>
     {
 #if NETCODE
         [GhostField]
@@ -56,6 +57,11 @@ namespace StatusEffects.Entities
         [GhostField]
 #endif
         public Hash128 EventId;
+
+        public int CompareTo(StatusEffects other)
+        {
+            return Id.CompareTo(other.Id);
+        }
 
         [BurstCompile]
         /// <summary>

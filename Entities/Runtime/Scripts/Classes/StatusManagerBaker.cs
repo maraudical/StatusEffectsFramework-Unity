@@ -11,7 +11,7 @@ namespace StatusEffects.Entities
             AddComponent<StatusVariableUpdate>(entity);
             AddBuffer<StatusEffects>(entity);
 #if NETCODE
-            AddBuffer<StatusEffectsInterpolated>(entity);
+            AddBuffer<InterpolatedStatusEffects>(entity);
 #endif
             AddBuffer<StatusEffectRequests>(entity);
             AddBuffer<StatusFloats>(entity);
