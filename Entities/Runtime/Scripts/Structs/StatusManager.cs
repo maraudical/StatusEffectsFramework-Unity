@@ -1,13 +1,20 @@
 #if ENTITIES
 using Unity.Entities;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 namespace StatusEffects.Entities
 {
 #if NETCODE
     [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]
-    [GhostEnabledBit]
 #endif
-    internal struct StatusVariableUpdate : IComponentData, IEnableableComponent { }
+    internal struct StatusManager : IComponentData
+    {
+#if NETCODE
+        [GhostField]
+#endif
+        public uint AvailableId;
+    }
 }
 #endif

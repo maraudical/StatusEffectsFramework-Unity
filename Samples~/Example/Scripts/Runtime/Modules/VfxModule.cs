@@ -18,7 +18,7 @@ namespace StatusEffects.Modules
     [CreateAssetMenu(fileName = "Vfx Module", menuName = "Status Effect Framework/Modules/Vfx", order = 1)]
     [AttachModuleInstance(typeof(VfxInstance))]
     public class VfxModule : Module
-#if ENTITIES
+/*#if ENTITIES
         , IEntityModule
     {
         public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)
@@ -37,9 +37,9 @@ namespace StatusEffects.Modules
             public UnityObjectRef<GameObject> Prefab;
             public bool InstantiateAgainWhenAddingStacks;
         }
-#else
+#else*/
     {
-#endif
+//#endif
 
 #if UNITASK
         public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)

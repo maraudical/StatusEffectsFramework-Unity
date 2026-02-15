@@ -1,4 +1,4 @@
-#if ENTITIES
+/*#if ENTITIES
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -121,4 +121,4 @@ namespace StatusEffects.Entities.Example
         }
     }
 }
-#endif
+#endif*/

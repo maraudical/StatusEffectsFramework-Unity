@@ -69,24 +69,28 @@ namespace StatusEffects.Entities
         /// </summary>
         public float TimeRemaining
 #if NETCODE   
-            (ClientServerTickRate tickRate, NetworkTime networkTime, bool isPredicted)
+            (NetworkTick currentTick, ClientServerTickRate tickRate)
+        {
+            return TimeRemaining(currentTick, 0f, tickRate);
+        }
+
+        public float TimeRemaining (NetworkTick currentTick, float currentTickFraction, ClientServerTickRate tickRate)
         {
             return Timing switch
             {
                 StatusEffectTiming.Infinite => -1f,
                 StatusEffectTiming.Event or StatusEffectTiming.Predicate => Duration,
-                _ => isPredicted ? networkTime.PredictedTimeSinceTick(TickAdded, tickRate) 
-                                 : networkTime.InterpolatedTimeSinceTick(TickAdded, tickRate)
+                _ => currentTick.TimeSince(TickAdded, currentTickFraction, tickRate)
             };
         }
 #else
-            (TimeData timeData)
+            (double elapsedTime)
         {
             return Timing switch
             {
                 StatusEffectTiming.Infinite => -1f,
                 StatusEffectTiming.Event or StatusEffectTiming.Predicate => Duration,
-                _ => Unity.Mathematics.math.max(Duration - timeData.ElapsedTime + TimeAdded)
+                _ => Unity.Mathematics.math.max(Duration - elapsedTime + TimeAdded)
             };
         } 
 #endif

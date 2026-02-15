@@ -1,5 +1,6 @@
 #if ENTITIES
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace StatusEffects.Entities
 {
@@ -7,6 +8,9 @@ namespace StatusEffects.Entities
     /// Adding this to any <see cref="Entity"> will make a request to add/remove a 
     /// StatusEffect. See the <see cref="StatusEffectRequests"/> constructors for options.
     /// </summary>
+#if NETCODE
+    [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]
+#endif
     public struct StatusEffectRequests : IBufferElementData
     {
         public StatusEffectRequestType Type;

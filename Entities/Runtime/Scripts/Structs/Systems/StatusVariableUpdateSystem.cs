@@ -9,11 +9,12 @@ namespace StatusEffects.Entities
 {
 #if NETCODE
     [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
+    [UpdateBefore(typeof(EndPredictedStatusEffectEntityCommandBufferSystem))]
 #else
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
+    [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
 #endif
     [UpdateAfter(typeof(StatusManagerSystem))]
-    [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
     [BurstCompile]
     public partial struct StatusVariableUpdateSystem : ISystem
     {
@@ -22,7 +23,7 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_StatusVariableUpdateQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusVariableUpdate>().WithAll<Simulate>().Build();
+            m_StatusVariableUpdateQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithAll<StatusVariableUpdate, Simulate>().Build();
             state.RequireForUpdate(m_StatusVariableUpdateQuery);
             state.RequireForUpdate<StatusReferences>();
         }
@@ -30,18 +31,14 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var references = SystemAPI.GetSingleton<StatusReferences>();
-            var commandBufferParallel = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-
             // If any entities were actually changed we update their StatusVariables.
             // This is done at the start of frame before StatusEffects structural changes.
             var statusVariableUpdateJob = new StatusVariableUpdateJob
             {
-                CommandBuffer = commandBufferParallel,
                 StatusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>(),
                 StatusIntsLookup = SystemAPI.GetBufferLookup<StatusInts>(),
                 StatusBoolsLookup = SystemAPI.GetBufferLookup<StatusBools>(),
-                References = references
+                References = SystemAPI.GetSingleton<StatusReferences>()
             };
             state.Dependency = statusVariableUpdateJob.ScheduleParallelByRef(m_StatusVariableUpdateQuery, state.Dependency);
         }
@@ -49,7 +46,6 @@ namespace StatusEffects.Entities
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         partial struct StatusVariableUpdateJob : IJobEntity
         {
-            public EntityCommandBuffer.ParallelWriter CommandBuffer;
             [NativeDisableParallelForRestriction]
             public BufferLookup<StatusFloats> StatusFloatsLookup;
             [NativeDisableParallelForRestriction]
@@ -59,11 +55,8 @@ namespace StatusEffects.Entities
             [ReadOnly]
             public StatusReferences References;
 
-            public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<StatusEffects> statusEffects, in StatusVariableUpdate statusVariableUpdate)
+            public void Execute(Entity entity, in DynamicBuffer<StatusEffects> statusEffects)
             {
-                // We can guarantee that this entity has a StatusEffect buffer
-                // because if a StatusEffect was added to an entity that wasn't
-                // baked from a StatusManager it would throw an error before this.
                 if (StatusFloatsLookup.TryGetBuffer(entity, out var statusFloatBuffer))
                     for (int i = 0; i < statusFloatBuffer.Length; i++)
                         GetValue(ref statusFloatBuffer.ElementAt(i), statusEffects, References);
@@ -75,8 +68,6 @@ namespace StatusEffects.Entities
                 if (StatusBoolsLookup.TryGetBuffer(entity, out var statusBoolBuffer))
                     for (int i = 0; i < statusBoolBuffer.Length; i++)
                         GetValue(ref statusBoolBuffer.ElementAt(i), statusEffects, References);
-
-                CommandBuffer.SetComponentEnabled<StatusVariableUpdate>(sortKey, entity, false);
             }
 
             // Copied from regular StatusFloat.GetValue() with burstable types and math.

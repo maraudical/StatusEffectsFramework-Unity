@@ -8,25 +8,22 @@ namespace StatusEffects.Entities
     /// A simple struct simply for reordering <see cref="StatusEffects"/> 
     /// buffers while retaining their origional index.
     /// </summary>
-    internal struct IndexedStatusEffect : IEquatable<int>, IEquatable<Hash128>
+    internal struct IndexedStatusEffects : IEquatable<int>, IEquatable<Hash128>
     {
         public int Index;
 
-        public bool HasModule;
-        public Hash128 Id;
+        public Hash128 StatusEffectDataId;
         public StatusEffectTiming Timing;
         public float Duration;
         public float Interval;
         public int Stacks;
         public Hash128 EventId;
 
-        public IndexedStatusEffect(int index, StatusEffects statusEffect)
+        public IndexedStatusEffects(int index, StatusEffects statusEffect)
         {
             Index = index;
 
-            HasModule = statusEffect.Module != Entity.Null;
- 
-            Id = statusEffect.StatusEffectDataId;
+            StatusEffectDataId = statusEffect.StatusEffectDataId;
             Timing = statusEffect.Timing;
             Duration = statusEffect.Duration;
             Interval = statusEffect.Interval;
@@ -41,7 +38,7 @@ namespace StatusEffects.Entities
 
         public bool Equals(Hash128 other)
         {
-            return Id.Equals(other);
+            return StatusEffectDataId.Equals(other);
         }
     }
 }

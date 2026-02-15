@@ -3,11 +3,12 @@ using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    public class StatusManagerBaker : Baker<StatusManager>
+    public class StatusManagerBaker : Baker<global::StatusEffects.StatusManager>
     {
-        public override void Bake(StatusManager authoring)
+        public override void Bake(global::StatusEffects.StatusManager authoring)
         {
             var entity = GetEntity(TransformUsageFlags.None);
+            AddComponent<StatusManager>(entity);
             AddComponent<StatusVariableUpdate>(entity);
             AddBuffer<StatusEffects>(entity);
 #if NETCODE

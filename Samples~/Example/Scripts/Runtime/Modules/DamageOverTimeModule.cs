@@ -18,7 +18,7 @@ namespace StatusEffects.Modules
     [CreateAssetMenu(fileName = "Damage Over Time Module", menuName = "Status Effect Framework/Modules/Damage Over Time", order = 1)]
     [AttachModuleInstance(typeof(DamageOverTimeInstance))]
     public class DamageOverTimeModule : Module
-#if ENTITIES
+/*#if ENTITIES
         , IEntityModule
     {
         public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)
@@ -36,9 +36,9 @@ namespace StatusEffects.Modules
             public float InvervalSeconds;
             public float CurrentSeconds; // For use in the ISystem
         }
-#else
+#else*/
     {
-#endif
+//#endif
 #if UNITASK
         public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {

@@ -3,18 +3,18 @@ using System.Collections.Generic;
 
 namespace StatusEffects.Entities
 {
-    internal struct IndexedStatusEffectComparer : IComparer<IndexedStatusEffect>
+    internal struct IndexedStatusEffectComparer : IComparer<IndexedStatusEffects>
     {
         private StatusReferences m_References;
         private bool m_UseIndex;
 
-        public int Compare(IndexedStatusEffect x, IndexedStatusEffect y)
+        public int Compare(IndexedStatusEffects x, IndexedStatusEffects y)
         {
             if (m_UseIndex)
                 return x.Index.CompareTo(y.Index);
 
-            ref StatusEffectData dataX = ref m_References.IdToStatusEffectDataMap.Value[x.Id].Value;
-            ref StatusEffectData dataY = ref m_References.IdToStatusEffectDataMap.Value[y.Id].Value;
+            ref StatusEffectData dataX = ref m_References.IdToStatusEffectDataMap.Value[x.StatusEffectDataId].Value;
+            ref StatusEffectData dataY = ref m_References.IdToStatusEffectDataMap.Value[y.StatusEffectDataId].Value;
             // Compare base value.
             int comparison = dataX.BaseValue.CompareTo(dataY.BaseValue);
             if (comparison != 0)

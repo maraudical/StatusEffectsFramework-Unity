@@ -1,10 +1,7 @@
 #if ENTITIES
 using StatusEffects.Modules;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
-using Unity.Assertions;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -12,9 +9,7 @@ using Unity.Entities;
 namespace StatusEffects.Entities
 {
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
-#if !NETCODE
     [UpdateAfter(typeof(BeginStatusEffectEntityCommandBufferSystem))]
-#endif
     public partial class StatusReferencesSetupSystem : SystemBase
     {
         public EntityQuery m_ReferencesQuery;
@@ -152,17 +147,22 @@ namespace StatusEffects.Entities
 
             var statusEffectDataMapBlob = idToStatusEffectDataMapBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>>(Allocator.Persistent);
             idToStatusEffectDataMapBuilder.Dispose();
-            
+
             // Copy module to system type dictionary to blob hash map
-            var moduleToSystemTypeMapBuilder = new BlobBuilder(Allocator.Temp);
-            ref var moduleToSystemTypeMapRoot = ref moduleToSystemTypeMapBuilder.ConstructRoot<BlobHashMap<ulong, ulong>>();
-            var moduleToSystemTypeMap = moduleToSystemTypeMapBuilder.AllocateHashMap(ref moduleToSystemTypeMapRoot, moduleToSystemTypeDictionary.Count);
+            var moduleToSystemTypeMapBlob = BlobAssetReference<BlobHashMap<ulong, ulong>>.Null;
 
-            foreach (var kvp in moduleToSystemTypeDictionary)
-                moduleToSystemTypeMap.Add(kvp.Key, kvp.Value);
+            if (moduleToSystemTypeDictionary.Count > 0)
+            {
+                var moduleToSystemTypeMapBuilder = new BlobBuilder(Allocator.Temp);
+                ref var moduleToSystemTypeMapRoot = ref moduleToSystemTypeMapBuilder.ConstructRoot<BlobHashMap<ulong, ulong>>();
+                var moduleToSystemTypeMap = moduleToSystemTypeMapBuilder.AllocateHashMap(ref moduleToSystemTypeMapRoot, moduleToSystemTypeDictionary.Count);
 
-            var moduleToSystemTypeMapBlob = moduleToSystemTypeMapBuilder.CreateBlobAssetReference<BlobHashMap<ulong, ulong>>(Allocator.Persistent);
-            moduleToSystemTypeMapBuilder.Dispose();
+                foreach (var kvp in moduleToSystemTypeDictionary)
+                    moduleToSystemTypeMap.Add(kvp.Key, kvp.Value);
+
+                moduleToSystemTypeMapBlob = moduleToSystemTypeMapBuilder.CreateBlobAssetReference<BlobHashMap<ulong, ulong>>(Allocator.Persistent);
+                moduleToSystemTypeMapBuilder.Dispose();
+            }
 
             commandBuffer.AddComponent(referencesEntity, new StatusReferences
             {
@@ -176,6 +176,7 @@ namespace StatusEffects.Entities
             if (SystemAPI.TryGetSingleton<StatusReferences>(out var references))
             {
                 using var statusEffectDataBlobs = references.IdToStatusEffectDataMap.Value.GetValueArray(Allocator.Temp);
+
                 foreach (var blob in statusEffectDataBlobs)
                 {
                     ref var statusEffectData = ref blob.Value;
@@ -186,8 +187,12 @@ namespace StatusEffects.Entities
                     }
                     blob.Dispose();
                 }
-                references.IdToStatusEffectDataMap.Dispose();
-                references.ModuleToSystemTypeMap.Dispose();
+
+                if (references.IdToStatusEffectDataMap.IsCreated)
+                    references.IdToStatusEffectDataMap.Dispose();
+
+                if (references.ModuleToSystemTypeMap.IsCreated)
+                    references.ModuleToSystemTypeMap.Dispose();
             }
         }
     }

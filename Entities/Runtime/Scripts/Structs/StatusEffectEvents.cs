@@ -6,20 +6,23 @@ namespace StatusEffects.Entities
     public struct StatusEffectEvents : IBufferElementData
     {
         public StatusEffectEvent Event;
-        public int Id;
+        public uint Id;
+        public Hash128 StatusEffectDataId;
         public int PreviousStacks;
 
-        public StatusEffectEvents(int id)
+        public StatusEffectEvents(uint id, Hash128 statusEffectDataId)
         {
             Event = StatusEffectEvent.Added;
             Id = id;
+            StatusEffectDataId = statusEffectDataId;
             PreviousStacks = 0;
         }
 
-        public StatusEffectEvents(StatusEffectEvent statusEffectEvent, int id, int previousStacks)
+        public StatusEffectEvents(uint id, Hash128 statusEffectDataId, int previousStacks, StatusEffectEvent statusEffectEvent)
         {
             Event = statusEffectEvent;
             Id = id;
+            StatusEffectDataId = statusEffectDataId;
             PreviousStacks = previousStacks;
         }
     }

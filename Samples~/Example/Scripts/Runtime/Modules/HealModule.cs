@@ -18,7 +18,7 @@ namespace StatusEffects.Modules
 {
     [CreateAssetMenu(fileName = "Heal Module", menuName = "Status Effect Framework/Modules/Heal", order = 1)]
     public class HealModule : Module
-#if ENTITIES
+/*#if ENTITIES
         , IEntityModule
     {
         public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)
@@ -27,9 +27,9 @@ namespace StatusEffects.Modules
         }
 
         public struct HealEntityModule : IComponentData { }
-#else
+#else*/
     {
-#endif
+//#endif
 #if UNITASK
         public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {

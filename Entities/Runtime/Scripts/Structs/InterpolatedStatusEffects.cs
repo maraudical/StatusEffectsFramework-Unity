@@ -9,6 +9,7 @@ namespace StatusEffects.Entities
     internal struct InterpolatedStatusEffects : IBufferElementData, IComparable<InterpolatedStatusEffects>
     {
         public uint Id;
+        public Hash128 StatusEffectDataId;
         public int Stacks;
 
         public int CompareTo(InterpolatedStatusEffects other)

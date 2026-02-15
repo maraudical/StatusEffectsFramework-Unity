@@ -163,28 +163,54 @@ namespace StatusEffects.Entities.Example.UI
 
         private void AddButtonClicked()
         {
-#if NETCODE_ENTITIES
+/*#if NETCODE_ENTITIES
             if (!ClientServerBootstrap.HasServerWorld)
                 return;
-#endif
-            var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            var entity = m_PlayerQuery.GetSingletonEntity();
+#endif*/
+            //var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+            /*var entity = m_PlayerQuery.GetSingletonEntity();
             commandBuffer.AppendToBuffer(entity, new StatusEffectRequests(m_StatusEffectData.Id));
             commandBuffer.Playback(m_Manager);
-            commandBuffer.Dispose();
+            commandBuffer.Dispose();*/
+            //TEMP
+            foreach (var world in World.All)
+            {
+                var manager = world.EntityManager;
+                var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayer), typeof(StatusEffectRequests));
+                if (playerQuery.TryGetSingletonEntity<ExamplePlayer>(out var entity))
+                {
+                    var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+                    commandBuffer.AppendToBuffer(entity, new StatusEffectRequests(m_StatusEffectData.Id));
+                    commandBuffer.Playback(manager);
+                    commandBuffer.Dispose();
+                }
+            }
         }
 
         private void RemoveButtonClicked()
         {
-#if NETCODE_ENTITIES
-            if (!ClientServerBootstrap.HasServerWorld)
-                return;
-#endif
-            var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
-            var entity = m_PlayerQuery.GetSingletonEntity();
+            /*#if NETCODE_ENTITIES
+                        if (!ClientServerBootstrap.HasServerWorld)
+                            return;
+            #endif*/
+            //var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+            /*var entity = m_PlayerQuery.GetSingletonEntity();
             commandBuffer.AppendToBuffer(entity, new StatusEffectRequests(StatusEffectRemovalType.Data, id: m_StatusEffectData.Id, stacks: 1));
             commandBuffer.Playback(m_Manager);
-            commandBuffer.Dispose();
+            commandBuffer.Dispose();*/
+            //TEMP
+            foreach (var world in World.All)
+            {
+                var manager = world.EntityManager;
+                var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayer));
+                if (playerQuery.TryGetSingletonEntity<ExamplePlayer>(out var entity))
+                {
+                    var commandBuffer = new EntityCommandBuffer(Allocator.Temp);
+                    commandBuffer.AppendToBuffer(entity, new StatusEffectRequests(StatusEffectRemovalType.Data, id: m_StatusEffectData.Id, stacks: 1));
+                    commandBuffer.Playback(manager);
+                    commandBuffer.Dispose();
+                }
+            }
         }
     }
 }
