@@ -1,5 +1,6 @@
 #if ENTITIES && NETCODE
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 
@@ -48,7 +49,7 @@ namespace StatusEffects.Entities
             {
                 if (!NetworkTime.IsFirstPredictionTick)
                     return;
-
+                
                 BeginPredictedStatusEffectEntityCommandBuffer.RemoveComponent<StatusEffectEvents>(sortKey, entity);
                 var events = PostPredictedSimulationEntityCommandBuffer.AddBuffer<StatusEffectEvents>(sortKey, entity);
                 events.CopyFrom(statusEffectEvents);

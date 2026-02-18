@@ -8,11 +8,9 @@ using Unity.Mathematics;
 namespace StatusEffects.Entities
 {
 #if NETCODE
-    [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
-    [UpdateBefore(typeof(EndPredictedStatusEffectEntityCommandBufferSystem))]
+    [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup))]
 #else
-    [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
-    [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
+    [UpdateInGroup(typeof(StatusEffectSystemGroup))]
 #endif
     [UpdateAfter(typeof(StatusManagerSystem))]
     [BurstCompile]

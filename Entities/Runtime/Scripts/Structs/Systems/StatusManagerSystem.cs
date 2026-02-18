@@ -19,11 +19,9 @@ namespace StatusEffects.Entities
     /// <see cref="SimulationSystemGroup"/>.
     /// </summary>
 #if NETCODE
-    [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
-    [UpdateBefore(typeof(EndPredictedStatusEffectEntityCommandBufferSystem))]
+    [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup))]
 #else
-    [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
-    [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
+    [UpdateInGroup(typeof(StatusEffectSystemGroup))]
 #endif
     [BurstCompile]
     public partial struct StatusManagerSystem : ISystem
@@ -35,7 +33,8 @@ namespace StatusEffects.Entities
         public void OnCreate(ref SystemState state)
         {
             m_RequestQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusVariableUpdate>().WithAll<Simulate>().WithAllRW<StatusManager, StatusEffectRequests>().Build();
-            m_StatusEffectQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusVariableUpdate>().WithAll<Simulate>().Build();
+            m_RequestQuery.AddChangedVersionFilter(ComponentType.ReadWrite<StatusEffectRequests>());
+            m_StatusEffectQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithPresentRW<StatusVariableUpdate>().WithAll<Simulate>().Build();
 
             state.RequireForUpdate(m_StatusEffectQuery);
             state.RequireForUpdate<StatusReferences>();
@@ -62,7 +61,6 @@ namespace StatusEffects.Entities
             {
 #if NETCODE
                 NetworkTime = networkTime,
-                WorldName = state.WorldUnmanaged.Name,
 #else
                 ElapsedTime = elapsedTime,
 #endif
@@ -76,8 +74,10 @@ namespace StatusEffects.Entities
             var statusEffectsJob = new StatusEffectsJob
             {
 #if NETCODE
+                IsServer = state.WorldUnmanaged.IsServer(),
                 NetworkTime = networkTime,
                 TickRate = tickRate,
+                EndPredictedSimulationEntityCommandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
 #else
                 ElapsedTime = elapsedTime,
 #endif
@@ -92,7 +92,6 @@ namespace StatusEffects.Entities
         {
 #if NETCODE
             public NetworkTime NetworkTime;
-            public FixedString128Bytes WorldName;
 #else
             public double ElapsedTime;
 #endif
@@ -718,27 +717,35 @@ namespace StatusEffects.Entities
         internal partial struct StatusEffectsJob : IJobEntity
         {
 #if NETCODE
+            public bool IsServer;
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
+            public EntityCommandBuffer.ParallelWriter EndPredictedSimulationEntityCommandBuffer;
 #else
             public double ElapsedTime;
 #endif
             public EntityCommandBuffer.ParallelWriter BeginStatusEffectEntityCommandBuffer;
             public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
 
-            void Execute([ChunkIndexInQuery] int sortKey, Entity entity, EnabledRefRW<StatusVariableUpdate> statusVariableUpdate, ref DynamicBuffer<StatusEffects> statusEffects)
+            void Execute([ChunkIndexInQuery] int sortKey, Entity entity, EnabledRefRW<StatusVariableUpdate> statusVariableUpdate, in DynamicBuffer<StatusEffects> statusEffects)
             {
+#if NETCODE
+                if (!IsServer && NetworkTime.IsFinalPredictionTick)
+                    EndPredictedSimulationEntityCommandBuffer.RemoveComponent<StatusEffectEvents>(sortKey, entity);
+
+#endif
                 // If nothing to change then continue.
                 if (statusEffects.Length <= 0)
-                    return;
+                return;
 
+                DynamicBuffer<StatusEffects> statusEffectsCopy = default;
                 bool statusVariableUpdateEnabled = statusVariableUpdate.ValueRO;
                 bool didUpdate = false;
 
                 // Iterate in reverse to not skip any that get removed.
                 for (int i = statusEffects.Length - 1; i >= 0 ; i--)
                 {
-                    ref var statusEffect = ref statusEffects.ElementAt(i);
+                    var statusEffect = statusEffects[i];
 
                     switch (statusEffect.Timing)
                     {
@@ -759,6 +766,8 @@ namespace StatusEffects.Entities
                                 if (!didUpdate)
                                 {
                                     didUpdate = true;
+                                    statusEffectsCopy = EndStatusEffectEntityCommandBuffer.SetBuffer<StatusEffects>(sortKey, entity);
+                                    statusEffectsCopy.CopyFrom(statusEffects);
                                     if (!statusVariableUpdateEnabled)
                                     {
                                         statusVariableUpdate.ValueRW = true;
@@ -768,7 +777,8 @@ namespace StatusEffects.Entities
                                     }
                                 }
                                 EndStatusEffectEntityCommandBuffer.AppendToBuffer(sortKey, entity, new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, statusEffect.Stacks, StatusEffectEvent.Removed));
-                                statusEffects.RemoveAt(i);
+                                
+                                statusEffectsCopy.RemoveAtSwapBack(i);
                             }
                             break;
                     }

@@ -28,7 +28,7 @@ namespace StatusEffects.Entities
             var statusEffectsInterpolatedEventsJob = new StatusEffectsInterpolatedEventsJob
             {
                 EndStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                BeginSimulationEntityCommandBuffer = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
+                BeginStatusEffectEntityEntityCommandBuffer = SystemAPI.GetSingleton<BeginStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
             };
             state.Dependency = statusEffectsInterpolatedEventsJob.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
         }
@@ -37,7 +37,7 @@ namespace StatusEffects.Entities
         partial struct StatusEffectsInterpolatedEventsJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
-            public EntityCommandBuffer.ParallelWriter BeginSimulationEntityCommandBuffer;
+            public EntityCommandBuffer.ParallelWriter BeginStatusEffectEntityEntityCommandBuffer;
 
             public unsafe void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<StatusEffects> statusEffects, ref DynamicBuffer<InterpolatedStatusEffects> interpolatedStatusEffects)
             {
@@ -66,7 +66,7 @@ namespace StatusEffects.Entities
 
                 var events = EndStatusEffectEntityCommandBuffer.AddBuffer<StatusEffectEvents>(sortKey, entity);
                 // Preemptively remove the buffer so that it only lasts for one frame.
-                BeginSimulationEntityCommandBuffer.RemoveComponent<StatusEffectEvents>(sortKey, entity);
+                BeginStatusEffectEntityEntityCommandBuffer.RemoveComponent<StatusEffectEvents>(sortKey, entity);
 
                 for (; ; )
                 {

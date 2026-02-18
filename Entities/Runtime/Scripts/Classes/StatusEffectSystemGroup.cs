@@ -148,10 +148,15 @@ namespace StatusEffects.Entities
         }
     }
 
-    [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.Editor | WorldSystemFilterFlags.ThinClientSimulation)]
+    [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.ThinClientSimulation)]
     [UpdateInGroup(typeof(SimulationSystemGroup), OrderFirst = true)]
-    [UpdateBefore(typeof(VariableRateSimulationSystemGroup))]
+#if NETCODE
+    [UpdateAfter(typeof(GhostSimulationSystemGroup))]
+    [UpdateBefore(typeof(PredictedSimulationSystemGroup))]
+#else
+    [UpdateAfter(typeof(VariableRateSimulationSystemGroup))]
     [UpdateBefore(typeof(FixedStepSimulationSystemGroup))]
+#endif
     public partial class StatusEffectSystemGroup : ComponentSystemGroup { }
 }
 #endif
