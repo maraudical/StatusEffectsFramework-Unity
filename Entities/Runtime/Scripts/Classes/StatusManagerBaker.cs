@@ -15,6 +15,7 @@ namespace StatusEffects.Entities
             AddBuffer<InterpolatedStatusEffects>(entity);
 #endif
             AddBuffer<StatusEffectRequests>(entity);
+            AddBuffer<ModuleSystemRequests>(entity);
             AddBuffer<StatusFloats>(entity);
             AddBuffer<StatusInts>(entity);
             AddBuffer<StatusBools>(entity);

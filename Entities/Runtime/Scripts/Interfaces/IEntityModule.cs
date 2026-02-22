@@ -10,11 +10,15 @@ namespace StatusEffects.Entities
     public interface IEntityModule
     {
         /// <summary>
-        /// Should return a system of type <see cref="ISystem"/> or <see cref="SystemBase"/> that will 
-        /// process the module's logic. The <see cref="DisableAutoCreationAttribute"/> should be added 
-        /// to that system as module system will be manually created and destroyed when needed.
+        /// This method should return a system of type <see cref="ISystem"/> or <see cref="SystemBase"/> 
+        /// that will process the module's logic. The <see cref="DisableAutoCreationAttribute"/> should 
+        /// be added to that system as module system will be manually created and destroyed when needed.
         /// </summary>
         public Type ModuleSystemType();
+        /// <summary>
+        /// This method should return the generic buffer <see cref="Modules{T}"/> for your struct.
+        /// </summary>
+        public Type ModuleType();
         /// <summary>
         /// Using the values in the <see cref="Module"/> and <see cref="ModuleInstance"/> this method 
         /// should create the default values for the burstable module struct. Make sure to return after 
@@ -54,7 +58,7 @@ namespace StatusEffects.Entities
                 UnsafeUtility.CopyStructureToPtr(ref moduleStruct, ptr);
                 var moduleInfo = new ModuleInfo
                 {
-                    StableTypeHash = TypeManager.GetTypeInfo(TypeManager.GetTypeIndex(typeof(T))).StableTypeHash,
+                    TypeIndex = TypeManager.GetTypeIndex(ModuleType()),
                     Ptr = (IntPtr)ptr,
                 };
                 return moduleInfo;

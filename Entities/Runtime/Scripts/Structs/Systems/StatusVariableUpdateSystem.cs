@@ -88,7 +88,10 @@ namespace StatusEffects.Entities
                 
                 foreach (var statusEffect in statusEffects)
                 {
-                    ref StatusEffectData data = ref references.IdToStatusEffectDataMap.Value[statusEffect.StatusEffectDataId].Value;
+                    if (!references.TryGetReference(statusEffect.StatusEffectDataId, out var blob))
+                        continue;
+
+                    ref StatusEffectData data = ref blob.Value;
 
                     for (int i = 0; i < data.Effects.Length; i++)
                     {

@@ -32,14 +32,17 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_RequestQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusVariableUpdate>().WithAll<Simulate>().WithAllRW<StatusManager, StatusEffectRequests>().Build();
+            m_RequestQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects, ModuleSystemRequests>().WithPresentRW<StatusVariableUpdate>().WithAll<Simulate>().WithAllRW<StatusManager, StatusEffectRequests>().Build();
             m_RequestQuery.AddChangedVersionFilter(ComponentType.ReadWrite<StatusEffectRequests>());
             m_StatusEffectQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithPresentRW<StatusVariableUpdate>().WithAll<Simulate>().Build();
 
             state.RequireForUpdate(m_StatusEffectQuery);
             state.RequireForUpdate<StatusReferences>();
+#if NETCODE
+            state.RequireForUpdate<NetworkTime>();
+#endif
         }
-        
+
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
@@ -47,7 +50,8 @@ namespace StatusEffects.Entities
             
 #if NETCODE
             var networkTime = SystemAPI.GetSingleton<NetworkTime>();
-            var tickRate = SystemAPI.GetSingleton<ClientServerTickRate>();
+            SystemAPI.TryGetSingleton<ClientServerTickRate>(out var tickRate);
+            tickRate.ResolveDefaults();
             var beginStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<BeginPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 #else
@@ -65,6 +69,7 @@ namespace StatusEffects.Entities
                 ElapsedTime = elapsedTime,
 #endif
                 References = references,
+                ModuleSystemHandles = SystemAPI.GetSingletonBuffer<ModuleSystemHandles>().ToNativeArray(Allocator.TempJob),
                 BeginStatusEffectEntityCommandBuffer = beginStatusEffectEntityCommandBuffer,
                 EndStatusEffectEntityCommandBuffer = endStatusEffectEntityCommandBuffer,
             };
@@ -96,10 +101,18 @@ namespace StatusEffects.Entities
             public double ElapsedTime;
 #endif
             public StatusReferences References;
+            [DeallocateOnJobCompletion]
+            public NativeArray<ModuleSystemHandles> ModuleSystemHandles;
             public EntityCommandBuffer.ParallelWriter BeginStatusEffectEntityCommandBuffer;
             public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
 
-            void Execute([ChunkIndexInQuery] int sortKey, Entity entity, EnabledRefRW<StatusVariableUpdate> statusVariableUpdate, ref StatusManager statusManager, ref DynamicBuffer<StatusEffectRequests> statusEffectRequests, ref DynamicBuffer<StatusEffects> statusEffects)
+            unsafe void Execute([ChunkIndexInQuery] int sortKey, 
+                Entity entity, 
+                EnabledRefRW<StatusVariableUpdate> statusVariableUpdate, 
+                ref StatusManager statusManager, 
+                ref DynamicBuffer<StatusEffectRequests> statusEffectRequests, 
+                ref DynamicBuffer<StatusEffects> statusEffects, 
+                ref DynamicBuffer<ModuleSystemRequests> moduleSystemRequests)
             {
                 // If nothing to change then continue.
                 if (statusEffectRequests.Length <= 0)
@@ -107,6 +120,7 @@ namespace StatusEffects.Entities
                 
                 NativeArray<StatusEffects>.ReadOnly unsortedStatusEffects = statusEffects.AsNativeArray().AsReadOnly();
                 NativeList<IndexedStatusEffects> statusEffectStackUpdates = new NativeList<IndexedStatusEffects>(unsortedStatusEffects.Length, Allocator.Temp);
+                NativeList<TypeIndex> bufferTypesAdded = new NativeList<TypeIndex>(statusEffectRequests.Length, Allocator.Temp);
 
                 for (int i = statusEffectRequests.Length - 1; i >= 0; i--)
                 {
@@ -631,6 +645,7 @@ namespace StatusEffects.Entities
                 }
 
                 statusEffectRequests.Clear();
+                var moduleSystemRequestsPtr = moduleSystemRequests.GetUnsafePtr();
 
                 // Remove and add status effects from buffer.
                 statusEffectStackUpdates.Sort(new IndexedStatusEffectComparer(References, true));
@@ -650,8 +665,27 @@ namespace StatusEffects.Entities
                         uint id = statusManager.AvailableId++;
                         EndStatusEffectEntityCommandBuffer.AppendToBuffer(sortKey, entity, new StatusEffectEvents(id, indexedUpdate.StatusEffectDataId));
 
-                        if (References.IdToStatusEffectDataMap.Value.TryGetValue(indexedUpdate.StatusEffectDataId, out var reference))
+                        if (References.TryGetReference(indexedUpdate.StatusEffectDataId, out var reference))
                         {
+                            ref var blobArray = ref reference.Value.Modules;
+                            for (int i = 0; i < blobArray.Length; i++)
+                            {
+                                var moduleInfo = blobArray[i];
+
+                                // Add buffer if it doesn't exist. Make sure to keep an array of added buffers for this frame so that we don't duplicate
+                                entity.
+                                moduleInfo.
+
+                                if (References.ModuleToSystemTypeMap.Value.TryGetValue(moduleInfo.TypeIndex, out var systemTypeIndex) 
+                                    && !ModuleSystemHandles.Contains(systemTypeIndex)
+                                    && !NativeArrayExtensions.Contains<ModuleSystemRequests, SystemTypeIndex>(moduleSystemRequestsPtr, moduleSystemRequests.Length, systemTypeIndex))
+                                    moduleSystemRequests.Add(new ModuleSystemRequests 
+                                    {
+                                        ModuleTypeIndex = moduleInfo.TypeIndex,
+                                        SystemTypeIndex = systemTypeIndex,
+                                    });
+                            }
+                            
                             // TODO: Update module logic
                             /*moduleEntity = CommandBuffer.Instantiate(sortKey, ModulePrefabs[reference.Value.ModulePrefabIndex].Entity);
                             CommandBuffer.AppendToBuffer(sortKey, entity, new Modules { Value = moduleEntity });
@@ -709,6 +743,7 @@ namespace StatusEffects.Entities
                         }
                     }
                     statusEffectStackUpdates.Dispose();
+                    bufferTypesAdded.Dispose();
                 }
             }
         }

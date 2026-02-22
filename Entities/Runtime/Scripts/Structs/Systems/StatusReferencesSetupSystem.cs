@@ -39,16 +39,22 @@ namespace StatusEffects.Entities
             var referencesEntity = commandBuffer.CreateEntity();
             
             commandBuffer.SetName(referencesEntity, "Status References");
+            var moduleSystemHandles = commandBuffer.AddBuffer<ModuleSystemHandles>(referencesEntity);
 
             var idToStatusEffectDataMapBuilder = new BlobBuilder(Allocator.Temp);
             ref var idToStatusEffectDataMapRoot = ref idToStatusEffectDataMapBuilder.ConstructRoot<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>>();
             var idToStatusEffectDataMap = idToStatusEffectDataMapBuilder.AllocateHashMap(ref idToStatusEffectDataMapRoot, statusEffectDatas.Count);
-            var moduleToSystemTypeDictionary = new Dictionary<ulong, ulong>();
+            var moduleToSystemTypeDictionary = new Dictionary<TypeIndex, SystemTypeIndex>();
             global::StatusEffects.Effect effect;
             global::StatusEffects.Condition condition;
             
             // Dispose of old blobs after copying
-            OnDestroy();
+            if (SystemAPI.TryGetSingletonEntity<StatusReferences>(out var oldReferencesEntity))
+            {
+                moduleSystemHandles.CopyFrom(EntityManager.GetBuffer<ModuleSystemHandles>(oldReferencesEntity));
+                OnDestroy();
+                commandBuffer.DestroyEntity(oldReferencesEntity);
+            }
 
             // Setup status effect datas
             foreach (var statusEffectData in statusEffectDatas)
@@ -134,8 +140,8 @@ namespace StatusEffects.Entities
                         var entityModule = (IEntityModule)moduleContainer.Module;
                         
                         var moduleInfo = entityModule.CreateModuleInfo(moduleContainer.ModuleInstance);
-                        var systemTypeHash = TypeManager.GetTypeInfo(TypeManager.GetTypeIndex(entityModule.ModuleSystemType())).StableTypeHash;
-                        moduleToSystemTypeDictionary.TryAdd(moduleInfo.StableTypeHash, systemTypeHash);
+                        var systemTypeIndex = TypeManager.GetSystemTypeIndex(entityModule.ModuleSystemType());
+                        moduleToSystemTypeDictionary.TryAdd(moduleInfo.TypeIndex, systemTypeIndex);
                         
                         modules[i] = moduleInfo;
                     }
@@ -149,18 +155,18 @@ namespace StatusEffects.Entities
             idToStatusEffectDataMapBuilder.Dispose();
 
             // Copy module to system type dictionary to blob hash map
-            var moduleToSystemTypeMapBlob = BlobAssetReference<BlobHashMap<ulong, ulong>>.Null;
+            var moduleToSystemTypeMapBlob = BlobAssetReference<BlobHashMap<TypeIndex, SystemTypeIndex>>.Null;
 
             if (moduleToSystemTypeDictionary.Count > 0)
             {
                 var moduleToSystemTypeMapBuilder = new BlobBuilder(Allocator.Temp);
-                ref var moduleToSystemTypeMapRoot = ref moduleToSystemTypeMapBuilder.ConstructRoot<BlobHashMap<ulong, ulong>>();
+                ref var moduleToSystemTypeMapRoot = ref moduleToSystemTypeMapBuilder.ConstructRoot<BlobHashMap<TypeIndex, SystemTypeIndex>>();
                 var moduleToSystemTypeMap = moduleToSystemTypeMapBuilder.AllocateHashMap(ref moduleToSystemTypeMapRoot, moduleToSystemTypeDictionary.Count);
 
                 foreach (var kvp in moduleToSystemTypeDictionary)
                     moduleToSystemTypeMap.Add(kvp.Key, kvp.Value);
 
-                moduleToSystemTypeMapBlob = moduleToSystemTypeMapBuilder.CreateBlobAssetReference<BlobHashMap<ulong, ulong>>(Allocator.Persistent);
+                moduleToSystemTypeMapBlob = moduleToSystemTypeMapBuilder.CreateBlobAssetReference<BlobHashMap<TypeIndex, SystemTypeIndex>>(Allocator.Persistent);
                 moduleToSystemTypeMapBuilder.Dispose();
             }
 

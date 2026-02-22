@@ -8,7 +8,7 @@ namespace StatusEffects.Entities
         public bool TryGetReference(Hash128 id, out BlobAssetReference<StatusEffectData> reference) => IdToStatusEffectDataMap.Value.TryGetValue(id, out reference);
 
         internal BlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>> IdToStatusEffectDataMap;
-        internal BlobAssetReference<BlobHashMap<ulong, ulong>> ModuleToSystemTypeMap;
+        internal BlobAssetReference<BlobHashMap<TypeIndex, SystemTypeIndex>> ModuleToSystemTypeMap;
     }
 }
 #endif

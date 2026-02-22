@@ -1,63 +1,114 @@
 #if ENTITIES
-using Unity.Burst;
+using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+using UnityEngine;
 
 namespace StatusEffects.Entities
 {
-    [UpdateInGroup(typeof(StatusEffectSystemGroup))]
+    [UpdateInGroup(typeof(SimulationSystemGroup), OrderLast = true)]
     public partial class ModuleSystem : SystemBase
     {
         public EntityQuery m_EntityQuery;
 
-        private const double k_ModuleSystemMaxInactivityTime = 20;
+        private const double k_ModuleSystemMaxInactivityTime = 120;
 
         protected override void OnCreate()
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAllRW<ModuleSystems>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAllRW<ModuleSystemHandles>().Build();
 
             RequireForUpdate(m_EntityQuery);
+
+            unsafe
+            {
+                int value = 5;
+                MyStruct copy = new MyStruct { x = 0, z = new MyInt { x = 8 } };
+                MyStruct test = new MyStruct { x = 1, z = new MyInt { x = 2 } };
+                MyInt inttest = new MyInt { x = 11 };
+                void* valuePtr = Unsafe.AsPointer(ref value);
+                void* copyPtr = Unsafe.AsPointer(ref copy);
+                void* testPtr = Unsafe.AsPointer(ref test);
+                void* inttestPtr = Unsafe.AsPointer(ref inttest);
+
+                UnsafeUtility.MemCpy(testPtr, copyPtr, UnsafeUtility.SizeOf<MyStruct>());
+                UnsafeUtility.MemCpy(testPtr, valuePtr, UnsafeUtility.SizeOf<int>());
+                IntPtr newPtr = IntPtr.Add(new IntPtr(testPtr), UnsafeUtility.SizeOf<int>());
+                UnsafeUtility.MemCpy(newPtr.ToPointer(), inttestPtr, UnsafeUtility.SizeOf<MyInt>());
+
+
+                Debug.Log("SIZE TEST---------------");
+                Debug.Log($"MyStruct: {test.x}, {test.z.x}");
+            }
+        }
+
+        public struct MyInt
+        {
+            public int x;
+        }
+
+        public struct MyStruct
+        {
+            public int x;
+            public MyInt z;
         }
 
         protected override void OnUpdate()
         {
-            var moduleSystemJob = new ModuleSystemJob
-            {
-                Time = SystemAPI.Time.ElapsedTime,
-                World = World,
-                WorldUnmanaged = World.Unmanaged,
-            };
-            Dependency = moduleSystemJob.Schedule(m_EntityQuery, Dependency);
-        }
-            
-        partial struct ModuleSystemJob : IJobEntity
-        {
-            public double Time;
-            public World World;
-            public WorldUnmanaged WorldUnmanaged;
+            var time = SystemAPI.Time.ElapsedTime;
 
-            public unsafe void Execute(ref DynamicBuffer<ModuleSystems> moduleSystems)
+            foreach (var handles in SystemAPI.Query<DynamicBuffer<ModuleSystemHandles>>())
             {
-                for (int i = moduleSystems.Length - 1; i >= 0; i--)
+                for (int i = handles.Length - 1; i >= 0; i--)
                 {
-                    ref var moduleSystem = ref moduleSystems.ElementAt(i);
-                    uint lastSystemVersion = WorldUnmanaged.ResolveSystemStateRef(moduleSystem.SystemHandle).LastSystemVersion;
+                    ref var handle = ref handles.ElementAt(i);
 
-                    if (moduleSystem.LastSystemVersion == lastSystemVersion)
+                    if (handle.TimeUpdated + k_ModuleSystemMaxInactivityTime > time)
+                        continue;
+
+                    var query = EntityManager.CreateEntityQuery(TypeManager.GetType(handle.ModuleTypeIndex));
+
+                    if (!query.IsEmptyIgnoreFilter)
                     {
-                        if (moduleSystem.TimeUpdated + k_ModuleSystemMaxInactivityTime > Time)
-                            continue;
-
-                        // Destroy inactive systems
-                        using var attributes = TypeManager.GetSystemAttributes(TypeManager.GetTypeIndexFromStableTypeHash(moduleSystem.StableTypeHash).Index, TypeManager.SystemAttributeKind.UpdateInGroup);
-                        
-                        World.DestroySystem(moduleSystem.SystemHandle);
-                        moduleSystems.RemoveAtSwapBack(i);
+                        Debug.Log("found some");
+                        handle.TimeUpdated = time;
+                        continue;
                     }
-                    else
+
+                    handles.RemoveAtSwapBack(i);
+
+                    // Destroy inactive systems
+                    _ = DestroyEndOfFrame(Application.exitCancellationToken, handle);
+                    async Awaitable DestroyEndOfFrame(CancellationToken token, ModuleSystemHandles handle)
                     {
-                        moduleSystem.LastSystemVersion = lastSystemVersion;
-                        moduleSystem.TimeUpdated = Time;
+                        await Awaitable.EndOfFrameAsync(token);
+                        
+                        if (token.IsCancellationRequested)
+                            return;
+                        Debug.Log("removing from !!!" + World.Name);
+
+                        using var attributes = TypeManager.GetSystemAttributes(handle.SystemTypeIndex, TypeManager.SystemAttributeKind.UpdateInGroup);
+                        Debug.Log(attributes.Length + " found!!!");
+                        if (attributes.Length == 0)
+                            World.GetOrCreateSystemManaged<SimulationSystemGroup>().RemoveSystemFromUpdateList(handle.Value);
+                        else
+                            foreach (var attr in attributes)
+                            {
+                                Debug.Log("ATTR FOUND!!!");
+                                var groupTypeIndex = attr.TargetSystemTypeIndex;
+                                var groupSys = World.GetExistingSystemManaged(groupTypeIndex);
+                                var group = groupSys as ComponentSystemGroup;
+
+                                if (group != null)
+                                {
+                                    group.RemoveSystemFromUpdateList(handle.Value);
+                                }
+                            }
+                        Debug.Log("destroyed!!!");
+                        World.DestroySystem(handle.Value);
                     }
                 }
             }
@@ -66,10 +117,10 @@ namespace StatusEffects.Entities
 
 #if NETCODE
     [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
-    [UpdateBefore(typeof(EndPredictedStatusEffectEntityCommandBufferSystem))]
+    [UpdateAfter(typeof(EndPredictedStatusEffectEntityCommandBufferSystem))]
 #else
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
-    [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
+    [UpdateAfter(typeof(EndStatusEffectEntityCommandBufferSystem))]
 #endif
     public partial class ModuleRequestSystem : SystemBase
     {
@@ -77,46 +128,47 @@ namespace StatusEffects.Entities
 
         protected override void OnCreate()
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAllRW<ModuleSystemRequests, ModuleSystems>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAllRW<ModuleSystemRequests>().Build();
             m_EntityQuery.AddChangedVersionFilter(ComponentType.ReadWrite<ModuleSystemRequests>());
 
             RequireForUpdate(m_EntityQuery);
+            RequireForUpdate<ModuleSystemHandles>();
         }
 
-        protected override void OnUpdate()
+        protected unsafe override void OnUpdate()
         {
-            var moduleRequestSystemJob = new ModuleRequestSystemJob
-            {
-                Time = SystemAPI.Time.ElapsedTime,
-                World = World,
-                WorldUnmanaged = World.Unmanaged
-            };
-            Dependency = moduleRequestSystemJob.Schedule(m_EntityQuery, Dependency);
-        }
+            var handles = SystemAPI.GetSingletonBuffer<ModuleSystemHandles>();
+            var handlesPtr = handles.GetUnsafePtr();
+            var time = SystemAPI.Time.ElapsedTime;
 
-        partial struct ModuleRequestSystemJob : IJobEntity
-        {
-            public double Time;
-            public World World;
-            public WorldUnmanaged WorldUnmanaged;
-
-            public unsafe void Execute(ref DynamicBuffer<ModuleSystemRequests> moduleSystemRequests, ref DynamicBuffer<ModuleSystems> moduleSystems)
+            foreach (var requests in SystemAPI.Query<DynamicBuffer<ModuleSystemRequests>>())
             {
-                var list = new NativeList<SystemTypeIndex>(moduleSystemRequests.Length, Allocator.Temp);
-                foreach (var request in moduleSystemRequests)
+                if (requests.Length <= 0)
+                    return;
+
+                using var systemTypeIndexList = new NativeList<SystemTypeIndex>(requests.Length, Allocator.Temp);
+
+                foreach (var request in requests)
                 {
-                    if (NativeArrayExtensions.Contains<ModuleSystems, ModuleSystemRequests>(moduleSystems.GetUnsafeReadOnlyPtr(), moduleSystems.Length, request))
+                    if (NativeArrayExtensions.Contains<ModuleSystemHandles, ModuleSystemRequests>(handlesPtr, handles.Length, request))
                         continue;
-                    list.AddNoResize(TypeManager.GetTypeIndexFromStableTypeHash(request.StableTypeHash).Index);
-                    moduleSystems.Add(new ModuleSystems
+                    systemTypeIndexList.AddNoResize(request.SystemTypeIndex);
+                }
+
+                DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(World, systemTypeIndexList);
+
+                foreach (var request in requests)
+                {
+                    handles.Add(new ModuleSystemHandles
                     {
-                        StableTypeHash = request.StableTypeHash,
-                        SystemHandle = WorldUnmanaged.
-                    })
-                }  
-                
-                DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(World, list);
-                moduleSystemRequests.Clear();
+                        ModuleTypeIndex = request.ModuleTypeIndex,
+                        SystemTypeIndex = request.SystemTypeIndex,
+                        Value = World.GetExistingSystem(request.SystemTypeIndex),
+                        TimeUpdated = time
+                    });
+                }
+
+                requests.Clear();
             }
         }
     }

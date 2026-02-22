@@ -7,7 +7,7 @@ namespace StatusEffects.Entities
     [BurstCompile]
     public struct Modules<T> : IBufferElementData where T : unmanaged
     {
-        public int Id;
+        public uint Id;
         public T Value;
     }
 }
