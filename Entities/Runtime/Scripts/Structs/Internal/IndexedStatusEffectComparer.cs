@@ -13,8 +13,8 @@ namespace StatusEffects.Entities
             if (m_UseIndex)
                 return x.Index.CompareTo(y.Index);
 
-            ref StatusEffectData dataX = ref m_References.IdToStatusEffectDataMap.Value[x.StatusEffectDataId].Value;
-            ref StatusEffectData dataY = ref m_References.IdToStatusEffectDataMap.Value[y.StatusEffectDataId].Value;
+            ref UnmanagedStatusEffectData dataX = ref m_References.IdToStatusEffectDataMap.Value[x.StatusEffectDataId].Value;
+            ref UnmanagedStatusEffectData dataY = ref m_References.IdToStatusEffectDataMap.Value[y.StatusEffectDataId].Value;
             // Compare base value.
             int comparison = dataX.BaseValue.CompareTo(dataY.BaseValue);
             if (comparison != 0)

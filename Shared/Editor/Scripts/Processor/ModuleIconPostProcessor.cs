@@ -21,9 +21,6 @@ namespace StatusEffects.Editor
                     // Hack, hack, hack away....
                     string scriptText = File.ReadAllText(assetPath);
 
-                    if (!scriptText.Contains("namespace StatusEffects.Modules"))
-                        continue;
-
                     if (scriptText.Substring(0, 30).Contains("#EXCLUDEFROMPROCESSING#"))
                         continue;
 

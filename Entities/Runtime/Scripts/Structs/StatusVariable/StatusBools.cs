@@ -33,7 +33,7 @@ namespace StatusEffects.Entities
             Value = baseValue;
         }
 
-        public StatusBools(Hash128 componentId, global::StatusEffects.StatusBool statusBool)
+        public StatusBools(Hash128 componentId, StatusBool statusBool)
         {
             ComponentId = componentId;
             if (statusBool != null && statusBool.StatusName)

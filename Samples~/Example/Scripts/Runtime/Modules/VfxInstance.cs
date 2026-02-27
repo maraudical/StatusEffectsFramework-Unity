@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace StatusEffects.Modules
+namespace StatusEffects.Example
 {
     public class VfxInstance : ModuleInstance
     {

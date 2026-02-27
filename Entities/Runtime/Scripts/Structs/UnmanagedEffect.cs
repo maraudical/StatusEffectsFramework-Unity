@@ -3,7 +3,7 @@ using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    public struct Effect
+    public struct UnmanagedEffect
     {
         public Hash128 Id;
         public ValueModifier ValueModifier;

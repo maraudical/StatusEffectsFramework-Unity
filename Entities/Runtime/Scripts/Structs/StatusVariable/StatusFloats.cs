@@ -38,7 +38,7 @@ namespace StatusEffects.Entities
             Value = baseValue;
         }
 
-        public StatusFloats(Hash128 componentId, global::StatusEffects.StatusFloat statusFloat)
+        public StatusFloats(Hash128 componentId, StatusFloat statusFloat)
         {
             ComponentId = componentId;
             if (statusFloat != null && statusFloat.StatusName)

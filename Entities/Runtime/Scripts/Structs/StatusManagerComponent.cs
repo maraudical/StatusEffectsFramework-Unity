@@ -9,7 +9,7 @@ namespace StatusEffects.Entities
 #if NETCODE
     [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]
 #endif
-    internal struct StatusManager : IComponentData
+    internal struct StatusManagerComponent : IComponentData
     {
 #if NETCODE
         [GhostField]

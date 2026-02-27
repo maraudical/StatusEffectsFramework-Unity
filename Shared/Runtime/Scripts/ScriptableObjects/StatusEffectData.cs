@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using StatusEffects.Modules;
 using System.Collections.ObjectModel;
-using System;
 #if LOCALIZED
 using UnityEngine.Localization;
 #endif
@@ -83,9 +81,9 @@ namespace StatusEffects
         [SerializeField] private Sprite m_Icon;
         [SerializeField] private Color m_Color = Color.white;
 #if LOCALIZED
-        [SerializeField] private  LocalizedString m_StatusEffectName;
+        [SerializeField] private LocalizedString m_StatusEffectName;
         [SerializeField] private LocalizedString m_Acronym;
-        [SerializeField] private  LocalizedString m_Description;
+        [SerializeField] private LocalizedString m_Description;
 #else
         [SerializeField] private string m_StatusEffectName;
         [SerializeField] private string m_Acronym;

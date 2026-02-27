@@ -5,7 +5,7 @@ using Unity.Entities;
 namespace StatusEffects.Entities
 {
     /// <summary>
-    /// A simple struct simply for reordering <see cref="StatusEffects"/> 
+    /// A simple struct simply for reordering <see cref="ActiveStatusEffects"/> 
     /// buffers while retaining their origional index.
     /// </summary>
     internal struct IndexedStatusEffects : IEquatable<int>, IEquatable<Hash128>
@@ -19,7 +19,7 @@ namespace StatusEffects.Entities
         public int Stacks;
         public Hash128 EventId;
 
-        public IndexedStatusEffects(int index, StatusEffects statusEffect)
+        public IndexedStatusEffects(int index, ActiveStatusEffects statusEffect)
         {
             Index = index;
 
@@ -31,15 +31,9 @@ namespace StatusEffects.Entities
             EventId = statusEffect.EventId;
         }
 
-        public bool Equals(int other)
-        {
-            return Index.Equals(other);
-        }
+        public bool Equals(int other) => Index.Equals(other);
 
-        public bool Equals(Hash128 other)
-        {
-            return StatusEffectDataId.Equals(other);
-        }
+        public bool Equals(Hash128 other) => StatusEffectDataId.Equals(other);
     }
 }
 #endif

@@ -1,5 +1,4 @@
 #if ENTITIES
-using StatusEffects.Modules;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
@@ -9,7 +8,6 @@ using Unity.Entities;
 namespace StatusEffects.Entities
 {
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
-    [UpdateAfter(typeof(BeginStatusEffectEntityCommandBufferSystem))]
     public partial class StatusReferencesSetupSystem : SystemBase
     {
         public EntityQuery m_ReferencesQuery;
@@ -39,19 +37,16 @@ namespace StatusEffects.Entities
             var referencesEntity = commandBuffer.CreateEntity();
             
             commandBuffer.SetName(referencesEntity, "Status References");
-            var moduleSystemHandles = commandBuffer.AddBuffer<ModuleSystemHandles>(referencesEntity);
 
             var idToStatusEffectDataMapBuilder = new BlobBuilder(Allocator.Temp);
-            ref var idToStatusEffectDataMapRoot = ref idToStatusEffectDataMapBuilder.ConstructRoot<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>>();
+            ref var idToStatusEffectDataMapRoot = ref idToStatusEffectDataMapBuilder.ConstructRoot<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>>();
             var idToStatusEffectDataMap = idToStatusEffectDataMapBuilder.AllocateHashMap(ref idToStatusEffectDataMapRoot, statusEffectDatas.Count);
-            var moduleToSystemTypeDictionary = new Dictionary<TypeIndex, SystemTypeIndex>();
-            global::StatusEffects.Effect effect;
-            global::StatusEffects.Condition condition;
+            Effect effect;
+            Condition condition;
             
             // Dispose of old blobs after copying
             if (SystemAPI.TryGetSingletonEntity<StatusReferences>(out var oldReferencesEntity))
             {
-                moduleSystemHandles.CopyFrom(EntityManager.GetBuffer<ModuleSystemHandles>(oldReferencesEntity));
                 OnDestroy();
                 commandBuffer.DestroyEntity(oldReferencesEntity);
             }
@@ -65,7 +60,7 @@ namespace StatusEffects.Entities
 
                 var subBuilder = new BlobBuilder(Allocator.Temp);
 
-                ref StatusEffectData statusEffectDataRoot = ref subBuilder.ConstructRoot<StatusEffectData>();
+                ref UnmanagedStatusEffectData statusEffectDataRoot = ref subBuilder.ConstructRoot<UnmanagedStatusEffectData>();
                 statusEffectDataRoot.Id = statusEffectData.Id;
                 statusEffectDataRoot.Group = statusEffectData.Group;
                 statusEffectDataRoot.ComparableName = statusEffectData.ComparableName ? statusEffectData.ComparableName.Id : default;
@@ -92,7 +87,7 @@ namespace StatusEffects.Entities
                 for (int i = 0; i < effects.Length; i++)
                 {
                     effect = statusEffectData.Effects[i];
-                    effects[i] = new Effect
+                    effects[i] = new UnmanagedEffect
                     {
                         Id = effect.StatusName ? effect.StatusName.Id : default,
                         ValueModifier = effect.ValueModifier,
@@ -107,7 +102,7 @@ namespace StatusEffects.Entities
                 for (int i = 0; i < conditions.Length; i++)
                 {
                     condition = statusEffectData.Conditions[i];
-                    conditions[i] = new Condition()
+                    conditions[i] = new UnmanagedCondition()
                     {
                         SearchableConfigurable = condition.SearchableConfigurable,
                         SearchableData = condition.SearchableData ? condition.SearchableData.Id : default,
@@ -135,45 +130,27 @@ namespace StatusEffects.Entities
                 if (entityModuleContainers.Count > 0)
                 {
                     for (int i = 0; i < modules.Length; i++)
-                    unsafe {
+                    {
                         var moduleContainer = entityModuleContainers[i];
                         var entityModule = (IEntityModule)moduleContainer.Module;
-                        
-                        var moduleInfo = entityModule.CreateModuleInfo(moduleContainer.ModuleInstance);
-                        var systemTypeIndex = TypeManager.GetSystemTypeIndex(entityModule.ModuleSystemType());
-                        moduleToSystemTypeDictionary.TryAdd(moduleInfo.TypeIndex, systemTypeIndex);
-                        
-                        modules[i] = moduleInfo;
+
+                        modules[i] = entityModule.CreateModuleInfo(moduleContainer.ModuleInstance);
                     }
                 }
 
-                idToStatusEffectDataMap.Add(statusEffectData.Id, subBuilder.CreateBlobAssetReference<StatusEffectData>(Allocator.Persistent));
+                idToStatusEffectDataMap.Add(statusEffectData.Id, subBuilder.CreateBlobAssetReference<UnmanagedStatusEffectData>(Allocator.Persistent));
                 subBuilder.Dispose();
             }
 
-            var statusEffectDataMapBlob = idToStatusEffectDataMapBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<StatusEffectData>>>(Allocator.Persistent);
+            var statusEffectDataMapBlob = idToStatusEffectDataMapBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>>(Allocator.Persistent);
             idToStatusEffectDataMapBuilder.Dispose();
 
             // Copy module to system type dictionary to blob hash map
             var moduleToSystemTypeMapBlob = BlobAssetReference<BlobHashMap<TypeIndex, SystemTypeIndex>>.Null;
 
-            if (moduleToSystemTypeDictionary.Count > 0)
-            {
-                var moduleToSystemTypeMapBuilder = new BlobBuilder(Allocator.Temp);
-                ref var moduleToSystemTypeMapRoot = ref moduleToSystemTypeMapBuilder.ConstructRoot<BlobHashMap<TypeIndex, SystemTypeIndex>>();
-                var moduleToSystemTypeMap = moduleToSystemTypeMapBuilder.AllocateHashMap(ref moduleToSystemTypeMapRoot, moduleToSystemTypeDictionary.Count);
-
-                foreach (var kvp in moduleToSystemTypeDictionary)
-                    moduleToSystemTypeMap.Add(kvp.Key, kvp.Value);
-
-                moduleToSystemTypeMapBlob = moduleToSystemTypeMapBuilder.CreateBlobAssetReference<BlobHashMap<TypeIndex, SystemTypeIndex>>(Allocator.Persistent);
-                moduleToSystemTypeMapBuilder.Dispose();
-            }
-
             commandBuffer.AddComponent(referencesEntity, new StatusReferences
             {
                 IdToStatusEffectDataMap = statusEffectDataMapBlob,
-                ModuleToSystemTypeMap = moduleToSystemTypeMapBlob
             });
         }
 
@@ -196,9 +173,6 @@ namespace StatusEffects.Entities
 
                 if (references.IdToStatusEffectDataMap.IsCreated)
                     references.IdToStatusEffectDataMap.Dispose();
-
-                if (references.ModuleToSystemTypeMap.IsCreated)
-                    references.ModuleToSystemTypeMap.Dispose();
             }
         }
     }

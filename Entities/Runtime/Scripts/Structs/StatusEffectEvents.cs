@@ -1,9 +1,10 @@
 #if ENTITIES
+using System;
 using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    public struct StatusEffectEvents : IBufferElementData
+    public struct StatusEffectEvents : IBufferElementData, IEnableableComponent, IEquatable<uint>
     {
         public StatusEffectEvent Event;
         public uint Id;
@@ -25,6 +26,8 @@ namespace StatusEffects.Entities
             StatusEffectDataId = statusEffectDataId;
             PreviousStacks = previousStacks;
         }
+
+        public bool Equals(uint other) => Id.Equals(other);
     }
 }
 #endif

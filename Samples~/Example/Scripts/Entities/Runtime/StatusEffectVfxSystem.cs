@@ -4,7 +4,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
-using static StatusEffects.Modules.VfxModule;
+using static StatusEffects.VfxModule;
 
 namespace StatusEffects.Entities.Example
 {

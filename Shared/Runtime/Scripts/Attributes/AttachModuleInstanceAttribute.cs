@@ -1,6 +1,6 @@
 using System;
 
-namespace StatusEffects.Modules
+namespace StatusEffects
 {
     /// <summary>
     /// Define the <see cref="ModuleInstance"/> to be used with this <see cref="Module"/>.

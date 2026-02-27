@@ -8,11 +8,12 @@ using Unity.Mathematics;
 namespace StatusEffects.Entities
 {
 #if NETCODE
-    [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup))]
+    [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
+    [UpdateAfter(typeof(EndPredictedStatusEffectEntityCommandBufferSystem))]
 #else
-    [UpdateInGroup(typeof(StatusEffectSystemGroup))]
+    [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
+    [UpdateAfter(typeof(EndStatusEffectEntityCommandBufferSystem))]
 #endif
-    [UpdateAfter(typeof(StatusManagerSystem))]
     [BurstCompile]
     public partial struct StatusVariableUpdateSystem : ISystem
     {
@@ -21,7 +22,7 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_StatusVariableUpdateQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithAll<StatusVariableUpdate, Simulate>().Build();
+            m_StatusVariableUpdateQuery = SystemAPI.QueryBuilder().WithAll<ActiveStatusEffects>().WithAll<StatusEffectEvents, Simulate>().Build();
             state.RequireForUpdate(m_StatusVariableUpdateQuery);
             state.RequireForUpdate<StatusReferences>();
         }
@@ -53,7 +54,7 @@ namespace StatusEffects.Entities
             [ReadOnly]
             public StatusReferences References;
 
-            public void Execute(Entity entity, in DynamicBuffer<StatusEffects> statusEffects)
+            public void Execute(Entity entity, in DynamicBuffer<ActiveStatusEffects> statusEffects)
             {
                 if (StatusFloatsLookup.TryGetBuffer(entity, out var statusFloatBuffer))
                     for (int i = 0; i < statusFloatBuffer.Length; i++)
@@ -69,9 +70,9 @@ namespace StatusEffects.Entities
             }
 
             // Copied from regular StatusFloat.GetValue() with burstable types and math.
-            public void GetValue(ref StatusFloats statusFloat, in DynamicBuffer<StatusEffects> statusEffects, in StatusReferences references)
+            public void GetValue(ref StatusFloats statusFloat, in DynamicBuffer<ActiveStatusEffects> statusEffects, in StatusReferences references)
             {
-                Effect effect;
+                UnmanagedEffect effect;
 
                 bool positive = math.sign(statusFloat.BaseValue) >= 0;
                 float additiveValue = 0;
@@ -91,7 +92,7 @@ namespace StatusEffects.Entities
                     if (!references.TryGetReference(statusEffect.StatusEffectDataId, out var blob))
                         continue;
 
-                    ref StatusEffectData data = ref blob.Value;
+                    ref UnmanagedStatusEffectData data = ref blob.Value;
 
                     for (int i = 0; i < data.Effects.Length; i++)
                     {
@@ -151,9 +152,9 @@ namespace StatusEffects.Entities
             }
 
             // Copied from regular StatusInt.GetValue() with burstable types and math.
-            public void GetValue(ref StatusInts statusInt, in DynamicBuffer<StatusEffects> statusEffects, in StatusReferences references)
+            public void GetValue(ref StatusInts statusInt, in DynamicBuffer<ActiveStatusEffects> statusEffects, in StatusReferences references)
             {
-                Effect effect;
+                UnmanagedEffect effect;
 
                 bool positive = math.sign(statusInt.BaseValue) >= 0;
                 int additiveValue = 0;
@@ -170,7 +171,7 @@ namespace StatusEffects.Entities
 
                 foreach (var statusEffect in statusEffects)
                 {
-                    ref StatusEffectData data = ref references.IdToStatusEffectDataMap.Value[statusEffect.StatusEffectDataId].Value;
+                    ref UnmanagedStatusEffectData data = ref references.IdToStatusEffectDataMap.Value[statusEffect.StatusEffectDataId].Value;
 
                     for (int i = 0; i < data.Effects.Length; i++)
                     {
@@ -230,9 +231,9 @@ namespace StatusEffects.Entities
             }
 
             // Copied from regular StatusBool.GetValue() with burstable types and math.
-            public void GetValue(ref StatusBools statusBool, in DynamicBuffer<StatusEffects> statusEffects, in StatusReferences references)
+            public void GetValue(ref StatusBools statusBool, in DynamicBuffer<ActiveStatusEffects> statusEffects, in StatusReferences references)
             {
-                Effect effect;
+                UnmanagedEffect effect;
 
                 bool value = statusBool.BaseValue;
                 int priority = -1;
@@ -241,7 +242,7 @@ namespace StatusEffects.Entities
 
                 foreach (var statusEffect in statusEffects)
                 {
-                    ref StatusEffectData data = ref references.IdToStatusEffectDataMap.Value[statusEffect.StatusEffectDataId].Value;
+                    ref UnmanagedStatusEffectData data = ref references.IdToStatusEffectDataMap.Value[statusEffect.StatusEffectDataId].Value;
 
                     for (int i = 0; i < data.Effects.Length; i++)
                     {

@@ -68,76 +68,69 @@ namespace StatusEffects.Templates
         }
 
         internal const string UniTaskModuleScriptContent =
-@"using Cysharp.Threading.Tasks;
+@"using StatusEffects
+using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
 
-namespace StatusEffects.Modules
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
+//[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
+public class #SCRIPTNAME# : Module
 {
-    [CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
-    //[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
-    public class #SCRIPTNAME# : Module
+    public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
     {
-        public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
-        {
-            await UniTask.CompletedTask;
-        }
+        await UniTask.CompletedTask;
     }
 }";
 
         internal const string ModuleScriptContent =
-@"using System.Threading;
+@"using StatusEffects
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace StatusEffects.Modules
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
+//[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
+public class #SCRIPTNAME# : Module
 {
-    [CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
-    //[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
-    public class #SCRIPTNAME# : Module
+    public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
     {
-        public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
-        {
-            await Task.CompletedTask; return;
-        }
+        await Task.CompletedTask; return;
     }
 }";
 
         internal const string EntityModuleScriptContent =
-@"using StatusEffects.Entities;
+@"using StatusEffects
+using StatusEffects.Entities;
 using Unity.Entities;
 using UnityEngine;
 
-namespace StatusEffects.Modules
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
+//[AttachModuleInstance(typeof(#SCRIPTNAME#Instance))]
+public class #SCRIPTNAME# : Module, IEntityModule
 {
-    [CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
-    //[AttachModuleInstance(typeof(#SCRIPTNAME#Instance))]
-    public class #SCRIPTNAME# : Module, IEntityModule
+    public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)
     {
-        public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)
-        {
-            //#SCRIPTNAME#Instance instance = moduleInstance as #SCRIPTNAME#Instance;
+        //#SCRIPTNAME#Instance instance = moduleInstance as #SCRIPTNAME#Instance;
             
-            commandBuffer.AddComponent(entity, new Entity#DISPLAYNAME#() 
-            { 
+        commandBuffer.AddComponent(entity, new Entity#DISPLAYNAME#() 
+        { 
                 
-            });
-        }
+        });
+    }
 
-        public struct Entity#DISPLAYNAME# : IComponentData
-        {
+    public struct Entity#DISPLAYNAME# : IComponentData
+    {
             
-        }
     }
 }";
 
         internal const string ModuleInstanceScriptContent =
-@"namespace StatusEffects.Modules
+@"using StatusEffects
+
+public class #SCRIPTNAME# : ModuleInstance
 {
-    public class #SCRIPTNAME# : ModuleInstance
-    {
         
-    }
 }";
     }
 }

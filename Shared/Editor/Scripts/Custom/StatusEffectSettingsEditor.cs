@@ -1,4 +1,3 @@
-using StatusEffects.Modules;
 using StatusEffects.Templates;
 using System;
 using System.Collections.Generic;

@@ -3,19 +3,19 @@ using Unity.Entities;
 
 namespace StatusEffects.Entities
 {
-    public class StatusManagerBaker : Baker<global::StatusEffects.StatusManager>
+    public class StatusManagerBaker : Baker<StatusManager>
     {
-        public override void Bake(global::StatusEffects.StatusManager authoring)
+        public override void Bake(StatusManager authoring)
         {
             var entity = GetEntity(TransformUsageFlags.None);
-            AddComponent<StatusManager>(entity);
-            AddComponent<StatusVariableUpdate>(entity);
-            AddBuffer<StatusEffects>(entity);
+            AddComponent<StatusManagerComponent>(entity);
+            AddBuffer<ActiveStatusEffects>(entity);
 #if NETCODE
             AddBuffer<InterpolatedStatusEffects>(entity);
 #endif
             AddBuffer<StatusEffectRequests>(entity);
-            AddBuffer<ModuleSystemRequests>(entity);
+            AddBuffer<StatusEffectEvents>(entity);
+            SetComponentEnabled<StatusEffectEvents>(entity, false);
             AddBuffer<StatusFloats>(entity);
             AddBuffer<StatusInts>(entity);
             AddBuffer<StatusBools>(entity);

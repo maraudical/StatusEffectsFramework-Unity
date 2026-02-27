@@ -4,7 +4,7 @@ using Hash128 = Unity.Entities.Hash128;
 
 namespace StatusEffects.Entities
 {
-    public struct Condition
+    public struct UnmanagedCondition
     {
         public ConditionalConfigurable SearchableConfigurable;
         public Hash128 SearchableData;

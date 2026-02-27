@@ -1,7 +1,6 @@
 using System.Linq;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
-using StatusEffects.Modules;
 using System;
 using System.Collections.Generic;
 using UnityEditor;

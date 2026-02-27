@@ -38,7 +38,7 @@ namespace StatusEffects.Entities
             Value = baseValue;
         }
 
-        public StatusInts(Hash128 componentId, global::StatusEffects.StatusInt statusInt)
+        public StatusInts(Hash128 componentId, StatusInt statusInt)
         {
             ComponentId = componentId;
             if (statusInt != null && statusInt.StatusName)

@@ -8,7 +8,7 @@ using Unity.NetCode;
 namespace StatusEffects.Entities
 {
     [BurstCompile]
-    public struct StatusFloat
+    public struct UnmanagedStatusBool
     {
         public Hash128 Id;
 #if NETCODE
@@ -17,11 +17,11 @@ namespace StatusEffects.Entities
         private int m_CachedIndex;
 
         /// <summary>
-        /// Attempt to retrieve the <see cref="StatusFloats"/> value for this <see cref="StatusFloat"/>.
+        /// Attempt to retrieve the <see cref="StatusBools"/> value for this <see cref="UnmanagedStatusBool"/>.
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetValue(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out float value)
+        public bool TryGetValue(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out bool value)
         {
             if (TryGetIndex(componentId, buffer, out int index))
             {
@@ -34,11 +34,11 @@ namespace StatusEffects.Entities
         }
 
         /// <summary>
-        /// Attempt to retrieve the <see cref="StatusFloats"/> for this <see cref="StatusFloat"/>.
+        /// Attempt to retrieve the <see cref="StatusBools"/> for this <see cref="UnmanagedStatusBool"/>.
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetElement(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out StatusFloats value)
+        public bool TryGetElement(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out StatusBools value)
         {
             if (TryGetIndex(componentId, buffer, out int index))
             {
@@ -51,27 +51,27 @@ namespace StatusEffects.Entities
         }
 
         /// <summary>
-        /// Attempt to retrieve the <see cref="StatusFloats"/> index value for this <see cref="StatusFloat"/>.
+        /// Attempt to retrieve the <see cref="StatusBools"/> index value for this <see cref="UnmanagedStatusBool"/>.
         /// </summary>
         [BurstCompile]
-        public bool TryGetIndex(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out int index)
+        public bool TryGetIndex(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out int index)
         {
-            StatusFloats statusFloat;
+            StatusBools statusBool;
             int length = buffer.Length;
             index = m_CachedIndex;
             if (index >= 0 && index < buffer.Length)
             {
-                statusFloat = buffer[index];
-                if (statusFloat.ComponentId == componentId && statusFloat.Id == Id)
+                statusBool = buffer[index];
+                if (statusBool.ComponentId == componentId && statusBool.Id == Id)
                     return true;
             }
-
+            
             index = -1;
 
             for (int i = 0; i < buffer.Length; i++)
             {
-                statusFloat = buffer[i];
-                if (statusFloat.ComponentId == componentId && statusFloat.Id == Id)
+                statusBool = buffer[i];
+                if (statusBool.ComponentId == componentId && statusBool.Id == Id)
                 {
                     index = i;
                     break;
@@ -82,15 +82,15 @@ namespace StatusEffects.Entities
             return index >= 0;
         }
 
-        public StatusFloat(Hash128 id)
+        public UnmanagedStatusBool(Hash128 id)
         {
             Id = id;
             m_CachedIndex = -1;
         }
 
-        public static implicit operator StatusFloat(UnityEngine.Hash128 value) => new StatusFloat(value);
-        public static implicit operator StatusFloat(Hash128 value) => new StatusFloat(value);
-        public static implicit operator StatusFloat(global::StatusEffects.StatusFloat value) => new StatusFloat(value != null && value.StatusName ? value.StatusName.Id : default);
+        public static implicit operator UnmanagedStatusBool(UnityEngine.Hash128 value) => new UnmanagedStatusBool(value);
+        public static implicit operator UnmanagedStatusBool(Hash128 value) => new UnmanagedStatusBool(value);
+        public static implicit operator UnmanagedStatusBool(StatusBool value) => new UnmanagedStatusBool(value != null && value.StatusName ? value.StatusName.Id : default);
     }
 }
 #endif

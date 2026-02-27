@@ -2,7 +2,6 @@
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.NetCode;
 
 namespace StatusEffects.Entities
 {
@@ -16,8 +15,8 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, InterpolatedStatusEffects>().Build();
-            m_EntityQuery.SetChangedVersionFilter(ComponentType.ReadOnly<StatusEffects>());
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<ActiveStatusEffects>().WithAllRW<InterpolatedStatusEffects>().WithPresentRW<StatusEffectEvents>().Build();
+            m_EntityQuery.SetChangedVersionFilter(ComponentType.ReadOnly<ActiveStatusEffects>());
 
             state.RequireForUpdate(m_EntityQuery);
         }
@@ -25,22 +24,21 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var statusEffectsInterpolatedEventsJob = new StatusEffectsInterpolatedEventsJob
-            {
-                EndStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
-                BeginStatusEffectEntityEntityCommandBuffer = SystemAPI.GetSingleton<BeginStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter()
-            };
-            state.Dependency = statusEffectsInterpolatedEventsJob.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
+            state.Dependency = new StatusEffectsInterpolatedEventsJob().ScheduleParallel(m_EntityQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         partial struct StatusEffectsInterpolatedEventsJob : IJobEntity
         {
-            public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
-            public EntityCommandBuffer.ParallelWriter BeginStatusEffectEntityEntityCommandBuffer;
-
-            public unsafe void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<StatusEffects> statusEffects, ref DynamicBuffer<InterpolatedStatusEffects> interpolatedStatusEffects)
+            public unsafe void Execute([ChunkIndexInQuery] int sortKey, 
+                Entity entity, 
+                EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW,
+                in DynamicBuffer<ActiveStatusEffects> statusEffects,
+                ref DynamicBuffer<StatusEffectEvents> statusEffectEvents, 
+                ref DynamicBuffer<InterpolatedStatusEffects> interpolatedStatusEffects)
             {
+                statusEffectEvents.Clear();
+
                 int length = statusEffects.Length;
                 int interpolatedLength = interpolatedStatusEffects.Length;
                 // We copy to a new array here so that we don't sort the underlying
@@ -61,12 +59,10 @@ namespace StatusEffects.Entities
 
                 bool hasStatusEffects;
                 bool hasInterpolatedStatusEffects;
-                StatusEffects statusEffect;
+                ActiveStatusEffects statusEffect;
                 InterpolatedStatusEffects interpolatedStatusEffect;
 
-                var events = EndStatusEffectEntityCommandBuffer.AddBuffer<StatusEffectEvents>(sortKey, entity);
-                // Preemptively remove the buffer so that it only lasts for one frame.
-                BeginStatusEffectEntityEntityCommandBuffer.RemoveComponent<StatusEffectEvents>(sortKey, entity);
+                bool statusEffectEventsEnabled = statusEffectEventsEnabledRW.ValueRO;;
 
                 for (; ; )
                 {
@@ -82,25 +78,49 @@ namespace StatusEffects.Entities
                             // Loop through remaining status effects, trigger added events.
                             do
                             {
+                                UnityEngine.Debug.Log("added");
                                 statusEffect = enumerator.Current;
-                                events.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId));
+                                statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId));
+                                if (!statusEffectEventsEnabled)
+                                {
+                                    statusEffectEventsEnabled = true;
+                                    statusEffectEventsEnabledRW.ValueRW = true;
+                                }
                             }
                             while (enumerator.MoveNext());
                         }
                         else if (statusEffect.Id < interpolatedStatusEffect.Id)
                         {
+                            UnityEngine.Debug.Log("added");
                             // Status effect was added, trigger added event.
-                            events.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId));
+                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId));
+                            if (!statusEffectEventsEnabled)
+                            {
+                                statusEffectEventsEnabled = true;
+                                statusEffectEventsEnabledRW.ValueRW = true;
+                            }
                         }
                         else if (statusEffect.Id > interpolatedStatusEffect.Id)
                         {
+                            UnityEngine.Debug.Log("removed");
                             // Status effect was removed, trigger removed event.
-                            events.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
+                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
+                            if (!statusEffectEventsEnabled)
+                            {
+                                statusEffectEventsEnabled = true;
+                                statusEffectEventsEnabledRW.ValueRW = true;
+                            }
                         }
                         else if (statusEffect.Stacks != interpolatedStatusEffect.Stacks)
                         {
+                            UnityEngine.Debug.Log("updated");
                             // Status effect was updated, trigger updated event.
-                            events.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Updated));
+                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Updated));
+                            if (!statusEffectEventsEnabled)
+                            {
+                                statusEffectEventsEnabled = true;
+                                statusEffectEventsEnabledRW.ValueRW = true;
+                            }
                         }
                     }
                     else if (hasInterpolatedStatusEffects)
@@ -108,14 +128,23 @@ namespace StatusEffects.Entities
                         // Loop through remaining interpolated status effects, trigger removed events.
                         do
                         {
+                            UnityEngine.Debug.Log("removed");
                             interpolatedStatusEffect = interpolatedEnumerator.Current;
-                            events.Add(new StatusEffectEvents(interpolatedStatusEffect.Id, interpolatedStatusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
+                            statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.Id, interpolatedStatusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
+                            if (!statusEffectEventsEnabled)
+                            {
+                                statusEffectEventsEnabled = true;
+                                statusEffectEventsEnabledRW.ValueRW = true;
+                            }
                         }
                         while (interpolatedEnumerator.MoveNext());
                     }
                     else
                         break;
                 }
+
+                if (statusEffectEventsEnabled && statusEffectEvents.Length == 0)
+                    statusEffectEventsEnabledRW.ValueRW = false;
             }
         }
     }

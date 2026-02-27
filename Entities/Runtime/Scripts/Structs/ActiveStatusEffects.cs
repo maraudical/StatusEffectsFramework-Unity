@@ -9,7 +9,7 @@ using Unity.NetCode;
 namespace StatusEffects.Entities
 {
     [BurstCompile]
-    public struct StatusEffects : IBufferElementData, IComparable<StatusEffects>
+    public struct ActiveStatusEffects : IBufferElementData, IComparable<ActiveStatusEffects>, IEquatable<uint>
     {
 #if NETCODE
         [GhostField]
@@ -50,7 +50,7 @@ namespace StatusEffects.Entities
         /// (in the case of <see cref="StatusEffectTiming.Event"/> and 
         /// <see cref="StatusEffectTiming.Predicate"/>) is needed. That 
         /// system can query when and what to decrement by looping 
-        /// through all <see cref="StatusEffects"/> buffers and manually 
+        /// through all <see cref="ActiveStatusEffects"/> buffers and manually 
         /// decrement them.
         /// </summary>
 #if NETCODE
@@ -58,10 +58,9 @@ namespace StatusEffects.Entities
 #endif
         public Hash128 EventId;
 
-        public int CompareTo(StatusEffects other)
-        {
-            return Id.CompareTo(other.Id);
-        }
+        public int CompareTo(ActiveStatusEffects other) => Id.CompareTo(other.Id);
+
+        public bool Equals(uint other) => Id.Equals(other);
 
         [BurstCompile]
         /// <summary>

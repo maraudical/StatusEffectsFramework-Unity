@@ -21,11 +21,11 @@ namespace StatusEffects.Entities
         public float Duration;
         public float Interval;
         public int Stacks;
-        /// <inheritdoc cref="StatusEffects.EventId"/>
+        /// <inheritdoc cref="ActiveStatusEffects.EventId"/>
         public Hash128 EventId;
 
         /// <summary>
-        /// Add a <see cref="StatusEffects"/>. Optional stack count.
+        /// Add a <see cref="ActiveStatusEffects"/>. Optional stack count.
         /// </summary>
         public StatusEffectRequests(Hash128 statusEffectData, int stacks = 1)
         {
@@ -41,7 +41,7 @@ namespace StatusEffects.Entities
         }
 
         /// <summary>
-        /// Add a <see cref="StatusEffects"/> with a duration. Optional 
+        /// Add a <see cref="ActiveStatusEffects"/> with a duration. Optional 
         /// stack count.
         /// </summary>
         public StatusEffectRequests(Hash128 statusEffectData, float duration, int stacks = 1)
@@ -58,10 +58,10 @@ namespace StatusEffects.Entities
         }
 
         /// <summary>
-        /// Add a <see cref="StatusEffects"/> with a duration. Timing 
+        /// Add a <see cref="ActiveStatusEffects"/> with a duration. Timing 
         /// option will be <see cref="StatusEffectTiming.Event"/>. 
         /// Duration should be decremented by <paramref name="interval"/> 
-        /// in custom systems by querying <see cref="StatusEffects"/> 
+        /// in custom systems by querying <see cref="ActiveStatusEffects"/> 
         /// buffers with the given <paramref name="eventId"/>. Optional 
         /// stack count.
         /// </summary>
@@ -79,9 +79,9 @@ namespace StatusEffects.Entities
         }
 
         /// <summary>
-        /// Add a <see cref="StatusEffects"/>. Timing option will be 
+        /// Add a <see cref="ActiveStatusEffects"/>. Timing option will be 
         /// <see cref="StatusEffectTiming.Predicate"/>. Duration should 
-        /// be set to 0 in custom systems by querying <see cref="StatusEffects"/> 
+        /// be set to 0 in custom systems by querying <see cref="ActiveStatusEffects"/> 
         /// buffers with the given <paramref name="eventId"/>. Optional 
         /// stack count.
         /// </summary>
@@ -99,7 +99,7 @@ namespace StatusEffects.Entities
         }
 
         /// <summary>
-        /// Remove any number of <see cref="StatusEffects"/> given 
+        /// Remove any number of <see cref="ActiveStatusEffects"/> given 
         /// either a <see cref="Hash128"/> ID, a 
         /// <see cref="StatusEffectGroup"/>, or nothing. If stacks 
         /// is negative it will remove all of them.

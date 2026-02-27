@@ -13,7 +13,7 @@ using Unity.Entities;
 #endif
 using UnityEngine;
 
-namespace StatusEffects.Modules
+namespace StatusEffects.Example
 {
     [CreateAssetMenu(fileName = "Vfx Module", menuName = "Status Effect Framework/Modules/Vfx", order = 1)]
     [AttachModuleInstance(typeof(VfxInstance))]

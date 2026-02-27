@@ -8,7 +8,7 @@ using Unity.NetCode;
 namespace StatusEffects.Entities
 {
     [BurstCompile]
-    public struct StatusInt
+    public struct UnmanagedStatusInt
     {
         public Hash128 Id;
 #if NETCODE
@@ -17,7 +17,7 @@ namespace StatusEffects.Entities
         private int m_CachedIndex;
         
         /// <summary>
-        /// Attempt to retrieve the <see cref="StatusInts"/> value for this <see cref="StatusInt"/>.
+        /// Attempt to retrieve the <see cref="StatusInts"/> value for this <see cref="UnmanagedStatusInt"/>.
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
@@ -34,7 +34,7 @@ namespace StatusEffects.Entities
         }
 
         /// <summary>
-        /// Attempt to retrieve the <see cref="StatusInts"/> for this <see cref="StatusInt"/>.
+        /// Attempt to retrieve the <see cref="StatusInts"/> for this <see cref="UnmanagedStatusInt"/>.
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
@@ -51,7 +51,7 @@ namespace StatusEffects.Entities
         }
 
         /// <summary>
-        /// Attempt to retrieve the <see cref="StatusInts"/> index value for this <see cref="StatusInt"/>.
+        /// Attempt to retrieve the <see cref="StatusInts"/> index value for this <see cref="UnmanagedStatusInt"/>.
         /// </summary>
         [BurstCompile]
         public bool TryGetIndex(in Hash128 componentId, in DynamicBuffer<StatusInts> buffer, out int index)
@@ -82,15 +82,15 @@ namespace StatusEffects.Entities
             return index >= 0;
         }
 
-        public StatusInt(Hash128 id)
+        public UnmanagedStatusInt(Hash128 id)
         {
             Id = id;
             m_CachedIndex = -1;
         }
 
-        public static implicit operator StatusInt(UnityEngine.Hash128 value) => new StatusInt(value);
-        public static implicit operator StatusInt(Hash128 value) => new StatusInt(value);
-        public static implicit operator StatusInt(global::StatusEffects.StatusInt value) => new StatusInt(value != null && value.StatusName ? value.StatusName.Id : default);
+        public static implicit operator UnmanagedStatusInt(UnityEngine.Hash128 value) => new UnmanagedStatusInt(value);
+        public static implicit operator UnmanagedStatusInt(Hash128 value) => new UnmanagedStatusInt(value);
+        public static implicit operator UnmanagedStatusInt(StatusInt value) => new UnmanagedStatusInt(value != null && value.StatusName ? value.StatusName.Id : default);
     }
 }
 #endif

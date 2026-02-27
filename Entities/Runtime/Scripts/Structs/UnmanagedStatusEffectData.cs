@@ -1,5 +1,4 @@
 #if ENTITIES
-using System;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -7,7 +6,7 @@ using Hash128 = Unity.Entities.Hash128;
 
 namespace StatusEffects.Entities
 {
-    public struct StatusEffectData
+    public struct UnmanagedStatusEffectData
     {
         public Hash128 Id;
         public StatusEffectGroup Group;
@@ -30,8 +29,8 @@ namespace StatusEffects.Entities
         public bool AllowEffectStacking;
         public NonStackingBehaviour NonStackingBehaviour;
         public int MaxStacks;
-        public BlobArray<Effect> Effects;
-        public BlobArray<Condition> Conditions;
+        public BlobArray<UnmanagedEffect> Effects;
+        public BlobArray<UnmanagedCondition> Conditions;
         public BlobArray<ModuleInfo> Modules;
     }
 }

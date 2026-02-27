@@ -9,7 +9,7 @@ using System.Collections;
 #endif
 using UnityEngine;
 
-namespace StatusEffects.Modules
+namespace StatusEffects
 {
     public abstract class Module : ScriptableObject
     {

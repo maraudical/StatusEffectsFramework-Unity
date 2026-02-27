@@ -3,7 +3,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using static StatusEffects.Modules.HealModule;
+using static StatusEffects.HealModule;
 
 namespace StatusEffects.Entities.Example
 {

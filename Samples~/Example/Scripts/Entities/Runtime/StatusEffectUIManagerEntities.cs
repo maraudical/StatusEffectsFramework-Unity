@@ -1,37 +1,36 @@
 #if ENTITIES
-using StatusEffects.Example.UI;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UI;
-using Hash128 = Unity.Entities.Hash128;
 using System.Collections;
 using Cysharp.Threading.Tasks;
-using UnityEngine.LightTransport;
-
-
+using StatusEffects.Entities;
+using Hash128 = Unity.Entities.Hash128;
 
 #if NETCODE_ENTITIES
 using Unity.NetCode;
 #endif
 
-namespace StatusEffects.Entities.Example.UI
+namespace StatusEffects.Example.UI
 {
     // This would be more optimized and scalable from a SystemBase.
     // For simplicity everything is done in this MonoBehaviour.
     public class StatusEffectUIManagerEntities : MonoBehaviour
     {
+        public bool kill = false;
+        public bool serverOnly = false;
+        public bool fuckItUp = false;
         [SerializeField] private Transform m_EffectParent;
         [SerializeField] private GameObject m_EffectPrefab;
         [SerializeField] private Dropdown m_EffectDropdown;
         [SerializeField] private Button m_EffectAddButton;
         [SerializeField] private Button m_EffectRemoveButton;
         [Space]
-        [SerializeField] private List<global::StatusEffects.StatusEffectData> m_StatusEffectDatas;
+        [SerializeField] private List<StatusEffectData> m_StatusEffectDatas;
 
-        private global::StatusEffects.StatusEffectData m_StatusEffectData;
+        private StatusEffectData m_StatusEffectData;
 
         private Dictionary<Hash128, StatusEffectUI> m_StatusEffectUIs;
         private Dictionary<Hash128, int> m_CurrentStackCounts;
@@ -41,9 +40,9 @@ namespace StatusEffects.Entities.Example.UI
         private EntityQuery m_PlayerQuery;
         private EntityQuery m_StatusEffectsQuery;
         private EntityQuery m_StatusReferencesQuery;
-        private DynamicBuffer<StatusEffects> m_StatusEffects;
+        private DynamicBuffer<ActiveStatusEffects> m_StatusEffects;
         private StatusReferences m_StatusReferences;
-        private StatusEffectData m_StatusEffectDataReference;
+        private UnmanagedStatusEffectData m_StatusEffectDataReference;
 #if NETCODE_ENTITIES
 
         private bool m_Initialized;
@@ -93,8 +92,8 @@ namespace StatusEffects.Entities.Example.UI
 #else
             m_Manager = World.DefaultGameObjectInjectionWorld.EntityManager;
 #endif
-            m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayer));
-            m_StatusEffectsQuery = m_Manager.CreateEntityQuery(typeof(StatusEffects));
+            m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
+            m_StatusEffectsQuery = m_Manager.CreateEntityQuery(typeof(ActiveStatusEffects));
             m_StatusReferencesQuery = m_Manager.CreateEntityQuery(typeof(StatusReferences));
         }
 
@@ -177,19 +176,24 @@ namespace StatusEffects.Entities.Example.UI
             commandBuffer.Playback(m_Manager);
             commandBuffer.Dispose();*/
             //TEMP
-            foreach (var world in ClientServerBootstrap.ClientWorlds)
+            if (!serverOnly)
             {
-                var manager = world.EntityManager;
-                var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayer), typeof(StatusEffectRequests));
-                if (playerQuery.TryGetSingletonEntity<ExamplePlayer>(out var entity))
+                foreach (var world in ClientServerBootstrap.ClientWorlds)
                 {
-                    var buffer = manager.GetBuffer<StatusEffectRequests>(entity);
-                    buffer.Add(new StatusEffectRequests(m_StatusEffectData.Id));
+                    var manager = world.EntityManager;
+                    var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayerComponent), typeof(StatusEffectRequests));
+                    if (playerQuery.TryGetSingletonEntity<ExamplePlayerComponent>(out var entity))
+                    {
+                        var buffer = manager.GetBuffer<StatusEffectRequests>(entity);
+                        buffer.Add(new StatusEffectRequests(m_StatusEffectData.Id));
+                    }
                 }
             }
 
+
             var query = ClientServerBootstrap.ClientWorld.EntityManager.CreateEntityQuery(typeof(NetworkTime));
-            AddOnServer(query.GetSingleton<NetworkTime>().ServerTick).Forget();
+            if (!fuckItUp)
+                AddOnServer(query.GetSingleton<NetworkTime>().ServerTick).Forget();
 
             // Delay server remove in editor so that client rollback is still synced.
             async UniTaskVoid AddOnServer(NetworkTick tick)
@@ -197,8 +201,8 @@ namespace StatusEffects.Entities.Example.UI
                 var manager = ClientServerBootstrap.ServerWorld.EntityManager;
                 var query = manager.CreateEntityQuery(typeof(NetworkTime));
                 await UniTask.WaitUntil(() => query.GetSingleton<NetworkTime>().ServerTick == tick);
-                var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayer));
-                if (playerQuery.TryGetSingletonEntity<ExamplePlayer>(out var entity))
+                var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
+                if (playerQuery.TryGetSingletonEntity<ExamplePlayerComponent>(out var entity))
                 {
                     var buffer = manager.GetBuffer<StatusEffectRequests>(entity);
                     buffer.Add(new StatusEffectRequests(m_StatusEffectData.Id));
@@ -218,19 +222,23 @@ namespace StatusEffects.Entities.Example.UI
             commandBuffer.Playback(m_Manager);
             commandBuffer.Dispose();*/
             //TEMP
-            foreach (var world in ClientServerBootstrap.ClientWorlds)
+            if (!serverOnly)
             {
-                var manager = world.EntityManager;
-                var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayer));
-                if (playerQuery.TryGetSingletonEntity<ExamplePlayer>(out var entity))
+                foreach (var world in ClientServerBootstrap.ClientWorlds)
                 {
-                    var buffer = manager.GetBuffer<StatusEffectRequests>(entity);
-                    buffer.Add(new StatusEffectRequests(StatusEffectRemovalType.Data, id: m_StatusEffectData.Id, stacks: 1));
+                    var manager = world.EntityManager;
+                    var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
+                    if (playerQuery.TryGetSingletonEntity<ExamplePlayerComponent>(out var entity))
+                    {
+                        var buffer = manager.GetBuffer<StatusEffectRequests>(entity);
+                        buffer.Add(new StatusEffectRequests(StatusEffectRemovalType.Data, id: m_StatusEffectData.Id, stacks: 1));
+                    }
                 }
             }
 
             var query = ClientServerBootstrap.ClientWorld.EntityManager.CreateEntityQuery(typeof(NetworkTime));
-            RemoveOnServer(query.GetSingleton<NetworkTime>().ServerTick).Forget();
+            if (!fuckItUp)
+                RemoveOnServer(query.GetSingleton<NetworkTime>().ServerTick).Forget();
 
             // Delay server remove in editor so that client rollback is still synced.
             async UniTaskVoid RemoveOnServer(NetworkTick tick)
@@ -238,13 +246,21 @@ namespace StatusEffects.Entities.Example.UI
                 var manager = ClientServerBootstrap.ServerWorld.EntityManager;
                 var query = manager.CreateEntityQuery(typeof(NetworkTime));
                 await UniTask.WaitUntil(() => query.GetSingleton<NetworkTime>().ServerTick == tick);
-                var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayer));
-                if (playerQuery.TryGetSingletonEntity<ExamplePlayer>(out var entity))
+                var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
+                if (playerQuery.TryGetSingletonEntity<ExamplePlayerComponent>(out var entity))
                 {
                     var buffer = manager.GetBuffer<StatusEffectRequests>(entity);
                     buffer.Add(new StatusEffectRequests(StatusEffectRemovalType.Data, id: m_StatusEffectData.Id, stacks: 1));
                 }
             }
+        }
+        
+        public void Kill()
+        {
+            kill = false;
+            var manager = ClientServerBootstrap.ServerWorld.EntityManager;
+            var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
+            manager.DestroyEntity(playerQuery);
         }
     }
 }

@@ -14,7 +14,7 @@ using Unity.Entities;
 using UnityEngine;
 using StatusEffects.Example;
 
-namespace StatusEffects.Modules
+namespace StatusEffects.Example
 {
     [CreateAssetMenu(fileName = "Heal Module", menuName = "Status Effect Framework/Modules/Heal", order = 1)]
     public class HealModule : Module

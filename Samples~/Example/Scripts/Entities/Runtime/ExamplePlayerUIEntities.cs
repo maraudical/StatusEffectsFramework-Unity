@@ -4,12 +4,12 @@ using System.Collections;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UI;
+using StatusEffects.Entities;
 #if NETCODE_ENTITIES
-using Unity.Collections;
 using Unity.NetCode;
 #endif
 
-namespace StatusEffects.Entities.Example.UI
+namespace StatusEffects.Example
 {
     // This would be more optimized and scalable from a SystemBase.
     // For simplicity everything is done in this MonoBehaviour.
@@ -50,12 +50,12 @@ namespace StatusEffects.Entities.Example.UI
 #else
             m_Manager = World.DefaultGameObjectInjectionWorld.EntityManager;
 #endif
-            m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayer));
+            m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
 
-            yield return new WaitUntil(() => m_PlayerQuery.TryGetSingletonEntity<ExamplePlayer>(out var entity));
+            yield return new WaitUntil(() => m_PlayerQuery.TryGetSingletonEntity<ExamplePlayerComponent>(out var entity));
             
             var entity = m_PlayerQuery.GetSingletonEntity();
-            var player = m_Manager.GetComponentData<ExamplePlayer>(entity);
+            var player = m_Manager.GetComponentData<ExamplePlayerComponent>(entity);
 
             m_StatusFloatBuffer = m_Manager.GetBuffer<StatusFloats>(entity);
             m_StatusIntBuffer = m_Manager.GetBuffer<StatusInts>(entity);
@@ -80,10 +80,10 @@ namespace StatusEffects.Entities.Example.UI
                 return;
 
 #endif
-            if (!m_PlayerQuery.TryGetSingletonEntity<ExamplePlayer>(out var entity))
+            if (!m_PlayerQuery.TryGetSingletonEntity<ExamplePlayerComponent>(out var entity))
                 return;
             
-            var player = m_Manager.GetComponentData<ExamplePlayer>(entity);
+            var player = m_Manager.GetComponentData<ExamplePlayerComponent>(entity);
 
             m_StatusFloatBuffer = m_Manager.GetBuffer<StatusFloats>(entity);
             m_StatusIntBuffer = m_Manager.GetBuffer<StatusInts>(entity);
