@@ -2,6 +2,7 @@
 using System;
 using Unity.Burst;
 using Unity.Entities;
+using Unity.Mathematics;
 #if NETCODE
 using Unity.NetCode;
 #endif
@@ -79,7 +80,7 @@ namespace StatusEffects.Entities
             {
                 StatusEffectTiming.Infinite => -1f,
                 StatusEffectTiming.Event or StatusEffectTiming.Predicate => Duration,
-                _ => currentTick.TimeSince(TickAdded, currentTickFraction, tickRate)
+                _ => math.max(0, Duration - currentTick.TimeSince(TickAdded, currentTickFraction, tickRate))
             };
         }
 #else
@@ -89,7 +90,7 @@ namespace StatusEffects.Entities
             {
                 StatusEffectTiming.Infinite => -1f,
                 StatusEffectTiming.Event or StatusEffectTiming.Predicate => Duration,
-                _ => Unity.Mathematics.math.max(Duration - elapsedTime + TimeAdded)
+                _ => math.max(0, Duration - elapsedTime + TimeAdded)
             };
         } 
 #endif

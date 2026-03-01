@@ -4,8 +4,7 @@ namespace StatusEffects.Entities
     public enum StatusEffectRequestType
     {
         Add,
-        Remove,
-        RemoveAll
+        Remove
     }
 }
 #endif

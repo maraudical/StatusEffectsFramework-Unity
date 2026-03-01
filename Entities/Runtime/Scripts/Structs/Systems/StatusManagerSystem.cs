@@ -1,4 +1,5 @@
 #if ENTITIES
+using NUnit.Framework;
 using System;
 using Unity.Burst;
 using Unity.Collections;
@@ -47,13 +48,23 @@ namespace StatusEffects.Entities
         public void OnUpdate(ref SystemState state)
         {
             var references = SystemAPI.GetSingleton<StatusReferences>();
-            
+
 #if NETCODE
             var networkTime = SystemAPI.GetSingleton<NetworkTime>();
             SystemAPI.TryGetSingleton<ClientServerTickRate>(out var tickRate);
             tickRate.ResolveDefaults();
             var endPredictedSimulationEntityCommandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+
+            if (networkTime.IsFirstPredictionTick)
+            {
+                var checkIfRebuildModulesNeededJob = new CheckIfRebuildModulesNeededJob
+                {
+                    EndPredictedSimulationEntityCommandBuffer = endPredictedSimulationEntityCommandBuffer,
+                    EndStatusEffectEntityCommandBuffer = endStatusEffectEntityCommandBuffer,
+                };
+                state.Dependency = checkIfRebuildModulesNeededJob.ScheduleParallelByRef(state.Dependency);
+            }
 #else
             var elapsedTime = SystemAPI.Time.ElapsedTime;
             var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
@@ -86,6 +97,36 @@ namespace StatusEffects.Entities
             };
             state.Dependency = statusEffectRequestsJob.ScheduleParallelByRef(m_RequestsQuery, state.Dependency);
         }
+#if NETCODE
+
+        [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
+        [WithAll(typeof(Simulate))]
+        internal partial struct CheckIfRebuildModulesNeededJob : IJobEntity
+        {
+            public EntityCommandBuffer.ParallelWriter EndPredictedSimulationEntityCommandBuffer;
+            public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
+
+            void Execute([ChunkIndexInQuery] int sortKey,
+                Entity entity,
+                in DynamicBuffer<ActiveStatusEffects> statusEffects,
+                in DynamicBuffer<InterpolatedStatusEffects> interpolatedStatusEffects)
+            {
+                if (statusEffects.Length != interpolatedStatusEffects.Length)
+                    goto AddTag;
+
+                for (int i = 0; i < statusEffects.Length; i++)
+                    if (statusEffects[i].Id != interpolatedStatusEffects[i].Id)
+                        goto AddTag;
+
+                return;
+
+                AddTag:
+
+                EndStatusEffectEntityCommandBuffer.AddComponent<RebuildModulesTag>(sortKey, entity);
+                EndPredictedSimulationEntityCommandBuffer.RemoveComponent<RebuildModulesTag>(sortKey, entity);
+            } 
+        }
+#endif
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         internal partial struct StatusEffectsJob : IJobEntity
@@ -148,7 +189,7 @@ namespace StatusEffects.Entities
                                         statusEffectEventsEnabledRW.ValueRW = true;
                                 }
                                 statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, statusEffect.Stacks, StatusEffectEvent.Removed));
-
+                                
                                 statusEffectsCopy.RemoveAtSwapBack(i);
                             }
                             break;
@@ -199,7 +240,7 @@ namespace StatusEffects.Entities
                             if (request.Stacks <= 0)
                                 return;
                             
-                            if (!references.IdToStatusEffectDataMap.Value.TryGetValue(request.Id, out var reference))
+                            if (!references.IdToStatusEffectDataMap.Value.TryGetValue(request.Hash, out var reference))
                                 return;
                             
                             // If the duration given is less than zero it won't be applied.
@@ -226,7 +267,7 @@ namespace StatusEffects.Entities
                                 int stackCount = 0;
 
                                 for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                    if (unsortedStatusEffects[x].StatusEffectDataId == request.Id)
+                                    if (unsortedStatusEffects[x].StatusEffectDataId == request.Hash)
                                         sortedStatusEffects.Add(new IndexedStatusEffects(x, unsortedStatusEffects[x]));
 
                                 if (sortedStatusEffects.Length <= 0)
@@ -496,26 +537,20 @@ namespace StatusEffects.Entities
                                     continue;
 
                                 StatusEffectRequests conditionalRequest;
+                                int conditionalStacks = condition.Add || condition.UseStacks ? condition.Stacks * (condition.Scaled ? request.Stacks : 1) : -1;
 
                                 if (condition.Add)
                                 {
                                     switch (condition.Timing)
                                     {
                                         case ConditionalTiming.Duration:
-                                            conditionalRequest = new StatusEffectRequests
-                                            {
-                                                Type = StatusEffectRequestType.Add,
-                                                Id = condition.ActionData,
-                                                Timing = StatusEffectTiming.Duration,
-                                                Duration = condition.Duration,
-                                                Stacks = condition.Stacks * (condition.Scaled ? request.Stacks : 1),
-                                            };
+                                            conditionalRequest = StatusEffectRequests.AddWithDuration(condition.ActionData, condition.Duration, condition.Stacks * (condition.Scaled ? request.Stacks : 1));
                                             break;
                                         case ConditionalTiming.Inherited:
                                             conditionalRequest = new StatusEffectRequests
                                             {
                                                 Type = StatusEffectRequestType.Add,
-                                                Id = condition.ActionData,
+                                                Hash = condition.ActionData,
                                                 Timing = request.Timing,
                                                 Duration = request.Duration,
                                                 Interval = request.Interval,
@@ -524,14 +559,7 @@ namespace StatusEffects.Entities
                                             };
                                             break;
                                         default:
-                                            conditionalRequest = new StatusEffectRequests
-                                            {
-                                                Type = StatusEffectRequestType.Add,
-                                                Id = condition.ActionData,
-                                                Timing = StatusEffectTiming.Infinite,
-                                                Duration = -1,
-                                                Stacks = condition.Stacks * (condition.Scaled ? request.Stacks : 1),
-                                            };
+                                            conditionalRequest = StatusEffectRequests.Add(condition.ActionData, condition.Stacks * (condition.Scaled ? request.Stacks : 1));
                                             break;
                                     }
                                     EvaluateRequest(ref statusEffectBuffer, conditionalRequest, references);
@@ -540,20 +568,19 @@ namespace StatusEffects.Entities
                                 // current data to be added is tagged for removal.
                                 else if (condition.ActionData == statusEffectData.Id)
                                 {
-                                    int conditionalStacks = condition.Stacks * (condition.Scaled ? request.Stacks : 1);
                                     if (!condition.UseStacks || conditionalStacks >= request.Stacks)
                                     {
                                         preventStatusEffect = true;
                                         if (condition.UseStacks)
                                             conditionalStacks -= request.Stacks;
                                         request.Stacks = 0;
-                                        conditionalRequest = new StatusEffectRequests
+                                        // In the case where other status effects of this Id exist we need to request to remove them.
+                                        conditionalRequest = condition.ActionConfigurable switch
                                         {
-                                            Type = condition.UseStacks ? StatusEffectRequestType.Remove : StatusEffectRequestType.RemoveAll,
-                                            RemovalType = (StatusEffectRemovalType)condition.ActionConfigurable,
-                                            Group = condition.ActionGroup,
-                                            Id = condition.ActionConfigurable is ConditionalConfigurable.Name ? condition.ActionComparableName : condition.ActionData,
-                                            Stacks = conditionalStacks,
+                                            ConditionalConfigurable.Data => StatusEffectRequests.RemoveWithStatusEffectDataId(condition.ActionData, conditionalStacks),
+                                            ConditionalConfigurable.Name => StatusEffectRequests.RemoveWithComparableName(condition.ActionComparableName, conditionalStacks),
+                                            ConditionalConfigurable.Group => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks),
+                                            _  => throw new InvalidOperationException($"Invalid {nameof(ConditionalConfigurable)} enum value of {condition.ActionConfigurable}.")
                                         };
                                         EvaluateRequest(ref statusEffectBuffer, conditionalRequest, references);
                                     }
@@ -563,13 +590,12 @@ namespace StatusEffects.Entities
                                 // Otherwise we remove effects.
                                 else
                                 {
-                                    conditionalRequest = new StatusEffectRequests
+                                    conditionalRequest = condition.ActionConfigurable switch
                                     {
-                                        Type = condition.UseStacks ? StatusEffectRequestType.Remove : StatusEffectRequestType.RemoveAll,
-                                        RemovalType = (StatusEffectRemovalType)condition.ActionConfigurable,
-                                        Group = condition.ActionGroup,
-                                        Id = condition.ActionConfigurable is ConditionalConfigurable.Name ? condition.ActionComparableName : condition.ActionData,
-                                        Stacks = condition.Stacks * (condition.Scaled ? request.Stacks : 1)
+                                        ConditionalConfigurable.Data => StatusEffectRequests.RemoveWithStatusEffectDataId(condition.ActionData, conditionalStacks),
+                                        ConditionalConfigurable.Name => StatusEffectRequests.RemoveWithComparableName(condition.ActionComparableName, conditionalStacks),
+                                        ConditionalConfigurable.Group => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks),
+                                        _ => throw new InvalidOperationException($"Invalid {nameof(ConditionalConfigurable)} enum value of {condition.ActionConfigurable}.")
                                     };
                                     EvaluateRequest(ref statusEffectBuffer, conditionalRequest, references);
                                 }
@@ -579,7 +605,7 @@ namespace StatusEffects.Entities
                                 return;
 
                             if (flagForRemoval.Index >= 0)
-                                RemoveStatusEffect(flagForRemoval, removeAll: true);
+                                RemoveStatusEffect(flagForRemoval, -1);
 
                             // Add the status effect
                             indexedStatusEffect.Duration = request.Duration;
@@ -592,7 +618,32 @@ namespace StatusEffects.Entities
 
                             switch (request.RemovalType)
                             {
-                                case StatusEffectRemovalType.Group:
+                                case StatusEffectRemovalType.Id:
+                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
+                                    {
+                                        ActiveStatusEffects statusEffect = unsortedStatusEffects[x];
+                                        if (statusEffect.Id == request.Id)
+                                            sortedStatusEffects.Add(new IndexedStatusEffects(x, statusEffect));
+                                    }
+                                    break;
+                                case StatusEffectRemovalType.StatusEffectDataId:
+                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
+                                    {
+                                        ActiveStatusEffects statusEffect = unsortedStatusEffects[x];
+                                        if (statusEffect.StatusEffectDataId == request.Hash)
+                                            sortedStatusEffects.Add(new IndexedStatusEffects(x, statusEffect));
+                                    }
+                                    break;
+                                case StatusEffectRemovalType.ComparableName:
+                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
+                                    {
+                                        ActiveStatusEffects statusEffect = unsortedStatusEffects[x];
+                                        ref UnmanagedStatusEffectData statusEffectData = ref references.IdToStatusEffectDataMap.Value[statusEffect.StatusEffectDataId].Value;
+                                        if (statusEffectData.ComparableName == request.Hash)
+                                            sortedStatusEffects.Add(new IndexedStatusEffects(x, statusEffect));
+                                    }
+                                    break;
+                                case StatusEffectRemovalType.AnyGroups:
                                     for (int x = 0; x < unsortedStatusEffects.Length; x++)
                                     {
                                         ActiveStatusEffects statusEffect = unsortedStatusEffects[x];
@@ -601,20 +652,12 @@ namespace StatusEffects.Entities
                                             sortedStatusEffects.Add(new IndexedStatusEffects(x, statusEffect));
                                     }
                                     break;
-                                case StatusEffectRemovalType.Data:
-                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                    {
-                                        ActiveStatusEffects statusEffect = unsortedStatusEffects[x];
-                                        if (statusEffect.StatusEffectDataId == request.Id)
-                                            sortedStatusEffects.Add(new IndexedStatusEffects(x, statusEffect));
-                                    }
-                                    break;
-                                case StatusEffectRemovalType.Name:
+                                case StatusEffectRemovalType.AllGroups:
                                     for (int x = 0; x < unsortedStatusEffects.Length; x++)
                                     {
                                         ActiveStatusEffects statusEffect = unsortedStatusEffects[x];
                                         ref UnmanagedStatusEffectData statusEffectData = ref references.IdToStatusEffectDataMap.Value[statusEffect.StatusEffectDataId].Value;
-                                        if (statusEffectData.ComparableName == request.Id)
+                                        if ((statusEffectData.Group & request.Group) == request.Group)
                                             sortedStatusEffects.Add(new IndexedStatusEffects(x, statusEffect));
                                     }
                                     break;
@@ -627,13 +670,15 @@ namespace StatusEffects.Entities
                             sortedStatusEffects.Sort(new IndexedStatusEffectComparer(references, false));
                             // Remove until max stack limit reached.
                             int removedCount = 0;
-                            bool removeAll = request.Type == StatusEffectRequestType.RemoveAll;
                             for (int x = 0; x < sortedStatusEffects.Length; x++)
                             {
-                                IndexedStatusEffects indexedStatusEffect = sortedStatusEffects.ElementAt(x);
-                                removedCount += RemoveStatusEffect(indexedStatusEffect, request.Stacks - removedCount, removeAll);
-                            }
+                                if (request.Stacks >= 0 && removedCount >= request.Stacks)
+                                    break;
 
+                                IndexedStatusEffects indexedStatusEffect = sortedStatusEffects.ElementAt(x);
+                                var count = RemoveStatusEffect(indexedStatusEffect, request.Stacks - removedCount);
+                                removedCount += count;
+                            }
                             sortedStatusEffects.Dispose();
                         }
                     }
@@ -667,13 +712,13 @@ namespace StatusEffects.Entities
                     }
 
                     // Returns the amount removed
-                    int RemoveStatusEffect(IndexedStatusEffects indexedStatusEffect, int stacks = 1, bool removeAll = false)
+                    int RemoveStatusEffect(IndexedStatusEffects indexedStatusEffect, int stacks = 1)
                     {
                         int alreadyUpdatingIndex = statusEffectStackUpdates.IndexOf(indexedStatusEffect.Index);
                         if (alreadyUpdatingIndex >= 0)
                         {
                             ref IndexedStatusEffects indexedUpdate = ref statusEffectStackUpdates.ElementAt(alreadyUpdatingIndex);
-                            if (!removeAll)
+                            if (stacks >= 0)
                             {
                                 int currentStackCount = indexedStatusEffect.Stacks + indexedUpdate.Stacks;
 
@@ -685,11 +730,13 @@ namespace StatusEffects.Entities
                             }
                             // If it got to this point we can remove the effect. Either
                             // we removed all its stacks or there was no stack count.
+                            var removedCount = indexedStatusEffect.Stacks + indexedUpdate.Stacks;
                             indexedUpdate.Stacks = -indexedStatusEffect.Stacks;
+                            return removedCount;
                         }
                         else
                         {
-                            if (!removeAll)
+                            if (stacks >= 0)
                             {
                                 if (indexedStatusEffect.Stacks > stacks)
                                 {
@@ -700,10 +747,11 @@ namespace StatusEffects.Entities
                             }
                             // If it got to this point we can remove the effect. Either
                             // we removed all its stacks or there was no stack count.
-                            indexedStatusEffect.Stacks = -indexedStatusEffect.Stacks;
+                            var removedCount = indexedStatusEffect.Stacks;
+                            indexedStatusEffect.Stacks = -removedCount;
                             statusEffectStackUpdates.Add(indexedStatusEffect);
+                            return removedCount;
                         }
-                        return indexedStatusEffect.Stacks;
                     }
                 }
 

@@ -100,28 +100,133 @@ public class #SCRIPTNAME# : Module
 }";
 
         internal const string EntityModuleScriptContent =
-@"using StatusEffects
+@"using StatusEffects;
 using StatusEffects.Entities;
+using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
+
+[assembly: RegisterGenericComponentType(typeof(Modules<#SCRIPTNAME#Struct>))]
 
 [CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
 //[AttachModuleInstance(typeof(#SCRIPTNAME#Instance))]
 public class #SCRIPTNAME# : Module, IEntityModule
 {
-    public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)
+    public ModuleInfo CreateModuleInfo(ModuleInstance moduleInstance)
     {
-        //#SCRIPTNAME#Instance instance = moduleInstance as #SCRIPTNAME#Instance;
+        //var instance = moduleInstance as #SCRIPTNAME#Instance;
+        var moduleStruct = new #SCRIPTNAME#Struct
+        {
+            // Add in struct specific values and/or copy them from the module instance.
+        };
+        return (this as IEntityModule).AllocateModule(moduleStruct);
+    }
+}
+
+public struct #SCRIPTNAME#Struct
+{
             
-        commandBuffer.AddComponent(entity, new Entity#DISPLAYNAME#() 
-        { 
-                
-        });
+}
+
+[UpdateInGroup(typeof(SimulationSystemGroup))]
+[BurstCompile]
+public partial struct #SCRIPTNAME#System : ISystem
+{
+    private EntityQuery m_EventQuery;
+
+    private TypeIndex m_TypeIndex;
+
+    [BurstCompile]
+    public void OnCreate(ref SystemState state)
+    {
+        m_EventQuery = SystemAPI.QueryBuilder().WithAll<ActiveStatusEffects, StatusEffectEvents>().WithAll<Simulate>().Build();
+
+        m_TypeIndex = TypeManager.GetTypeIndex<Modules<#SCRIPTNAME#Struct>>();
+
+        state.RequireForUpdate<StatusReferences>();
+        state.RequireForUpdate(m_EventQuery);
     }
 
-    public struct Entity#DISPLAYNAME# : IComponentData
+    [BurstCompile]
+    public void OnUpdate(ref SystemState state)
     {
-            
+        var statusReferences = SystemAPI.GetSingleton<StatusReferences>();
+        var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+        var lookup = SystemAPI.GetBufferLookup<Modules<#SCRIPTNAME#Struct>>();
+
+        var eventJob = new #SCRIPTNAME#EventJob
+        {
+            TypeIndex = m_TypeIndex,
+            References = statusReferences,
+            CommandBuffer = commandBuffer,
+            Lookup = lookup,
+        };
+        state.Dependency = eventJob.ScheduleParallelByRef(m_EventQuery, state.Dependency);
+    }
+
+    [BurstCompile]
+    partial struct #SCRIPTNAME#EventJob : IJobEntity
+    {
+        public TypeIndex TypeIndex;
+        public StatusReferences References;
+        public EntityCommandBuffer.ParallelWriter CommandBuffer;
+        [NativeDisableParallelForRestriction]
+        public BufferLookup<Modules<#SCRIPTNAME#Struct>> Lookup;
+
+        public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<ActiveStatusEffects> statusEffects, in DynamicBuffer<StatusEffectEvents> statusEffectEvents)
+        {
+            bool foundBuffer = Lookup.TryGetBuffer(entity, out var buffer);
+
+            foreach (var statusEffectEvent in statusEffectEvents)
+            {
+                if (!References.TryGetReference(statusEffectEvent.StatusEffectDataId, out var reference))
+                    continue;
+
+                ref var data = ref reference.Value;
+
+                if (!StatusEffectsUtility.ModuleInfosContainType(ref data.Modules, TypeIndex))
+                    continue;
+
+                switch (statusEffectEvent.Event)
+                {
+                    case StatusEffectEvent.Added:
+                        ref var modules = ref data.Modules;
+                        for (int i = 0; i < modules.Length; i++)
+                        {
+                            var moduleInfo = modules[i];
+
+                            if (moduleInfo.TypeIndex != TypeIndex)
+                                continue;
+
+                            if (!foundBuffer)
+                            {
+                                foundBuffer = true;
+                                buffer = CommandBuffer.AddBuffer<Modules<#SCRIPTNAME#Struct>>(sortKey, entity);
+                            }
+                            var module = StatusEffectsUtility.AddModuleToBuffer(ref buffer, moduleInfo, statusEffectEvent.Id);
+                            // Put specific logic when added here.
+                        }
+
+                        break;
+                    case StatusEffectEvent.Removed:
+                        if (foundBuffer)
+                            StatusEffectsUtility.RemoveModulesFromBuffer(ref buffer, statusEffectEvent.Id);
+                        // Put specific logic when removed here. Do not use the buffer since the modules have already been removed.
+                        break;
+                        /*case StatusEffectEvent.Updated:
+                            foreach (var module in buffer)
+                                if (module.Id == statusEffectEvent.Id)
+                                {
+                                    Put specific logic when updated here.
+                                }
+                            break;*/
+                }
+            }
+
+            if (foundBuffer && buffer.Length <= 0)
+                CommandBuffer.RemoveComponent<Modules<#SCRIPTNAME#Struct>>(sortKey, entity);
+        }
     }
 }";
 

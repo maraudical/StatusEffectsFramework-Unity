@@ -57,7 +57,7 @@ namespace StatusEffects.Example
         [SerializeField] private StatusEffectData m_StatusEffectData;
         [SerializeField] private float Duration = 10;
         [SerializeField] private StatusEffectGroup Group;
-        [SerializeField] private int Stack = 1;
+        [SerializeField] private int Stacks = 1;
         // See the DebugAddStatusEffectPredicate method for how a predicate
         // can be used to stop an effect.
         [SerializeField] private bool PredicateBool;
@@ -98,22 +98,22 @@ namespace StatusEffects.Example
             PredicateBool = false;
         }
         // Default adding of status effect is infinite.
-        public void DebugAddStatusEffect() { StatusManager?.AddStatusEffect(StatusEffectData, Stack); }
+        public void DebugAddStatusEffect() { StatusManager?.AddStatusEffect(StatusEffectData, Stacks); }
         // But you can set an effect duration.
-        public void DebugAddStatusEffectTimed() { StatusManager?.AddStatusEffect(StatusEffectData, Duration, Stack); }
+        public void DebugAddStatusEffectTimed() { StatusManager?.AddStatusEffect(StatusEffectData, Duration, Stacks); }
         // Additionally you can have the duration update of System.Action
         // events where each invoke reduces duration by 1. This could be used
         // for games that are more round based or don't work in realtime.
-        public void DebugAddStatusEffectTimedEvent() { StatusManager?.AddStatusEffect(StatusEffectData, Duration, Event, 1, Stack); }
+        public void DebugAddStatusEffectTimedEvent() { StatusManager?.AddStatusEffect(StatusEffectData, Duration, Event, 1, Stacks); }
         // Just calls the example action.
         public void InvokeEvent() { Event?.Invoke(); }
         // Set a predicate that when true disables the effect. In this example
         // if _predicateBool is set to true the effect is removed.
-        public void DebugAddStatusEffectPredicate() { StatusManager?.AddStatusEffect(StatusEffectData, () => PredicateBool, Stack); }
+        public void DebugAddStatusEffectPredicate() { StatusManager?.AddStatusEffect(StatusEffectData, () => PredicateBool, Stacks); }
         // Default removing of a status effect. There are multiple overrides
         // such as using status effect string names or the StatusEffect
         // reference itself instead.
-        public void DebugRemoveStatusEffect() { StatusManager?.RemoveStatusEffect(StatusEffectData, Stack); }
+        public void DebugRemoveStatusEffect() { StatusManager?.RemoveStatusEffect(StatusEffectData, Stacks); }
         // Removes all effects that fall under a specific group. Additionally
         // you can remove the group parameter and just remove all effects.
         public void DebugRemoveStatusEffectGroup() {StatusManager?.RemoveAllStatusEffects(); /*StatusManager?.RemoveStatusEffect(Group);*/ }

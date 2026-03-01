@@ -14,19 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Prefab: {fileID: 3165632045659492785, guid: 596723451463a6443aff5842e68ee3c3, type: 3}
   InstantiateAgainWhenAddingStacks: 1
---- !u!114 &-3962457711192202009
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9092bac51f8768c45a04647087914bcd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.StatusEffectsFramework.Example::StatusEffects.Example.TestModuleInstance
-  TestValue: 99
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -69,8 +56,6 @@ MonoBehaviour:
     m_ModuleInstance: {fileID: 0}
   - m_Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
     m_ModuleInstance: {fileID: -6144187819791929497}
-  - m_Module: {fileID: 11400000, guid: aa816da88a0a3654b8306999c540af25, type: 2}
-    m_ModuleInstance: {fileID: -3962457711192202009}
   m_EnableIcon: 1
   m_EnableColor: 0
   m_EnableName: 0

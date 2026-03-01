@@ -2,6 +2,7 @@
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.NetCode;
 
 namespace StatusEffects.Entities
 {
@@ -19,17 +20,28 @@ namespace StatusEffects.Entities
             m_EntityQuery.SetChangedVersionFilter(ComponentType.ReadOnly<ActiveStatusEffects>());
 
             state.RequireForUpdate(m_EntityQuery);
+            state.RequireForUpdate<NetworkTime>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            state.Dependency = new StatusEffectsInterpolatedEventsJob().ScheduleParallel(m_EntityQuery, state.Dependency);
+            SystemAPI.TryGetSingleton<ClientServerTickRate>(out var tickRate);
+            tickRate.ResolveDefaults();
+
+            var statusEffectsInterpolatedEventsJob = new StatusEffectsInterpolatedEventsJob
+            {
+                NetworkTime = SystemAPI.GetSingleton<NetworkTime>()
+            };
+            state.Dependency = statusEffectsInterpolatedEventsJob.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         partial struct StatusEffectsInterpolatedEventsJob : IJobEntity
         {
+            public NetworkTime NetworkTime;
+            public ClientServerTickRate TickRate;
+
             public unsafe void Execute([ChunkIndexInQuery] int sortKey, 
                 Entity entity, 
                 EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW,
@@ -78,9 +90,9 @@ namespace StatusEffects.Entities
                             // Loop through remaining status effects, trigger added events.
                             do
                             {
-                                UnityEngine.Debug.Log("added");
                                 statusEffect = enumerator.Current;
-                                statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId));
+                                bool isOld = NetworkTime.InterpolationTick.TimeSince(statusEffect.TickAdded, TickRate) > StatusEffectEvents.SecondsTillOldThreshold;
+                                statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, isOld));
                                 if (!statusEffectEventsEnabled)
                                 {
                                     statusEffectEventsEnabled = true;
@@ -91,9 +103,9 @@ namespace StatusEffects.Entities
                         }
                         else if (statusEffect.Id < interpolatedStatusEffect.Id)
                         {
-                            UnityEngine.Debug.Log("added");
                             // Status effect was added, trigger added event.
-                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId));
+                            bool isOld = NetworkTime.InterpolationTick.TimeSince(statusEffect.TickAdded, TickRate) > StatusEffectEvents.SecondsTillOldThreshold;
+                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, isOld));
                             if (!statusEffectEventsEnabled)
                             {
                                 statusEffectEventsEnabled = true;
@@ -102,7 +114,6 @@ namespace StatusEffects.Entities
                         }
                         else if (statusEffect.Id > interpolatedStatusEffect.Id)
                         {
-                            UnityEngine.Debug.Log("removed");
                             // Status effect was removed, trigger removed event.
                             statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
                             if (!statusEffectEventsEnabled)
@@ -113,7 +124,6 @@ namespace StatusEffects.Entities
                         }
                         else if (statusEffect.Stacks != interpolatedStatusEffect.Stacks)
                         {
-                            UnityEngine.Debug.Log("updated");
                             // Status effect was updated, trigger updated event.
                             statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Updated));
                             if (!statusEffectEventsEnabled)
@@ -128,7 +138,6 @@ namespace StatusEffects.Entities
                         // Loop through remaining interpolated status effects, trigger removed events.
                         do
                         {
-                            UnityEngine.Debug.Log("removed");
                             interpolatedStatusEffect = interpolatedEnumerator.Current;
                             statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.Id, interpolatedStatusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
                             if (!statusEffectEventsEnabled)

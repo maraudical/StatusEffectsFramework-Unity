@@ -1,4 +1,5 @@
 #if ENTITIES
+using Unity.Burst;
 using Unity.Entities;
 using Unity.NetCode;
 
@@ -6,17 +7,20 @@ namespace StatusEffects.Entities
 {
     /// <summary>
     /// Adding this to any <see cref="Entity"> will make a request to add/remove a 
-    /// StatusEffect. See the <see cref="StatusEffectRequests"/> constructors for options.
+    /// StatusEffect. See the <see cref="StatusEffectRequests"/> static methods for 
+    /// options.
     /// </summary>
 #if NETCODE
     [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]
 #endif
+    [BurstCompile]
     public struct StatusEffectRequests : IBufferElementData
     {
         public StatusEffectRequestType Type;
         public StatusEffectRemovalType RemovalType;
         public StatusEffectGroup Group;
-        public Hash128 Id;
+        public uint Id;
+        public Hash128 Hash;
         public StatusEffectTiming Timing;
         public float Duration;
         public float Interval;
@@ -25,96 +29,177 @@ namespace StatusEffects.Entities
         public Hash128 EventId;
 
         /// <summary>
-        /// Add a <see cref="ActiveStatusEffects"/>. Optional stack count.
+        /// Constructs a <see cref="StatusEffectRequests"/> to request adding a new 
+        /// effect. Optional <paramref name="stacks"/> count.
         /// </summary>
-        public StatusEffectRequests(Hash128 statusEffectData, int stacks = 1)
+        [BurstCompile]
+        public static StatusEffectRequests Add(Hash128 statusEffectData, int stacks = 1)
         {
-            Type = StatusEffectRequestType.Add;
-            RemovalType = default;
-            Group = default;
-            Id = statusEffectData;
-            Timing = StatusEffectTiming.Infinite;
-            Duration = -1;
-            Interval = default;
-            Stacks = stacks;
-            EventId = default;
+            return new StatusEffectRequests
+            {
+                Type = StatusEffectRequestType.Add,
+                Hash = statusEffectData,
+                Timing = StatusEffectTiming.Infinite,
+                Duration = -1,
+                Stacks = stacks,
+            };
         }
 
         /// <summary>
-        /// Add a <see cref="ActiveStatusEffects"/> with a duration. Optional 
-        /// stack count.
+        /// Constructs a <see cref="StatusEffectRequests"/> to request adding a new 
+        /// effect with a <paramref name="duration"/>. Optional 
+        /// <paramref name="stacks"/> count.
         /// </summary>
-        public StatusEffectRequests(Hash128 statusEffectData, float duration, int stacks = 1)
+        [BurstCompile]
+        public static StatusEffectRequests AddWithDuration(Hash128 statusEffectData, float duration, int stacks = 1)
         {
-            Type = StatusEffectRequestType.Add;
-            RemovalType = default;
-            Group = default;
-            Id = statusEffectData;
-            Timing = StatusEffectTiming.Duration;
-            Duration = duration;
-            Interval = default;
-            Stacks = stacks;
-            EventId = default;
+            return new StatusEffectRequests
+            {
+                Type = StatusEffectRequestType.Add,
+                Hash = statusEffectData,
+                Timing = StatusEffectTiming.Duration,
+                Duration = duration,
+                Stacks = stacks,
+            };
         }
 
         /// <summary>
-        /// Add a <see cref="ActiveStatusEffects"/> with a duration. Timing 
-        /// option will be <see cref="StatusEffectTiming.Event"/>. 
-        /// Duration should be decremented by <paramref name="interval"/> 
-        /// in custom systems by querying <see cref="ActiveStatusEffects"/> 
-        /// buffers with the given <paramref name="eventId"/>. Optional 
-        /// stack count.
+        /// Constructs a <see cref="StatusEffectRequests"/> to request adding a new 
+        /// effect with a <paramref name="duration"/> that will decrement from an 
+        /// <paramref name="eventId"/>. Optional <paramref name="stacks"/> count and 
+        /// <paramref name="interval"/> for decrementing effect duration.
         /// </summary>
-        public StatusEffectRequests(Hash128 statusEffectData, float duration, Hash128 eventId, float interval = 1, int stacks = 1)
+        /// <remarks>
+        /// Note that decrementing duration for this effect must be controlled by the 
+        /// user. It will not happen automatically.This can be done by querying 
+        /// relevant <see cref="ActiveStatusEffects"/> and checking for similar 
+        /// <paramref name="eventId"/>.
+        /// </remarks>
+        [BurstCompile]
+        public static StatusEffectRequests AddWithEvent(Hash128 statusEffectData, float duration, Hash128 eventId, float interval = 1, int stacks = 1)
         {
-            Type = StatusEffectRequestType.Add;
-            RemovalType = default;
-            Group = default;
-            Id = statusEffectData;
-            Timing = StatusEffectTiming.Event;
-            Duration = duration;
-            Interval = interval;
-            Stacks = stacks;
-            EventId = eventId;
+            return new StatusEffectRequests
+            {
+                Type = StatusEffectRequestType.Add,
+                Hash = statusEffectData,
+                Timing = StatusEffectTiming.Event,
+                Duration = duration,
+                Interval = interval,
+                Stacks = stacks,
+                EventId = eventId,
+            };
         }
 
         /// <summary>
-        /// Add a <see cref="ActiveStatusEffects"/>. Timing option will be 
-        /// <see cref="StatusEffectTiming.Predicate"/>. Duration should 
-        /// be set to 0 in custom systems by querying <see cref="ActiveStatusEffects"/> 
-        /// buffers with the given <paramref name="eventId"/>. Optional 
-        /// stack count.
+        /// Constructs a <see cref="StatusEffectRequests"/> to request adding a new 
+        /// effect with a predicate <paramref name="eventId"/>. Optional 
+        /// <paramref name="stacks"/> count.
         /// </summary>
-        public StatusEffectRequests(Hash128 statusEffectData, Hash128 eventId, int stacks = 1)
+        /// <remarks>
+        /// Note that ending the predicate for this effect must be controlled by the 
+        /// user. It will not happen automatically.This can be done by querying 
+        /// relevant <see cref="ActiveStatusEffects"/> and checking for similar 
+        /// <paramref name="eventId"/>. The user only needs to set 
+        /// <see cref="ActiveStatusEffects.Duration"/> to 0.
+        /// </remarks>
+        [BurstCompile]
+        public static StatusEffectRequests AddWithPredicate(Hash128 statusEffectData, Hash128 eventId, int stacks = 1)
         {
-            Type = StatusEffectRequestType.Add;
-            RemovalType = default;
-            Group = default;
-            Id = statusEffectData;
-            Timing = StatusEffectTiming.Predicate;
-            Duration = 1;
-            Interval = default;
-            Stacks = stacks;
-            EventId = eventId;
+            return new StatusEffectRequests
+            {
+                Type = StatusEffectRequestType.Add,
+                Hash = statusEffectData,
+                Timing = StatusEffectTiming.Duration,
+                Duration = 1,
+                Stacks = stacks,
+                EventId = eventId,
+            };
         }
 
         /// <summary>
-        /// Remove any number of <see cref="ActiveStatusEffects"/> given 
-        /// either a <see cref="Hash128"/> ID, a 
-        /// <see cref="StatusEffectGroup"/>, or nothing. If stacks 
-        /// is negative it will remove all of them.
-        /// </summary>
-        public StatusEffectRequests(StatusEffectRemovalType removalType, Hash128 id = default, StatusEffectGroup group = default, int stacks = -1)
+        /// Removes all <see cref="ActiveStatusEffects"/>. 
+        ///</summary>
+        [BurstCompile]
+        public static StatusEffectRequests RemoveAll()
         {
-            Type = stacks < 0 ? StatusEffectRequestType.RemoveAll : StatusEffectRequestType.Remove;
-            RemovalType = removalType;
-            Group = group;
-            Id = id;
-            Timing = default;
-            Duration = default;
-            Interval = default;
-            Stacks = stacks < 0 ? default : stacks;
-            EventId = default;
+            return new StatusEffectRequests
+            {
+                Type = StatusEffectRequestType.Remove,
+                RemovalType = StatusEffectRemovalType.Any,
+                Stacks = -1
+            };
+        }
+
+        /// <summary>
+        /// Remove any amount of <see cref="ActiveStatusEffects"/> given a 
+        /// <see cref="uint"/> <paramref name="id"/>. Optional 
+        /// <paramref name="stacks"/> count.
+        /// </summary>
+        [BurstCompile]
+        public static StatusEffectRequests RemoveWithId(uint id, int stacks = -1)
+        {
+            return new StatusEffectRequests
+            {
+                Type = StatusEffectRequestType.Remove,
+                RemovalType = StatusEffectRemovalType.Id,
+                Id = id,
+                Stacks = stacks
+            };
+        }
+
+        /// <summary>
+        /// Remove any amount of <see cref="ActiveStatusEffects"/> given a 
+        /// <see cref="Hash128"/> <paramref name="id"/> of the 
+        /// <see cref="UnmanagedStatusEffectData.Id"/> reference. Optional 
+        /// <paramref name="stacks"/> count.
+        /// </summary>
+        [BurstCompile]
+        public static StatusEffectRequests RemoveWithStatusEffectDataId(Hash128 id, int stacks = -1)
+        {
+            return new StatusEffectRequests
+            {
+                Type = StatusEffectRequestType.Remove,
+                RemovalType = StatusEffectRemovalType.StatusEffectDataId,
+                Hash = id,
+                Stacks = stacks
+            };
+        }
+
+        /// <summary>
+        /// Remove any amount of <see cref="ActiveStatusEffects"/> given a 
+        /// <see cref="Hash128"/> <paramref name="name"/> of the 
+        /// <see cref="ComparableName"/> <see cref="Name.Id"/> reference. Optional 
+        /// <paramref name="stacks"/> count.
+        /// </summary>
+        [BurstCompile]
+        public static StatusEffectRequests RemoveWithComparableName(Hash128 name, int stacks = -1)
+        {
+            return new StatusEffectRequests
+            {
+                Type = StatusEffectRequestType.Remove,
+                RemovalType = StatusEffectRemovalType.ComparableName,
+                Hash = name,
+                Stacks = stacks
+            };
+        }
+
+        /// <summary>
+        /// Remove any amount of <see cref="ActiveStatusEffects"/> given a 
+        /// <see cref="StatusEffectGroup"/> <paramref name="group"/>. Optional 
+        /// <paramref name="stacks"/> count and <paramref name="matchAllGroups"/> 
+        /// toggle if the all groups in the given <paramref name="group"/> need 
+        /// to exist in the effect to remove.
+        /// </summary>
+        [BurstCompile]
+        public static StatusEffectRequests RemoveWithGroup(StatusEffectGroup group, int stacks = -1, bool matchAllGroups = true)
+        {
+            return new StatusEffectRequests
+            {
+                Type = StatusEffectRequestType.Remove,
+                RemovalType = matchAllGroups ? StatusEffectRemovalType.AllGroups : StatusEffectRemovalType.AnyGroups,
+                Group = group,
+                Stacks = stacks
+            };
         }
     }
 }

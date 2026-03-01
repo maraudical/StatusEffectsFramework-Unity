@@ -4,9 +4,11 @@ namespace StatusEffects.Entities
     public enum StatusEffectRemovalType
     {
         Any = -1,
-        Data = 0,
-        Name = 1,
-        Group = 2,
+        Id = 0,
+        StatusEffectDataId = 1,
+        ComparableName = 2,
+        AnyGroups = 3,
+        AllGroups = 4
     }
 }
 #endif

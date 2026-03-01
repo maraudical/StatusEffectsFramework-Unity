@@ -14,7 +14,7 @@ namespace StatusEffects.Entities
         [BurstCompile]
         public static int IndexOfStatusEffect(in DynamicBuffer<ActiveStatusEffects> buffer, uint id)
         {
-            unsafe { return NativeArrayExtensions.IndexOf<ActiveStatusEffects, uint>(buffer.GetUnsafePtr(), buffer.Length, id); }
+            return buffer.AsNativeArray().IndexOf(id);
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace StatusEffects.Entities
         /// Adds a new <see cref="Modules{T}"/> and retrieves values from the <see cref="ModuleInfo"/>.
         /// </summary>
         [BurstCompile]
-        public static Modules<T> AddModuleToBuffer<T>(ref DynamicBuffer<Modules<T>> buffer, ModuleInfo moduleInfo, uint id) where T : unmanaged
+        public static ref Modules<T> AddModuleToBuffer<T>(ref DynamicBuffer<Modules<T>> buffer, ModuleInfo moduleInfo, uint id) where T : unmanaged
         {
             var module = new Modules<T>
             {
@@ -51,7 +51,7 @@ namespace StatusEffects.Entities
                 Value = moduleInfo.GetValue<T>()
             };
             buffer.Add(module);
-            return module;
+            return ref buffer.ElementAt(buffer.Length - 1);
         }
 
         /// <summary>
