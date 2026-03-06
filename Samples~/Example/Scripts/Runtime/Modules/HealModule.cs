@@ -153,7 +153,7 @@ namespace StatusEffects.Example
         public void OnUpdate(ref SystemState state)
         {
             var statusReferences = SystemAPI.GetSingleton<StatusReferences>();
-            var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            var commandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             var lookup = SystemAPI.GetBufferLookup<Modules<HealModuleStruct>>();
             var playerLookup = SystemAPI.GetComponentLookup<ExamplePlayerComponent>();
             var statusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>();
@@ -301,7 +301,7 @@ namespace StatusEffects.Example
                                     foundBuffer = true;
                                     buffer = CommandBuffer.AddBuffer<Modules<HealModuleStruct>>(sortKey, entity);
                                 }
-                                var module = StatusEffectsUtility.AddModuleToBuffer(ref buffer, moduleInfo, statusEffectEvent.Id);
+                                StatusEffectsUtility.AddModuleToBuffer(ref buffer, moduleInfo, statusEffectEvent.Id);
 
                                 if (!isValid)
                                     continue;

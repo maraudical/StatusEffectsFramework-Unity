@@ -20,6 +20,10 @@ namespace StatusEffects.Entities
 #endif
 #if NETCODE
         [GhostField]
+        public NetworkTick TickUpdated;
+#endif
+#if NETCODE
+        [GhostField]
 #endif
         public uint Id;
 #if NETCODE
@@ -68,7 +72,7 @@ namespace StatusEffects.Entities
         /// Calculated remaining time until the status effect expires.
         /// </summary>
         public float TimeRemaining
-#if NETCODE   
+#if NETCODE
             (NetworkTick currentTick, ClientServerTickRate tickRate)
         {
             return TimeRemaining(currentTick, 0f, tickRate);

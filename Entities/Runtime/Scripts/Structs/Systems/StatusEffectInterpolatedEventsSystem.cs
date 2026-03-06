@@ -125,7 +125,8 @@ namespace StatusEffects.Entities
                         else if (statusEffect.Stacks != interpolatedStatusEffect.Stacks)
                         {
                             // Status effect was updated, trigger updated event.
-                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Updated));
+                            bool isOld = NetworkTime.InterpolationTick.TimeSince(statusEffect.TickUpdated, TickRate) > StatusEffectEvents.SecondsTillOldThreshold;
+                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Updated, isOld));
                             if (!statusEffectEventsEnabled)
                             {
                                 statusEffectEventsEnabled = true;

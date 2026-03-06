@@ -1,3 +1,4 @@
+using UnityEngine;
 #if UNITASK
 using Cysharp.Threading.Tasks;
 using System.Threading;
@@ -10,36 +11,39 @@ using System.Collections;
 #if ENTITIES
 using StatusEffects.Entities;
 using Unity.Entities;
+using Unity.Collections;
+using Unity.Transforms;
+using System;
+
+[assembly: RegisterGenericComponentType(typeof(Modules<StatusEffects.Example.VfxModuleStruct>))]
 #endif
-using UnityEngine;
 
 namespace StatusEffects.Example
 {
     [CreateAssetMenu(fileName = "Vfx Module", menuName = "Status Effect Framework/Modules/Vfx", order = 1)]
     [AttachModuleInstance(typeof(VfxInstance))]
     public class VfxModule : Module
-/*#if ENTITIES
+#if ENTITIES
         , IEntityModule
     {
-        public void ModifyCommandBuffer(ref EntityCommandBuffer commandBuffer, in Entity entity, ModuleInstance moduleInstance)
+        public ModuleInfo CreateModuleInfo(ModuleInstance moduleInstance)
         {
-            VfxInstance vfxInstance = moduleInstance as VfxInstance;
-            
-            commandBuffer.AddComponent(entity, new VfxEntityModule() 
-            { 
-                Prefab = vfxInstance.Prefab,
-                InstantiateAgainWhenAddingStacks = vfxInstance.InstantiateAgainWhenAddingStacks,
-            });
-        }
+            var instance = moduleInstance as VfxInstance;
 
-        public struct VfxEntityModule : IComponentData
-        {
-            public UnityObjectRef<GameObject> Prefab;
-            public bool InstantiateAgainWhenAddingStacks;
+            bool isLooping = false;
+            if (instance && instance.Prefab && instance.Prefab.TryGetComponent(out ParticleSystem particleSystem))
+                isLooping = particleSystem.main.loop;
+
+            var moduleStruct = new VfxModuleStruct
+            {
+                Prefab = instance.Prefab,
+                IsLooping = isLooping,
+            };
+            return (this as IEntityModule).AllocateModule(moduleStruct);
         }
-#else*/
+#else
     {
-//#endif
+#endif
 
 #if UNITASK
         public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
@@ -48,46 +52,34 @@ namespace StatusEffects.Example
             // Make sure the particle system stop action is set to destroy so it
             // automatically destroys itself when all particles die.
             GameObject vfxGameObject = Instantiate(vfxInstance.Prefab, manager.transform);
+            ParticleSystem particleSystem = vfxGameObject.GetComponent<ParticleSystem>();
             // If we want this effect to be added everytime more stacks are
             // added we just immediately begin destruction on the current particle.
-            if (vfxInstance.InstantiateAgainWhenAddingStacks)
-                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
-            else
+            if (particleSystem && particleSystem.main.loop)
                 await UniTask.WaitUntilCanceled(token);
-            // Attempt to stop the particle system.
-            if (!vfxInstance.InstantiateAgainWhenAddingStacks)
-            {
-                // Note that you need to check if the effect is null in case the
-                // cancellation was invoked from the destruction of the MonoBehaviour.
-                if (!vfxGameObject)
-                    return;
+            else
+                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
 
-                vfxGameObject.GetComponent<ParticleSystem>().Stop();
-            }
+            // Attempt to stop the particle system.
+            particleSystem?.Stop();
         }
 #elif UNITY_2023_1_OR_NEWER
         public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
         {
-            VfxInstance vfxInstance = moduleInstance as VfxInstance;
+        VfxInstance vfxInstance = moduleInstance as VfxInstance;
             // Make sure the particle system stop action is set to destroy so it
             // automatically destroys itself when all particles die.
             GameObject vfxGameObject = Instantiate(vfxInstance.Prefab, manager.transform);
-            // If we want this effect to be added everytime more are stacks
+            ParticleSystem particleSystem = vfxGameObject.GetComponent<ParticleSystem>();
+            // If we want this effect to be added everytime more stacks are
             // added we just immediately begin destruction on the current particle.
-            if (vfxInstance.InstantiateAgainWhenAddingStacks)
-                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
-            else
+            if (particleSystem && particleSystem.main.loop)
                 await AwaitableExtensions.WaitUntilCanceled(token);
-            // Attempt to stop the particle system.
-            if (!vfxInstance.InstantiateAgainWhenAddingStacks)
-            {
-                // Note that you need to check if the effect is null in case the
-                // cancellation was invoked from the destruction of the MonoBehaviour.
-                if (!vfxGameObject)
-                    return;
+            else
+                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
 
-                vfxGameObject.GetComponent<ParticleSystem>().Stop();
-            }
+            // Attempt to stop the particle system.
+            particleSystem?.Stop();
         }
 #else
         public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
@@ -97,9 +89,10 @@ namespace StatusEffects.Example
             // automatically destroys itself when all particles die.
             // Give the vfx the name of the prefab so it can be queried later.
             GameObject vfxGameObject = Instantiate(vfxInstance.Prefab, manager.transform);
+            ParticleSystem particleSystem = vfxGameObject.GetComponent<ParticleSystem>();
             vfxGameObject.name = vfxInstance.Prefab.name;
 
-            if (vfxInstance.InstantiateAgainWhenAddingStacks)
+            if (particleSystem && particleSystem.main.loop)
                 statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
 
             yield break;
@@ -108,12 +101,9 @@ namespace StatusEffects.Example
         public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance) 
         {
             VfxInstance vfxInstance = moduleInstance as VfxInstance;
-            // If we are instantiating when adding stacks it has already been destroyed.
-            if (vfxInstance.InstantiateAgainWhenAddingStacks)
-                return;
-            // This magic name finding system is horrible but it works. Unitask would do
-            // the enabling and disabling so much better since the reference to the
-            // GameObject can be kept as DisableModule is just when cancellation is called.
+            // This magic name finding system is horrible but it works. Unitask/Await would 
+            // do the enabling and disabling so much better since the reference to the
+            // GameObject can be kept within the method.
             Transform vfxTransform = manager.transform.Find(vfxInstance.Prefab.name);
             
             if (!vfxTransform)
@@ -121,7 +111,7 @@ namespace StatusEffects.Example
             
             GameObject vfxGameObject = vfxTransform.gameObject;
             // Attempt to stop the particle system.
-            vfxGameObject.GetComponent<ParticleSystem>().Stop();
+            vfxGameObject.GetComponent<ParticleSystem>()?.Stop();
             // Unset the parent so that if multiple effects are being removed it doesn't
             // grab the same VFX twice.
             vfxTransform.SetParent(null);
@@ -136,4 +126,212 @@ namespace StatusEffects.Example
             Instantiate(prefab, manager.transform);
         }
     }
+#if ENTITIES
+
+    public struct VfxModuleStruct 
+    {
+        public UnityObjectRef<GameObject> Prefab;
+        public bool IsLooping;
+    }
+
+    public struct VfxModuleCleanup : ICleanupBufferElementData
+    {
+        public uint Id;
+        public UnityObjectRef<GameObject> Value;
+    }
+
+#if NETCODE_ENTITIES
+    [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
+#endif
+    [UpdateInGroup(typeof(SimulationSystemGroup))]
+    public partial class VfxModuleSystem : SystemBase
+    {
+        private EntityQuery m_CleanupQuery;
+        private EntityQuery m_EventQuery;
+        public EntityQuery[] m_Queries;
+        
+        private TypeIndex m_TypeIndex;
+        
+        protected override void OnCreate()
+        {
+            m_CleanupQuery = SystemAPI.QueryBuilder().WithAll<VfxModuleCleanup>().Build();
+            m_EventQuery = SystemAPI.QueryBuilder().WithAll<ActiveStatusEffects, StatusEffectEvents>().Build();
+
+            m_TypeIndex = TypeManager.GetTypeIndex<Modules<VfxModuleStruct>>();
+
+            m_Queries = new EntityQuery[]
+            {
+                m_CleanupQuery,
+                m_EventQuery
+            };
+
+            RequireAnyForUpdate(m_Queries);
+            RequireForUpdate<StatusReferences>();
+        }
+
+        protected override void OnUpdate()
+        {
+            var statusReferences = SystemAPI.GetSingleton<StatusReferences>();
+            var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
+            var statusEffectsLookup = SystemAPI.GetBufferLookup<ActiveStatusEffects>(true);
+            var statusEffectEventsLookup = SystemAPI.GetBufferLookup<StatusEffectEvents>(true);
+            var localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
+            var moduleLookup = SystemAPI.GetBufferLookup<Modules<VfxModuleStruct>>();
+            var cleanupLookup = SystemAPI.GetBufferLookup<VfxModuleCleanup>();
+
+            using var entities = m_EventQuery.ToEntityArray(Allocator.Temp);
+            ActiveStatusEffects statusEffect;
+
+            foreach (var entity in entities)
+            {
+                var statusEffects = statusEffectsLookup[entity];
+                var statusEffectEvents = statusEffectEventsLookup[entity];
+
+                bool foundBuffer = moduleLookup.TryGetBuffer(entity, out var buffer);
+                bool foundCleanupBuffer = cleanupLookup.TryGetBuffer(entity, out var cleanupBuffer);
+
+                foreach (var statusEffectEvent in statusEffectEvents)
+                {
+                    if (!statusReferences.TryGetReference(statusEffectEvent.StatusEffectDataId, out var reference))
+                        continue;
+
+                    ref var data = ref reference.Value;
+
+                    if (!StatusEffectsUtility.ModuleInfosContainType(ref data.Modules, m_TypeIndex))
+                        continue;
+
+                    switch (statusEffectEvent.Event)
+                    {
+                        case StatusEffectEvent.Added:
+                            if (!StatusEffectsUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
+                                continue;
+
+                            ref var modules = ref data.Modules;
+                            for (int i = 0; i < modules.Length; i++)
+                            {
+                                var moduleInfo = modules[i];
+
+                                if (moduleInfo.TypeIndex != m_TypeIndex)
+                                    continue;
+
+                                if (!foundBuffer)
+                                {
+                                    foundBuffer = true;
+                                    buffer = commandBuffer.AddBuffer<Modules<VfxModuleStruct>>(entity);
+                                }
+
+                                if (!foundCleanupBuffer)
+                                {
+                                    foundCleanupBuffer = true;
+                                    cleanupBuffer = commandBuffer.AddBuffer<VfxModuleCleanup>(entity);
+                                }
+
+                                var module = StatusEffectsUtility.AddModuleToBuffer(ref buffer, moduleInfo, statusEffectEvent.Id);
+#if NETCODE_ENTITIES
+                                // Special case where we don't want old events to instantiate VFX.
+                                if (!module.Value.IsLooping && statusEffectEvent.IsOld)
+                                    continue;
+
+#endif
+                                localToWorldLookup.TryGetComponent(entity, out var localToWorld);
+                                var vfxObject = UnityEngine.Object.Instantiate(module.Value.Prefab, localToWorld.Position, localToWorld.Rotation) as GameObject;
+
+                                cleanupBuffer.Add(new VfxModuleCleanup
+                                {
+                                    Id = module.Id,
+                                    Value = vfxObject,
+                                });
+                            }
+
+                            break;
+                        case StatusEffectEvent.Removed:
+                            if (!foundBuffer)
+                                break;
+                            
+                            StatusEffectsUtility.RemoveModulesFromBuffer(ref buffer, statusEffectEvent.Id);
+
+                            for (int i = cleanupBuffer.Length - 1; i >= 0; i--)
+                            {
+                                var cleanup = cleanupBuffer[i];
+
+                                if (cleanup.Id != statusEffectEvent.Id)
+                                    continue;
+
+                                cleanupBuffer.RemoveAtSwapBack(i);
+
+                                if (!cleanup.Value.IsValid())
+                                    continue;
+
+                                cleanup.Value.Value.GetComponent<ParticleSystem>()?.Stop();
+                            }
+
+                            break;
+                        case StatusEffectEvent.Updated:
+#if NETCODE_ENTITIES
+                            // Special case where we don't want old events to instantiate VFX.
+                            if (statusEffectEvent.IsOld)
+                                continue;
+
+#endif
+                            if (!foundCleanupBuffer)
+                            {
+                                foundCleanupBuffer = true;
+                                cleanupBuffer = commandBuffer.AddBuffer<VfxModuleCleanup>(entity);
+                            }
+
+                            if (!StatusEffectsUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
+                                continue;
+
+                            foreach (var module in buffer)
+                            {
+                                if (module.Value.IsLooping || module.Id != statusEffectEvent.Id || statusEffect.Stacks < statusEffectEvent.PreviousStacks)
+                                    continue;
+
+                                localToWorldLookup.TryGetComponent(entity, out var localToWorld);
+                                var vfxObject = UnityEngine.Object.Instantiate(module.Value.Prefab, localToWorld.Position, localToWorld.Rotation) as GameObject;
+
+                                cleanupBuffer.Add(new VfxModuleCleanup
+                                {
+                                    Id = module.Id,
+                                    Value = vfxObject,
+                                });
+                            }
+                            break;
+                    }
+                }
+
+                if (foundBuffer && buffer.Length <= 0)
+                    commandBuffer.RemoveComponent<Modules<VfxModuleStruct>>(entity);
+            }
+
+            foreach (var (cleanupBuffer, entity) in SystemAPI.Query<DynamicBuffer<VfxModuleCleanup>>().WithEntityAccess())
+            {
+                for (int i = cleanupBuffer.Length - 1; i >= 0; i--)
+                {
+                    var cleanup = cleanupBuffer[i];
+
+                    if (!cleanup.Value.IsValid())
+                    {
+                        cleanupBuffer.RemoveAtSwapBack(i);
+                        continue; 
+                    }
+
+                    // If the entity is being destoyed we need to cleanup the VFX.
+                    if (!statusEffectsLookup.HasBuffer(entity))
+                    {
+                        cleanupBuffer.RemoveAtSwapBack(i);
+                        cleanup.Value.Value.GetComponent<ParticleSystem>()?.Stop();
+                        continue;
+                    }
+
+                    localToWorldLookup.TryGetComponent(entity, out var localToWorld);
+                    cleanup.Value.Value.transform.SetPositionAndRotation(localToWorld.Position, localToWorld.Rotation);
+                }
+
+                if (cleanupBuffer.Length <= 0)
+                    commandBuffer.RemoveComponent<VfxModuleCleanup>(entity);
+            }
+        }
+    }
+#endif
 }

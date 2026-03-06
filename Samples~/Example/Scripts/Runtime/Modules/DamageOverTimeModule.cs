@@ -144,7 +144,7 @@ namespace StatusEffects.Example
         public void OnUpdate(ref SystemState state)
         {
             var statusReferences = SystemAPI.GetSingleton<StatusReferences>();
-            var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+            var commandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             var lookup = SystemAPI.GetBufferLookup<Modules<DamageOverTimeModuleStruct>>();
             var playerLookup = SystemAPI.GetComponentLookup<ExamplePlayerComponent>();
             var statusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>();

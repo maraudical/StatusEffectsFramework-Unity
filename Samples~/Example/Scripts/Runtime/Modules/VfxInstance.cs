@@ -5,6 +5,5 @@ namespace StatusEffects.Example
     public class VfxInstance : ModuleInstance
     {
         public GameObject Prefab;
-        public bool InstantiateAgainWhenAddingStacks;
     }
 }

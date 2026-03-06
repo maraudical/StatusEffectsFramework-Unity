@@ -783,6 +783,7 @@ namespace StatusEffects.Entities
                         {
 #if NETCODE
                             TickAdded = NetworkTime.ServerTick,
+                            TickUpdated = NetworkTime.ServerTick,
 #else
                             TimeAdded = ElapsedTime,
 #endif
@@ -819,6 +820,7 @@ namespace StatusEffects.Entities
                             statusEffectEventsEnabledRW.ValueRW = true;
                         }
                         updatingStatusEffectRef.Stacks += indexedUpdate.Stacks;
+                        updatingStatusEffectRef.TickUpdated = NetworkTime.ServerTick;
                     }
                 }
 
