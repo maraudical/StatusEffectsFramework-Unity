@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace StatusEffects.Editor
+namespace StatusEffectFramework.Editor
 {
     public class StatusEffectsStyleSheet : ScriptableSingleton<StatusEffectsStyleSheet>
     {

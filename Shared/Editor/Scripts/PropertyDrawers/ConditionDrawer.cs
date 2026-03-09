@@ -4,7 +4,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Editor
+namespace StatusEffectFramework.Editor
 {
     [CustomPropertyDrawer(typeof(Condition))]
     internal class ConditionDrawer : PropertyDrawer

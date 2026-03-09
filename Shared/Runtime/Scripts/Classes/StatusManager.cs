@@ -2,7 +2,7 @@
 using Cysharp.Threading.Tasks;
 using System.Threading;
 #elif UNITY_2023_1_OR_NEWER
-using StatusEffects.Extensions;
+using StatusEffectFramework.Extensions;
 using System.Threading;
 #else
 using System.Collections;
@@ -13,7 +13,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using System.Runtime.CompilerServices;
 
-namespace StatusEffects
+namespace StatusEffectFramework
 {
     /// <summary>
     /// A component that manages currently active Status Effects.

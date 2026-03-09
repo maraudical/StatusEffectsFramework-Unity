@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace StatusEffects.Editor
+namespace StatusEffectFramework.Editor
 {
     [CustomEditor(typeof(Name), editorForChildClasses: true)]
     internal class NameEditor : UnityEditor.Editor

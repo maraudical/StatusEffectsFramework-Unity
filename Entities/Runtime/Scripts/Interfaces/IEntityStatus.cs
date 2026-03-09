@@ -1,7 +1,7 @@
 #if ENTITIES
 using Unity.Entities;
 
-namespace StatusEffects.Entities
+namespace StatusEffectFramework.Entities
 {
     public interface IEntityStatus
     {

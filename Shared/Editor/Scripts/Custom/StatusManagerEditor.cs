@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace StatusEffects.Editor
+namespace StatusEffectFramework.Editor
 {
     [CustomEditor(typeof(StatusManager))]
     [CanEditMultipleObjects]

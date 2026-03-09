@@ -9,7 +9,7 @@ using System.Collections.ObjectModel;
 using UnityEditor;
 #endif
 
-namespace StatusEffects
+namespace StatusEffectFramework
 {
     // Create a new type of Database Asset.
     public class StatusEffectDatabase : ScriptableObject

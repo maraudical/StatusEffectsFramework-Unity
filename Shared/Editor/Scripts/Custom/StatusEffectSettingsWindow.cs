@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Editor
+namespace StatusEffectFramework.Editor
 {
     public class StatusEffectSettingsWindow : EditorWindow
     {

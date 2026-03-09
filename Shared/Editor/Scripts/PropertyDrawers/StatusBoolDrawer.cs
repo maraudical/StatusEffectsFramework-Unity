@@ -4,7 +4,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Editor
+namespace StatusEffectFramework.Editor
 {
     [CustomPropertyDrawer(typeof(StatusBool))]
     internal class StatusBoolDrawer : PropertyDrawer

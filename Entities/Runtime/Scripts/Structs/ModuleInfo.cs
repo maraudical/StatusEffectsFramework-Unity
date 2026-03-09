@@ -4,7 +4,7 @@ using Unity.Burst.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
-namespace StatusEffects.Entities
+namespace StatusEffectFramework.Entities
 {
     [BurstCompile]
     public struct ModuleInfo

@@ -1,4 +1,4 @@
-using StatusEffects.Templates;
+using StatusEffectFramework.Templates;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,10 +9,10 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.UIElements.Experimental;
-using static StatusEffects.Editor.ModulePopup;
-using static StatusEffects.Editor.StatusNamePopup;
+using static StatusEffectFramework.Editor.ModulePopup;
+using static StatusEffectFramework.Editor.StatusNamePopup;
 
-namespace StatusEffects.Editor
+namespace StatusEffectFramework.Editor
 {
     public class StatusNamePopup : PopupWindowContent
     {

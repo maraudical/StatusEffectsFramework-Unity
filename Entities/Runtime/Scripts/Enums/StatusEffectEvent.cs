@@ -1,5 +1,5 @@
 #if ENTITIES
-namespace StatusEffects.Entities
+namespace StatusEffectFramework.Entities
 {
     public enum StatusEffectEvent
     {

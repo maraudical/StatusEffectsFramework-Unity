@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace StatusEffects
+namespace StatusEffectFramework
 {
     public abstract class ModuleInstance : ScriptableObject { }
 }

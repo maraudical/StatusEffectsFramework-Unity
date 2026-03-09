@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace StatusEffects.Entities
+namespace StatusEffectFramework.Entities
 {
     /// <summary>
     /// A read only hashmap that can be used inside a blob asset

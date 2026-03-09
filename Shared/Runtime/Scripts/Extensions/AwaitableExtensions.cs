@@ -1,9 +1,9 @@
-#if UNITY_2023_1_OR_NEWER && !UNITASK
+#if UNITY_2023_1_OR_NEWER
 using System;
 using System.Threading;
 using UnityEngine;
 
-namespace StatusEffects.Extensions
+namespace StatusEffectFramework
 {
     public static class AwaitableExtensions
     {

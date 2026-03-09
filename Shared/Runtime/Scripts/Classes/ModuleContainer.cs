@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace StatusEffects
+namespace StatusEffectFramework
 {
     [Serializable]
     public class ModuleContainer

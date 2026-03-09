@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine.Events;
 using UnityEngine;
 
-namespace StatusEffects
+namespace StatusEffectFramework
 {
     public interface IStatusManager
     {

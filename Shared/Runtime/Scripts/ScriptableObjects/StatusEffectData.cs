@@ -5,7 +5,7 @@ using System.Collections.ObjectModel;
 using UnityEngine.Localization;
 #endif
 
-namespace StatusEffects
+namespace StatusEffectFramework
 {
     [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effect Framework/Status Effect Data", order = -5)]
     public class StatusEffectData : ScriptableObject
@@ -41,7 +41,7 @@ namespace StatusEffects
         /// </summary>
         internal void GenerateId()
         {
-            m_Id = Hash128Extensions.Id();
+            m_Id = StatusEffectsUtility.GenerateId();
             UnityEditor.EditorUtility.SetDirty(this);
             UnityEditor.AssetDatabase.SaveAssetIfDirty(this);
         }
@@ -75,7 +75,7 @@ namespace StatusEffects
         [Tooltip("Unless you are trying to do something with Addressables and loading new Status Effect Data at runtime you can leave this checked on.")]
         [SerializeField] private bool m_AutomaticallyAddToDatabase = true;
         [SerializeField] private StatusEffectGroup m_Group;
-        [Tooltip("This name can be used to categorize a series of Status Effects. For example, \"Poison\" may be used on multiple different poison effects.")]
+        [Tooltip("This name can be used to categorize a series of Status Effects. For example, \"Poison\" may be used for multiple different poison effects.")]
         [SerializeField] private ComparableName m_ComparableName;
         [SerializeField] private float m_BaseValue = 1f;
         [SerializeField] private Sprite m_Icon;

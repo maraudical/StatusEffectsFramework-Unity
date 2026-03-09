@@ -11,8 +11,8 @@
 	"type": "git",
 	"url": "https://github.com/maraudical/StatusEffectsFramework-Unity.git"
   },
-  "unity": "6000.0",
-  "unityRelease": "9f1",
+  "unity": "6000.3",
+  "unityRelease": "4f1",
   "keywords": [
 	"status",
 	"effect",
@@ -27,9 +27,34 @@
   "documentationUrl": "https://maraudical.gitbook.io/status-effect-framework/",
   "samples": [
   {
-	"displayName": "Example",
-	"description": "Contains multiple examples of a few effects as well as how to implement them into your own classes with example UI. Also includes samples for Netcode for GameObjects, Entities, and Netcode for Entities so make sure to double check which scene is opened and any scripting defines.",
-	"path": "Samples~/Example"
+	"displayName": "Shared Resources",
+	"description": "Add this sample first before adding any others. It mostly contains the necessary prefabs and base scripts for the other samples.",
+	"path": "Samples~/Shared"
+  },
+  {
+	"displayName": "Default Sample",
+	"description": "If you aren't using the Entities package you should download this sample.",
+	"path": "Samples~/Default"
+  },
+  {
+	"displayName": "UniTask Sample",
+	"description": "If you aren't using the Entities package but are using UniTask you should download this sample.",
+	"path": "Samples~/UniTask"
+  },
+  {
+	"displayName": "Netcode for GameObjects Addon",
+	"description": "Add this with the Shared Resources and Default samples if you are using the Netcode for GameObjects package.",
+	"path": "Samples~/Netcode for GameObjects"
+  },
+  {
+	"displayName": "Entities Sample",
+	"description": "If you are using the Entities package you should download this sample. Just note that there is an assembly defenition in the `Scripts/Define` folder just to use a netcode scripting define. You should remove or keep the associated preprocessing directives depending on if you are using Netcode for Entities or not.",
+	"path": "Samples~/Entities"
+  },
+  {
+	"displayName": "Netcode for Entities Addon",
+	"description": "Add this with the Shared Resources and Entities sample if you are using the Netcode for Entities package.",
+	"path": "Samples~/Netcode for Entities"
   }
   ],
   "type": "tool"

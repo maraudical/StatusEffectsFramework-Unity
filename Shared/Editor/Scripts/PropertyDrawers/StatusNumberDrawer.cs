@@ -5,7 +5,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Editor
+namespace StatusEffectFramework.Editor
 {
     [CustomPropertyDrawer(typeof(StatusFloat))]
     [CustomPropertyDrawer(typeof(StatusInt))]

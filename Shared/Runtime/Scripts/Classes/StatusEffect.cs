@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.CompilerServices;
 
-namespace StatusEffects
+namespace StatusEffectFramework
 {
     [Serializable]
     public class StatusEffect
@@ -57,7 +57,7 @@ namespace StatusEffects
             return m_InstanceId;
         }
 
-        internal void SetInstanceID() => SetInstanceID(Hash128Extensions.Id());
+        internal void SetInstanceID() => SetInstanceID(StatusEffectsUtility.GenerateId());
 
         internal void SetInstanceID(Hash128 value)
         {

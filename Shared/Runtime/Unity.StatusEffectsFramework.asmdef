@@ -1,6 +1,6 @@
 {
-    "name": "Unity.StatusEffectsFramework.Runtime",
-    "rootNamespace": "StatusEffects",
+    "name": "Unity.StatusEffectsFramework",
+    "rootNamespace": "StatusEffectFramework",
     "references": [
         "GUID:df380645f10b7bc4b97d4f5eb6303d95",
         "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5",
@@ -26,16 +26,6 @@
             "name": "com.unity.localization",
             "expression": "",
             "define": "LOCALIZED"
-        },
-        {
-            "name": "com.unity.netcode.gameobjects",
-            "expression": "1.8",
-            "define": "NETCODE"
-        },
-        {
-            "name": "com.unity.entities",
-            "expression": "",
-            "define": "ENTITIES"
         }
     ],
     "noEngineReferences": false

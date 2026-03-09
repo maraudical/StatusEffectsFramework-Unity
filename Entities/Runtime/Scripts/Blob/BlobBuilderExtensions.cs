@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace StatusEffects.Entities
+namespace StatusEffectFramework.Entities
 {
     /// <summary>
     /// Extension methods for BlobBuilder to allocate BlobHashMaps with

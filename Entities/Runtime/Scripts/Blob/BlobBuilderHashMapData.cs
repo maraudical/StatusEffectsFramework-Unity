@@ -7,7 +7,7 @@ using System;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace StatusEffects.Entities
+namespace StatusEffectFramework.Entities
 {
     internal ref struct BlobBuilderHashMapData<TKey, TValue>
         where TKey : struct, IEquatable<TKey>

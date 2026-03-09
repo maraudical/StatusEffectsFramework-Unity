@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 using System;
 using UnityEditor;
 
-namespace StatusEffects.Editor
+namespace StatusEffectFramework.Editor
 {
     [CustomPropertyDrawer(typeof(Effect))]
     internal class EffectDrawer : PropertyDrawer

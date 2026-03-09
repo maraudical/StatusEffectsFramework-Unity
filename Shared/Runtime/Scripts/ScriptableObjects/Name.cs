@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace StatusEffects
+namespace StatusEffectFramework
 {
     public abstract class Name : ScriptableObject, IEquatable<Name>
     {
@@ -36,7 +36,7 @@ namespace StatusEffects
         /// </summary>
         public void GenerateId()
         {
-            m_Id = Hash128Extensions.Id();
+            m_Id = StatusEffectsUtility.GenerateId();
             UnityEditor.EditorUtility.SetDirty(this);
             UnityEditor.AssetDatabase.SaveAssetIfDirty(this);
         }

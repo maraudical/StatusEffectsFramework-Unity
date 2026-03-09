@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Editor
+namespace StatusEffectFramework.Editor
 {
     [CustomPropertyDrawer(typeof(ModuleContainer))]
     internal class ModuleContainerDrawer : PropertyDrawer

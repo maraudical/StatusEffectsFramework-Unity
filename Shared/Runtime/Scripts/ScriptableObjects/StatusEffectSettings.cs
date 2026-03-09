@@ -4,7 +4,7 @@ using System.IO;
 using UnityEditor;
 #endif
 
-namespace StatusEffects
+namespace StatusEffectFramework
 {
     // Create a new type of Settings Asset.
     public class StatusEffectSettings : ScriptableObject

@@ -1,0 +1,25 @@
+{
+    "name": "Unity.StatusEffectsFramework.NetCode",
+    "rootNamespace": "StatusEffectFramework.NetCode",
+    "references": [
+        "GUID:c1d753aaef5f86c4488844bae8cb6730",
+        "GUID:df380645f10b7bc4b97d4f5eb6303d95",
+        "GUID:1491147abca9d7d4bb7105af628b223e",
+        "GUID:e0cd26848372d4e5c891c569017e11f1"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.netcode.gameobjects",
+            "expression": "1.8",
+            "define": "NETCODE"
+        }
+    ],
+    "noEngineReferences": false
+}

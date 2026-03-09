@@ -1,4 +1,4 @@
-namespace StatusEffects
+namespace StatusEffectFramework
 {
     public enum ValueModifier
     {

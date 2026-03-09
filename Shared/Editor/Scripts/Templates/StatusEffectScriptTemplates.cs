@@ -4,7 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffects.Templates
+namespace StatusEffectFramework.Templates
 {
     public static class StatusEffectScriptTemplates
     {
@@ -68,7 +68,7 @@ namespace StatusEffects.Templates
         }
 
         internal const string UniTaskModuleScriptContent =
-@"using StatusEffects
+@"using StatusEffectFramework
 using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
@@ -84,7 +84,7 @@ public class #SCRIPTNAME# : Module
 }";
 
         internal const string ModuleScriptContent =
-@"using StatusEffects
+@"using StatusEffectFramework
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -100,8 +100,8 @@ public class #SCRIPTNAME# : Module
 }";
 
         internal const string EntityModuleScriptContent =
-@"using StatusEffects;
-using StatusEffects.Entities;
+@"using StatusEffectFramework;
+using StatusEffectFramework.Entities;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -231,7 +231,7 @@ public partial struct #SCRIPTNAME#System : ISystem
 }";
 
         internal const string ModuleInstanceScriptContent =
-@"using StatusEffects
+@"using StatusEffectFramework
 
 public class #SCRIPTNAME# : ModuleInstance
 {

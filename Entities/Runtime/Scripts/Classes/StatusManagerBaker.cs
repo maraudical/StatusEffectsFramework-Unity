@@ -1,7 +1,7 @@
 #if ENTITIES
 using Unity.Entities;
 
-namespace StatusEffects.Entities
+namespace StatusEffectFramework.Entities
 {
     public class StatusManagerBaker : Baker<StatusManager>
     {
@@ -9,7 +9,7 @@ namespace StatusEffects.Entities
         {
             var entity = GetEntity(TransformUsageFlags.None);
             AddComponent<StatusManagerComponent>(entity);
-            AddBuffer<ActiveStatusEffects>(entity);
+            AddBuffer<StatusEffects>(entity);
 #if NETCODE
             AddBuffer<InterpolatedStatusEffects>(entity);
 #endif
