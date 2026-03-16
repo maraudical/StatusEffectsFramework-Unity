@@ -19,6 +19,9 @@ namespace StatusEffectFramework.Entities
             AddBuffer<StatusFloats>(entity);
             AddBuffer<StatusInts>(entity);
             AddBuffer<StatusBools>(entity);
+            AddBuffer<DynamicEffectFloats>(entity);
+            AddBuffer<DynamicEffectInts>(entity);
+            AddBuffer<DynamicEffectBools>(entity);
 
             IEntityStatus[] statuses = authoring.GetComponents<IEntityStatus>();
 

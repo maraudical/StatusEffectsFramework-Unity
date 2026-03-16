@@ -13,7 +13,7 @@ namespace StatusEffectFramework.Editor
             var statusNameProperty = property.FindPropertyRelative($"m_{nameof(Effect.StatusName)}");
             var valueModifierProperty = property.FindPropertyRelative($"m_{nameof(Effect.ValueModifier)}");
             var priorityProperty = property.FindPropertyRelative($"m_{nameof(Effect.Priority)}");
-            var useBaseValueProperty = property.FindPropertyRelative($"m_{nameof(Effect.UseBaseValue)}");
+            var valueTypeProperty = property.FindPropertyRelative($"m_{nameof(Effect.ValueType)}");
             var floatProperty = property.FindPropertyRelative($"m_{nameof(Effect.FloatValue)}");
             var intProperty = property.FindPropertyRelative($"m_{nameof(Effect.IntValue)}");
             var boolProperty = property.FindPropertyRelative($"m_{nameof(Effect.BoolValue)}");
