@@ -4,6 +4,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using static Unity.Entities.EntitiesJournaling;
 
 namespace StatusEffectFramework.Entities
 {
@@ -22,7 +23,7 @@ namespace StatusEffectFramework.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_StatusVariableUpdateQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithAll<StatusEffectEvents, Simulate>().Build();
+            m_StatusVariableUpdateQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusFloats, StatusInts, StatusBools>().WithAll<StatusEffectEvents, Simulate>().Build();
             state.RequireForUpdate(m_StatusVariableUpdateQuery);
             state.RequireForUpdate<StatusReferences>();
         }
@@ -34,9 +35,6 @@ namespace StatusEffectFramework.Entities
             // This is done at the start of frame before StatusEffects structural changes.
             var statusVariableUpdateJob = new StatusVariableUpdateJob
             {
-                StatusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>(),
-                StatusIntsLookup = SystemAPI.GetBufferLookup<StatusInts>(),
-                StatusBoolsLookup = SystemAPI.GetBufferLookup<StatusBools>(),
                 References = SystemAPI.GetSingleton<StatusReferences>()
             };
             state.Dependency = statusVariableUpdateJob.ScheduleParallelByRef(m_StatusVariableUpdateQuery, state.Dependency);
@@ -45,32 +43,50 @@ namespace StatusEffectFramework.Entities
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         partial struct StatusVariableUpdateJob : IJobEntity
         {
-            [NativeDisableParallelForRestriction]
-            public BufferLookup<StatusFloats> StatusFloatsLookup;
-            [NativeDisableParallelForRestriction]
-            public BufferLookup<StatusInts> StatusIntsLookup;
-            [NativeDisableParallelForRestriction]
-            public BufferLookup<StatusBools> StatusBoolsLookup;
             [ReadOnly]
             public StatusReferences References;
 
-            public void Execute(Entity entity, in DynamicBuffer<StatusEffects> statusEffects)
+            public void Execute(Entity entity, 
+                in DynamicBuffer<StatusEffects> statusEffects, 
+                ref DynamicBuffer<StatusFloats> statusFloats, 
+                ref DynamicBuffer<StatusInts> statusInts, 
+                ref DynamicBuffer<StatusBools> statusBools)
             {
-                if (StatusFloatsLookup.TryGetBuffer(entity, out var statusFloatBuffer))
-                    for (int i = 0; i < statusFloatBuffer.Length; i++)
-                        GetValue(ref statusFloatBuffer.ElementAt(i), statusEffects, References);
+                using var effectIdToStatusEffect = new NativeParallelMultiHashMap<Hash128, StatusEffects>(statusEffects.Length, Allocator.Temp);
+                // Map ids to status effects to quickly find all status effects affecting a specific status variable.
+                foreach (var statusEffect in statusEffects)
+                {
+                    if (!References.TryGetReference(statusEffect.StatusEffectDataId, out var blob))
+                        continue;
 
-                if (StatusIntsLookup.TryGetBuffer(entity, out var statusIntBuffer))
-                    for (int i = 0; i < statusIntBuffer.Length; i++)
-                        GetValue(ref statusIntBuffer.ElementAt(i), statusEffects, References);
+                    ref UnmanagedStatusEffectData data = ref blob.Value;
+                    for (int i = 0; i < data.Effects.Length; i++)
+                        effectIdToStatusEffect.Add(data.Effects[i].Id, statusEffect);
+                }
 
-                if (StatusBoolsLookup.TryGetBuffer(entity, out var statusBoolBuffer))
-                    for (int i = 0; i < statusBoolBuffer.Length; i++)
-                        GetValue(ref statusBoolBuffer.ElementAt(i), statusEffects, References);
+                for (int i = 0; i < statusFloats.Length; i++)
+                {
+                    ref var statusFloat = ref statusFloats.ElementAt(i);
+                    GetValue(ref statusFloat, effectIdToStatusEffect.GetValuesForKey(statusFloat.Id), References);
+                }
+
+                for (int i = 0; i < statusInts.Length; i++)
+                {
+                    ref var statusInt = ref statusInts.ElementAt(i);
+                    GetValue(ref statusInt, effectIdToStatusEffect.GetValuesForKey(statusInt.Id), References);
+                }
+
+                for (int i = 0; i < statusBools.Length; i++)
+                {
+                    ref var statusBool = ref statusBools.ElementAt(i);
+                    GetValue(ref statusBool, effectIdToStatusEffect.GetValuesForKey(statusBool.Id), References);
+                }
             }
 
             // Copied from regular StatusFloat.GetValue() with burstable types and math.
-            public void GetValue(ref StatusFloats statusFloat, in DynamicBuffer<StatusEffects> statusEffects, in StatusReferences references)
+            public void GetValue(ref StatusFloats statusFloat, 
+                in NativeParallelMultiHashMap<Hash128, StatusEffects>.Enumerator statusEffects, 
+                in StatusReferences references)
             {
                 UnmanagedEffect effect;
 
@@ -152,7 +168,9 @@ namespace StatusEffectFramework.Entities
             }
 
             // Copied from regular StatusInt.GetValue() with burstable types and math.
-            public void GetValue(ref StatusInts statusInt, in DynamicBuffer<StatusEffects> statusEffects, in StatusReferences references)
+            public void GetValue(ref StatusInts statusInt, 
+                in NativeParallelMultiHashMap<Hash128, StatusEffects>.Enumerator statusEffects, 
+                in StatusReferences references)
             {
                 UnmanagedEffect effect;
 
@@ -231,7 +249,9 @@ namespace StatusEffectFramework.Entities
             }
 
             // Copied from regular StatusBool.GetValue() with burstable types and math.
-            public void GetValue(ref StatusBools statusBool, in DynamicBuffer<StatusEffects> statusEffects, in StatusReferences references)
+            public void GetValue(ref StatusBools statusBool, 
+                in NativeParallelMultiHashMap<Hash128, StatusEffects>.Enumerator statusEffects, 
+                in StatusReferences references)
             {
                 UnmanagedEffect effect;
 
