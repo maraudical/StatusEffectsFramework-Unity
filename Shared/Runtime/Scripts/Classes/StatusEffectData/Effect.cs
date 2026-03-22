@@ -9,8 +9,8 @@ namespace StatusEffectFramework
     {
         public StatusName StatusName => m_StatusName;
         public ValueModifier ValueModifier => m_ValueModifier;
-        public int Priority => m_Priority;
         public ValueType ValueType => m_ValueType;
+        public int Priority => m_Priority;
         public float FloatValue => m_FloatValue;
         public int IntValue => m_IntValue;
         public bool BoolValue => m_BoolValue;
@@ -19,10 +19,10 @@ namespace StatusEffectFramework
         private StatusName m_StatusName;
         [SerializeField, FormerlySerializedAs("ValueModifier")]
         private ValueModifier m_ValueModifier;
-        [SerializeField, FormerlySerializedAs("Priority")]
-        [Min(0)] private int m_Priority;
         [SerializeField]
         private ValueType m_ValueType;
+        [SerializeField, FormerlySerializedAs("Priority")]
+        [Min(0)] private int m_Priority;
         [SerializeField, FormerlySerializedAs("FloatValue")]
         private float m_FloatValue;
         [SerializeField, FormerlySerializedAs("IntValue")]

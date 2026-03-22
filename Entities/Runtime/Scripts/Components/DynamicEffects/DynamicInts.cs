@@ -9,24 +9,24 @@ namespace StatusEffectFramework.Entities
 #if NETCODE
     [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]
 #endif
-    public struct DynamicEffectBools : IBufferElementData
+    public struct DynamicInts : IBufferElementData
     {
 #if NETCODE
         [GhostField]
 #endif
-        public Hash128 Id;
+        public uint Id;
 #if NETCODE
         [GhostField]
 #endif
-        public ValueModifier ValueModifier;
+        public TypeIndex SystemType;
 #if NETCODE
         [GhostField]
 #endif
-        public bool Value;
+        public bool PostEvaluate;
 #if NETCODE
         [GhostField]
 #endif
-        public int Priority;
+        public int Value;
     }
 }
 #endif

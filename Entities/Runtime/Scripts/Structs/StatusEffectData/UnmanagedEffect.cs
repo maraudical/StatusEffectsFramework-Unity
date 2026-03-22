@@ -7,11 +7,11 @@ namespace StatusEffectFramework.Entities
     {
         public Hash128 Id;
         public ValueModifier ValueModifier;
-        public bool UseBaseValue;
+        public ValueType ValueType;
+        public int Priority;
         public float FloatValue;
         public int IntValue;
         public bool BoolValue;
-        public int Priority;
     }
 }
 #endif
