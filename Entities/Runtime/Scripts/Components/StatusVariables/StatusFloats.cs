@@ -9,17 +9,13 @@ namespace StatusEffectFramework.Entities
     public struct StatusFloats : IBufferElementData
     {
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
 #endif
         public Hash128 ComponentId;
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
 #endif
         public Hash128 Id;
-#if NETCODE
-        [GhostField(Quantization = 1000)]
-#endif
-        public float BaseValue;
 #if NETCODE
         [GhostField]
 #endif
@@ -27,15 +23,25 @@ namespace StatusEffectFramework.Entities
 #if NETCODE
         [GhostField(Quantization = 1000)]
 #endif
-        public float Value;
+        public float BaseValue;
+#if NETCODE
+        [GhostField(Quantization = 1000)]
+#endif
+        public float PreEvaluationValue;
+#if NETCODE
+        [GhostField(Quantization = 1000)]
+#endif
+        public float PostEvaluationValue;
+        public float Value => PostEvaluationValue;
 
         public StatusFloats(Hash128 componentId, Hash128 id, float baseValue, bool signProtected)
         {
             ComponentId = componentId;
             Id = id;
-            BaseValue = baseValue;
             SignProtected = signProtected;
-            Value = baseValue;
+            BaseValue = baseValue;
+            PreEvaluationValue = baseValue;
+            PostEvaluationValue = baseValue;
         }
 
         public StatusFloats(Hash128 componentId, StatusFloat statusFloat)
@@ -44,16 +50,18 @@ namespace StatusEffectFramework.Entities
             if (statusFloat != null && statusFloat.StatusName)
             {
                 Id = statusFloat.StatusName.Id;
-                BaseValue = statusFloat.BaseValue;
                 SignProtected = statusFloat.SignProtected;
-                Value = statusFloat.BaseValue;
+                BaseValue = statusFloat.BaseValue;
+                PreEvaluationValue = statusFloat.BaseValue;
+                PostEvaluationValue = statusFloat.BaseValue;
             }
             else
             {
                 Id = default;
-                BaseValue = default;
                 SignProtected = default;
-                Value = default;
+                BaseValue = default;
+                PreEvaluationValue = default;
+                PostEvaluationValue = default;
             }
         }
     }

@@ -16,9 +16,13 @@ namespace StatusEffectFramework.Entities
 #endif
         public uint Id;
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
 #endif
         public TypeIndex SystemType;
+#if NETCODE
+        [GhostField]
+#endif
+        public ValueModifier ValueModifier;
 #if NETCODE
         [GhostField]
 #endif

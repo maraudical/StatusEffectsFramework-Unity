@@ -13,13 +13,13 @@ namespace StatusEffectFramework.Entities
     public struct StatusEffects : IBufferElementData, IComparable<StatusEffects>, IEquatable<uint>
     {
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
         public NetworkTick TickAdded;
 #else
         public double TimeAdded;
 #endif
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
         public NetworkTick TickUpdated;
 #endif
 #if NETCODE
@@ -27,7 +27,7 @@ namespace StatusEffectFramework.Entities
 #endif
         public uint Id;
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
 #endif
         public Hash128 StatusEffectDataId;
 #if NETCODE
@@ -59,7 +59,7 @@ namespace StatusEffectFramework.Entities
         /// decrement them.
         /// </summary>
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
 #endif
         public Hash128 EventId;
 

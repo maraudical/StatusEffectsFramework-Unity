@@ -9,11 +9,11 @@ namespace StatusEffectFramework.Entities
     public struct StatusBools : IBufferElementData
     {
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
 #endif
         public Hash128 ComponentId;
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
 #endif
         public Hash128 Id;
 #if NETCODE
@@ -23,14 +23,20 @@ namespace StatusEffectFramework.Entities
 #if NETCODE
         [GhostField]
 #endif
-        public bool Value;
+        public bool PreEvaluationValue;
+#if NETCODE
+        [GhostField]
+#endif
+        public bool PostEvaluationValue;
+        public bool Value => PostEvaluationValue;
 
         public StatusBools(Hash128 componentId, Hash128 id, bool baseValue)
         {
             ComponentId = componentId;
             Id = id;
             BaseValue = baseValue;
-            Value = baseValue;
+            PreEvaluationValue = baseValue;
+            PostEvaluationValue = baseValue;
         }
 
         public StatusBools(Hash128 componentId, StatusBool statusBool)
@@ -40,13 +46,15 @@ namespace StatusEffectFramework.Entities
             {
                 Id = statusBool.StatusName.Id;
                 BaseValue = statusBool.BaseValue;
-                Value = statusBool.BaseValue;
+                PreEvaluationValue = statusBool.BaseValue;
+                PostEvaluationValue = statusBool.BaseValue;
             }
             else
             {
                 Id = default;
                 BaseValue = default;
-                Value = default;
+                PreEvaluationValue = default;
+                PostEvaluationValue = default;
             }
         }
     }

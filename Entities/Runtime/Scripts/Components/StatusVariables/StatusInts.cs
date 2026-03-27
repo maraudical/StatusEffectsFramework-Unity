@@ -9,17 +9,13 @@ namespace StatusEffectFramework.Entities
     public struct StatusInts : IBufferElementData
     {
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
 #endif
         public Hash128 ComponentId;
 #if NETCODE
-        [GhostField]
+        [GhostField(Composite = true)]
 #endif
         public Hash128 Id;
-#if NETCODE
-        [GhostField]
-#endif
-        public int BaseValue;
 #if NETCODE
         [GhostField]
 #endif
@@ -27,15 +23,25 @@ namespace StatusEffectFramework.Entities
 #if NETCODE
         [GhostField]
 #endif
-        public int Value;
+        public int BaseValue;
+#if NETCODE
+        [GhostField]
+#endif
+        public int PreEvaluationValue;
+#if NETCODE
+        [GhostField]
+#endif
+        public int PostEvaluationValue;
+        public int Value => PostEvaluationValue;
 
         public StatusInts(Hash128 componentId, Hash128 id, int baseValue, bool signProtected)
         {
             ComponentId = componentId;
             Id = id;
-            BaseValue = baseValue;
             SignProtected = signProtected;
-            Value = baseValue;
+            BaseValue = baseValue;
+            PreEvaluationValue = baseValue;
+            PostEvaluationValue = baseValue;
         }
 
         public StatusInts(Hash128 componentId, StatusInt statusInt)
@@ -44,16 +50,18 @@ namespace StatusEffectFramework.Entities
             if (statusInt != null && statusInt.StatusName)
             {
                 Id = statusInt.StatusName.Id;
-                BaseValue = statusInt.BaseValue;
                 SignProtected = statusInt.SignProtected;
-                Value = statusInt.BaseValue;
+                BaseValue = statusInt.BaseValue;
+                PreEvaluationValue = statusInt.BaseValue;
+                PostEvaluationValue = statusInt.BaseValue;
             }
             else
             {
                 Id = default;
-                BaseValue = default;
                 SignProtected = default;
-                Value = default;
+                BaseValue = default;
+                PreEvaluationValue = default;
+                PostEvaluationValue = default;
             }
         }
     }

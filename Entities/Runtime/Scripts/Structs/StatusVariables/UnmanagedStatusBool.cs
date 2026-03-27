@@ -10,6 +10,9 @@ namespace StatusEffectFramework.Entities
     [BurstCompile]
     public struct UnmanagedStatusBool
     {
+#if NETCODE
+        [GhostField(Composite = true)]
+#endif
         public Hash128 Id;
 #if NETCODE
         [GhostField(SendData = false)]
