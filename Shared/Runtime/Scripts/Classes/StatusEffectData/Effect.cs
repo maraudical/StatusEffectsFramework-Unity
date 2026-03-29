@@ -14,6 +14,9 @@ namespace StatusEffectFramework
         public float FloatValue => m_FloatValue;
         public int IntValue => m_IntValue;
         public bool BoolValue => m_BoolValue;
+        public DynamicFloatEffect DynamicFloatEffect => m_DynamicFloatEffect;
+        public DynamicIntEffect DynamicIntEffect => m_DynamicIntEffect;
+        public DynamicBoolEffect DynamicBoolEffect => m_DynamicBoolEffect;
 
         [SerializeField, FormerlySerializedAs("StatusName")]
         private StatusName m_StatusName;
@@ -29,5 +32,8 @@ namespace StatusEffectFramework
         private int m_IntValue;
         [SerializeField, FormerlySerializedAs("BoolValue")]
         private bool m_BoolValue;
+        [SerializeField] private DynamicFloatEffect m_DynamicFloatEffect;
+        [SerializeField] private DynamicIntEffect m_DynamicIntEffect;
+        [SerializeField] private DynamicBoolEffect m_DynamicBoolEffect;
     }
 }

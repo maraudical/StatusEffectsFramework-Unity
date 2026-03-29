@@ -3,6 +3,12 @@ using Unity.Entities;
 
 namespace StatusEffectFramework.Entities
 {
+    /// <summary>
+    /// Entities that need to have their <see cref="StatusVariable"/>s baked must 
+    /// implement this interface. Otherwise they will not exist in the relevant 
+    /// <see cref="StatusFloats"/>, <see cref="StatusInts"/>, and 
+    /// <see cref="StatusBools"/> buffers.
+    /// </summary>
     public interface IEntityStatus
     {
         public Hash128 ComponentId { get; }

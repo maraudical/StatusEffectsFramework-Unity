@@ -6,6 +6,10 @@ using Unity.Entities;
 
 namespace StatusEffectFramework.Entities
 {
+    /// <summary>
+    /// To allow a module to be used with Entities, the <see cref="Module"/> must implement this 
+    /// interface. Otherwise it will be excluded during runtime conversion.
+    /// </summary>
     public interface IEntityModule
     {
         /// <summary>

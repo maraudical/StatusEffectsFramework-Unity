@@ -2,20 +2,20 @@ namespace StatusEffectFramework
 {
     public abstract class StatusVariable
     {
-        protected IStatusManager Instance;
+        protected IStatusManager Manager;
         /// <summary>
         /// Sets up the <see cref="StatusVariable"/>. This must be set before trying to get any value from it.
         /// </summary>
         public virtual void SetManager(IStatusManager instance)
         {
-            if (Instance != null)
-                Instance.ValueUpdate -= InstanceUpdate;
+            if (Manager != null)
+                Manager.OnStatusEffect -= OnStatusEffect;
 
-            Instance = instance;
+            Manager = instance;
 
-            Instance.ValueUpdate += InstanceUpdate;
+            Manager.OnStatusEffect += OnStatusEffect;
         }
 
-        protected abstract void InstanceUpdate(StatusEffect statusEffect);
+        protected abstract void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks);
     }
 }

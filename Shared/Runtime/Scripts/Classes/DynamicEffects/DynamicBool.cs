@@ -11,10 +11,10 @@ namespace StatusEffectFramework
         private bool m_Value;
         public bool Value { get => m_Value; set { Value = value; OnValueChanged(); } }
 
-        public DynamicBool(DynamicBoolEffect dynamicEffect, Effect effect, bool value = false) 
+        public DynamicBool(Effect effect, bool value = false) 
         { 
             ValueModifier = effect.ValueModifier;
-            PostEvaluate = dynamicEffect.PostEvaluate;
+            PostEvaluate = effect.DynamicBoolEffect.PostEvaluate;
             Priority = effect.Priority;
             m_Value = value;
         }

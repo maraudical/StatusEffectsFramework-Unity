@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -15,7 +16,7 @@ namespace StatusEffectFramework
         public StatusNameFloat StatusName => m_StatusName;
         public float BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
         public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; SignProtectedChanged(); } }
-        public float Value => Instance != null ? m_Value : m_BaseValue;
+        public float Value => Manager != null ? m_Value : m_BaseValue;
 
         [SerializeField] protected StatusNameFloat m_StatusName;
         [SerializeField] protected float m_BaseValue;
@@ -25,12 +26,15 @@ namespace StatusEffectFramework
         [SerializeField] protected float m_Value;
         protected float m_PreviousValue;
 
+        protected Dictionary<uint, DynamicFloat[]> DynamicFloats;
+
         public StatusFloat(float baseValue, bool signProtected = true)
         {
+            DynamicFloats = new();
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
 
-            if (Instance != null)
+            if (Manager != null)
             {
                 UpdateBaseValue();
                 m_PreviousBaseValue = baseValue;
@@ -41,11 +45,12 @@ namespace StatusEffectFramework
 
         public StatusFloat(float baseValue, StatusNameFloat statusName, bool signProtected = true)
         {
+            DynamicFloats = new();
             m_StatusName = statusName;
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
 
-            if (Instance != null)
+            if (Manager != null)
             {
                 UpdateBaseValue();
                 m_PreviousBaseValue = baseValue;
@@ -80,18 +85,41 @@ namespace StatusEffectFramework
             UpdateValue();
         }
 
-        protected override void InstanceUpdate(StatusEffect statusEffect)
+        protected override void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
         {
             // Only update if the status effect actually has any effects that have the same StatusName
-            if (statusEffect.Data.Effects.Select(e => e.StatusName).Contains(m_StatusName))
+            bool update = false;
+            switch (action)
             {
-                UpdateValue();
+                case StatusEffectAction.AddedStatusEffect:
+                    foreach (Effect effect in statusEffect.Data.Effects)
+                        if (effect.StatusName == m_StatusName)
+                        {
+                            update = true;
+                            if (effect.ValueType is ValueType.DynamicValue && effect.DynamicFloatEffect)
+                                Manager.DynamicFloats.TryGetValue(statusEffect.)
+                        }
+                        {
+                            effect.DynamicFloatEffect.ValueEvent()
+                            update = true;
+                            break;
+                        }
+                case StatusEffectAction.RemovedStatusEffect:
+                    // Copy form add
+                    break;
+                case StatusEffectAction.AddedStacks:
+                case StatusEffectAction.RemovedStacks:
+                    update = statusEffect.Data.Effects.Any(effect => effect.StatusName == m_StatusName);
+                    break;
             }
+
+            if (update)
+                UpdateValue();
         }
 
         protected float GetValue()
         {
-            if (Instance == null)
+            if (Manager == null)
                 return m_BaseValue;
 
             bool positive = Mathf.Sign(m_BaseValue) >= 0;
@@ -107,7 +135,7 @@ namespace StatusEffectFramework
 
             float effectValue;
 
-            foreach (StatusEffect statusEffect in Instance.Effects)
+            foreach (StatusEffect statusEffect in Manager.Effects)
             {
                 foreach (Effect effect in statusEffect.Data.Effects)
                 {

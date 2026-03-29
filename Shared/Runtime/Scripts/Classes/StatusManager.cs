@@ -12,6 +12,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using System.Runtime.CompilerServices;
+using System;
 
 namespace StatusEffectFramework
 {
@@ -22,34 +23,43 @@ namespace StatusEffectFramework
     [AddComponentMenu("Status Effect/Status Manager")]
     public class StatusManager : MonoBehaviour, IStatusManager
     {
-        [HideInInspector] public event System.Action<StatusEffect, StatusEffectAction, int, int> OnStatusEffect;
-        event System.Action<StatusEffect> IStatusManager.ValueUpdate
-        {
-            add => ValueUpdate += value;
-            remove => ValueUpdate -= value;
-        }
-        [HideInInspector] internal event System.Action<StatusEffect> ValueUpdate;
+        public event System.Action<StatusEffect, StatusEffectAction, int, int> OnStatusEffect;
 
         public IEnumerable<StatusEffect> Effects => m_Effects?.Values ?? Enumerable.Empty<StatusEffect>();
 
-        internal System.Action<StatusEffect, bool> TimerOverride;
-
-        [SerializeField] private Dictionary<Hash128, StatusEffect> m_Effects;
+        IEnumerable<StatusEffect> IStatusManager.Effects => throw new NotImplementedException();
+        
+        [SerializeField] private Dictionary<uint, StatusEffect> m_Effects;
+        
+        internal uint AvailableId;
 
 #if UNITY_EDITOR
         [SerializeField] private List<StatusEffect> m_EditorOnlyEffects;
 
-#endif
-        #region Public Methods
-        public bool GetStatusEffect(Hash128 instanceId, out StatusEffect statusEffect)
+        event Action<StatusEffect, StatusEffectAction, int, int> IStatusManager.OnStatusEffect
         {
-            if (m_Effects == null)
+            add
             {
-                statusEffect = null;
-                return false;
+                throw new NotImplementedException();
             }
-            
-            return m_Effects.TryGetValue(instanceId, out statusEffect);
+
+            remove
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+#endif
+        private void Awake()
+        {
+            AvailableId = 0;
+            m_Effects = new();
+        }
+
+        #region Public Methods
+        public bool GetStatusEffect(uint id, out StatusEffect statusEffect)
+        {
+            return m_Effects.TryGetValue(id, out statusEffect);
         }
         
 #nullable enable
@@ -67,8 +77,6 @@ namespace StatusEffectFramework
         public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null)
 #nullable disable
         {
-            if (Effects == null)
-                return null;
             // Return the effects for a given monobehaviour, if given a group
             // or name to match only return effects within those categories.
             return Effects.FirstOrDefault(e => (name  == null || e.Data.ComparableName == name)
@@ -92,7 +100,7 @@ namespace StatusEffectFramework
             if (statusEffect == null)
                 return null;
             // Begin a timer on the monobehaviour.
-            if (TimerOverride != null) TimerOverride.Invoke(statusEffect, true); else CreateTimer(statusEffect);
+            CreateTimer(statusEffect);
 
             return statusEffect;
         }
@@ -135,7 +143,7 @@ namespace StatusEffectFramework
         
         public void RemoveStatusEffect(StatusEffect statusEffect)
         {
-            if (statusEffect == null || m_Effects == null)
+            if (statusEffect == null)
                 return;
             // Stop the timer
 #if UNITASK || UNITY_2023_1_OR_NEWER
@@ -146,12 +154,11 @@ namespace StatusEffectFramework
 #endif
 
             // Remove the effects for a given monobehaviour.
-            m_Effects.Remove(statusEffect.GetInstanceID());
+            m_Effects.Remove(statusEffect.Id);
 #if UNITY_EDITOR
             m_EditorOnlyEffects.Remove(statusEffect);
 #endif
 
-            ValueUpdate?.Invoke(statusEffect);
             // If a module exists it will be stopped.
             statusEffect.DisableModules(this);
             
@@ -162,12 +169,12 @@ namespace StatusEffectFramework
         public void RemoveStatusEffect(StatusEffectData statusEffectData, int? stacks = null)
 #nullable disable
         {
-            if (statusEffectData == null || m_Effects == null)
+            if (statusEffectData == null)
                 return;
 
             if (stacks.HasValue && stacks.Value <= 0)
                 return;
-            
+            also put this on entities logic
             IEnumerable<StatusEffect> leastToMostValueThenDuration = m_Effects.Values.Where(se => se.Data == statusEffectData)
                                                                                      .OrderBy(se => se.Data.BaseValue)
                                                                                      .ThenBy(se => se.Timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate ? float.PositiveInfinity : se.Duration);
@@ -176,9 +183,6 @@ namespace StatusEffectFramework
         
         public void RemoveStatusEffect(ComparableName name, int? stacks = null)
         {
-            if (m_Effects == null)
-                return;
-
             if (stacks.HasValue && stacks.Value <= 0)
                 return;
             
@@ -190,9 +194,6 @@ namespace StatusEffectFramework
         
         public void RemoveStatusEffect(StatusEffectGroup group, int? stacks = null)
         {
-            if (m_Effects == null)
-                return;
-
             if (stacks.HasValue && stacks.Value <= 0)
                 return;
 
@@ -204,61 +205,9 @@ namespace StatusEffectFramework
         
         public void RemoveAllStatusEffects()
         {
-            if (m_Effects == null)
-                return;
             // From the end of the list iterate through and remove all.
             for (int i = m_Effects.Count - 1; i >= 0; i--)
                 RemoveStatusEffect(m_Effects.ElementAt(i).Value);
-        }
-        /// <summary>
-        /// Forcibly adds a <see cref="StatusEffect"/> regardless of whether it can or can't.
-        /// </summary>
-        internal StatusEffect ForceAddStatusEffect(Hash128 instanceId, StatusEffectData statusEffectData, StatusEffectTiming timing, float duration, int stacks)
-        {
-            // Check for null values
-            if (!statusEffectData)
-                Debug.LogError("The given Status Effect Data is null!");
-
-            StatusEffect statusEffect = new StatusEffect(statusEffectData, timing, duration, stacks);
-            statusEffect.SetInstanceID(instanceId);
-            // Add the effect for a given monobehaviour. This also is the first time
-            // initializing so we need to initialize all of the Status Variables
-            if (m_Effects == null)
-            {
-                m_Effects = new() { { statusEffect.GetInstanceID(), statusEffect } };
-#if UNITY_EDITOR
-                m_EditorOnlyEffects = new() { statusEffect };
-#endif
-            }
-            else
-            {
-                m_Effects.Add(statusEffect.GetInstanceID(), statusEffect);
-#if UNITY_EDITOR
-                m_EditorOnlyEffects.Add(statusEffect);
-#endif
-            }
-
-            ValueUpdate?.Invoke(statusEffect);
-            // If a module exists it will be started.
-            statusEffect.EnableModules(this);
-
-            OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.AddedStatusEffect, 0, stacks);
-
-            // Begin a timer on the monobehaviour if it is a realtime timer.
-            if (timing == StatusEffectTiming.Duration)
-                if (TimerOverride != null) TimerOverride.Invoke(statusEffect, false); else CreateTimer(statusEffect, false);
-            // Return the effect in case it is wanted for other reference.
-            return statusEffect;
-        }
-
-        internal void InvokeValueUpdate(StatusEffect statusEffect)
-        {
-            ValueUpdate?.Invoke(statusEffect);
-        }
-
-        internal void InvokeOnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
-        {
-            OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
         }
         #endregion
 
@@ -279,9 +228,6 @@ namespace StatusEffectFramework
                     {
                         currentRemoveCount = (int)(currentStackCount - (removedCount + currentStackCount - stacks));
                         statusEffect.Stacks -= currentRemoveCount;
-
-                        ValueUpdate?.Invoke(statusEffect);
-                        statusEffect.InvokeStackUpdate();
                         OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStacks, currentStackCount, statusEffect.Stacks);
 
                         break;
@@ -295,7 +241,7 @@ namespace StatusEffectFramework
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CreateTimer(StatusEffect statusEffect, bool remove = true)
+        private void CreateTimer(StatusEffect statusEffect)
         {
 #if UNITASK
             statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
@@ -338,8 +284,7 @@ namespace StatusEffectFramework
 #if UNITASK || UNITY_2023_1_OR_NEWER
                 if (!token.IsCancellationRequested)
 #endif
-                if (remove)
-                    RemoveStatusEffect(statusEffect);
+                RemoveStatusEffect(statusEffect);
             }
         }
 
@@ -653,32 +598,19 @@ namespace StatusEffectFramework
                 previousStacks = statusEffect.Stacks;
                 currentStacks += statusEffect.Stacks;
                 statusEffect.Stacks += stacks;
-                ValueUpdate?.Invoke(statusEffect);
-                statusEffect.InvokeStackUpdate();
                 action = StatusEffectAction.AddedStacks;
             }
             else
             {
                 // Create a new status effect instance.
-                statusEffect = new StatusEffect(statusEffectData, timing, durationValue, stacks);
+                statusEffect = new StatusEffect(AvailableId, statusEffectData, timing, Time.timeAsDouble, durationValue, stacks);
+                AvailableId++;
                 // Add the effect for a given monobehaviour. This also is the first time
                 // initializing so we need to initialize all of the Status Variables
-                if (m_Effects == null)
-                {
-                    m_Effects = new() { { statusEffect.GetInstanceID(), statusEffect } };
+                m_Effects.Add(statusEffect.Id, statusEffect);
 #if UNITY_EDITOR
-                    m_EditorOnlyEffects = new() { statusEffect };
+                m_EditorOnlyEffects.Add(statusEffect);
 #endif
-                }
-                else
-                {
-                    m_Effects.Add(statusEffect.GetInstanceID(), statusEffect);
-#if UNITY_EDITOR
-                    m_EditorOnlyEffects.Add(statusEffect);
-#endif
-                }
-
-                ValueUpdate?.Invoke(statusEffect);
             }
             // If a module exists it will be started.
             statusEffect.EnableModules(this);
@@ -686,6 +618,66 @@ namespace StatusEffectFramework
             OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
             // Return the effect in case it is wanted for other reference.
             return statusEffect;
+        }
+
+        bool IStatusManager.GetStatusEffect(uint id, out StatusEffect statusEffect)
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerable<StatusEffect> IStatusManager.GetStatusEffects(StatusEffectGroup? group, ComparableName name, StatusEffectData data)
+        {
+            throw new NotImplementedException();
+        }
+
+        StatusEffect IStatusManager.GetFirstStatusEffect(StatusEffectGroup? group, ComparableName name, StatusEffectData data)
+        {
+            throw new NotImplementedException();
+        }
+
+        StatusEffect IStatusManager.AddStatusEffect(StatusEffectData statusEffectData, int stacks)
+        {
+            throw new NotImplementedException();
+        }
+
+        StatusEffect IStatusManager.AddStatusEffect(StatusEffectData statusEffectData, float duration, int stacks)
+        {
+            throw new NotImplementedException();
+        }
+
+        StatusEffect IStatusManager.AddStatusEffect(StatusEffectData statusEffectData, float duration, UnityEvent unityEvent, float interval, int stacks)
+        {
+            throw new NotImplementedException();
+        }
+
+        StatusEffect IStatusManager.AddStatusEffect(StatusEffectData statusEffectData, Func<bool> predicate, int stacks)
+        {
+            throw new NotImplementedException();
+        }
+
+        void IStatusManager.RemoveStatusEffect(StatusEffect statusEffect)
+        {
+            throw new NotImplementedException();
+        }
+
+        void IStatusManager.RemoveStatusEffect(StatusEffectData statusEffectData, int? stacks)
+        {
+            throw new NotImplementedException();
+        }
+
+        void IStatusManager.RemoveStatusEffect(ComparableName name, int? stacks)
+        {
+            throw new NotImplementedException();
+        }
+
+        void IStatusManager.RemoveStatusEffect(StatusEffectGroup group, int? stacks)
+        {
+            throw new NotImplementedException();
+        }
+
+        void IStatusManager.RemoveAllStatusEffects()
+        {
+            throw new NotImplementedException();
         }
         #endregion
     }

@@ -10,10 +10,10 @@ namespace StatusEffectFramework
         private int m_Value;
         public int Value { get => m_Value; set { Value = value; OnValueChanged(); } }
 
-        public DynamicInt(DynamicFloatEffect dynamicEffect, Effect effect, int value = 0)
+        public DynamicInt(Effect effect, int value = 0)
         {
             ValueModifier = effect.ValueModifier;
-            PostEvaluate = dynamicEffect.PostEvaluate;
+            PostEvaluate = effect.DynamicIntEffect.PostEvaluate;
             m_Value = value;
         }
     }

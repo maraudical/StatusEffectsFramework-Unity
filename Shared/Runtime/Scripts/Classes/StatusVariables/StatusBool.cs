@@ -13,7 +13,7 @@ namespace StatusEffectFramework
 
         public StatusNameBool StatusName => m_StatusName;
         public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
-        public bool Value => Instance != null ? m_Value : m_BaseValue;
+        public bool Value => Manager != null ? m_Value : m_BaseValue;
 
         [SerializeField] protected StatusNameBool m_StatusName;
         [SerializeField] protected bool m_BaseValue;
@@ -25,7 +25,7 @@ namespace StatusEffectFramework
         {
             m_BaseValue = baseValue;
 
-            if (Instance != null)
+            if (Manager != null)
             {
                 UpdateBaseValue();
                 m_PreviousBaseValue = baseValue;
@@ -37,7 +37,7 @@ namespace StatusEffectFramework
             m_StatusName = statusName;
             m_BaseValue = baseValue;
 
-            if (Instance != null)
+            if (Manager != null)
             {
                 UpdateBaseValue();
                 m_PreviousBaseValue = baseValue;
@@ -62,7 +62,7 @@ namespace StatusEffectFramework
             UpdateValue();
         }
 
-        protected override void InstanceUpdate(StatusEffect statusEffect)
+        protected override void OnStatusEffect(StatusEffect statusEffect)
         {
             // Only update if the status effect actually has any effects that have the same StatusName
             if (statusEffect.Data.Effects.Select(e => e.StatusName).Contains(m_StatusName))
@@ -71,7 +71,7 @@ namespace StatusEffectFramework
 
         protected bool GetValue()
         {
-            if (Instance == null)
+            if (Manager == null)
                 return m_BaseValue;
 
             bool value = m_BaseValue;
@@ -79,7 +79,7 @@ namespace StatusEffectFramework
 
             bool effectValue;
 
-            foreach (StatusEffect statusEffect in Instance.Effects)
+            foreach (StatusEffect statusEffect in Manager.Effects)
             {
                 foreach (Effect effect in statusEffect.Data.Effects)
                 {

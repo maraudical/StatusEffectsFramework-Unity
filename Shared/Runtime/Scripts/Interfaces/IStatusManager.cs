@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine.Events;
 using UnityEngine;
 
@@ -14,10 +13,6 @@ namespace StatusEffectFramework
         /// and then the previous and then current <see cref="int"/> values for stack count.</remarks>
         public event System.Action<StatusEffect, StatusEffectAction, int, int> OnStatusEffect;
         /// <summary>
-        /// This is invoked to update <see cref="StatusVariable"/>s just before the <see cref="IStatusManager.OnStatusEffect"/> event is called.
-        /// </summary>
-        internal event System.Action<StatusEffect> ValueUpdate;
-        /// <summary>
         /// Cannot directly edit this <see cref="IReadOnlyList{T}"/>! Please call 
         /// <see cref="StatusManager.AddStatusEffect"/> or  <see cref="StatusManager.RemoveStatusEffect"/>.
         /// </summary>
@@ -25,7 +20,7 @@ namespace StatusEffectFramework
         /// <summary>
         /// Gets a <see cref="StatusEffect"/>s by its <see cref="StatusEffect.GetInstanceID"/>.
         /// </summary>
-        public bool GetStatusEffect(Hash128 instanceId, out StatusEffect statusEffect);
+        public bool GetStatusEffect(uint id, out StatusEffect statusEffect);
         /// <summary>
         /// Returns the listed <see cref="StatusEffect"/>s in a <see cref="List{}"/> for the <see cref="StatusManager"/>.
         /// </summary>

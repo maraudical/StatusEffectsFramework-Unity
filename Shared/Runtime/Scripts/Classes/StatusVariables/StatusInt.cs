@@ -15,7 +15,7 @@ namespace StatusEffectFramework
         public StatusNameInt StatusName => m_StatusName;
         public int BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
         public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; SignProtectedChanged(); } }
-        public int Value => Instance != null ? m_Value : m_BaseValue;
+        public int Value => Manager != null ? m_Value : m_BaseValue;
 
         [SerializeField] protected StatusNameInt m_StatusName;
         [SerializeField] protected int m_BaseValue;
@@ -30,7 +30,7 @@ namespace StatusEffectFramework
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
 
-            if (Instance != null)
+            if (Manager != null)
             {
                 UpdateBaseValue();
                 m_PreviousBaseValue = baseValue;
@@ -45,7 +45,7 @@ namespace StatusEffectFramework
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
 
-            if (Instance != null)
+            if (Manager != null)
             {
                 UpdateBaseValue();
                 m_PreviousBaseValue = baseValue;
@@ -80,7 +80,7 @@ namespace StatusEffectFramework
             UpdateValue();
         }
 
-        protected override void InstanceUpdate(StatusEffect statusEffect)
+        protected override void OnStatusEffect(StatusEffect statusEffect)
         {
             // Only update if the status effect actually has any effects that have the same StatusName
             if (statusEffect.Data.Effects.Select(e => e.StatusName).Contains(m_StatusName))
@@ -89,7 +89,7 @@ namespace StatusEffectFramework
 
         protected virtual int GetValue()
         {
-            if (Instance == null)
+            if (Manager == null)
                 return m_BaseValue;
 
             bool positive = Mathf.Sign(m_BaseValue) > 0;
@@ -105,7 +105,7 @@ namespace StatusEffectFramework
 
             int effectValue;
 
-            foreach (StatusEffect statusEffect in Instance.Effects)
+            foreach (StatusEffect statusEffect in Manager.Effects)
             {
                 foreach (Effect effect in statusEffect.Data.Effects)
                 {

@@ -7,7 +7,6 @@ using System.Threading;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using System.Runtime.CompilerServices;
 
 namespace StatusEffectFramework
 {
@@ -21,15 +20,22 @@ namespace StatusEffectFramework
 
         public StatusEffectData Data;
         public StatusEffectTiming Timing;
+        public uint Id => m_Id;
+        public double TimeAdded => m_TimeAdded;
         public float Duration { get => m_Duration; set { m_Duration = value; OnDurationUpdate?.Invoke(value); } }
-        public int Stacks { get => m_Stacks; set { m_PreviousStack = m_Stacks; m_Stacks = value; } }
+        public int Stacks { get => m_Stacks; set { m_PreviousStacks = m_Stacks; m_Stacks = value; OnStackUpdate?.Invoke(m_PreviousStacks, m_Stacks); } }
 
-        [SerializeField] private float m_Duration;
+        internal uint m_Id;
+        private double m_TimeAdded;
+        private float m_Duration;
         [SerializeField] private int m_Stacks;
 
-        private int m_PreviousStack;
-        private Hash128 m_InstanceId;
+        private int m_PreviousStacks;
         private bool m_ModulesEnabled;
+
+        internal DynamicFloat[] DynamicFloats;
+        internal DynamicInt[] DynamicInts;
+        internal DynamicBool[] DynamicBools;
 
 #if UNITASK || UNITY_2023_1_OR_NEWER
         private List<CancellationTokenSource> m_ModuleTokenSources;
@@ -39,34 +45,51 @@ namespace StatusEffectFramework
         public Coroutine TimedCoroutine;
 #endif
 
-        public StatusEffect(StatusEffectData data, StatusEffectTiming timing, float duration, int stack)
+        public StatusEffect(uint id, StatusEffectData data, StatusEffectTiming timing, double timeAdded, float duration, int stack)
         {
+            m_Id = id;
             Data = data;
             Timing = timing;
+            m_TimeAdded = timeAdded;
             m_Duration = duration;
             m_Stacks = stack;
             m_ModulesEnabled = false;
+
+            var dynamicFloatsList = new List<DynamicFloat>();
+            var dynamicIntsList = new List<DynamicInt>();
+            var dynamicBoolsList = new List<DynamicBool>();
+
+            foreach (var effect in data.Effects)
+            {
+                if (effect.ValueType is not ValueType.DynamicValue)
+                    continue;
+
+                switch (effect.StatusName)
+                {
+                    case StatusNameFloat:
+                        if (effect.DynamicFloatEffect)
+                            dynamicFloatsList.Add(effect.DynamicFloatEffect.ValueEvent());
+                        break;
+                    case StatusNameInt:
+                        if (effect.DynamicIntEffect)
+                            dynamicFloatsList.Add(effect.DynamicIntEffect.ValueEvent());
+                        break;
+                    case StatusNameBool:
+                        if (effect.DynamicBoolEffect)
+                            dynamicFloatsList.Add(effect.DynamicBoolEffect.ValueEvent());
+                        break;
+                }
+            }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Hash128 GetInstanceID()
+        public float TimeRemaining(double elapsedTime)
         {
-            if (!m_InstanceId.isValid)
-                SetInstanceID();
-
-            return m_InstanceId;
-        }
-
-        internal void SetInstanceID() => SetInstanceID(StatusEffectsUtility.GenerateId());
-
-        internal void SetInstanceID(Hash128 value)
-        {
-            m_InstanceId = value;
-        }
-
-        internal void InvokeStackUpdate()
-        {
-            OnStackUpdate?.Invoke(m_PreviousStack, m_Stacks);
+            return Timing switch
+            {
+                StatusEffectTiming.Infinite => -1f,
+                StatusEffectTiming.Event or StatusEffectTiming.Predicate => Duration,
+                _ => Mathf.Max(0f, Duration - (float)(elapsedTime + TimeAdded))
+            };
         }
 
         internal void EnableModules(StatusManager manager)
