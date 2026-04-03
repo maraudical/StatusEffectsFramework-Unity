@@ -89,7 +89,7 @@ namespace StatusEffectFramework.Entities
                     effect = statusEffectData.Effects[i];
                     effects[i] = new UnmanagedEffect
                     {
-                        Id = effect.StatusName ? effect.StatusName.Id : default,
+                        StatusName = effect.StatusName ? effect.StatusName.Id : default,
                         ValueModifier = effect.ValueModifier,
                         UseBaseValue = effect.UseBaseValue,
                         FloatValue = effect.FloatValue,

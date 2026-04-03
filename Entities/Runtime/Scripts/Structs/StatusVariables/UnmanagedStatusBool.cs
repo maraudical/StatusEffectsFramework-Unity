@@ -65,7 +65,7 @@ namespace StatusEffectFramework.Entities
             if (index >= 0 && index < buffer.Length)
             {
                 statusBool = buffer[index];
-                if (statusBool.ComponentId == componentId && statusBool.Id == Id)
+                if (statusBool.ComponentId == componentId && statusBool.StatusName == Id)
                     return true;
             }
             
@@ -74,7 +74,7 @@ namespace StatusEffectFramework.Entities
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusBool = buffer[i];
-                if (statusBool.ComponentId == componentId && statusBool.Id == Id)
+                if (statusBool.ComponentId == componentId && statusBool.StatusName == Id)
                 {
                     index = i;
                     break;

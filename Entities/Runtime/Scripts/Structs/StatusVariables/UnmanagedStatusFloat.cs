@@ -65,7 +65,7 @@ namespace StatusEffectFramework.Entities
             if (index >= 0 && index < buffer.Length)
             {
                 statusFloat = buffer[index];
-                if (statusFloat.ComponentId == componentId && statusFloat.Id == Id)
+                if (statusFloat.ComponentId == componentId && statusFloat.StatusName == Id)
                     return true;
             }
 
@@ -74,7 +74,7 @@ namespace StatusEffectFramework.Entities
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusFloat = buffer[i];
-                if (statusFloat.ComponentId == componentId && statusFloat.Id == Id)
+                if (statusFloat.ComponentId == componentId && statusFloat.StatusName == Id)
                 {
                     index = i;
                     break;

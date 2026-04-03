@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace StatusEffectFramework
 {
@@ -10,27 +10,28 @@ namespace StatusEffectFramework
     public class StatusFloat : StatusVariable
     {
         public event Action<float, float> OnValueChanged;
+        public event Action<float, float> OnPreEvaluationValueChanged;
         public event Action<float, float> OnBaseValueChanged;
         public event Action<bool, bool> OnSignProtectedChanged;
 
         public StatusNameFloat StatusName => m_StatusName;
         public float BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
         public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; SignProtectedChanged(); } }
-        public float Value => Manager != null ? m_Value : m_BaseValue;
+        public float Value => Manager != null ? PostEvaluationValue : m_BaseValue;
+        public float PreEvaluationValue { get; protected set; }
+        public float PostEvaluationValue { get; protected set; }
 
         [SerializeField] protected StatusNameFloat m_StatusName;
         [SerializeField] protected float m_BaseValue;
-        protected float m_PreviousBaseValue;
         [SerializeField] protected bool m_SignProtected;
-        protected bool m_PreviousSignProtected;
-        [SerializeField] protected float m_Value;
-        protected float m_PreviousValue;
 
-        protected Dictionary<uint, DynamicFloat[]> DynamicFloats;
+        protected float m_PreviousBaseValue;
+        protected bool m_PreviousSignProtected;
+        protected float m_PreviousPreEvaluationValue;
+        protected float m_PreviousPostEvaluationValue;
 
         public StatusFloat(float baseValue, bool signProtected = true)
         {
-            DynamicFloats = new();
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
 
@@ -45,7 +46,6 @@ namespace StatusEffectFramework
 
         public StatusFloat(float baseValue, StatusNameFloat statusName, bool signProtected = true)
         {
-            DynamicFloats = new();
             m_StatusName = statusName;
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
@@ -57,83 +57,82 @@ namespace StatusEffectFramework
                 UpdateSignProtected();
                 m_PreviousSignProtected = signProtected;
             }
-            UpdateValue();
+
+            PreEvaluationValue = m_BaseValue;
+            PostEvaluationValue = 0;
         }
 
         public static implicit operator float(StatusFloat statusFloat) => statusFloat.Value;
 
         public override void SetManager(IStatusManager instance)
         {
+            if (Manager != null)
+                foreach (StatusEffect statusEffect in Manager.Effects)
+                    foreach (var dynamicFloat in statusEffect.DynamicFloats)
+                        if (dynamicFloat.StatusName == m_StatusName)
+                        {
+                            if (dynamicFloat.PostEvaluate)
+                                dynamicFloat.OnValueChanged -= UpdatePostEvaluationValue;
+                            else
+                                dynamicFloat.OnValueChanged -= UpdatePreEvaluationValue;
+                        }
+
             base.SetManager(instance);
             m_PreviousBaseValue = m_BaseValue;
             m_PreviousSignProtected = m_SignProtected;
-            m_Value = m_BaseValue;
-            UpdateValue();
+            m_PreviousPreEvaluationValue = m_BaseValue;
+            m_PreviousPostEvaluationValue = 0;
+            foreach (StatusEffect statusEffect in Manager.Effects)
+                foreach (var dynamicFloat in statusEffect.DynamicFloats)
+                    if (dynamicFloat.StatusName == m_StatusName)
+                    {
+                        if (dynamicFloat.PostEvaluate)
+                            dynamicFloat.OnValueChanged += UpdatePostEvaluationValue;
+                        else
+                            dynamicFloat.OnValueChanged += UpdatePreEvaluationValue;
+                    }
+
+            UpdatePreEvaluationValue();
+            UpdatePostEvaluationValue();
         }
 
         protected virtual void BaseValueChanged()
         {
             UpdateBaseValue();
             m_PreviousBaseValue = m_BaseValue;
-            UpdateValue();
+            UpdatePreEvaluationValue();
         }
 
         protected virtual void SignProtectedChanged()
         {
             UpdateSignProtected();
             m_PreviousSignProtected = m_SignProtected;
-            UpdateValue();
+            UpdatePreEvaluationValue();
+            UpdatePostEvaluationValue();
         }
 
         protected override void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
         {
+            if (action is StatusEffectAction.AddedStatusEffect)
+                foreach (var dynamicFloat in statusEffect.DynamicFloats)
+                    if (dynamicFloat.StatusName == m_StatusName)
+                        if (dynamicFloat.PostEvaluate)
+                            dynamicFloat.OnValueChanged += UpdatePostEvaluationValue;
+                        else
+                            dynamicFloat.OnValueChanged += UpdatePreEvaluationValue;
             // Only update if the status effect actually has any effects that have the same StatusName
-            bool update = false;
-            switch (action)
-            {
-                case StatusEffectAction.AddedStatusEffect:
-                    foreach (Effect effect in statusEffect.Data.Effects)
-                        if (effect.StatusName == m_StatusName)
-                        {
-                            update = true;
-                            if (effect.ValueType is ValueType.DynamicValue && effect.DynamicFloatEffect)
-                                Manager.DynamicFloats.TryGetValue(statusEffect.)
-                        }
-                        {
-                            effect.DynamicFloatEffect.ValueEvent()
-                            update = true;
-                            break;
-                        }
-                case StatusEffectAction.RemovedStatusEffect:
-                    // Copy form add
-                    break;
-                case StatusEffectAction.AddedStacks:
-                case StatusEffectAction.RemovedStacks:
-                    update = statusEffect.Data.Effects.Any(effect => effect.StatusName == m_StatusName);
-                    break;
-            }
-
-            if (update)
-                UpdateValue();
+            if (statusEffect.Data.Effects.Any(effect => effect.StatusName == m_StatusName))
+                UpdatePreEvaluationValue();
         }
 
-        protected float GetValue()
+        protected float GetPreEvaluationValue()
         {
             if (Manager == null)
                 return m_BaseValue;
 
-            bool positive = Mathf.Sign(m_BaseValue) >= 0;
-            float additiveValue = 0;
-            float multiplicativeValue = 1;
-            float postAdditiveValue = 0;
-            int minimumPriority = -1;
-            float minimumValue = float.NegativeInfinity;
-            int maximumPriority = -1;
-            float maximumValue = float.PositiveInfinity;
-            int overwritePriority = -1;
-            float overwriteValue = 0;
+            var statusFloatValue = new StatusFloatValue(m_BaseValue, m_SignProtected);
 
-            float effectValue;
+            float effectValue = default;
 
             foreach (StatusEffect statusEffect in Manager.Effects)
             {
@@ -142,62 +141,58 @@ namespace StatusEffectFramework
                     if (effect.StatusName != m_StatusName)
                         continue;
 
-                    effectValue = statusEffect.Stacks * (effect.UseBaseValue ? statusEffect.Data.BaseValue : effect.FloatValue);
-                    
-                    switch (effect.ValueModifier)
+                    switch (effect.ValueType)
                     {
-                        case ValueModifier.Additive:
-                            additiveValue += effectValue;
+                        case ValueType.ExplicitValue:
+                            effectValue = statusEffect.Stacks * effect.FloatValue;
                             break;
-                        case ValueModifier.Multiplicative:
-                            multiplicativeValue += effectValue;
+                        case ValueType.BaseValue:
+                            effectValue = statusEffect.Stacks * statusEffect.Data.BaseValue;
                             break;
-                        case ValueModifier.PostAdditive:
-                            postAdditiveValue += effectValue;
-                            break;
-                        case ValueModifier.Minimum:
-                            if (minimumPriority < effect.Priority)
-                            {
-                                minimumPriority = effect.Priority;
-                                minimumValue = effectValue;
-                            }
-                            else if (minimumPriority == effect.Priority)
-                                minimumValue = Mathf.Max(minimumValue, effectValue);
-                            break;
-                        case ValueModifier.Maximum:
-                            if (maximumPriority < effect.Priority)
-                            {
-                                maximumPriority = effect.Priority;
-                                maximumValue = effectValue;
-                            }
-                            else if (maximumPriority == effect.Priority)
-                                maximumValue = Mathf.Min(maximumValue, effectValue);
-                            break;
-                        case ValueModifier.Overwrite:
-                            if (overwritePriority <= effect.Priority)
-                            {
-                                overwritePriority = effect.Priority;
-                                overwriteValue = effectValue;
-                            }
-                            break;
+                        case ValueType.DynamicValue:
+                            continue;
                     }
+
+                    statusFloatValue.ApplyEffect(effect.ValueModifier, effectValue, effect.Priority);
                 }
+
+                foreach (var dynamicFloat in statusEffect.DynamicFloats)
+                    if (!dynamicFloat.PostEvaluate)
+                        statusFloatValue.ApplyEffect(dynamicFloat.ValueModifier, dynamicFloat.Value, dynamicFloat.Priority);
             }
 
-            if (overwritePriority >= 0)
-                return Mathf.Clamp(overwriteValue, overwritePriority <= minimumPriority ? minimumValue : float.NegativeInfinity, overwritePriority <= maximumPriority ? maximumValue : float.PositiveInfinity);
-            else if (m_SignProtected)
-                return Mathf.Clamp((m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, Mathf.Max(positive ? 0 : float.NegativeInfinity, minimumValue), Mathf.Min(positive ? float.PositiveInfinity : 0, maximumValue));
-            else
-                return Mathf.Clamp((m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, minimumValue, maximumValue);
+            return statusFloatValue.GetValue();
         }
 
-        protected void UpdateValue()
+        protected float GetPostEvaluationValue()
         {
-            m_PreviousValue = m_Value;
-            m_Value = GetValue();
-            if (m_Value != m_PreviousValue)
-                OnValueChanged?.Invoke(m_PreviousValue, m_Value);
+            if (Manager == null)
+                return 0;
+
+            var statusFloatValue = new StatusFloatValue(m_BaseValue, m_SignProtected);
+            
+            foreach (StatusEffect statusEffect in Manager.Effects)
+                foreach (var dynamicFloat in statusEffect.DynamicFloats)
+                    if (dynamicFloat.PostEvaluate)
+                        statusFloatValue.ApplyEffect(dynamicFloat.ValueModifier, dynamicFloat.Value, dynamicFloat.Priority);
+
+            return statusFloatValue.GetValue();
+        }
+
+        protected void UpdatePreEvaluationValue()
+        {
+            m_PreviousPreEvaluationValue = PreEvaluationValue;
+            PreEvaluationValue = GetPreEvaluationValue();
+            if (PreEvaluationValue != m_PreviousPreEvaluationValue)
+                OnValueChanged?.Invoke(m_PreviousPreEvaluationValue, PreEvaluationValue);
+        }
+
+        protected void UpdatePostEvaluationValue()
+        {
+            m_PreviousPostEvaluationValue = PostEvaluationValue;
+            PostEvaluationValue = GetPostEvaluationValue();
+            if (PostEvaluationValue != m_PreviousPostEvaluationValue)
+                OnValueChanged?.Invoke(m_PreviousPostEvaluationValue, PostEvaluationValue);
         }
 
         protected void UpdateBaseValue()
@@ -219,7 +214,7 @@ namespace StatusEffectFramework
 
             UpdateBaseValue();
             m_PreviousBaseValue = m_BaseValue;
-            UpdateValue();
+            UpdatePreEvaluationValue();
         }
 
         protected virtual async void SignProtectedUpdate()
@@ -228,8 +223,94 @@ namespace StatusEffectFramework
 
             UpdateSignProtected();
             m_PreviousSignProtected = m_SignProtected;
-            UpdateValue();
+            UpdatePreEvaluationValue();
+            UpdatePostEvaluationValue();
         }
 #endif
+
+        struct StatusFloatValue
+        {
+            public float BaseValue;
+
+            public float AdditiveValue;
+            public float MultiplicativeValue;
+            public float PostAdditiveValue;
+            public int MinimumPriority;
+            public float MinimumValue;
+            public int MaximumPriority;
+            public float MaximumValue;
+            public int OverwritePriority;
+            public float OverwriteValue;
+
+            public StatusFloatValue(float baseValue, bool signProtected)
+            {
+                BaseValue = baseValue;
+                AdditiveValue = 0;
+                MultiplicativeValue = 1;
+                PostAdditiveValue = 0;
+                MinimumPriority = -1;
+                MinimumValue = float.NegativeInfinity;
+                MaximumPriority = -1;
+                MaximumValue = float.PositiveInfinity;
+                OverwritePriority = -1;
+                OverwriteValue = 0;
+                if (signProtected)
+                {
+                    if (Mathf.Sign(baseValue) >= 0)
+                        MinimumValue = 0;
+                    else
+                        MaximumValue = 0;
+                }  
+            }
+
+            public void ApplyEffect(ValueModifier valueModifier, float value, int priority)
+            {
+                switch (valueModifier)
+                {
+                    case ValueModifier.Additive:
+                        AdditiveValue += value;
+                        break;
+                    case ValueModifier.Multiplicative:
+                        MultiplicativeValue += value;
+                        break;
+                    case ValueModifier.PostAdditive:
+                        PostAdditiveValue += value;
+                        break;
+                    case ValueModifier.Minimum:
+                        if (MinimumPriority < priority)
+                        {
+                            MinimumPriority = priority;
+                            MinimumValue = value;
+                        }
+                        else if (MinimumPriority == priority)
+                            MinimumValue = Mathf.Max(MinimumValue, value);
+                        break;
+                    case ValueModifier.Maximum:
+                        if (MaximumPriority < priority)
+                        {
+                            MaximumPriority = priority;
+                            MaximumValue = value;
+                        }
+                        else if (MaximumPriority == priority)
+                            MaximumValue = Mathf.Min(MaximumValue, value);
+                        break;
+                    case ValueModifier.Overwrite:
+                        if (OverwritePriority <= priority)
+                        {
+                            OverwritePriority = priority;
+                            OverwriteValue = value;
+                        }
+                        break;
+                }
+            }
+
+            public float GetValue()
+            {
+                if (OverwritePriority >= 0)
+                    return Mathf.Clamp(OverwriteValue, OverwritePriority <= MinimumPriority ? MinimumValue : float.NegativeInfinity, OverwritePriority <= MaximumPriority ? MaximumValue : float.PositiveInfinity);
+                else
+                    return Mathf.Clamp((BaseValue + AdditiveValue) * MultiplicativeValue + PostAdditiveValue, MinimumValue, MaximumValue);
+            }
+        }
     }
 }

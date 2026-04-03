@@ -15,7 +15,7 @@ namespace StatusEffectFramework.Entities
 #if NETCODE
         [GhostField(Composite = true)]
 #endif
-        public Hash128 Id;
+        public Hash128 StatusName;
 #if NETCODE
         [GhostField]
 #endif
@@ -33,7 +33,7 @@ namespace StatusEffectFramework.Entities
         public StatusBools(Hash128 componentId, Hash128 id, bool baseValue)
         {
             ComponentId = componentId;
-            Id = id;
+            StatusName = id;
             BaseValue = baseValue;
             PreEvaluationValue = baseValue;
             PostEvaluationValue = baseValue;
@@ -44,14 +44,14 @@ namespace StatusEffectFramework.Entities
             ComponentId = componentId;
             if (statusBool != null && statusBool.StatusName)
             {
-                Id = statusBool.StatusName.Id;
+                StatusName = statusBool.StatusName.Id;
                 BaseValue = statusBool.BaseValue;
                 PreEvaluationValue = statusBool.BaseValue;
                 PostEvaluationValue = statusBool.BaseValue;
             }
             else
             {
-                Id = default;
+                StatusName = default;
                 BaseValue = default;
                 PreEvaluationValue = default;
                 PostEvaluationValue = default;

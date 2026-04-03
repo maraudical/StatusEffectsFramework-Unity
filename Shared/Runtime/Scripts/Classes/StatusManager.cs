@@ -2,7 +2,6 @@
 using Cysharp.Threading.Tasks;
 using System.Threading;
 #elif UNITY_2023_1_OR_NEWER
-using StatusEffectFramework.Extensions;
 using System.Threading;
 #else
 using System.Collections;
@@ -25,11 +24,11 @@ namespace StatusEffectFramework
     {
         public event System.Action<StatusEffect, StatusEffectAction, int, int> OnStatusEffect;
 
-        public IEnumerable<StatusEffect> Effects => m_Effects?.Values ?? Enumerable.Empty<StatusEffect>();
+        public IEnumerable<StatusEffect> StatusEffects => m_StatusEffects?.Values ?? Enumerable.Empty<StatusEffect>();
 
         IEnumerable<StatusEffect> IStatusManager.Effects => throw new NotImplementedException();
         
-        [SerializeField] private Dictionary<uint, StatusEffect> m_Effects;
+        [SerializeField] private Dictionary<uint, StatusEffect> m_StatusEffects;
         
         internal uint AvailableId;
 
@@ -53,35 +52,35 @@ namespace StatusEffectFramework
         private void Awake()
         {
             AvailableId = 0;
-            m_Effects = new();
+            m_StatusEffects = new();
         }
 
         #region Public Methods
         public bool GetStatusEffect(uint id, out StatusEffect statusEffect)
         {
-            return m_Effects.TryGetValue(id, out statusEffect);
+            return m_StatusEffects.TryGetValue(id, out statusEffect);
         }
         
 #nullable enable
-        public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null)
+        public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true)
 #nullable disable
         {
             // Return the effects for a given monobehaviour, if given a group
             // or name to match only return effects within those categories.
-            return Effects.Where(e => (name  == null || e.Data.ComparableName  == name) 
-                                   && (group == null ||(e.Data.Group & group) != 0)
-                                   && (data  == null || e.Data == data));
+            return StatusEffects.Where(se => (name  == null || se.Data.ComparableName  == name) 
+                                   && (group == null || (matchAllGroups ? (se.Data.Group & group) == group : (se.Data.Group & group) != 0))
+                                   && (data  == null || se.Data == data));
         }
 
 #nullable enable
-        public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null)
+        public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true)
 #nullable disable
         {
             // Return the effects for a given monobehaviour, if given a group
             // or name to match only return effects within those categories.
-            return Effects.FirstOrDefault(e => (name  == null || e.Data.ComparableName == name)
-                                            && (group == null ||(e.Data.Group & group) != 0)
-                                            && (data  == null || e.Data == data));
+            return StatusEffects.FirstOrDefault(se => (name  == null || se.Data.ComparableName == name)
+                                            && (group == null || (matchAllGroups ? (se.Data.Group & group) == group : (se.Data.Group & group) != 0))
+                                            && (data  == null || se.Data == data));
         }
 
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, int stacks = 1)
@@ -154,13 +153,13 @@ namespace StatusEffectFramework
 #endif
 
             // Remove the effects for a given monobehaviour.
-            m_Effects.Remove(statusEffect.Id);
+            m_StatusEffects.Remove(statusEffect.Id);
 #if UNITY_EDITOR
             m_EditorOnlyEffects.Remove(statusEffect);
 #endif
 
             // If a module exists it will be stopped.
-            statusEffect.DisableModules(this);
+            statusEffect.Stop(this);
             
             OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStatusEffect, statusEffect.Stacks, 0);
         }
@@ -174,11 +173,8 @@ namespace StatusEffectFramework
 
             if (stacks.HasValue && stacks.Value <= 0)
                 return;
-            also put this on entities logic
-            IEnumerable<StatusEffect> leastToMostValueThenDuration = m_Effects.Values.Where(se => se.Data == statusEffectData)
-                                                                                     .OrderBy(se => se.Data.BaseValue)
-                                                                                     .ThenBy(se => se.Timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate ? float.PositiveInfinity : se.Duration);
-            IterateRemoval(leastToMostValueThenDuration, stacks);
+            
+            IterateRemoval(OrderStatusEffects(m_StatusEffects.Values.Where(se => se.Data == statusEffectData)), stacks);
         }
         
         public void RemoveStatusEffect(ComparableName name, int? stacks = null)
@@ -186,32 +182,33 @@ namespace StatusEffectFramework
             if (stacks.HasValue && stacks.Value <= 0)
                 return;
             
-            IEnumerable<StatusEffect> leastToMostValueThenDuration = m_Effects.Values.Where(se => se.Data.ComparableName == name)
-                                                                                     .OrderBy(se => se.Data.BaseValue)
-                                                                                     .ThenBy(se => se.Timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate ? float.PositiveInfinity : se.Duration);
-            IterateRemoval(leastToMostValueThenDuration, stacks);
+            IterateRemoval(OrderStatusEffects(m_StatusEffects.Values.Where(se => se.Data.ComparableName == name)), stacks);
         }
         
-        public void RemoveStatusEffect(StatusEffectGroup group, int? stacks = null)
+        public void RemoveStatusEffect(StatusEffectGroup group, int? stacks = null, bool matchAllGroups = true)
         {
             if (stacks.HasValue && stacks.Value <= 0)
                 return;
-
-            IEnumerable<StatusEffect> leastToMostValueThenDuration = m_Effects.Values.Where(se => (se.Data.Group & group) != 0)
-                                                                                     .OrderBy(se => se.Data.BaseValue)
-                                                                                     .ThenBy(se => se.Timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate ? float.PositiveInfinity : se.Duration);
-            IterateRemoval(leastToMostValueThenDuration, stacks);
+            
+            IterateRemoval(OrderStatusEffects(m_StatusEffects.Values.Where(se => matchAllGroups ? (se.Data.Group & group) == group : (se.Data.Group & group) != 0)), stacks);
         }
         
         public void RemoveAllStatusEffects()
         {
             // From the end of the list iterate through and remove all.
-            for (int i = m_Effects.Count - 1; i >= 0; i--)
-                RemoveStatusEffect(m_Effects.ElementAt(i).Value);
+            for (int i = m_StatusEffects.Count - 1; i >= 0; i--)
+                RemoveStatusEffect(m_StatusEffects.ElementAt(i).Value);
         }
         #endregion
 
         #region Private Methods
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private IEnumerable<StatusEffect> OrderStatusEffects(IEnumerable<StatusEffect> statusEffects)
+        {
+            return statusEffects.OrderBy(se => se.Data.BaseValue)
+                                .ThenBy(se => se.Timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate ? float.PositiveInfinity : se.Duration);
+        }
+
         private void IterateRemoval(IEnumerable<StatusEffect> statusEffectsToRemove, int? stacks)
         {
             int removedCount = 0;
@@ -607,77 +604,17 @@ namespace StatusEffectFramework
                 AvailableId++;
                 // Add the effect for a given monobehaviour. This also is the first time
                 // initializing so we need to initialize all of the Status Variables
-                m_Effects.Add(statusEffect.Id, statusEffect);
+                m_StatusEffects.Add(statusEffect.Id, statusEffect);
 #if UNITY_EDITOR
                 m_EditorOnlyEffects.Add(statusEffect);
 #endif
             }
             // If a module exists it will be started.
-            statusEffect.EnableModules(this);
+            statusEffect.Start(this);
             
             OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
             // Return the effect in case it is wanted for other reference.
             return statusEffect;
-        }
-
-        bool IStatusManager.GetStatusEffect(uint id, out StatusEffect statusEffect)
-        {
-            throw new NotImplementedException();
-        }
-
-        IEnumerable<StatusEffect> IStatusManager.GetStatusEffects(StatusEffectGroup? group, ComparableName name, StatusEffectData data)
-        {
-            throw new NotImplementedException();
-        }
-
-        StatusEffect IStatusManager.GetFirstStatusEffect(StatusEffectGroup? group, ComparableName name, StatusEffectData data)
-        {
-            throw new NotImplementedException();
-        }
-
-        StatusEffect IStatusManager.AddStatusEffect(StatusEffectData statusEffectData, int stacks)
-        {
-            throw new NotImplementedException();
-        }
-
-        StatusEffect IStatusManager.AddStatusEffect(StatusEffectData statusEffectData, float duration, int stacks)
-        {
-            throw new NotImplementedException();
-        }
-
-        StatusEffect IStatusManager.AddStatusEffect(StatusEffectData statusEffectData, float duration, UnityEvent unityEvent, float interval, int stacks)
-        {
-            throw new NotImplementedException();
-        }
-
-        StatusEffect IStatusManager.AddStatusEffect(StatusEffectData statusEffectData, Func<bool> predicate, int stacks)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IStatusManager.RemoveStatusEffect(StatusEffect statusEffect)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IStatusManager.RemoveStatusEffect(StatusEffectData statusEffectData, int? stacks)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IStatusManager.RemoveStatusEffect(ComparableName name, int? stacks)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IStatusManager.RemoveStatusEffect(StatusEffectGroup group, int? stacks)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IStatusManager.RemoveAllStatusEffects()
-        {
-            throw new NotImplementedException();
         }
         #endregion
     }

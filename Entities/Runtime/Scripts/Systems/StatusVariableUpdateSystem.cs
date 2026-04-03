@@ -61,25 +61,25 @@ namespace StatusEffectFramework.Entities
 
                     ref UnmanagedStatusEffectData data = ref blob.Value;
                     for (int i = 0; i < data.Effects.Length; i++)
-                        effectIdToStatusEffect.Add(data.Effects[i].Id, statusEffect);
+                        effectIdToStatusEffect.Add(data.Effects[i].StatusName, statusEffect);
                 }
 
                 for (int i = 0; i < statusFloats.Length; i++)
                 {
                     ref var statusFloat = ref statusFloats.ElementAt(i);
-                    GetValue(ref statusFloat, effectIdToStatusEffect.GetValuesForKey(statusFloat.Id), References);
+                    GetValue(ref statusFloat, effectIdToStatusEffect.GetValuesForKey(statusFloat.StatusName), References);
                 }
 
                 for (int i = 0; i < statusInts.Length; i++)
                 {
                     ref var statusInt = ref statusInts.ElementAt(i);
-                    GetValue(ref statusInt, effectIdToStatusEffect.GetValuesForKey(statusInt.Id), References);
+                    GetValue(ref statusInt, effectIdToStatusEffect.GetValuesForKey(statusInt.StatusName), References);
                 }
 
                 for (int i = 0; i < statusBools.Length; i++)
                 {
                     ref var statusBool = ref statusBools.ElementAt(i);
-                    GetValue(ref statusBool, effectIdToStatusEffect.GetValuesForKey(statusBool.Id), References);
+                    GetValue(ref statusBool, effectIdToStatusEffect.GetValuesForKey(statusBool.StatusName), References);
                 }
             }
 
@@ -114,7 +114,7 @@ namespace StatusEffectFramework.Entities
                     {
                         effect = data.Effects[i];
                         
-                        if (effect.Id != statusFloat.Id)
+                        if (effect.StatusName != statusFloat.StatusName)
                             continue;
                         
                         effectValue = statusEffect.Stacks * (effect.UseBaseValue ? data.BaseValue : effect.FloatValue);
@@ -195,7 +195,7 @@ namespace StatusEffectFramework.Entities
                     {
                         effect = data.Effects[i];
 
-                        if (effect.Id != statusInt.Id)
+                        if (effect.StatusName != statusInt.StatusName)
                             continue;
 
                         effectValue = statusEffect.Stacks * (effect.UseBaseValue ? (int)data.BaseValue : effect.IntValue);
@@ -268,7 +268,7 @@ namespace StatusEffectFramework.Entities
                     {
                         effect = data.Effects[i];
 
-                        if (effect.Id != statusBool.Id)
+                        if (effect.StatusName != statusBool.StatusName)
                             continue;
 
                         effectValue = effect.UseBaseValue ? Convert.ToBoolean(data.BaseValue) : effect.BoolValue;

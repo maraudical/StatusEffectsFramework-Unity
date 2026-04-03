@@ -45,7 +45,7 @@ namespace StatusEffectFramework
         public Coroutine TimedCoroutine;
 #endif
 
-        public StatusEffect(uint id, StatusEffectData data, StatusEffectTiming timing, double timeAdded, float duration, int stack)
+        public StatusEffect(StatusManager manager, uint id, StatusEffectData data, StatusEffectTiming timing, double timeAdded, float duration, int stack)
         {
             m_Id = id;
             Data = data;
@@ -68,18 +68,22 @@ namespace StatusEffectFramework
                 {
                     case StatusNameFloat:
                         if (effect.DynamicFloatEffect)
-                            dynamicFloatsList.Add(effect.DynamicFloatEffect.ValueEvent());
+                            dynamicFloatsList.Add(effect.DynamicFloatEffect.ValueEvent(manager, this, effect));
                         break;
                     case StatusNameInt:
                         if (effect.DynamicIntEffect)
-                            dynamicFloatsList.Add(effect.DynamicIntEffect.ValueEvent());
+                            dynamicFloatsList.Add(effect.DynamicIntEffect.ValueEvent(manager, this, effect));
                         break;
                     case StatusNameBool:
                         if (effect.DynamicBoolEffect)
-                            dynamicFloatsList.Add(effect.DynamicBoolEffect.ValueEvent());
+                            dynamicFloatsList.Add(effect.DynamicBoolEffect.ValueEvent(manager, this, effect));
                         break;
                 }
             }
+
+            DynamicFloats = dynamicFloatsList.ToArray();
+            DynamicInts = dynamicIntsList.ToArray();
+            DynamicBools = dynamicBoolsList.ToArray();
         }
 
         public float TimeRemaining(double elapsedTime)
@@ -92,10 +96,10 @@ namespace StatusEffectFramework
             };
         }
 
-        internal void EnableModules(StatusManager manager)
+        internal void Start(StatusManager manager)
         {
             if (Data.Modules == null || m_ModulesEnabled)
-                return;
+                goto Start;
 
 #if UNITASK || UNITY_2023_1_OR_NEWER
             CancellationTokenSource effectTokenSource;
@@ -129,19 +133,20 @@ namespace StatusEffectFramework
 #endif
 
             m_ModulesEnabled = true;
+            Start:
             Started?.Invoke();
         }
 
 #nullable enable
-        internal void DisableModules(StatusManager manager)
+        internal void Stop(StatusManager manager)
 #nullable disable
         {
             if (Data.Modules == null || !m_ModulesEnabled)
-                return;
+                goto Stop;
 
 #if UNITASK || UNITY_2023_1_OR_NEWER
             if (m_ModuleTokenSources == null)
-                return;
+                goto Stop;
 
             foreach (var tokenSources in m_ModuleTokenSources)
                 tokenSources?.Cancel();
@@ -149,7 +154,7 @@ namespace StatusEffectFramework
             m_ModuleTokenSources?.Clear();
 #else
             if (m_EffectCoroutines == null)
-                return;
+                goto Stop;
             
             foreach (var container in Data.Modules)
                 container.Module?.DisableModule(manager, this, container.ModuleInstance);
@@ -162,6 +167,7 @@ namespace StatusEffectFramework
 #endif
 
             m_ModulesEnabled = false;
+            Stop:
             Stopped?.Invoke();
         }
     }

@@ -25,13 +25,13 @@ namespace StatusEffectFramework
         /// Returns the listed <see cref="StatusEffect"/>s in a <see cref="List{}"/> for the <see cref="StatusManager"/>.
         /// </summary>
 #nullable enable
-        public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null);
+        public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true);
 #nullable disable
         /// <summary>
         /// Returns the first <see cref="StatusEffect"/>s that matches the given parameters. If none are found returns null.
         /// </summary>
 #nullable enable
-        public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null);
+        public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true);
 #nullable disable
         /// <summary>
         /// Adds a <see cref="StatusEffect"/> to this <see cref="StatusManager"/>. Returns null if no <see cref="StatusEffect"/> was added.
@@ -77,7 +77,7 @@ namespace StatusEffectFramework
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
         /// are part of the given <see cref="StatusEffectGroup"/> group. If a stacks count is given it will remove only the specified amount.
         /// </summary>
-        public void RemoveStatusEffect(StatusEffectGroup group, int? stacks = null);
+        public void RemoveStatusEffect(StatusEffectGroup group, int? stacks = null, bool matchAllGroups = true);
         /// <summary>
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/>.
         /// </summary>

@@ -5,7 +5,7 @@ namespace StatusEffectFramework.Entities
 {
     public struct UnmanagedEffect
     {
-        public Hash128 Id;
+        public Hash128 StatusName;
         public ValueModifier ValueModifier;
         public ValueType ValueType;
         public int Priority;
