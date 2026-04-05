@@ -2,6 +2,11 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+#if BURST
+using Unity.Burst;
+using Unity.Mathematics;
+#endif
+
 
 namespace StatusEffectFramework
 {
@@ -9,34 +14,34 @@ namespace StatusEffectFramework
     public class StatusInt : StatusVariable
     {
         public event Action<int, int> OnValueChanged;
+        public event Action<int, int> OnPreEvaluationValueChanged;
         public event Action<int, int> OnBaseValueChanged;
         public event Action<bool, bool> OnSignProtectedChanged;
 
         public StatusNameInt StatusName => m_StatusName;
-        public int BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
-        public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; SignProtectedChanged(); } }
-        public int Value => Manager != null ? m_Value : m_BaseValue;
+        public int BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; UpdateBaseValue(); } }
+        public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; UpdateSignProtected(); } }
+        public int Value => Manager != null ? PostEvaluationValue : m_BaseValue;
+        public int PreEvaluationValue { get; protected set; }
+        public int PostEvaluationValue { get; protected set; }
 
         [SerializeField] protected StatusNameInt m_StatusName;
         [SerializeField] protected int m_BaseValue;
-        protected int m_PreviousBaseValue;
         [SerializeField] protected bool m_SignProtected;
+
+        protected int m_PreviousBaseValue;
         protected bool m_PreviousSignProtected;
-        [SerializeField] protected int m_Value;
-        protected int m_PreviousValue;
+        protected int m_PreviousPreEvaluationValue;
+        protected int m_PreviousPostEvaluationValue;
 
         public StatusInt(int baseValue, bool signProtected = true)
         {
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
-
-            if (Manager != null)
-            {
-                UpdateBaseValue();
-                m_PreviousBaseValue = baseValue;
-                UpdateSignProtected();
-                m_PreviousSignProtected = signProtected;
-            }
+            m_PreviousBaseValue = baseValue;
+            m_PreviousSignProtected = signProtected;
+            PreEvaluationValue = baseValue;
+            PostEvaluationValue = baseValue;
         }
 
         public StatusInt(int baseValue, StatusNameInt statusName, bool signProtected = true)
@@ -44,66 +49,64 @@ namespace StatusEffectFramework
             m_StatusName = statusName;
             m_BaseValue = baseValue;
             m_SignProtected = signProtected;
-
-            if (Manager != null)
-            {
-                UpdateBaseValue();
-                m_PreviousBaseValue = baseValue;
-                UpdateSignProtected();
-                m_PreviousSignProtected = signProtected;
-            }
-            UpdateValue();
+            m_PreviousBaseValue = baseValue;
+            m_PreviousSignProtected = signProtected;
+            PreEvaluationValue = baseValue;
+            PostEvaluationValue = baseValue;
         }
 
         public static implicit operator int(StatusInt statusInt) => statusInt.Value;
 
         public override void SetManager(IStatusManager instance)
         {
+            if (Manager != null)
+                foreach (StatusEffect statusEffect in Manager.Effects)
+                    foreach (var dynamicInt in statusEffect.DynamicInts)
+                        if (dynamicInt.StatusName == m_StatusName)
+                        {
+                            if (dynamicInt.PostEvaluate)
+                                dynamicInt.OnValueChanged -= UpdatePostEvaluationValue;
+                            else
+                                dynamicInt.OnValueChanged -= UpdatePreEvaluationValue;
+                        }
+
             base.SetManager(instance);
-            m_PreviousBaseValue = m_BaseValue;
-            m_PreviousSignProtected = m_SignProtected;
-            m_Value = m_BaseValue;
-            UpdateValue();
+
+            foreach (StatusEffect statusEffect in Manager.Effects)
+                foreach (var dynamicInt in statusEffect.DynamicInts)
+                    if (dynamicInt.StatusName == m_StatusName)
+                    {
+                        if (dynamicInt.PostEvaluate)
+                            dynamicInt.OnValueChanged += UpdatePostEvaluationValue;
+                        else
+                            dynamicInt.OnValueChanged += UpdatePreEvaluationValue;
+                    }
+
+            UpdatePreEvaluationValue();
         }
 
-        protected virtual void BaseValueChanged()
+        protected override void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
         {
-            UpdateBaseValue();
-            m_PreviousBaseValue = m_BaseValue;
-            UpdateValue();
-        }
-
-        protected virtual void SignProtectedChanged()
-        {
-            UpdateSignProtected();
-            m_PreviousSignProtected = m_SignProtected;
-            UpdateValue();
-        }
-
-        protected override void OnStatusEffect(StatusEffect statusEffect)
-        {
+            if (action is StatusEffectAction.AddedStatusEffect)
+                foreach (var dynamicInt in statusEffect.DynamicInts)
+                    if (dynamicInt.StatusName == m_StatusName)
+                        if (dynamicInt.PostEvaluate)
+                            dynamicInt.OnValueChanged += UpdatePostEvaluationValue;
+                        else
+                            dynamicInt.OnValueChanged += UpdatePreEvaluationValue;
             // Only update if the status effect actually has any effects that have the same StatusName
-            if (statusEffect.Data.Effects.Select(e => e.StatusName).Contains(m_StatusName))
-                UpdateValue();
+            if (statusEffect.Data.Effects.Any(effect => effect.StatusName == m_StatusName))
+                UpdatePreEvaluationValue();
         }
 
-        protected virtual int GetValue()
+        protected int GetPreEvaluationValue()
         {
             if (Manager == null)
                 return m_BaseValue;
 
-            bool positive = Mathf.Sign(m_BaseValue) > 0;
-            int additiveValue = 0;
-            int multiplicativeValue = 1;
-            int postAdditiveValue = 0;
-            int minimumPriority = -1;
-            int minimumValue = int.MinValue;
-            int maximumPriority = -1;
-            int maximumValue = int.MaxValue;
-            int overwritePriority = -1;
-            int overwriteValue = 0;
+            var statusIntValue = new StatusIntValue(m_BaseValue, m_SignProtected);
 
-            int effectValue;
+            int effectValue = default;
 
             foreach (StatusEffect statusEffect in Manager.Effects)
             {
@@ -112,74 +115,81 @@ namespace StatusEffectFramework
                     if (effect.StatusName != m_StatusName)
                         continue;
 
-                    effectValue = statusEffect.Stacks * (effect.UseBaseValue ? (int)statusEffect.Data.BaseValue : effect.IntValue);
-
-                    switch (effect.ValueModifier)
+                    switch (effect.ValueType)
                     {
-                        case ValueModifier.Additive:
-                            additiveValue += effectValue;
+                        case ValueType.ExplicitValue:
+                            effectValue = statusEffect.Stacks * effect.IntValue;
                             break;
-                        case ValueModifier.Multiplicative:
-                            multiplicativeValue += effectValue;
+                        case ValueType.BaseValue:
+                            effectValue = statusEffect.Stacks * (int)statusEffect.Data.BaseValue;
                             break;
-                        case ValueModifier.PostAdditive:
-                            postAdditiveValue += effectValue;
-                            break;
-                        case ValueModifier.Minimum:
-                            if (minimumPriority < effect.Priority)
-                            {
-                                minimumPriority = effect.Priority;
-                                minimumValue = effectValue;
-                            }
-                            else if (minimumPriority == effect.Priority)
-                                minimumValue = Mathf.Max(minimumValue, effectValue);
-                            break;
-                        case ValueModifier.Maximum:
-                            if (maximumPriority < effect.Priority)
-                            {
-                                maximumPriority = effect.Priority;
-                                maximumValue = effectValue;
-                            }
-                            else if (maximumPriority == effect.Priority)
-                                maximumValue = Mathf.Min(maximumValue, effectValue);
-                            break;
-                        case ValueModifier.Overwrite:
-                            if (overwritePriority <= effect.Priority)
-                            {
-                                overwritePriority = effect.Priority;
-                                overwriteValue = effectValue;
-                            }
-                            break;
+                        case ValueType.DynamicValue:
+                            continue;
                     }
+
+                    statusIntValue.ApplyEffect(effect.ValueModifier, effectValue, effect.Priority);
                 }
+
+                foreach (var dynamicInt in statusEffect.DynamicInts)
+                    if (!dynamicInt.PostEvaluate && dynamicInt.StatusName == m_StatusName)
+                        statusIntValue.ApplyEffect(dynamicInt.ValueModifier, statusEffect.Stacks * dynamicInt.Value, dynamicInt.Priority);
             }
 
-            if (overwritePriority >= 0)
-                return Mathf.Clamp(overwriteValue, overwritePriority <= minimumPriority ? minimumValue : int.MinValue, overwritePriority <= maximumPriority ? maximumValue : int.MaxValue);
-            else if (m_SignProtected)
-                return Mathf.Clamp((m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, Mathf.Max(positive ? 0 : int.MinValue, minimumValue), Mathf.Min(positive ? int.MaxValue : 0, maximumValue));
-            else
-                return Mathf.Clamp((m_BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, minimumValue, maximumValue);
+            return statusIntValue.GetValue();
         }
 
-        protected void UpdateValue()
+        protected int GetPostEvaluationValue()
         {
-            m_PreviousValue = m_Value;
-            m_Value = GetValue();
-            if (m_Value != m_PreviousValue)
-                OnValueChanged?.Invoke(m_PreviousValue, m_Value);
+            if (Manager == null)
+                return PreEvaluationValue;
+
+            var statusIntValue = new StatusIntValue(PreEvaluationValue, m_SignProtected);
+
+            foreach (StatusEffect statusEffect in Manager.Effects)
+                foreach (var dynamicInt in statusEffect.DynamicInts)
+                    if (dynamicInt.PostEvaluate && dynamicInt.StatusName == m_StatusName)
+                        statusIntValue.ApplyEffect(dynamicInt.ValueModifier, statusEffect.Stacks * dynamicInt.Value, dynamicInt.Priority);
+
+            return statusIntValue.GetValue();
+        }
+
+        protected void UpdatePreEvaluationValue()
+        {
+            m_PreviousPreEvaluationValue = PreEvaluationValue;
+            PreEvaluationValue = GetPreEvaluationValue();
+            if (PreEvaluationValue != m_PreviousPreEvaluationValue)
+            {
+                OnPreEvaluationValueChanged?.Invoke(m_PreviousPreEvaluationValue, PreEvaluationValue);
+                UpdatePostEvaluationValue();
+            }
+        }
+
+        protected void UpdatePostEvaluationValue()
+        {
+            m_PreviousPostEvaluationValue = PostEvaluationValue;
+            PostEvaluationValue = GetPostEvaluationValue();
+            if (PostEvaluationValue != m_PreviousPostEvaluationValue)
+                OnValueChanged?.Invoke(m_PreviousPostEvaluationValue, PostEvaluationValue);
         }
 
         protected void UpdateBaseValue()
         {
             if (m_BaseValue != m_PreviousBaseValue)
+            {
                 OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
+                m_PreviousBaseValue = m_BaseValue;
+                UpdatePreEvaluationValue();
+            }
         }
 
         protected void UpdateSignProtected()
         {
             if (m_SignProtected != m_PreviousSignProtected)
+            {
                 OnSignProtectedChanged?.Invoke(m_PreviousSignProtected, m_SignProtected);
+                m_PreviousSignProtected = m_SignProtected;
+                UpdatePreEvaluationValue();
+            }
         }
 #if UNITY_EDITOR
 
@@ -188,8 +198,6 @@ namespace StatusEffectFramework
             await Task.Yield();
 
             UpdateBaseValue();
-            m_PreviousBaseValue = m_BaseValue;
-            UpdateValue();
         }
 
         protected virtual async void SignProtectedUpdate()
@@ -197,9 +205,131 @@ namespace StatusEffectFramework
             await Task.Yield();
 
             UpdateSignProtected();
-            m_PreviousSignProtected = m_SignProtected;
-            UpdateValue();
         }
 #endif
+    }
+
+#if BURST
+    [BurstCompile]
+#endif
+    internal struct StatusIntValue
+    {
+        public int BaseValue;
+
+        public int AdditiveValue;
+        public int MultiplicativeValue;
+        public int PostAdditiveValue;
+        public int MinimumPriority;
+        public int MinimumValue;
+        public int MaximumPriority;
+        public int MaximumValue;
+        public int OverwritePriority;
+        public int OverwriteValue;
+
+        public StatusIntValue(int baseValue, bool signProtected)
+        {
+            BaseValue = baseValue;
+            AdditiveValue = 0;
+            MultiplicativeValue = 1;
+            PostAdditiveValue = 0;
+            MinimumPriority = -1;
+            MinimumValue = int.MinValue;
+            MaximumPriority = -1;
+            MaximumValue = int.MaxValue;
+            OverwritePriority = -1;
+            OverwriteValue = 0;
+            if (signProtected)
+            {
+                if (
+#if BURST
+                    math.sign
+#else
+                    Mathf.Sign
+#endif
+                    (baseValue) >= 0)
+                    MinimumValue = 0;
+                else
+                    MaximumValue = 0;
+            }
+        }
+
+#if BURST
+        [BurstCompile]
+#endif
+        public void ApplyEffect(ValueModifier valueModifier, int value, int priority)
+        {
+            switch (valueModifier)
+            {
+                case ValueModifier.Additive:
+                    AdditiveValue += value;
+                    break;
+                case ValueModifier.Multiplicative:
+                    MultiplicativeValue += value;
+                    break;
+                case ValueModifier.PostAdditive:
+                    PostAdditiveValue += value;
+                    break;
+                case ValueModifier.Minimum:
+                    if (MinimumPriority < priority)
+                    {
+                        MinimumPriority = priority;
+                        MinimumValue = value;
+                    }
+                    else if (MinimumPriority == priority)
+                        MinimumValue =
+#if BURST
+                        math.max
+#else
+                        Mathf.Max
+#endif
+                        (MinimumValue, value);
+                    break;
+                case ValueModifier.Maximum:
+                    if (MaximumPriority < priority)
+                    {
+                        MaximumPriority = priority;
+                        MaximumValue = value;
+                    }
+                    else if (MaximumPriority == priority)
+                        MaximumValue =
+#if BURST
+                        math.min
+#else
+                        Mathf.Min
+#endif
+                        (MaximumValue, value);
+                    break;
+                case ValueModifier.Overwrite:
+                    if (OverwritePriority <= priority)
+                    {
+                        OverwritePriority = priority;
+                        OverwriteValue = value;
+                    }
+                    break;
+            }
+        }
+
+#if BURST
+        [BurstCompile]
+#endif
+        public int GetValue()
+        {
+            if (OverwritePriority >= 0)
+                return
+#if BURST
+                    math.clamp
+#else
+                    Mathf.Clamp
+#endif
+                    (OverwriteValue, OverwritePriority <= MinimumPriority ? MinimumValue : int.MinValue, OverwritePriority <= MaximumPriority ? MaximumValue : int.MaxValue);
+            else
+                return
+#if BURST
+                    math.clamp
+#else
+                    Mathf.Clamp
+#endif
+                    ((BaseValue + AdditiveValue) * MultiplicativeValue + PostAdditiveValue, MinimumValue, MaximumValue);
+        }
     }
 }

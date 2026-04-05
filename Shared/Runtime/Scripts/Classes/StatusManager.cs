@@ -600,7 +600,7 @@ namespace StatusEffectFramework
             else
             {
                 // Create a new status effect instance.
-                statusEffect = new StatusEffect(AvailableId, statusEffectData, timing, Time.timeAsDouble, durationValue, stacks);
+                statusEffect = new StatusEffect(this, AvailableId, statusEffectData, timing, Time.timeAsDouble, durationValue, stacks);
                 AvailableId++;
                 // Add the effect for a given monobehaviour. This also is the first time
                 // initializing so we need to initialize all of the Status Variables
@@ -608,9 +608,9 @@ namespace StatusEffectFramework
 #if UNITY_EDITOR
                 m_EditorOnlyEffects.Add(statusEffect);
 #endif
+                // If a module exists it will be started.
+                statusEffect.Start(this);
             }
-            // If a module exists it will be started.
-            statusEffect.Start(this);
             
             OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
             // Return the effect in case it is wanted for other reference.

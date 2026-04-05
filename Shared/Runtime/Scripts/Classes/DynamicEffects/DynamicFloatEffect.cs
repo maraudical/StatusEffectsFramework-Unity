@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-
 namespace StatusEffectFramework
 {
     public abstract class DynamicFloatEffect : DynamicEffect

@@ -2,6 +2,11 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using NUnit.Framework.Internal;
+
+#if BURST
+using Unity.Burst;
+#endif
 
 namespace StatusEffectFramework
 {
@@ -9,75 +14,91 @@ namespace StatusEffectFramework
     public class StatusBool : StatusVariable
     {
         public event Action<bool, bool> OnValueChanged;
+        public event Action<bool, bool> OnPreEvaluationValueChanged;
         public event Action<bool, bool> OnBaseValueChanged;
 
         public StatusNameBool StatusName => m_StatusName;
-        public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
-        public bool Value => Manager != null ? m_Value : m_BaseValue;
+        public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; UpdateBaseValue(); } }
+        public bool Value => Manager != null ? PostEvaluationValue : m_BaseValue;
+        public bool PreEvaluationValue { get; protected set; }
+        public bool PostEvaluationValue { get; protected set; }
 
         [SerializeField] protected StatusNameBool m_StatusName;
         [SerializeField] protected bool m_BaseValue;
-        protected bool m_PreviousBaseValue;
-        [SerializeField] protected bool m_Value;
-        protected bool m_PreviousValue;
 
-        public StatusBool(bool baseValue)
+        protected bool m_PreviousBaseValue;
+        protected bool m_PreviousPreEvaluationValue;
+        protected bool m_PreviousPostEvaluationValue;
+
+        public StatusBool(bool baseValue, bool signProtected = true)
         {
             m_BaseValue = baseValue;
-
-            if (Manager != null)
-            {
-                UpdateBaseValue();
-                m_PreviousBaseValue = baseValue;
-            }
+            m_PreviousBaseValue = baseValue;
+            PreEvaluationValue = baseValue;
+            PostEvaluationValue = baseValue;
         }
 
-        public StatusBool(bool baseValue, StatusNameBool statusName)
+        public StatusBool(bool baseValue, StatusNameBool statusName, bool signProtected = true)
         {
             m_StatusName = statusName;
             m_BaseValue = baseValue;
-
-            if (Manager != null)
-            {
-                UpdateBaseValue();
-                m_PreviousBaseValue = baseValue;
-            }
-            UpdateValue();
+            m_PreviousBaseValue = baseValue;
+            PreEvaluationValue = baseValue;
+            PostEvaluationValue = baseValue;
         }
 
         public static implicit operator bool(StatusBool statusBool) => statusBool.Value;
 
         public override void SetManager(IStatusManager instance)
         {
+            if (Manager != null)
+                foreach (StatusEffect statusEffect in Manager.Effects)
+                    foreach (var dynamicBool in statusEffect.DynamicBools)
+                        if (dynamicBool.StatusName == m_StatusName)
+                        {
+                            if (dynamicBool.PostEvaluate)
+                                dynamicBool.OnValueChanged -= UpdatePostEvaluationValue;
+                            else
+                                dynamicBool.OnValueChanged -= UpdatePreEvaluationValue;
+                        }
+
             base.SetManager(instance);
-            m_PreviousBaseValue = m_BaseValue;
-            m_Value = m_BaseValue;
-            UpdateValue();
+
+            foreach (StatusEffect statusEffect in Manager.Effects)
+                foreach (var dynamicBool in statusEffect.DynamicBools)
+                    if (dynamicBool.StatusName == m_StatusName)
+                    {
+                        if (dynamicBool.PostEvaluate)
+                            dynamicBool.OnValueChanged += UpdatePostEvaluationValue;
+                        else
+                            dynamicBool.OnValueChanged += UpdatePreEvaluationValue;
+                    }
+
+            UpdatePreEvaluationValue();
         }
 
-        protected virtual void BaseValueChanged()
+        protected override void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
         {
-            UpdateBaseValue();
-            m_PreviousBaseValue = m_BaseValue;
-            UpdateValue();
-        }
-
-        protected override void OnStatusEffect(StatusEffect statusEffect)
-        {
+            if (action is StatusEffectAction.AddedStatusEffect)
+                foreach (var dynamicBool in statusEffect.DynamicBools)
+                    if (dynamicBool.StatusName == m_StatusName)
+                        if (dynamicBool.PostEvaluate)
+                            dynamicBool.OnValueChanged += UpdatePostEvaluationValue;
+                        else
+                            dynamicBool.OnValueChanged += UpdatePreEvaluationValue;
             // Only update if the status effect actually has any effects that have the same StatusName
-            if (statusEffect.Data.Effects.Select(e => e.StatusName).Contains(m_StatusName))
-                UpdateValue();
+            if (statusEffect.Data.Effects.Any(effect => effect.StatusName == m_StatusName))
+                UpdatePreEvaluationValue();
         }
 
-        protected bool GetValue()
+        protected bool GetPreEvaluationValue()
         {
             if (Manager == null)
                 return m_BaseValue;
 
-            bool value = m_BaseValue;
-            int priority = -1;
+            var statusBoolValue = new StatusBoolValue(m_BaseValue);
 
-            bool effectValue;
+            bool effectValue = default;
 
             foreach (StatusEffect statusEffect in Manager.Effects)
             {
@@ -86,31 +107,71 @@ namespace StatusEffectFramework
                     if (effect.StatusName != m_StatusName)
                         continue;
 
-                    effectValue = effect.UseBaseValue ? Convert.ToBoolean(statusEffect.Data.BaseValue) : effect.BoolValue;
-
-                    if (priority < effect.Priority)
+                    switch (effect.ValueType)
                     {
-                        priority = effect.Priority;
-                        value = effectValue;
+                        case ValueType.ExplicitValue:
+                            effectValue = effect.BoolValue;
+                            break;
+                        case ValueType.BaseValue:
+                            effectValue = Convert.ToBoolean(statusEffect.Data.BaseValue);
+                            break;
+                        case ValueType.DynamicValue:
+                            continue;
                     }
+
+                    statusBoolValue.ApplyEffect(effectValue, effect.Priority);
                 }
+
+                foreach (var dynamicBool in statusEffect.DynamicBools)
+                    if (!dynamicBool.PostEvaluate && dynamicBool.StatusName == m_StatusName)
+                        statusBoolValue.ApplyEffect(dynamicBool.Value, dynamicBool.Priority);
             }
 
-            return value;
+            return statusBoolValue.GetValue();
         }
 
-        protected void UpdateValue()
+        protected bool GetPostEvaluationValue()
         {
-            m_PreviousValue = m_Value;
-            m_Value = GetValue();
-            if (m_Value != m_PreviousValue)
-                OnValueChanged?.Invoke(m_PreviousValue, m_Value);
+            if (Manager == null)
+                return PreEvaluationValue;
+
+            var statusBoolValue = new StatusBoolValue(PreEvaluationValue);
+
+            foreach (StatusEffect statusEffect in Manager.Effects)
+                foreach (var dynamicBool in statusEffect.DynamicBools)
+                    if (dynamicBool.PostEvaluate && dynamicBool.StatusName == m_StatusName)
+                        statusBoolValue.ApplyEffect(dynamicBool.Value, dynamicBool.Priority);
+
+            return statusBoolValue.GetValue();
+        }
+
+        protected void UpdatePreEvaluationValue()
+        {
+            m_PreviousPreEvaluationValue = PreEvaluationValue;
+            PreEvaluationValue = GetPreEvaluationValue();
+            if (PreEvaluationValue != m_PreviousPreEvaluationValue)
+            {
+                OnPreEvaluationValueChanged?.Invoke(m_PreviousPreEvaluationValue, PreEvaluationValue);
+                UpdatePostEvaluationValue();
+            }
+        }
+
+        protected void UpdatePostEvaluationValue()
+        {
+            m_PreviousPostEvaluationValue = PostEvaluationValue;
+            PostEvaluationValue = GetPostEvaluationValue();
+            if (PostEvaluationValue != m_PreviousPostEvaluationValue)
+                OnValueChanged?.Invoke(m_PreviousPostEvaluationValue, PostEvaluationValue);
         }
 
         protected void UpdateBaseValue()
         {
             if (m_BaseValue != m_PreviousBaseValue)
+            {
                 OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
+                m_PreviousBaseValue = m_BaseValue;
+                UpdatePreEvaluationValue();
+            }
         }
 #if UNITY_EDITOR
 
@@ -119,9 +180,40 @@ namespace StatusEffectFramework
             await Task.Yield();
 
             UpdateBaseValue();
-            m_PreviousBaseValue = m_BaseValue;
-            UpdateValue();
         }
 #endif
+    }
+
+#if BURST
+    [BurstCompile]
+#endif
+    internal struct StatusBoolValue
+    {
+        public bool Value;
+
+        public int Priority;
+
+        public StatusBoolValue(bool baseValue)
+        {
+            Value = baseValue;
+            Priority = int.MinValue;
+        }
+
+#if BURST
+        [BurstCompile]
+#endif
+        public void ApplyEffect(bool value, int priority)
+        {
+            if (Priority < priority)
+            {
+                Priority = priority;
+                Value = value;
+            }
+        }
+
+#if BURST
+        [BurstCompile]
+#endif
+        public bool GetValue() => Value;
     }
 }

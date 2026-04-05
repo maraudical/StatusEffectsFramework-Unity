@@ -4,7 +4,6 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using static Unity.Entities.EntitiesJournaling;
 
 namespace StatusEffectFramework.Entities
 {
@@ -79,7 +78,7 @@ namespace StatusEffectFramework.Entities
                 for (int i = 0; i < statusBools.Length; i++)
                 {
                     ref var statusBool = ref statusBools.ElementAt(i);
-                    GetValue(ref statusBool, effectIdToStatusEffect.GetValuesForKey(statusBool.StatusName), References);
+                    GetValue(ref statusBool, effectIdToStatusEffect.GetValuesForKey(statusBool.StatusName), , References);
                 }
             }
 
@@ -169,23 +168,15 @@ namespace StatusEffectFramework.Entities
 
             // Copied from regular StatusInt.GetValue() with burstable types and math.
             public void GetValue(ref StatusInts statusInt, 
-                in NativeParallelMultiHashMap<Hash128, StatusEffects>.Enumerator statusEffects, 
+                in NativeParallelMultiHashMap<Hash128, StatusEffects>.Enumerator statusEffects,
+                in NativeParallelMultiHashMap<Hash128, DynamicInts>.Enumerator dynamicInts,
                 in StatusReferences references)
             {
                 UnmanagedEffect effect;
 
-                bool positive = math.sign(statusInt.BaseValue) >= 0;
-                int additiveValue = 0;
-                int multiplicativeValue = 1;
-                int postAdditiveValue = 0;
-                int minimumPriority = -1;
-                int minimumValue = int.MinValue;
-                int maximumPriority = -1;
-                int maximumValue = int.MaxValue;
-                int overwritePriority = -1;
-                int overwriteValue = 0;
+                var statusIntValue = new StatusIntValue(statusInt.BaseValue, statusInt.SignProtected);
 
-                int effectValue;
+                int effectValue = default;
 
                 foreach (var statusEffect in statusEffects)
                 {
@@ -193,72 +184,48 @@ namespace StatusEffectFramework.Entities
 
                     for (int i = 0; i < data.Effects.Length; i++)
                     {
+                        RRrrr//
+                        ValueTuple<UnmanagedEffect, StatusEffects, float> test;
+                        // in one group include the effect, se, and base val
+                        // for dynamics I need too  include stack count
                         effect = data.Effects[i];
 
                         if (effect.StatusName != statusInt.StatusName)
                             continue;
 
-                        effectValue = statusEffect.Stacks * (effect.UseBaseValue ? (int)data.BaseValue : effect.IntValue);
-
-                        switch (effect.ValueModifier)
+                        switch (effect.ValueType)
                         {
-                            case ValueModifier.Additive:
-                                additiveValue += effectValue;
+                            case ValueType.ExplicitValue:
+                                effectValue = statusEffect.Stacks * effect.IntValue;
                                 break;
-                            case ValueModifier.Multiplicative:
-                                multiplicativeValue += effectValue;
+                            case ValueType.BaseValue:
+                                effectValue = statusEffect.Stacks * (int)data.BaseValue;
                                 break;
-                            case ValueModifier.PostAdditive:
-                                postAdditiveValue += effectValue;
-                                break;
-                            case ValueModifier.Minimum:
-                                if (minimumPriority < effect.Priority)
-                                {
-                                    minimumPriority = effect.Priority;
-                                    minimumValue = effectValue;
-                                }
-                                else if (minimumPriority == effect.Priority)
-                                    minimumValue = math.max(minimumValue, effectValue);
-                                break;
-                            case ValueModifier.Maximum:
-                                if (maximumPriority < effect.Priority)
-                                {
-                                    maximumPriority = effect.Priority;
-                                    maximumValue = effectValue;
-                                }
-                                else if (maximumPriority == effect.Priority)
-                                    maximumValue = math.min(maximumValue, effectValue);
-                                break;
-                            case ValueModifier.Overwrite:
-                                if (overwritePriority <= effect.Priority)
-                                {
-                                    overwritePriority = effect.Priority;
-                                    overwriteValue = effectValue;
-                                }
-                                break;
+                            case ValueType.DynamicValue:
+                                continue;
                         }
+
+                        statusIntValue.ApplyEffect(effect.ValueModifier, effectValue, effect.Priority);
                     }
                 }
+                hmmmm//deal with stacks
+                foreach (var dynamicInt in dynamicInts)
+                    if (!dynamicInt.PostEvaluate)
+                        statusIntValue.ApplyEffect(dynamicInt.ValueModifier, dynamicInt.Value, dynamicInt.Priority);
 
-                if (overwritePriority >= 0)
-                    statusInt.Value = math.clamp(overwriteValue, overwritePriority <= minimumPriority ? minimumValue : int.MinValue, overwritePriority <= maximumPriority ? maximumValue : int.MaxValue);
-                else if (statusInt.SignProtected)
-                    statusInt.Value = math.clamp((statusInt.BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, math.max(positive ? 0 : int.MinValue, minimumValue), math.min(positive ? int.MaxValue : 0, maximumValue));
-                else
-                    statusInt.Value = math.clamp((statusInt.BaseValue + additiveValue) * multiplicativeValue + postAdditiveValue, minimumValue, maximumValue);
+                statusInt.Value = statusIntValue.GetValue();
             }
-
-            // Copied from regular StatusBool.GetValue() with burstable types and math.
+            
             public void GetValue(ref StatusBools statusBool, 
-                in NativeParallelMultiHashMap<Hash128, StatusEffects>.Enumerator statusEffects, 
+                in NativeParallelMultiHashMap<Hash128, StatusEffects>.Enumerator statusEffects,
+                in NativeParallelMultiHashMap<Hash128, DynamicBools>.Enumerator dynamicBools,
                 in StatusReferences references)
             {
                 UnmanagedEffect effect;
 
-                bool value = statusBool.BaseValue;
-                int priority = -1;
+                var statusBoolValue = new StatusBoolValue(statusBool.BaseValue);
 
-                bool effectValue;
+                bool effectValue = default;
 
                 foreach (var statusEffect in statusEffects)
                 {
@@ -271,17 +238,27 @@ namespace StatusEffectFramework.Entities
                         if (effect.StatusName != statusBool.StatusName)
                             continue;
 
-                        effectValue = effect.UseBaseValue ? Convert.ToBoolean(data.BaseValue) : effect.BoolValue;
-
-                        if (priority < effect.Priority)
+                        switch (effect.ValueType)
                         {
-                            priority = effect.Priority;
-                            value = effectValue;
+                            case ValueType.ExplicitValue:
+                                effectValue = effect.BoolValue;
+                                break;
+                            case ValueType.BaseValue:
+                                effectValue = Convert.ToBoolean(data.BaseValue);
+                                break;
+                            case ValueType.DynamicValue:
+                                continue;
                         }
+
+                        statusBoolValue.ApplyEffect(effectValue, effect.Priority);
                     }
                 }
 
-                statusBool.Value = value;
+                foreach (var dynamicBool in dynamicBools)
+                    if (!dynamicBool.PostEvaluate)
+                        statusBoolValue.ApplyEffect(dynamicBool.Value, dynamicBool.Priority);
+
+                statusBool.PreEvaluationValue = statusBoolValue.GetValue();
             }
         }
     }

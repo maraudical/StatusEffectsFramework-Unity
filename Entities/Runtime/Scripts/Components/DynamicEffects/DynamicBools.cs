@@ -22,10 +22,6 @@ namespace StatusEffectFramework.Entities
 #if NETCODE
         [GhostField]
 #endif
-        public ValueModifier ValueModifier;
-#if NETCODE
-        [GhostField]
-#endif
         public bool PostEvaluate;
 #if NETCODE
         [GhostField]

@@ -72,11 +72,11 @@ namespace StatusEffectFramework
                         break;
                     case StatusNameInt:
                         if (effect.DynamicIntEffect)
-                            dynamicFloatsList.Add(effect.DynamicIntEffect.ValueEvent(manager, this, effect));
+                            dynamicIntsList.Add(effect.DynamicIntEffect.ValueEvent(manager, this, effect));
                         break;
                     case StatusNameBool:
                         if (effect.DynamicBoolEffect)
-                            dynamicFloatsList.Add(effect.DynamicBoolEffect.ValueEvent(manager, this, effect));
+                            dynamicBoolsList.Add(effect.DynamicBoolEffect.ValueEvent(manager, this, effect));
                         break;
                 }
             }
