@@ -5,8 +5,12 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
+using static UnityEngine.Analytics.IAnalytic;
+
 #if NETCODE
 using Unity.NetCode;
+using static Unity.Entities.EntitiesJournaling;
+using UnityEditor.PackageManager.Requests;
 #endif
 
 namespace StatusEffectFramework.Entities
@@ -211,12 +215,15 @@ namespace StatusEffectFramework.Entities
             public StatusReferences References;
 
             unsafe void Execute([ChunkIndexInQuery] int sortKey, 
-                Entity entity, 
+                Entity entity,
                 EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW, 
                 ref StatusManagerComponent statusManager, 
                 ref DynamicBuffer<StatusEffectRequests> statusEffectRequests, 
                 ref DynamicBuffer<StatusEffects> statusEffects, 
-                ref DynamicBuffer<StatusEffectEvents> statusEffectEvents)
+                ref DynamicBuffer<StatusEffectEvents> statusEffectEvents,
+                ref DynamicBuffer<DynamicFloats> statusEffects,
+                ref DynamicBuffer<DynamicInts> statusEffects,
+                ref DynamicBuffer<DynamicBools> statusEffects)
             {
                 // If nothing to change then continue.
                 if (statusEffectRequests.Length <= 0)
@@ -794,6 +801,18 @@ namespace StatusEffectFramework.Entities
                             Stacks = indexedUpdate.Stacks,
                             EventId = indexedUpdate.EventId,
                         });
+                        // Add dynamic effects to the buffers.
+                        if (References.IdToStatusEffectDataMap.Value.TryGetValue(indexedUpdate.StatusEffectDataId, out var reference))
+                        {
+                            ref UnmanagedStatusEffectData statusEffectData = ref reference.Value;
+                            for (int i = 0; i < statusEffectData.Effects.Length; i++)
+                            {
+                                var effect = statusEffectData.Effects[i];
+                                if (effect.ValueType is not ValueType.DynamicValue)
+                                    continue;
+
+                            }
+                        }
                         continue;
                     }
 

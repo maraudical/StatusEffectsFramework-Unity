@@ -20,6 +20,10 @@ namespace StatusEffectFramework.Entities
 #endif
         public TypeIndex SystemType;
 #if NETCODE
+        [GhostField(Composite = true)]
+#endif
+        public Hash128 StatusName;
+#if NETCODE
         [GhostField]
 #endif
         public bool PostEvaluate;
