@@ -51,8 +51,11 @@ namespace StatusEffectFramework.Entities
                 in DynamicBuffer<DynamicBools> dynamicBools,
                 ref DynamicBuffer<StatusFloats> statusFloats, 
                 ref DynamicBuffer<StatusInts> statusInts, 
-                ref DynamicBuffer<StatusBools> statusBools)
+                ref DynamicBuffer<StatusBools> statusBools,
+                EnabledRefRW<DynamicPreEvaluateUpdate> preEvaluateUpdate)
             {
+                preEvaluateUpdate.ValueRW = false;
+
                 using var statusNameToEffect = new NativeParallelMultiHashMap<Hash128, (UnmanagedEffect, int, float)>(statusEffects.Length, Allocator.Temp);
                 using var idToStatusEffect = new NativeHashMap<uint, StatusEffects>(statusEffects.Length, Allocator.Temp);
                 using var statusNameToDynamicFloat = new NativeParallelMultiHashMap<Hash128, (DynamicFloats, int)>(statusEffects.Length, Allocator.Temp);

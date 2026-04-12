@@ -20,7 +20,7 @@ namespace StatusEffectFramework.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, DynamicFloats, DynamicInts, DynamicBools, StatusFloats, StatusInts, StatusBools>().WithAll<Simulate>().WithAny<StatusEffectEvents, DynamicPreEvaluateUpdate>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, DynamicFloats, DynamicInts, DynamicBools, StatusFloats, StatusInts, StatusBools>().WithAll<Simulate>().WithAny<StatusEffectEvents, DynamicPostEvaluateUpdate>().Build();
             state.RequireForUpdate(m_EntityQuery);
         }
 
@@ -40,8 +40,11 @@ namespace StatusEffectFramework.Entities
                 in DynamicBuffer<DynamicBools> dynamicBools,
                 ref DynamicBuffer<StatusFloats> statusFloats,
                 ref DynamicBuffer<StatusInts> statusInts,
-                ref DynamicBuffer<StatusBools> statusBools)
+                ref DynamicBuffer<StatusBools> statusBools,
+                EnabledRefRW<DynamicPostEvaluateUpdate> postEvaluateUpdate)
             {
+                postEvaluateUpdate.ValueRW = false;
+                
                 using var idToStatusEffect = new NativeHashMap<uint, StatusEffects>(statusEffects.Length, Allocator.Temp);
                 using var statusNameToDynamicFloat = new NativeParallelMultiHashMap<Hash128, (DynamicFloats, int)>(statusEffects.Length, Allocator.Temp);
                 using var statusNameToDynamicInt = new NativeParallelMultiHashMap<Hash128, (DynamicInts, int)>(statusEffects.Length, Allocator.Temp);

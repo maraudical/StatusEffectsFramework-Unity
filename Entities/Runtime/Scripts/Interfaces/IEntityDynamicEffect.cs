@@ -7,6 +7,6 @@ namespace StatusEffectFramework.Entities
     /// </summary>
     public interface IEntityDynamicEffect
     {
-        public SystemTypeIndex GetSystemTypeIndex();
+        public TypeIndex GetTypeIndex();
     }
 }

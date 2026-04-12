@@ -18,7 +18,7 @@ namespace StatusEffectFramework.Entities
 #if NETCODE
         [GhostField(Composite = true)]
 #endif
-        public TypeIndex SystemType;
+        public TypeIndex TypeIndex;
 #if NETCODE
         [GhostField(Composite = true)]
 #endif
