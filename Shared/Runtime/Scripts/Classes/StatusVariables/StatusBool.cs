@@ -107,15 +107,15 @@ namespace StatusEffectFramework
                     if (effect.StatusName != m_StatusName)
                         continue;
 
-                    switch (effect.ValueType)
+                    switch (effect.ValueSource)
                     {
-                        case ValueType.ExplicitValue:
+                        case ValueSource.ExplicitValue:
                             effectValue = effect.BoolValue;
                             break;
-                        case ValueType.BaseValue:
+                        case ValueSource.BaseValue:
                             effectValue = Convert.ToBoolean(statusEffect.Data.BaseValue);
                             break;
-                        case ValueType.DynamicValue:
+                        case ValueSource.DynamicValue:
                             continue;
                     }
 

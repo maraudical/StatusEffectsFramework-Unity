@@ -7,10 +7,10 @@ namespace StatusEffectFramework.Entities
 {
 #if NETCODE
     [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
-    [UpdateAfter(typeof(EndPredictedStatusEffectEntityCommandBufferSystem))]
+    [UpdateAfter(typeof(StatusVariablePreEvaluateSystem))]
 #else
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
-    [UpdateAfter(typeof(EndStatusEffectEntityCommandBufferSystem))]
+    [UpdateAfter(typeof(StatusVariablePreEvaluateSystem))]
 #endif
     [BurstCompile]
     public partial struct StatusVariablePostEvaluateSystem : ISystem
@@ -20,14 +20,14 @@ namespace StatusEffectFramework.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, DynamicFloats, DynamicInts, DynamicBools, StatusFloats, StatusInts, StatusBools>().WithAll<Simulate>().WithAny<StatusEffectEvents, DynamicPostEvaluateUpdate>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, DynamicFloats, DynamicInts, DynamicBools, StatusFloats, StatusInts, StatusBools>().WithAll<StatusVariablePostEvaluateUpdate, Simulate>().Build();
             state.RequireForUpdate(m_EntityQuery);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            state.Dependency = new StatusVariablePostEvaluateJob().ScheduleParallelByRef(m_EntityQuery, state.Dependency);
+            state.Dependency = new StatusVariablePostEvaluateJob().ScheduleParallel(m_EntityQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -41,7 +41,7 @@ namespace StatusEffectFramework.Entities
                 ref DynamicBuffer<StatusFloats> statusFloats,
                 ref DynamicBuffer<StatusInts> statusInts,
                 ref DynamicBuffer<StatusBools> statusBools,
-                EnabledRefRW<DynamicPostEvaluateUpdate> postEvaluateUpdate)
+                EnabledRefRW<StatusVariablePostEvaluateUpdate> postEvaluateUpdate)
             {
                 postEvaluateUpdate.ValueRW = false;
                 
@@ -82,19 +82,19 @@ namespace StatusEffectFramework.Entities
                     GetValue(ref statusBool, statusNameToDynamicBool.GetValuesForKey(statusBool.StatusName));
                 }
             }
-            
+
             public void GetValue(ref StatusFloats statusFloat,
                 in NativeParallelMultiHashMap<Hash128, (DynamicFloats DynamicFloat, int Stacks)>.Enumerator dynamicFloats)
             {
                 var statusFloatValue = new StatusFloatValue(statusFloat.PreEvaluationValue, statusFloat.SignProtected);
-                
+
                 foreach (var dynamicFloat in dynamicFloats)
                     if (dynamicFloat.DynamicFloat.PostEvaluate)
                         statusFloatValue.ApplyEffect(dynamicFloat.DynamicFloat.ValueModifier, dynamicFloat.Stacks * dynamicFloat.DynamicFloat.Value, dynamicFloat.DynamicFloat.Priority);
 
                 statusFloat.PostEvaluationValue = statusFloatValue.GetValue();
             }
-            
+
             public void GetValue(ref StatusInts statusInt,
                 in NativeParallelMultiHashMap<Hash128, (DynamicInts DynamicInt, int Stacks)>.Enumerator dynamicInts)
             {

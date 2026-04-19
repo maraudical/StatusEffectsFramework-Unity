@@ -13,7 +13,7 @@ namespace StatusEffectFramework.Templates
         {
             Texture2D icon = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D;
 
-            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(0, ScriptableObject.CreateInstance<CreateScriptTemplateAssetsAction>(), "NewModuleScript.cs", icon,
+            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(EntityId.None, ScriptableObject.CreateInstance<CreateScriptTemplateAssetsAction>(), "NewModuleScript.cs", icon,
 #if ENTITIES
                 EntityModuleScriptContent
 #elif UNITASK
@@ -29,15 +29,15 @@ namespace StatusEffectFramework.Templates
         {
             Texture2D icon = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D;
 
-            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(0, ScriptableObject.CreateInstance<CreateScriptTemplateAssetsAction>(), "NewModuleInstanceScript.cs", icon, ModuleInstanceScriptContent);
+            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(EntityId.None, ScriptableObject.CreateInstance<CreateScriptTemplateAssetsAction>(), "NewModuleInstanceScript.cs", icon, ModuleInstanceScriptContent);
         }
 
-        internal class CreateScriptTemplateAssetsAction : UnityEditor.ProjectWindowCallback.EndNameEditAction
+        internal class CreateScriptTemplateAssetsAction : UnityEditor.ProjectWindowCallback.AssetCreationEndAction
         {
-            public override void Action(int instanceId, string userPath, string resourceFile)
+            public override void Action(EntityId entityId, string pathName, string resourceFile)
             {
-                string directoryPath = Path.GetDirectoryName(userPath);
-                string enteredName = Path.GetFileNameWithoutExtension(userPath);
+                string directoryPath = Path.GetDirectoryName(pathName);
+                string enteredName = Path.GetFileNameWithoutExtension(pathName);
                 string cleanedEnteredNamed = enteredName.Replace(" ", "");
 
                 try

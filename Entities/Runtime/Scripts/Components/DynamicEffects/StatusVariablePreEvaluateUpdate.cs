@@ -7,5 +7,5 @@ namespace StatusEffectFramework.Entities
     [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]
     [GhostEnabledBit]
 #endif
-    public struct DynamicPreEvaluateUpdate : IComponentData, IEnableableComponent { }
+    public struct StatusVariablePreEvaluateUpdate : IComponentData, IEnableableComponent { }
 }

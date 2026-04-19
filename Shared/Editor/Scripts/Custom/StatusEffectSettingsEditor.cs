@@ -314,7 +314,7 @@ namespace StatusEffectFramework.Editor
 
                     if (!DeleteAssetsDialogue(paths))
                         return;
-                    Debug.Log("deleting " + paths.Count);
+                    
                     listView.viewController.RemoveItems(listView.selectedIndices.ToList());
                     listView.ClearSelection();
                     

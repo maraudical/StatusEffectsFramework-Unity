@@ -1,8 +1,6 @@
-using UnityEngine;
-
 namespace StatusEffectFramework
 {
-    public enum ValueType
+    public enum ValueSource
     {
         ExplicitValue,
         BaseValue,

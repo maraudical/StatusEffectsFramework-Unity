@@ -19,10 +19,10 @@ namespace StatusEffectFramework.Entities
             AddBuffer<StatusFloats>(entity);
             AddBuffer<StatusInts>(entity);
             AddBuffer<StatusBools>(entity);
-            AddComponent<DynamicPreEvaluateUpdate>(entity);
-            SetComponentEnabled<DynamicPreEvaluateUpdate>(entity, false);
-            AddComponent<DynamicPostEvaluateUpdate>(entity);
-            SetComponentEnabled<DynamicPostEvaluateUpdate>(entity, false);
+            AddComponent<StatusVariablePreEvaluateUpdate>(entity);
+            SetComponentEnabled<StatusVariablePreEvaluateUpdate>(entity, false);
+            AddComponent<StatusVariablePostEvaluateUpdate>(entity);
+            SetComponentEnabled<StatusVariablePostEvaluateUpdate>(entity, false);
             AddBuffer<DynamicFloats>(entity);
             AddBuffer<DynamicInts>(entity);
             AddBuffer<DynamicBools>(entity);

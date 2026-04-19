@@ -9,7 +9,7 @@ namespace StatusEffectFramework
     {
         public StatusName StatusName => m_StatusName;
         public ValueModifier ValueModifier => m_ValueModifier;
-        public ValueType ValueType => m_ValueType;
+        public ValueSource ValueSource => m_ValueSource;
         public int Priority => m_Priority;
         public float FloatValue => m_FloatValue;
         public int IntValue => m_IntValue;
@@ -23,7 +23,7 @@ namespace StatusEffectFramework
         [SerializeField, FormerlySerializedAs("ValueModifier")]
         private ValueModifier m_ValueModifier;
         [SerializeField]
-        private ValueType m_ValueType;
+        private ValueSource m_ValueSource;
         [SerializeField, FormerlySerializedAs("Priority")]
         [Min(0)] private int m_Priority;
         [SerializeField, FormerlySerializedAs("FloatValue")]

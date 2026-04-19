@@ -6,8 +6,11 @@ namespace StatusEffectFramework.Entities
     public struct UnmanagedEffect
     {
         public Hash128 StatusName;
-        public ValueModifier ValueModifier;
+        public TypeIndex TypeIndex;
         public ValueType ValueType;
+        public ValueModifier ValueModifier;
+        public ValueSource ValueSource;
+        public bool PostEvaluate;
         public int Priority;
         public float FloatValue;
         public int IntValue;

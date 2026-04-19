@@ -21,7 +21,7 @@ namespace StatusEffectFramework.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, DynamicFloats, DynamicInts, DynamicBools, StatusFloats, StatusInts, StatusBools>().WithAll<Simulate>().WithAny<StatusEffectEvents, DynamicPreEvaluateUpdate>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, DynamicFloats, DynamicInts, DynamicBools, StatusFloats, StatusInts, StatusBools>().WithAll<StatusVariablePreEvaluateUpdate, Simulate>().Build();
             state.RequireForUpdate(m_EntityQuery);
             state.RequireForUpdate<StatusReferences>();
         }
@@ -52,9 +52,11 @@ namespace StatusEffectFramework.Entities
                 ref DynamicBuffer<StatusFloats> statusFloats, 
                 ref DynamicBuffer<StatusInts> statusInts, 
                 ref DynamicBuffer<StatusBools> statusBools,
-                EnabledRefRW<DynamicPreEvaluateUpdate> preEvaluateUpdate)
+                EnabledRefRW<StatusVariablePreEvaluateUpdate> preEvaluateUpdate,
+                EnabledRefRW<StatusVariablePostEvaluateUpdate> postEvaluateUpdate)
             {
                 preEvaluateUpdate.ValueRW = false;
+                postEvaluateUpdate.ValueRW = true;
 
                 using var statusNameToEffect = new NativeParallelMultiHashMap<Hash128, (UnmanagedEffect, int, float)>(statusEffects.Length, Allocator.Temp);
                 using var idToStatusEffect = new NativeHashMap<uint, StatusEffects>(statusEffects.Length, Allocator.Temp);
@@ -104,8 +106,8 @@ namespace StatusEffectFramework.Entities
                     GetValue(ref statusBool, statusNameToEffect.GetValuesForKey(statusBool.StatusName), statusNameToDynamicBool.GetValuesForKey(statusBool.StatusName));
                 }
             }
-            
-            public void GetValue(ref StatusFloats statusFloat, 
+
+            public void GetValue(ref StatusFloats statusFloat,
                 in NativeParallelMultiHashMap<Hash128, (UnmanagedEffect Effect, int Stacks, float BaseValue)>.Enumerator effects,
                 in NativeParallelMultiHashMap<Hash128, (DynamicFloats DynamicFloat, int Stacks)>.Enumerator dynamicFloats)
             {
@@ -115,15 +117,15 @@ namespace StatusEffectFramework.Entities
 
                 foreach (var effect in effects)
                 {
-                    switch (effect.Effect.ValueType)
+                    switch (effect.Effect.ValueSource)
                     {
-                        case ValueType.ExplicitValue:
+                        case ValueSource.ExplicitValue:
                             effectValue = effect.Stacks * effect.Effect.IntValue;
                             break;
-                        case ValueType.BaseValue:
+                        case ValueSource.BaseValue:
                             effectValue = effect.Stacks * (int)effect.BaseValue;
                             break;
-                        case ValueType.DynamicValue:
+                        case ValueSource.DynamicValue:
                             continue;
                     }
 
@@ -136,8 +138,8 @@ namespace StatusEffectFramework.Entities
 
                 statusFloat.PreEvaluationValue = statusFloatValue.GetValue();
             }
-            
-            public void GetValue(ref StatusInts statusInt, 
+
+            public void GetValue(ref StatusInts statusInt,
                 in NativeParallelMultiHashMap<Hash128, (UnmanagedEffect Effect, int Stacks, float BaseValue)>.Enumerator effects,
                 in NativeParallelMultiHashMap<Hash128, (DynamicInts DynamicInt, int Stacks)>.Enumerator dynamicInts)
             {
@@ -147,29 +149,29 @@ namespace StatusEffectFramework.Entities
 
                 foreach (var effect in effects)
                 {
-                    switch (effect.Effect.ValueType)
+                    switch (effect.Effect.ValueSource)
                     {
-                        case ValueType.ExplicitValue:
+                        case ValueSource.ExplicitValue:
                             effectValue = effect.Stacks * effect.Effect.IntValue;
                             break;
-                        case ValueType.BaseValue:
+                        case ValueSource.BaseValue:
                             effectValue = effect.Stacks * (int)effect.BaseValue;
                             break;
-                        case ValueType.DynamicValue:
+                        case ValueSource.DynamicValue:
                             continue;
                     }
 
                     statusIntValue.ApplyEffect(effect.Effect.ValueModifier, effectValue, effect.Effect.Priority);
                 }
-                
+
                 foreach (var dynamicInt in dynamicInts)
                     if (!dynamicInt.DynamicInt.PostEvaluate)
                         statusIntValue.ApplyEffect(dynamicInt.DynamicInt.ValueModifier, dynamicInt.Stacks * dynamicInt.DynamicInt.Value, dynamicInt.DynamicInt.Priority);
 
                 statusInt.PreEvaluationValue = statusIntValue.GetValue();
             }
-            
-            public void GetValue(ref StatusBools statusBool, 
+
+            public void GetValue(ref StatusBools statusBool,
                 in NativeParallelMultiHashMap<Hash128, (UnmanagedEffect Effect, int Stacks, float BaseValue)>.Enumerator effects,
                 in NativeParallelMultiHashMap<Hash128, (DynamicBools DynamicBool, int Stacks)>.Enumerator dynamicBools)
             {
@@ -179,15 +181,15 @@ namespace StatusEffectFramework.Entities
 
                 foreach (var effect in effects)
                 {
-                    switch (effect.Effect.ValueType)
+                    switch (effect.Effect.ValueSource)
                     {
-                        case ValueType.ExplicitValue:
+                        case ValueSource.ExplicitValue:
                             effectValue = effect.Effect.BoolValue;
                             break;
-                        case ValueType.BaseValue:
+                        case ValueSource.BaseValue:
                             effectValue = Convert.ToBoolean(effect.BaseValue);
                             break;
-                        case ValueType.DynamicValue:
+                        case ValueSource.DynamicValue:
                             continue;
                     }
 

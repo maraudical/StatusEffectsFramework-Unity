@@ -115,15 +115,15 @@ namespace StatusEffectFramework
                     if (effect.StatusName != m_StatusName)
                         continue;
 
-                    switch (effect.ValueType)
+                    switch (effect.ValueSource)
                     {
-                        case ValueType.ExplicitValue:
+                        case ValueSource.ExplicitValue:
                             effectValue = statusEffect.Stacks * effect.IntValue;
                             break;
-                        case ValueType.BaseValue:
+                        case ValueSource.BaseValue:
                             effectValue = statusEffect.Stacks * (int)statusEffect.Data.BaseValue;
                             break;
-                        case ValueType.DynamicValue:
+                        case ValueSource.DynamicValue:
                             continue;
                     }
 

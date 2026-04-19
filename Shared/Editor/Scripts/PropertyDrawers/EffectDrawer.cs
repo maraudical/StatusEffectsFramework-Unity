@@ -2,6 +2,7 @@ using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 using System;
 using UnityEditor;
+using UnityEngine;
 
 namespace StatusEffectFramework.Editor
 {
@@ -13,14 +14,19 @@ namespace StatusEffectFramework.Editor
             var statusNameProperty = property.FindPropertyRelative($"m_{nameof(Effect.StatusName)}");
             var valueModifierProperty = property.FindPropertyRelative($"m_{nameof(Effect.ValueModifier)}");
             var priorityProperty = property.FindPropertyRelative($"m_{nameof(Effect.Priority)}");
-            var valueTypeProperty = property.FindPropertyRelative($"m_{nameof(Effect.ValueType)}");
+            var valueSourceProperty = property.FindPropertyRelative($"m_{nameof(Effect.ValueSource)}");
             var floatProperty = property.FindPropertyRelative($"m_{nameof(Effect.FloatValue)}");
             var intProperty = property.FindPropertyRelative($"m_{nameof(Effect.IntValue)}");
             var boolProperty = property.FindPropertyRelative($"m_{nameof(Effect.BoolValue)}");
+            var dynamicFloatProperty = property.FindPropertyRelative($"m_{nameof(Effect.DynamicFloatEffect)}");
+            var dynamicIntProperty = property.FindPropertyRelative($"m_{nameof(Effect.DynamicIntEffect)}");
+            var dynamicBoolProperty = property.FindPropertyRelative($"m_{nameof(Effect.DynamicBoolEffect)}");
 
             StatusName statusNameReference;
             Type statusNameType;
             Type statusNameTypeDummy;
+
+            Label statusNameLabel = default;
 
             var root = new VisualElement();
 
@@ -44,124 +50,67 @@ namespace StatusEffectFramework.Editor
             typeDifferenceContainer.Add(valueContainer);
 
             var usingBaseValueContainer = new TextField();
+            usingBaseValueContainer.label = " ";
             usingBaseValueContainer.value = "Using Base Value";
             usingBaseValueContainer.focusable = false;
             usingBaseValueContainer.SetEnabled(false);
             usingBaseValueContainer.AddToClassList(BaseField<string>.alignedFieldUssClassName);
             valueContainer.Add(usingBaseValueContainer);
 
-            var valuesContainer = new VisualElement();
-            valuesContainer.style.flexGrow = 1;
-            valuesContainer.style.flexShrink = 1;
-            valueContainer.Add(valuesContainer);
+            var explicitValueContainer = new VisualElement();
+            explicitValueContainer.style.flexGrow = 1;
+            explicitValueContainer.style.flexShrink = 1;
+            valueContainer.Add(explicitValueContainer);
 
-            var floatValue = new PropertyField(floatProperty, "Float Value");
-            floatValue.style.flexGrow = 1;
-            floatValue.style.flexShrink = 1;
-            valuesContainer.Add(floatValue);
+            var floatValue = new PropertyField(floatProperty, " ");
+            explicitValueContainer.Add(floatValue);
 
-            var intValue = new PropertyField(intProperty, "Int Value");
-            intValue.style.flexGrow = 1;
-            intValue.style.flexShrink = 1;
-            valuesContainer.Add(intValue);
+            var intValue = new PropertyField(intProperty, " ");
+            explicitValueContainer.Add(intValue);
 
-            var boolValue = new PropertyField(boolProperty, "Bool Value");
-            boolValue.style.flexGrow = 1;
-            boolValue.style.flexShrink = 1;
-            valuesContainer.Add(boolValue);
-            
-            var useBaseValue = new PropertyField(useBaseValueProperty, " ");
-            useBaseValue.style.position = Position.Absolute;
-            useBaseValue.style.left = 0;
-            useBaseValue.style.right = 0;
-            useBaseValue.style.top = 0;
-            useBaseValue.style.bottom = 0;
-            useBaseValue.style.flexGrow = 1;
-            useBaseValue.style.flexShrink = 1;
-            useBaseValue.style.flexDirection = FlexDirection.ColumnReverse;
-            valueContainer.Add(useBaseValue);
+            var boolValue = new PropertyField(boolProperty, " ");
+            explicitValueContainer.Add(boolValue);
+
+            var dynamicValueContainer = new VisualElement();
+            dynamicValueContainer.style.flexGrow = 1;
+            dynamicValueContainer.style.flexShrink = 1;
+            valueContainer.Add(dynamicValueContainer);
+
+            var dynamicFloatValue = new PropertyField(dynamicFloatProperty, " ");
+            dynamicValueContainer.Add(dynamicFloatValue);
+
+            var dynamicIntValue = new PropertyField(dynamicIntProperty, " ");
+            dynamicValueContainer.Add(dynamicIntValue);
+
+            var dynamicBoolValue = new PropertyField(dynamicBoolProperty, " ");
+            dynamicValueContainer.Add(dynamicBoolValue);
+
+            var valueSource = new PropertyField(valueSourceProperty, string.Empty);
+            valueSource.style.position = Position.Absolute;
+            valueSource.style.marginLeft = -3;
+            valueSource.style.minWidth = 83;
+            valueContainer.Add(valueSource);
+
+            StatusNameChanged(default);
 
             statusName.RegisterValueChangeCallback(StatusNameChanged);
 
             valueModifier.RegisterValueChangeCallback(ValueModifierChanged);
 
-            useBaseValue.RegisterValueChangeCallback(UseBaseValueChanged);
-            useBaseValue.RegisterCallback<GeometryChangedEvent>(UseBaseValueGeometryChanged);
+            valueSource.RegisterValueChangeCallback(ValueSourceChanged);
 
-            usingBaseValueContainer.RegisterCallback<GeometryChangedEvent>(UsingBaseValueTextGeometryChanged);
-
-            floatValue.RegisterCallback<GeometryChangedEvent>(FloatGeometryChanged);
-            
-            intValue.RegisterCallback<GeometryChangedEvent>(IntGeometryChanged);
-            
-            boolValue.RegisterCallback<GeometryChangedEvent>(BoolGeometryChanged);
-
-            StatusNameChanged(default);
+            statusName.RegisterCallback<GeometryChangedEvent>(StatusNameGeometryChanged);
 
             return root;
 
-            void IgnoreExcept(VisualElement root, string exception)
+            void StatusNameGeometryChanged(GeometryChangedEvent evt)
             {
-                if (root.name == exception)
-                {
-                    root.pickingMode = PickingMode.Position;
-                    return;
-                }
-
-                root.pickingMode = PickingMode.Ignore;
-
-                foreach(var child in root.Children())
-                    IgnoreExcept(child, exception);
+                if (statusNameLabel == null)
+                    statusNameLabel = statusName.Q<Label>();
+                valueSource.style.maxWidth = Mathf.Max(statusNameLabel.style.width.value.value + 3, valueSource.style.minWidth.value.value);
             }
 
-            void UseBaseValueGeometryChanged(GeometryChangedEvent changeEvent)
-            {
-                useBaseValue.UnregisterCallback<GeometryChangedEvent>(UseBaseValueGeometryChanged);
-                IgnoreExcept(useBaseValue, "unity-checkmark");
-            }
-
-            void UsingBaseValueTextGeometryChanged(GeometryChangedEvent changeEvent)
-            {
-                usingBaseValueContainer.UnregisterCallback<GeometryChangedEvent>(UsingBaseValueTextGeometryChanged);
-                var element = usingBaseValueContainer.Q("unity-text-input");
-                AdjustElement(element);
-            }
-
-            void FloatGeometryChanged(GeometryChangedEvent changeEvent)
-            {
-                floatValue.UnregisterCallback<GeometryChangedEvent>(FloatGeometryChanged);
-                var element = floatValue.Q("unity-text-input");
-                AdjustElement(element);
-            }
-
-            void IntGeometryChanged(GeometryChangedEvent changeEvent)
-            {
-                intValue.UnregisterCallback<GeometryChangedEvent>(IntGeometryChanged);
-                var element = intValue.Q("unity-text-input");
-                AdjustElement(element);
-            }
-
-            void BoolGeometryChanged(GeometryChangedEvent changeEvent)
-            {
-                boolValue.UnregisterCallback<GeometryChangedEvent>(BoolGeometryChanged);
-                var element = boolValue.Q("unity-checkmark")?.parent;
-                AdjustElement(element);
-            }
-
-            void AdjustElement(VisualElement element)
-            {
-                if (element != null)
-                {
-                    element.style.marginRight = 18;
-                    var styleTranslate = element.style.translate;
-                    var translate = styleTranslate.value;
-                    translate.x = 18;
-                    styleTranslate.value = translate;
-                    element.style.translate = styleTranslate;
-                }
-            }
-
-            void StatusNameChanged(SerializedPropertyChangeEvent changeEvent)
+            void StatusNameChanged(SerializedPropertyChangeEvent evt)
             {
                 bool typeDifference = ValidateStatusNameType();
                 typeDifferenceContainer.style.display = !typeDifference ? DisplayStyle.Flex : DisplayStyle.None;
@@ -173,21 +122,38 @@ namespace StatusEffectFramework.Editor
                 floatValue.style.display = isFloat ? DisplayStyle.Flex : DisplayStyle.None;
                 intValue.style.display = isInt ? DisplayStyle.Flex : DisplayStyle.None;
                 boolValue.style.display = isBool ? DisplayStyle.Flex : DisplayStyle.None;
-                usingBaseValueContainer.label = isBool ? boolValue.label : isInt ? intValue.label : floatValue.label;
+                dynamicFloatValue.style.display = isFloat ? DisplayStyle.Flex : DisplayStyle.None;
+                dynamicIntValue.style.display = isInt ? DisplayStyle.Flex : DisplayStyle.None;
+                dynamicBoolValue.style.display = isBool ? DisplayStyle.Flex : DisplayStyle.None;
             }
 
             void ValueModifierChanged(SerializedPropertyChangeEvent evt)
             {
-                bool typeDifference = ValidateStatusNameType();
                 bool isBool = statusNameType == typeof(StatusNameBool);
                 bool numberWithPriority = (valueModifierProperty.enumValueFlag & (int)(ValueModifier.Overwrite | ValueModifier.Minimum | ValueModifier.Maximum)) != 0;
                 priority.style.display = isBool || numberWithPriority ? DisplayStyle.Flex : DisplayStyle.None;
             }
 
-            void UseBaseValueChanged(SerializedPropertyChangeEvent evt)
+            void ValueSourceChanged(SerializedPropertyChangeEvent evt)
             {
-                valuesContainer.style.display = useBaseValueProperty.boolValue ? DisplayStyle.None : DisplayStyle.Flex;
-                usingBaseValueContainer.style.display = useBaseValueProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+                switch (evt.changedProperty.enumValueIndex)
+                {
+                    case (int)ValueSource.BaseValue:
+                        usingBaseValueContainer.style.display = DisplayStyle.Flex;
+                        explicitValueContainer.style.display = DisplayStyle.None;
+                        dynamicValueContainer.style.display = DisplayStyle.None;
+                        break;
+                    case (int)ValueSource.DynamicValue:
+                        usingBaseValueContainer.style.display = DisplayStyle.None;
+                        explicitValueContainer.style.display = DisplayStyle.None;
+                        dynamicValueContainer.style.display = DisplayStyle.Flex;
+                        break;
+                    default:
+                        usingBaseValueContainer.style.display = DisplayStyle.None;
+                        explicitValueContainer.style.display = DisplayStyle.Flex;
+                        dynamicValueContainer.style.display = DisplayStyle.None;
+                        break;
+                }
             }
 
             bool ValidateStatusNameType()

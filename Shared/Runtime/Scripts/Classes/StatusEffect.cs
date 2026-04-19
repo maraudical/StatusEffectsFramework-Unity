@@ -61,7 +61,7 @@ namespace StatusEffectFramework
 
             foreach (var effect in data.Effects)
             {
-                if (effect.ValueType is not ValueType.DynamicValue)
+                if (effect.ValueSource is not ValueSource.DynamicValue)
                     continue;
 
                 switch (effect.StatusName)

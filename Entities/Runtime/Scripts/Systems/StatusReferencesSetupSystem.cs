@@ -87,15 +87,62 @@ namespace StatusEffectFramework.Entities
                 for (int i = 0; i < effects.Length; i++)
                 {
                     effect = statusEffectData.Effects[i];
+                    ValueType valueType = default;
+                    TypeIndex typeIndex = default;
+                    bool postEvaluate = default;
+
+                    if (effect.StatusName == null)
+                        continue;
+
+                    switch (effect.StatusName)
+                    {
+                        case StatusNameFloat:
+                            if (effect.ValueSource is ValueSource.DynamicValue)
+                                if (effect.DynamicFloatEffect && effect.DynamicFloatEffect is IEntityDynamicEffect entityDynamicEffect)
+                                {
+                                    typeIndex = entityDynamicEffect.GetTypeIndex();
+                                    postEvaluate = effect.DynamicFloatEffect.PostEvaluate;
+                                }  
+                                else
+                                    continue;
+                            valueType = ValueType.Float;
+                            break;
+                        case StatusNameInt:
+                            if (effect.ValueSource is ValueSource.DynamicValue)
+                                if (effect.DynamicIntEffect && effect.DynamicIntEffect is IEntityDynamicEffect entityDynamicEffect)
+                                {
+                                    typeIndex = entityDynamicEffect.GetTypeIndex();
+                                    postEvaluate = effect.DynamicIntEffect.PostEvaluate;
+                                }
+                                else
+                                    continue;
+                            valueType = ValueType.Int;
+                            break;
+                        case StatusNameBool:
+                            if (effect.ValueSource is ValueSource.DynamicValue)
+                                if (effect.DynamicBoolEffect && effect.DynamicBoolEffect is IEntityDynamicEffect entityDynamicEffect)
+                                {
+                                    typeIndex = entityDynamicEffect.GetTypeIndex();
+                                    postEvaluate = effect.DynamicBoolEffect.PostEvaluate;
+                                }
+                                else
+                                    continue;
+                            valueType = ValueType.Bool;
+                            break;
+                    }
+
                     effects[i] = new UnmanagedEffect
                     {
                         StatusName = effect.StatusName ? effect.StatusName.Id : default,
+                        TypeIndex = typeIndex,
+                        ValueType = valueType,
                         ValueModifier = effect.ValueModifier,
-                        UseBaseValue = effect.UseBaseValue,
+                        ValueSource = effect.ValueSource,
+                        PostEvaluate = postEvaluate,
+                        Priority = effect.Priority,
                         FloatValue = effect.FloatValue,
                         IntValue = effect.IntValue,
                         BoolValue = effect.BoolValue,
-                        Priority = effect.Priority
                     };
                 }
                 var conditions = subBuilder.Allocate(ref statusEffectDataRoot.Conditions, statusEffectData.Conditions.Count);
