@@ -22,11 +22,15 @@ namespace StatusEffectFramework
     [AddComponentMenu("Status Effect/Status Manager")]
     public class StatusManager : MonoBehaviour, IStatusManager
     {
-        public event System.Action<StatusEffect, StatusEffectAction, int, int> OnStatusEffect;
+        event Action<StatusEffect, StatusEffectAction, int, int> IStatusManager.OnStatusEffect
+        {
+            add => OnStatusEffect += value;
+            remove => OnStatusEffect -= value;
+        }
+        public event Action<StatusEffect, StatusEffectAction, int, int> OnStatusEffect;
 
+        IEnumerable<StatusEffect> IStatusManager.StatusEffects => StatusEffects;
         public IEnumerable<StatusEffect> StatusEffects => m_StatusEffects?.Values ?? Enumerable.Empty<StatusEffect>();
-
-        IEnumerable<StatusEffect> IStatusManager.Effects => throw new NotImplementedException();
         
         [SerializeField] private Dictionary<uint, StatusEffect> m_StatusEffects;
         
@@ -34,20 +38,6 @@ namespace StatusEffectFramework
 
 #if UNITY_EDITOR
         [SerializeField] private List<StatusEffect> m_EditorOnlyEffects;
-
-        event Action<StatusEffect, StatusEffectAction, int, int> IStatusManager.OnStatusEffect
-        {
-            add
-            {
-                throw new NotImplementedException();
-            }
-
-            remove
-            {
-                throw new NotImplementedException();
-            }
-        }
-
 #endif
         private void Awake()
         {
@@ -508,7 +498,7 @@ namespace StatusEffectFramework
 
             foreach (Condition condition in statusEffectData.Conditions)
             {
-                bool exists = condition.SearchableConfigurable is ConditionalConfigurable.Group ? GetFirstStatusEffect(group: condition.SearchableGroup) != null
+                bool exists = condition.SearchableConfigurable is ConditionalConfigurable.AllGroups ? GetFirstStatusEffect(group: condition.SearchableGroup) != null
                             : condition.SearchableConfigurable is ConditionalConfigurable.Name  ? GetFirstStatusEffect(name: condition.SearchableComparableName) != null
                                                                                                 : GetFirstStatusEffect(data: condition.SearchableData) != null;
                 // If the condition is checking for existence and it doesn't exist or if
@@ -575,17 +565,23 @@ namespace StatusEffectFramework
                         case ConditionalConfigurable.Name:
                             RemoveStatusEffect(condition.ActionComparableName, stacks);
                             break;
-                        case ConditionalConfigurable.Group:
-                            RemoveStatusEffect(condition.ActionGroup, stacks);
+                        case ConditionalConfigurable.AllGroups:
+                            RemoveStatusEffect(condition.ActionGroup, stacks, true);
+                            break;
+                        case ConditionalConfigurable.AnyGroups:
+                            RemoveStatusEffect(condition.ActionGroup, stacks, false);
                             break;
                     }
                 }
             }
             
             if (preventStatusEffect)
-                return null;
+                return statusEffect;
 
             RemoveStatusEffect(flagForRemoval);
+
+            if (stacks == 0)
+                return null;
 
             int previousStacks = 0;
             int currentStacks = stacks;
@@ -594,8 +590,11 @@ namespace StatusEffectFramework
             {
                 previousStacks = statusEffect.Stacks;
                 currentStacks += statusEffect.Stacks;
-                statusEffect.Stacks += stacks;
-                action = StatusEffectAction.AddedStacks;
+                statusEffect.SetStacks(currentStacks);
+                arstrtsatrtratratar
+                //action = currentStacks > previousStacks StatusEffectAction.AddedStacks;
+                OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
+                statusEffect.InvokeStackUpdate(previousStacks, currentStacks);
             }
             else
             {
@@ -608,11 +607,11 @@ namespace StatusEffectFramework
 #if UNITY_EDITOR
                 m_EditorOnlyEffects.Add(statusEffect);
 #endif
+                OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
                 // If a module exists it will be started.
                 statusEffect.Start(this);
             }
             
-            OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
             // Return the effect in case it is wanted for other reference.
             return statusEffect;
         }

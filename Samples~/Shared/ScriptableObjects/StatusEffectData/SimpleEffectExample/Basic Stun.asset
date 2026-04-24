@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Prefab: {fileID: 556424116285107890, guid: 067710c4c4c0051478cfec350dda1e57, type: 3}
-  InstantiateAgainWhenAddingStacks: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36,53 +35,29 @@ MonoBehaviour:
   m_BaseValue: 1
   m_Icon: {fileID: 21300000, guid: 34613bedb05a8f647a5a377e5a3ff0e4, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
-  m_StatusEffectName:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_Acronym:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_Description:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_StatusEffectName: 
+  m_Acronym: 
+  m_Description: 
   m_AllowEffectStacking: 0
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
   m_Effects:
-  - StatusName: {fileID: 11400000, guid: f7273fbb099977747b3d7284bf74e0c8, type: 2}
-    ValueModifier: 0
-    UseBaseValue: 1
-    FloatValue: 0
-    IntValue: 0
-    BoolValue: 0
-    Priority: 0
+  - m_StatusName: {fileID: 11400000, guid: f7273fbb099977747b3d7284bf74e0c8, type: 2}
+    m_ValueModifier: 0
+    m_ValueSource: 1
+    m_Priority: 0
+    m_FloatValue: 0
+    m_IntValue: 0
+    m_BoolValue: 0
+    m_DynamicFloatEffect: {fileID: 0}
+    m_DynamicIntEffect: {fileID: 0}
+    m_DynamicBoolEffect: {fileID: 0}
   m_Conditions: []
   m_Modules:
-  - Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
-    ModuleInstance: {fileID: -1739847073860458187}
+  - m_Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
+    m_ModuleInstance: {fileID: -1739847073860458187}
   m_EnableIcon: 1
   m_EnableColor: 0
   m_EnableName: 0
   m_EnableDescription: 0
   m_EnableAcronym: 0
-  references:
-    version: 2
-    RefIds: []

@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Prefab: {fileID: 3165632045659492785, guid: 596723451463a6443aff5842e68ee3c3, type: 3}
-  InstantiateAgainWhenAddingStacks: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -45,11 +44,14 @@ MonoBehaviour:
   m_Effects:
   - m_StatusName: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
     m_ValueModifier: 0
+    m_ValueSource: 1
     m_Priority: 0
-    m_UseBaseValue: 1
     m_FloatValue: 0
     m_IntValue: 0
     m_BoolValue: 0
+    m_DynamicFloatEffect: {fileID: 0}
+    m_DynamicIntEffect: {fileID: 0}
+    m_DynamicBoolEffect: {fileID: 0}
   m_Conditions: []
   m_Modules:
   - m_Module: {fileID: 11400000, guid: fc369abdd5ca5574b92d2962ebfd5d96, type: 2}

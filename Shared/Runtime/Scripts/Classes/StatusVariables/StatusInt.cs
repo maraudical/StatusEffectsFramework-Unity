@@ -23,6 +23,9 @@ namespace StatusEffectFramework
         public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; UpdateSignProtected(); } }
         public int Value => Manager != null ? PostEvaluationValue : m_BaseValue;
         public int PreEvaluationValue { get; protected set; }
+#if UNITY_EDITOR
+        [field: SerializeField]
+#endif
         public int PostEvaluationValue { get; protected set; }
 
         [SerializeField] protected StatusNameInt m_StatusName;
@@ -60,7 +63,7 @@ namespace StatusEffectFramework
         public override void SetManager(IStatusManager instance)
         {
             if (Manager != null)
-                foreach (StatusEffect statusEffect in Manager.Effects)
+                foreach (StatusEffect statusEffect in Manager.StatusEffects)
                     foreach (var dynamicInt in statusEffect.DynamicInts)
                         if (dynamicInt.StatusName == m_StatusName)
                         {
@@ -72,7 +75,7 @@ namespace StatusEffectFramework
 
             base.SetManager(instance);
 
-            foreach (StatusEffect statusEffect in Manager.Effects)
+            foreach (StatusEffect statusEffect in Manager.StatusEffects)
                 foreach (var dynamicInt in statusEffect.DynamicInts)
                     if (dynamicInt.StatusName == m_StatusName)
                     {
@@ -108,7 +111,7 @@ namespace StatusEffectFramework
 
             int effectValue = default;
 
-            foreach (StatusEffect statusEffect in Manager.Effects)
+            foreach (StatusEffect statusEffect in Manager.StatusEffects)
             {
                 foreach (Effect effect in statusEffect.Data.Effects)
                 {
@@ -145,7 +148,7 @@ namespace StatusEffectFramework
 
             var statusIntValue = new StatusIntValue(PreEvaluationValue, m_SignProtected);
 
-            foreach (StatusEffect statusEffect in Manager.Effects)
+            foreach (StatusEffect statusEffect in Manager.StatusEffects)
                 foreach (var dynamicInt in statusEffect.DynamicInts)
                     if (dynamicInt.PostEvaluate && dynamicInt.StatusName == m_StatusName)
                         statusIntValue.ApplyEffect(dynamicInt.ValueModifier, statusEffect.Stacks * dynamicInt.Value, dynamicInt.Priority);

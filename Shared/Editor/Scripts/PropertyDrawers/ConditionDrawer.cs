@@ -31,6 +31,7 @@ namespace StatusEffectFramework.Editor
 
             var root = new VisualElement();
             root.style.flexDirection = FlexDirection.Row;
+            root.style.marginRight = -3;
             root.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
             root.AddToClassList(StatusEffectsStyleSheet.MaskFieldSizeClassName);
 
@@ -42,6 +43,8 @@ namespace StatusEffectFramework.Editor
 
             var searchableConfigurable = new PropertyField(searchableConfigurableProperty, string.Empty);
             searchableConfigurable.style.minWidth = 56;
+            searchableConfigurable.style.flexGrow = 1;
+            searchableConfigurable.style.flexShrink = 0;
             root.Add(searchableConfigurable);
 
             var searchableData = new PropertyField(searchableDataProperty, string.Empty);
@@ -60,8 +63,8 @@ namespace StatusEffectFramework.Editor
             root.Add(searchableGroup);
             
             var isLabel = new Label("is");
-            isLabel.style.paddingLeft = 7;
-            isLabel.style.paddingRight = 1;
+            isLabel.style.paddingLeft = 2;
+            isLabel.style.paddingRight = 2;
             isLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             root.Add(isLabel);
 
@@ -70,8 +73,8 @@ namespace StatusEffectFramework.Editor
             root.Add(existence);
 
             var thenLabel = new Label("then");
-            thenLabel.style.paddingLeft = 7;
-            thenLabel.style.paddingRight = 1;
+            thenLabel.style.paddingLeft = 2;
+            thenLabel.style.paddingRight = 2;
             thenLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             root.Add(thenLabel);
 
@@ -94,20 +97,20 @@ namespace StatusEffectFramework.Editor
             root.Add(removeOption);
 
             var stacksLabel = new Label("stacks");
-            stacksLabel.style.marginRight = -4;
-            stacksLabel.style.paddingLeft = 7;
-            stacksLabel.style.paddingRight = 0;
+            stacksLabel.style.paddingLeft = 2;
+            stacksLabel.style.paddingRight = 2;
             stacksLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             root.Add(stacksLabel);
 
             var ofLabel = new Label("of");
-            ofLabel.style.paddingLeft = 7;
-            ofLabel.style.paddingRight = 1;
+            ofLabel.style.paddingLeft = 2;
+            ofLabel.style.paddingRight = 2;
             ofLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             root.Add(ofLabel);
 
             var actionConfigurable = new PropertyField(actionConfigurableProperty, string.Empty);
             actionConfigurable.style.minWidth = 56;
+            actionConfigurable.style.flexGrow = 1;
             actionConfigurable.style.flexShrink = 0;
             root.Add(actionConfigurable);
 
@@ -135,8 +138,8 @@ namespace StatusEffectFramework.Editor
             root.Add(timing);
 
             var dashLabel = new Label("—");
-            dashLabel.style.paddingLeft = 7;
-            dashLabel.style.paddingRight = 1;
+            dashLabel.style.paddingLeft = 2;
+            dashLabel.style.paddingRight = 2;
             dashLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
             dashLabel.style.opacity = 0.5f;
             root.Add(dashLabel);
@@ -172,6 +175,9 @@ namespace StatusEffectFramework.Editor
             timing.RegisterValueChangeCallback(TimingValueChanged);
 
             EvaluateProperties();
+
+            // Fix for unity inspector margins
+            root.RegisterCallback<GeometryChangedEvent>(RootGeometryChanged);
 
             return root;
 
@@ -240,6 +246,33 @@ namespace StatusEffectFramework.Editor
                 EvaluateProperties();
             }
 
+            void RootGeometryChanged(GeometryChangedEvent evt)
+            {
+                timing.UnregisterCallback<GeometryChangedEvent>(RootGeometryChanged);
+
+                SetMargin(searchableConfigurable.Q(className: PopupField<int>.ussClassName));
+                SetMargin(searchableData.Q<ObjectField>());
+                SetMargin(searchableComparableName.Q<ObjectField>());
+                SetMargin(searchableGroup.Q<MaskField>());
+                SetMargin(existence.Q<EnumField>());
+                SetMargin(configurability.Q<EnumField>());
+                SetMargin(stacks.Q<IntegerField>());
+                SetMargin(scaleOption.Q<EnumField>());
+                SetMargin(removeOption.Q<EnumField>());
+                SetMargin(actionConfigurable.Q(className: PopupField<int>.ussClassName));
+                SetMargin(actionData.Q<ObjectField>());
+                SetMargin(actionComparableName.Q<ObjectField>());
+                SetMargin(actionGroup.Q<MaskField>());
+                SetMargin(duration.Q<FloatField>());
+                SetMargin(timing.Q(className: PopupField<int>.ussClassName));
+
+                void SetMargin(VisualElement element)
+                {
+                    element.style.marginRight = 1;
+                    element.style.marginLeft = 1;
+                }
+            }
+
             void EvaluateProperties()
             {
                 var searchableConfigurableValue = (ConditionalConfigurable)searchableConfigurableProperty.enumValueIndex;
@@ -256,8 +289,9 @@ namespace StatusEffectFramework.Editor
 
                 searchableData.style.display = !searchableDifference && searchableConfigurableValue is ConditionalConfigurable.Data ? DisplayStyle.Flex : DisplayStyle.None;
                 searchableComparableName.style.display = !searchableDifference && searchableConfigurableValue is ConditionalConfigurable.Name ? DisplayStyle.Flex : DisplayStyle.None;
-                searchableGroup.style.display = !searchableDifference && searchableConfigurableValue is ConditionalConfigurable.Group ? DisplayStyle.Flex : DisplayStyle.None;
+                searchableGroup.style.display = !searchableDifference && searchableConfigurableValue is ConditionalConfigurable.AllGroups or ConditionalConfigurable.AnyGroups ? DisplayStyle.Flex : DisplayStyle.None;
                 isLabel.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
+                isLabel.text = searchableConfigurableValue is ConditionalConfigurable.AllGroups or ConditionalConfigurable.AnyGroups ? "are" : "is";
                 existence.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
                 thenLabel.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
                 configurability.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
@@ -269,7 +303,7 @@ namespace StatusEffectFramework.Editor
                 actionConfigurable.style.display = !useStacksDifference && !addProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
                 actionData.style.display = !addDifference && !actionDifference && (addProperty.boolValue || actionConfigurableValue is ConditionalConfigurable.Data) ? DisplayStyle.Flex : DisplayStyle.None;
                 actionComparableName.style.display = !addDifference && !actionDifference && !addProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.Name ? DisplayStyle.Flex : DisplayStyle.None;
-                actionGroup.style.display = !addDifference && !actionDifference && !addProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.Group ? DisplayStyle.Flex : DisplayStyle.None;
+                actionGroup.style.display = !addDifference && !actionDifference && !addProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.AllGroups or ConditionalConfigurable.AnyGroups ? DisplayStyle.Flex : DisplayStyle.None;
                 duration.style.display = !timingDifference && addProperty.boolValue && conditionalTiming is ConditionalTiming.Duration ? DisplayStyle.Flex : DisplayStyle.None;
                 timing.style.display = !addDifference && addProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
                 dashLabel.style.display = anyDifference ? DisplayStyle.Flex : DisplayStyle.None;
@@ -278,8 +312,8 @@ namespace StatusEffectFramework.Editor
 
         public enum Existence
         {
-            Inactive,
-            Active
+            Absent,
+            Present
         }
 
         public enum Configurability

@@ -16,25 +16,30 @@ namespace StatusEffectFramework
         /// Cannot directly edit this <see cref="IReadOnlyList{T}"/>! Please call 
         /// <see cref="StatusManager.AddStatusEffect"/> or  <see cref="StatusManager.RemoveStatusEffect"/>.
         /// </summary>
-        public IEnumerable<StatusEffect> Effects { get; }
+        public IEnumerable<StatusEffect> StatusEffects { get; }
         /// <summary>
         /// Gets a <see cref="StatusEffect"/>s by its <see cref="StatusEffect.GetInstanceID"/>.
         /// </summary>
         public bool GetStatusEffect(uint id, out StatusEffect statusEffect);
         /// <summary>
-        /// Returns the listed <see cref="StatusEffect"/>s in a <see cref="List{}"/> for the <see cref="StatusManager"/>.
+        /// Returns the listed <see cref="StatusEffect"/>s in a <see cref="List{}"/> for the 
+        /// <see cref="StatusManager"/>. Optional <paramref name="matchAllGroups"/> toggle to check if all 
+        /// group flags in the given <paramref name="group"/> need to match in order to fetch.
         /// </summary>
 #nullable enable
         public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true);
 #nullable disable
         /// <summary>
-        /// Returns the first <see cref="StatusEffect"/>s that matches the given parameters. If none are found returns null.
+        /// Returns the first <see cref="StatusEffect"/>s that matches the given parameters. If none are 
+        /// found returns null. Optional <paramref name="matchAllGroups"/> toggle to check if all group 
+        /// flags in the given <paramref name="group"/> need to match in order to fetch.
         /// </summary>
 #nullable enable
         public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true);
 #nullable disable
         /// <summary>
-        /// Adds a <see cref="StatusEffect"/> to this <see cref="StatusManager"/>. Returns null if no <see cref="StatusEffect"/> was added.
+        /// Adds a <see cref="StatusEffect"/> to this <see cref="StatusManager"/>. Returns null if 
+        /// no <see cref="StatusEffect"/> was added.
         /// </summary>
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, int stacks = 1);
         /// <summary>
@@ -63,19 +68,24 @@ namespace StatusEffectFramework
         /// </summary>
         public void RemoveStatusEffect(StatusEffect statusEffect);
         /// <summary>
-        /// Removes all <see cref="StatusEffect"/> from a <see cref="MonoBehaviour"/>. If a stack count is given it will remove only the specified amount.
+        /// Removes all <see cref="StatusEffect"/> from a <see cref="MonoBehaviour"/>. If a 
+        /// <paramref name="stacks"/> count is given it will remove only the specified amount.
         /// </summary>
 #nullable enable
         public void RemoveStatusEffect(StatusEffectData statusEffectData, int? stacks = null);
 #nullable disable
         /// <summary>
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
-        /// have the same <see cref="ComparableName"/>. If a stacks count is given it will remove only the specified amount.
+        /// have the same <see cref="ComparableName"/>. If a <paramref name="stacks"/> count 
+        /// is given it will remove only the specified amount.
         /// </summary>
         public void RemoveStatusEffect(ComparableName name, int? stacks = null);
         /// <summary>
         /// Removes all <see cref="StatusEffect"/>s from a <see cref="MonoBehaviour"/> that 
-        /// are part of the given <see cref="StatusEffectGroup"/> group. If a stacks count is given it will remove only the specified amount.
+        /// are part of the given <see cref="StatusEffectGroup"/> group. Optional 
+        /// <paramref name="stacks"/> count and <paramref name="matchAllGroups"/> 
+        /// toggle to check if all group flags in the given <paramref name="group"/> 
+        /// need to match in order to remove.
         /// </summary>
         public void RemoveStatusEffect(StatusEffectGroup group, int? stacks = null, bool matchAllGroups = true);
         /// <summary>

@@ -4,6 +4,7 @@ namespace StatusEffectFramework
     {
         Data,
         Name,
-        Group
+        AllGroups,
+        AnyGroups,
     }
 }

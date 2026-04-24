@@ -22,44 +22,23 @@ MonoBehaviour:
   m_BaseValue: 1
   m_Icon: {fileID: 21300000, guid: 7c5e5f5e82bc3ee4e97adfe8bf6e8cd8, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
-  m_StatusEffectName:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_Acronym:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_Description:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_StatusEffectName: 
+  m_Acronym: 
+  m_Description: 
   m_AllowEffectStacking: 1
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
   m_Effects:
-  - StatusName: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
-    ValueModifier: 0
-    UseBaseValue: 1
-    FloatValue: 0
-    IntValue: 1
-    BoolValue: 0
-    Priority: 0
+  - m_StatusName: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
+    m_ValueModifier: 0
+    m_ValueSource: 1
+    m_Priority: 0
+    m_FloatValue: 0
+    m_IntValue: 1
+    m_BoolValue: 0
+    m_DynamicFloatEffect: {fileID: 0}
+    m_DynamicIntEffect: {fileID: 0}
+    m_DynamicBoolEffect: {fileID: 0}
   m_Conditions: []
   m_Modules: []
   m_EnableIcon: 1
@@ -67,6 +46,3 @@ MonoBehaviour:
   m_EnableName: 0
   m_EnableDescription: 0
   m_EnableAcronym: 0
-  references:
-    version: 2
-    RefIds: []

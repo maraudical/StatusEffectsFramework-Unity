@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Prefab: {fileID: 2646296195290802649, guid: ff4c2e5985a52234a9a42c642800f49c, type: 3}
-  InstantiateAgainWhenAddingStacks: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36,44 +35,23 @@ MonoBehaviour:
   m_BaseValue: -0.3
   m_Icon: {fileID: 21300000, guid: 4bae7d79998147e40bfbd395c6b4bbfb, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
-  m_StatusEffectName:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_Acronym:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_Description:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_StatusEffectName: 
+  m_Acronym: 
+  m_Description: 
   m_AllowEffectStacking: 0
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
   m_Effects:
   - m_StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
     m_ValueModifier: 2
+    m_ValueSource: 1
     m_Priority: 0
-    m_UseBaseValue: 1
     m_FloatValue: 0
     m_IntValue: 0
     m_BoolValue: 0
+    m_DynamicFloatEffect: {fileID: 0}
+    m_DynamicIntEffect: {fileID: 0}
+    m_DynamicBoolEffect: {fileID: 0}
   m_Conditions:
   - m_SearchableConfigurable: 1
     m_SearchableData: {fileID: 0}
@@ -117,6 +95,3 @@ MonoBehaviour:
   m_EnableName: 0
   m_EnableDescription: 0
   m_EnableAcronym: 0
-  references:
-    version: 2
-    RefIds: []

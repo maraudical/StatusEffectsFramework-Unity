@@ -22,6 +22,9 @@ namespace StatusEffectFramework
         public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; UpdateSignProtected(); } }
         public float Value => Manager != null ? PostEvaluationValue : m_BaseValue;
         public float PreEvaluationValue { get; protected set; }
+#if UNITY_EDITOR
+        [field: SerializeField]
+#endif
         public float PostEvaluationValue { get; protected set; }
 
         [SerializeField] protected StatusNameFloat m_StatusName;
@@ -59,7 +62,7 @@ namespace StatusEffectFramework
         public override void SetManager(IStatusManager instance)
         {
             if (Manager != null)
-                foreach (StatusEffect statusEffect in Manager.Effects)
+                foreach (StatusEffect statusEffect in Manager.StatusEffects)
                     foreach (var dynamicFloat in statusEffect.DynamicFloats)
                         if (dynamicFloat.StatusName == m_StatusName)
                         {
@@ -71,7 +74,7 @@ namespace StatusEffectFramework
 
             base.SetManager(instance);
             
-            foreach (StatusEffect statusEffect in Manager.Effects)
+            foreach (StatusEffect statusEffect in Manager.StatusEffects)
                 foreach (var dynamicFloat in statusEffect.DynamicFloats)
                     if (dynamicFloat.StatusName == m_StatusName)
                     {
@@ -107,7 +110,7 @@ namespace StatusEffectFramework
 
             float effectValue = default;
 
-            foreach (StatusEffect statusEffect in Manager.Effects)
+            foreach (StatusEffect statusEffect in Manager.StatusEffects)
             {
                 foreach (Effect effect in statusEffect.Data.Effects)
                 {
@@ -144,7 +147,7 @@ namespace StatusEffectFramework
 
             var statusFloatValue = new StatusFloatValue(PreEvaluationValue, m_SignProtected);
             
-            foreach (StatusEffect statusEffect in Manager.Effects)
+            foreach (StatusEffect statusEffect in Manager.StatusEffects)
                 foreach (var dynamicFloat in statusEffect.DynamicFloats)
                     if (dynamicFloat.PostEvaluate && dynamicFloat.StatusName == m_StatusName)
                         statusFloatValue.ApplyEffect(dynamicFloat.ValueModifier, statusEffect.Stacks * dynamicFloat.Value, dynamicFloat.Priority);

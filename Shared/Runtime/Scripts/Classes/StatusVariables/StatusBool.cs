@@ -21,6 +21,9 @@ namespace StatusEffectFramework
         public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; UpdateBaseValue(); } }
         public bool Value => Manager != null ? PostEvaluationValue : m_BaseValue;
         public bool PreEvaluationValue { get; protected set; }
+#if UNITY_EDITOR
+        [field: SerializeField]
+#endif
         public bool PostEvaluationValue { get; protected set; }
 
         [SerializeField] protected StatusNameBool m_StatusName;
@@ -52,7 +55,7 @@ namespace StatusEffectFramework
         public override void SetManager(IStatusManager instance)
         {
             if (Manager != null)
-                foreach (StatusEffect statusEffect in Manager.Effects)
+                foreach (StatusEffect statusEffect in Manager.StatusEffects)
                     foreach (var dynamicBool in statusEffect.DynamicBools)
                         if (dynamicBool.StatusName == m_StatusName)
                         {
@@ -64,7 +67,7 @@ namespace StatusEffectFramework
 
             base.SetManager(instance);
 
-            foreach (StatusEffect statusEffect in Manager.Effects)
+            foreach (StatusEffect statusEffect in Manager.StatusEffects)
                 foreach (var dynamicBool in statusEffect.DynamicBools)
                     if (dynamicBool.StatusName == m_StatusName)
                     {
@@ -100,7 +103,7 @@ namespace StatusEffectFramework
 
             bool effectValue = default;
 
-            foreach (StatusEffect statusEffect in Manager.Effects)
+            foreach (StatusEffect statusEffect in Manager.StatusEffects)
             {
                 foreach (Effect effect in statusEffect.Data.Effects)
                 {
@@ -137,7 +140,7 @@ namespace StatusEffectFramework
 
             var statusBoolValue = new StatusBoolValue(PreEvaluationValue);
 
-            foreach (StatusEffect statusEffect in Manager.Effects)
+            foreach (StatusEffect statusEffect in Manager.StatusEffects)
                 foreach (var dynamicBool in statusEffect.DynamicBools)
                     if (dynamicBool.PostEvaluate && dynamicBool.StatusName == m_StatusName)
                         statusBoolValue.ApplyEffect(dynamicBool.Value, dynamicBool.Priority);

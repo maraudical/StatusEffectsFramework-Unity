@@ -510,7 +510,7 @@ namespace StatusEffectFramework.Entities
 
                                 switch (condition.SearchableConfigurable)
                                 {
-                                    case ConditionalConfigurable.Group:
+                                    case ConditionalConfigurable.AllGroups:
                                         for (int x = 0; x < unsortedStatusEffects.Length; x++)
                                         {
                                             if (!references.IdToStatusEffectDataMap.Value.TryGetValue(unsortedStatusEffects[x].StatusEffectDataId, out var unsortedReference))
@@ -646,7 +646,8 @@ namespace StatusEffectFramework.Entities
                                         {
                                             ConditionalConfigurable.Data => StatusEffectRequests.RemoveWithStatusEffectDataId(condition.ActionData, conditionalStacks),
                                             ConditionalConfigurable.Name => StatusEffectRequests.RemoveWithComparableName(condition.ActionComparableName, conditionalStacks),
-                                            ConditionalConfigurable.Group => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks),
+                                            ConditionalConfigurable.AllGroups => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks, true),
+                                            ConditionalConfigurable.AnyGroups => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks, false),
                                             _  => throw new InvalidOperationException($"Invalid {nameof(ConditionalConfigurable)} enum value of {condition.ActionConfigurable}.")
                                         };
                                         EvaluateRequest(ref statusEffectBuffer, conditionalRequest, references);
@@ -661,7 +662,8 @@ namespace StatusEffectFramework.Entities
                                     {
                                         ConditionalConfigurable.Data => StatusEffectRequests.RemoveWithStatusEffectDataId(condition.ActionData, conditionalStacks),
                                         ConditionalConfigurable.Name => StatusEffectRequests.RemoveWithComparableName(condition.ActionComparableName, conditionalStacks),
-                                        ConditionalConfigurable.Group => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks),
+                                        ConditionalConfigurable.AllGroups => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks, true),
+                                        ConditionalConfigurable.AnyGroups => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks, false),
                                         _ => throw new InvalidOperationException($"Invalid {nameof(ConditionalConfigurable)} enum value of {condition.ActionConfigurable}.")
                                     };
                                     EvaluateRequest(ref statusEffectBuffer, conditionalRequest, references);

@@ -26,7 +26,7 @@ namespace StatusEffectFramework.Editor
         {
             var statusNameProperty = property.FindPropertyRelative($"m_{nameof(StatusFloat.StatusName)}");
             var baseValueProperty = property.FindPropertyRelative($"m_{nameof(StatusFloat.BaseValue)}");
-            var valueProperty = property.FindPropertyRelative($"m_{nameof(StatusFloat.Value)}");
+            var valueProperty = property.FindPropertyRelative($"<{nameof(StatusFloat.PostEvaluationValue)}>k__BackingField");
             var signProtectedProperty = property.FindPropertyRelative($"m_{nameof(StatusFloat.SignProtected)}");
 
             bool isPlaying = EditorApplication.isPlaying;
@@ -42,14 +42,14 @@ namespace StatusEffectFramework.Editor
 
             var headerPropertyObject = new PropertyField(statusNameProperty, " ");
             headerPropertyObject.style.position = Position.Absolute;
-            headerPropertyObject.style.left = Length.Percent(35);
+            headerPropertyObject.style.left = Length.Percent(30);
             headerPropertyObject.style.right = 0;
             headerPropertyObject.style.top = 0;
             headerPropertyObject.style.bottom = 0;
             headerPropertyObject.SetEnabled(!isPlaying);
             var headerPropertyValue = new PropertyField(isPlaying ? valueProperty : baseValueProperty, " ");
             headerPropertyValue.style.position = Position.Absolute;
-            headerPropertyValue.style.left = Length.Percent(35);
+            headerPropertyValue.style.left = Length.Percent(30);
             headerPropertyValue.style.right = 0;
             headerPropertyValue.style.top = 0;
             headerPropertyValue.style.bottom = 0;
@@ -79,7 +79,7 @@ namespace StatusEffectFramework.Editor
             valueContainer.style.flexShrink = 1;
             foldout.Add(valueContainer);
 
-            var valueLabel = new Label(valueProperty.displayName);
+            var valueLabel = new Label("Value");
             valueLabel.style.position = Position.Absolute;
             valueLabel.style.paddingTop = 1;
             valueLabel.style.paddingLeft = 4;
@@ -212,7 +212,7 @@ namespace StatusEffectFramework.Editor
 
             void BaseValueChanged(SerializedPropertyChangeEvent changeEvent)
             {
-                if (EditorApplication.isPlaying)
+                if (isPlaying)
                 {
                     m_MethodInfo = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                     foreach (var statusVariable in property.serializedObject.targetObjects)
@@ -224,7 +224,7 @@ namespace StatusEffectFramework.Editor
 
             void SignProtectedChanged(SerializedPropertyChangeEvent changeEvent)
             {
-                if (EditorApplication.isPlaying)
+                if (isPlaying)
                 {
                     m_MethodInfo = property.GetPropertyType().GetMethod("SignProtectedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                     foreach (var statusVariable in property.serializedObject.targetObjects)
@@ -321,7 +321,9 @@ namespace StatusEffectFramework.Editor
             m_StatusName = property.FindPropertyRelative($"m_{nameof(StatusFloat.StatusName)}");
             m_BaseValue = property.FindPropertyRelative($"m_{nameof(StatusFloat.BaseValue)}");
             m_SignProtected = property.FindPropertyRelative($"m_{nameof(StatusFloat.SignProtected)}");
-            m_Value = property.FindPropertyRelative($"m_{nameof(StatusFloat.Value)}");
+            m_Value = property.FindPropertyRelative($"<{nameof(StatusFloat.PostEvaluationValue)}>k__BackingField");
+
+            bool isPlaying = EditorApplication.isPlaying;
 
             position.height = m_FieldSize;
             position.y -= k_TopFix;
@@ -343,7 +345,7 @@ namespace StatusEffectFramework.Editor
                 EditorGUI.indentLevel = indent + 1;
                 position.y += m_FieldSize + m_Padding;
                 GUI.color = !m_StatusName.objectReferenceValue ? Color.red : Color.white;
-                EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying);
+                EditorGUI.BeginDisabledGroup(isPlaying);
                 EditorGUI.PropertyField(position, m_StatusName);
                 EditorGUI.EndDisabledGroup();
                 GUI.color = Color.white;
@@ -351,7 +353,7 @@ namespace StatusEffectFramework.Editor
 
                 EditorGUI.BeginChangeCheck();
                 EditorGUI.PropertyField(position, m_BaseValue);
-                if (EditorGUI.EndChangeCheck() && EditorApplication.isPlaying)
+                if (EditorGUI.EndChangeCheck() && isPlaying)
                 {
                     m_MethodInfo = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                     foreach (var statusVariable in property.serializedObject.targetObjects)
@@ -365,7 +367,7 @@ namespace StatusEffectFramework.Editor
                 EditorGUI.BeginChangeCheck();
                 EditorGUI.PropertyField(offset, m_SignProtected, GUIContent.none);
                 GUI.Label(offset, new GUIContent("", k_SignProtectedTooltip));
-                if (EditorGUI.EndChangeCheck() && EditorApplication.isPlaying)
+                if (EditorGUI.EndChangeCheck() && isPlaying)
                 {
                     m_MethodInfo = property.GetPropertyType().GetMethod("SignProtectedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
                     foreach (var statusVariable in property.serializedObject.targetObjects)
@@ -382,14 +384,14 @@ namespace StatusEffectFramework.Editor
                 offset = new Rect(propertyPosition.x + k_ToggleSize + k_HorizontalPadding, propertyPosition.y, propertyPosition.width - k_ToggleSize - k_HorizontalPadding, propertyPosition.height);
 
                 EditorGUI.BeginDisabledGroup(true);
-                EditorGUI.PropertyField(offset, EditorApplication.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
+                EditorGUI.PropertyField(offset, isPlaying ? m_Value : m_BaseValue, GUIContent.none);
                 EditorGUI.EndDisabledGroup();
             }
             else
             {
-                EditorGUI.BeginDisabledGroup(EditorApplication.isPlaying);
+                EditorGUI.BeginDisabledGroup(isPlaying);
                 Rect propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(" "));
-                EditorGUI.PropertyField(propertyPosition, EditorApplication.isPlaying ? m_Value : m_BaseValue, GUIContent.none);
+                EditorGUI.PropertyField(propertyPosition, isPlaying ? m_Value : m_BaseValue, GUIContent.none);
                 EditorGUI.EndDisabledGroup();
             }
 

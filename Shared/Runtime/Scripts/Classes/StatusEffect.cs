@@ -133,7 +133,7 @@ namespace StatusEffectFramework
 #endif
 
             m_ModulesEnabled = true;
-            Start:
+        Start:
             Started?.Invoke();
         }
 
@@ -167,8 +167,18 @@ namespace StatusEffectFramework
 #endif
 
             m_ModulesEnabled = false;
-            Stop:
+        Stop:
             Stopped?.Invoke();
+        }
+
+        internal void SetStacks(int stacks)
+        {
+            Stacks = stacks;
+        }
+
+        internal void InvokeStackUpdate(int previousStacks, int currentStacks)
+        { 
+            OnStackUpdate?.Invoke(previousStacks, currentStacks);
         }
     }
 }

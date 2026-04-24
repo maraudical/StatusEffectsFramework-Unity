@@ -20,6 +20,7 @@ namespace StatusEffectFramework.Editor
                                                                                                .ToDictionary(kvp => 1 << kvp.Key, kvp => kvp.Value);
 
             var root = new VisualElement();
+            root.name = $"unity-input-{property.name}";
             root.style.flexDirection = FlexDirection.Row;
             root.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
             root.AddToClassList(StatusEffectsStyleSheet.MaskFieldSizeClassName);
@@ -35,7 +36,10 @@ namespace StatusEffectFramework.Editor
             root.Add(maskField);
 
             var settingsButton = new Button();
-            settingsButton.style.marginRight = -2;
+            settingsButton.style.marginTop = 0;
+            settingsButton.style.marginBottom = 0;
+            settingsButton.style.marginRight = 0;
+            settingsButton.style.marginLeft = 1;
             settingsButton.style.paddingLeft = 0;
             settingsButton.style.paddingRight = 0;
             settingsButton.style.paddingTop = 0;
@@ -55,7 +59,7 @@ namespace StatusEffectFramework.Editor
             }
 #endif
             settingsButton.clicked += Clicked;
-            root.Add(settingsButton);
+            maskField.Add(settingsButton);
 
             var maskLabel = maskField.Q<Label>();
 

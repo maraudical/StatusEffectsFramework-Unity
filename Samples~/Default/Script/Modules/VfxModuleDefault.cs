@@ -20,12 +20,14 @@ namespace StatusEffectFramework.Samples
             // If we want this effect to be added everytime more stacks are
             // added we just immediately begin destruction on the current particle.
             if (particleSystem && particleSystem.main.loop)
+            {
                 await AwaitableExtensions.WaitUntilCanceled(token);
+                // Attempt to stop the particle system.
+                particleSystem?.Stop();
+            }
+                
             else
                 statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
-
-            // Attempt to stop the particle system.
-            particleSystem?.Stop();
         }
 #else
         public override IEnumerator EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)

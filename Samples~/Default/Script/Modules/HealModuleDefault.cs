@@ -15,7 +15,7 @@ namespace StatusEffectFramework.Samples
             if (!manager.TryGetComponent(out IExamplePlayer player))
                 return;
             // Add health according to status effect
-            player.Health += statusEffect.Data.BaseValue;
+            player.Health += statusEffect.Data.BaseValue * statusEffect.Stacks;
             player.Health = Mathf.Min(player.Health, player.MaxHealth);
 
             statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(player, statusEffect, previous, stack);

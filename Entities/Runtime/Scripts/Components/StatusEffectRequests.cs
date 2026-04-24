@@ -187,8 +187,8 @@ namespace StatusEffectFramework.Entities
         /// Remove any amount of <see cref="StatusEffects"/> given a 
         /// <see cref="StatusEffectGroup"/> <paramref name="group"/>. Optional 
         /// <paramref name="stacks"/> count and <paramref name="matchAllGroups"/> 
-        /// toggle if the all groups in the given <paramref name="group"/> need 
-        /// to exist in the effect to remove.
+        /// toggle to check if all group flags in the given <paramref name="group"/> 
+        /// need to match in order to remove.
         /// </summary>
         [BurstCompile]
         public static StatusEffectRequests RemoveWithGroup(StatusEffectGroup group, int stacks = -1, bool matchAllGroups = true)
