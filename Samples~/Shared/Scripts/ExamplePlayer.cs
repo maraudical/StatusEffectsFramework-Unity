@@ -98,6 +98,6 @@ namespace StatusEffectFramework.Samples
         public void DebugRemoveStatusEffect() { StatusManager?.RemoveStatusEffect(StatusEffectData, Stacks); }
         // Removes all effects that fall under a specific group. Additionally
         // you can remove the group parameter and just remove all effects.
-        public void DebugRemoveStatusEffectGroup() { StatusManager?.RemoveStatusEffect(Group); }
+        public void DebugRemoveStatusEffectGroup() { StatusManager?.RemoveStatusEffect(Group, Stacks); }
     }
 }

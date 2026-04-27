@@ -107,7 +107,7 @@ namespace StatusEffectFramework.Editor
             {
                 if (statusNameLabel == null)
                     statusNameLabel = statusName.Q<Label>();
-                valueSource.style.maxWidth = Mathf.Max(statusNameLabel.style.width.value.value + 3, valueSource.style.minWidth.value.value);
+                valueSource.style.maxWidth = Mathf.Max(statusNameLabel.resolvedStyle.width + 3, valueSource.style.minWidth.value.value);
             }
 
             void StatusNameChanged(SerializedPropertyChangeEvent evt)

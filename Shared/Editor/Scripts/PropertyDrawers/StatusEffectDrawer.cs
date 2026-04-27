@@ -1,7 +1,8 @@
-using UnityEngine.UIElements;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace StatusEffectFramework.Editor
 {
@@ -13,6 +14,7 @@ namespace StatusEffectFramework.Editor
             var referenceProperty = property.FindPropertyRelative(nameof(StatusEffect.Data));
             var timingProperty = property.FindPropertyRelative(nameof(StatusEffect.Timing));
             var durationProperty = property.FindPropertyRelative($"m_{nameof(StatusEffect.Duration)}");
+            var timeAddedProperty = property.FindPropertyRelative($"m_{nameof(StatusEffect.TimeAdded)}");
             var stacksProperty = property.FindPropertyRelative($"m_{nameof(StatusEffect.Stacks)}");
 
             var root = new VisualElement();
@@ -34,10 +36,37 @@ namespace StatusEffectFramework.Editor
             durationLabel.style.minWidth = 67;
             durationLabel.style.paddingRight = 0;
             durationLabel.style.unityTextAlign = TextAnchor.MiddleRight;
-            durationLabel.text = $"{timingProperty.enumDisplayNames[timingProperty.enumValueIndex]}:";
+            durationLabel.text = $"{(timingProperty.hasMultipleDifferentValues ? "—" : timingProperty.enumDisplayNames[timingProperty.enumValueIndex])}:";
             root.Add(durationLabel);
 
-            var duration = new PropertyField(durationProperty, string.Empty);
+            VisualElement duration = default;
+            bool hasDifferentDurationValues = false;
+
+            if (timingProperty.hasMultipleDifferentValues)
+                hasDifferentDurationValues = true;
+            else
+                switch (timingProperty.enumValueIndex)
+                {
+                    case (int)StatusEffectTiming.Duration:
+                        if (timeAddedProperty.hasMultipleDifferentValues || durationProperty.hasMultipleDifferentValues)
+                        {
+                            hasDifferentDurationValues = true;
+                            break;
+                        }
+
+                        var durationFloat = new FloatField(string.Empty);
+                        duration = durationFloat;
+                        StatusEffect statusEffect = (StatusEffect)durationProperty.GetParent(property.serializedObject.targetObject);
+                        durationFloat.schedule.Execute(() => { durationFloat.value = Mathf.Round(statusEffect.TimeRemaining(Time.timeAsDouble) * 100f) / 100f; }).Every(0);
+                        break;
+                    default:
+                        duration = new PropertyField(durationProperty, string.Empty);
+                        break;
+                }
+
+            if (hasDifferentDurationValues)
+                duration = new TextField(string.Empty) { value = "-" };
+
             duration.style.flexShrink = 0;
             duration.style.width = 42;
             duration.SetEnabled(false);

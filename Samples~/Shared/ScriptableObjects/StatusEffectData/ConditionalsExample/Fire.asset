@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Prefab: {fileID: 3350783055171671458, guid: fe17f8879467d5e4da9540a5249738dd, type: 3}
-  InstantiateAgainWhenAddingStacks: 0
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -32,37 +31,13 @@ MonoBehaviour:
   m_AutomaticallyAddToDatabase: 1
   m_Group:
     Value: 2
-  m_ComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
+  m_ComparableName: {fileID: 0}
   m_BaseValue: 2
   m_Icon: {fileID: 21300000, guid: f52a186736cd10544870bb012d8f0b21, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
-  m_StatusEffectName:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_Acronym:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
-  m_Description:
-    m_TableReference:
-      m_TableCollectionName: 
-    m_TableEntryReference:
-      m_KeyId: 0
-      m_Key: 
-    m_FallbackState: 0
-    m_WaitForCompletion: 0
-    m_LocalVariables: []
+  m_StatusEffectName: 
+  m_Acronym: 
+  m_Description: 
   m_AllowEffectStacking: 0
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
@@ -112,9 +87,6 @@ MonoBehaviour:
   m_EnableName: 0
   m_EnableDescription: 0
   m_EnableAcronym: 0
-  references:
-    version: 2
-    RefIds: []
 --- !u!114 &4871838168306289748
 MonoBehaviour:
   m_ObjectHideFlags: 0

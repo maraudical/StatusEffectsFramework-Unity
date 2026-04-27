@@ -42,7 +42,8 @@ namespace StatusEffectFramework
         }
 
 #endif
-        public static bool operator ==(Name name1, Name name2) => (name1?.Id ?? default) == (name2?.Id ?? default);
+        fix this shit
+        public static bool operator ==(Name name1, Name name2) { Debug.Log($"{name1} is null? ({(name1 as UnityEngine.Object) == null}) {name2} is null? ({(name2 as UnityEngine.Object) == null})"); return (name1?.Id ?? default) == (name2?.Id ?? default); }
         public static bool operator !=(Name name1, Name name2) => (name1?.Id ?? default) != (name2?.Id ?? default);
         public bool Equals(Name other) => other == this;
         public override bool Equals(object obj) => Equals(obj as Name);

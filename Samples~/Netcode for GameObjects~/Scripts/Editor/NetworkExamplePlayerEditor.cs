@@ -7,11 +7,5 @@ namespace StatusEffectFramework.NetCode.Example.Editor
 {
     [CustomEditor(typeof(NetworkExamplePlayer))]
     [CanEditMultipleObjects]
-    public class NetworkExamplePlayerEditor : Editor
-    {
-        public override VisualElement CreateInspectorGUI()
-        {
-            return ExamplePlayerInspector.DrawInspector(serializedObject, target as IExamplePlayer); ;
-        }
-    }
+    public class NetworkExamplePlayerEditor : ExamplePlayerEditor { }
 }

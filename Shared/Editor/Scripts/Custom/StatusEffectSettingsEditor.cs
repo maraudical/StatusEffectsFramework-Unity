@@ -380,28 +380,42 @@ namespace StatusEffectFramework.Editor
             {
                 var data = datas[index];
                 if (data == null)
+                {
+                    element.style.display = DisplayStyle.None;
                     return;
+                }
                 var foldout = element.Q<Foldout>("foldout");
+                var icon = element.Q<Image>("icon");
+                SetIcon(data.Icon);
+                element.Q<Label>("subtext").text = data.Id.ToString();
+                BindListItem(element, index, data);
                 foldout.Q<Toggle>().RegisterValueChangedCallback((changeEvent) =>
                 {
                     if (changeEvent.newValue)
                     {
                         var editor = CreateEditor(data).CreateInspectorGUI();
+                        editor.Q<PropertyField>("icon").RegisterValueChangeCallback(IconChanged);
                         foldout.Add(editor);
+
+                        void IconChanged(SerializedPropertyChangeEvent evt) => SetIcon(evt.changedProperty.objectReferenceValue as Sprite);
                     }
                     else
                         foldout.Clear();
                 });
-                var icon = element.Q<Image>("icon");
-                if (data.Icon)
-                    icon.image = data.Icon.texture;
-                else
+
+                void SetIcon(Sprite sprite)
                 {
-                    icon.image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(data));
-                    icon.style.opacity = 0.2f;
+                    if (sprite)
+                    {
+                        icon.image = sprite.texture;
+                        icon.style.opacity = 1f;
+                    }
+                    else
+                    {
+                        icon.image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(data));
+                        icon.style.opacity = 0.2f;
+                    }
                 }
-                element.Q<Label>("subtext").text = data.Id.ToString();
-                BindListItem(element, index, data);
             };
             datasListView.onAdd += (listView) =>
             {
@@ -436,8 +450,14 @@ namespace StatusEffectFramework.Editor
             namesListView.bindItem = (element, index) =>
             {
                 var name = names[index];
-                if (name == null)
+                more shits to fix
+                Debug.Log($"{name} is null? {name == null}");
+                if (name.Equals(null))
+                {
+                    Debug.Log("destroyed");
+                    element.style.display = DisplayStyle.None;
                     return;
+                }
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(name));
                 element.Q<Label>("subtext").text = name.Id.ToString();
                 BindListItem(element, index, name);
@@ -487,7 +507,10 @@ namespace StatusEffectFramework.Editor
             {
                 var comparable = comparables[index];
                 if (comparable == null)
+                {
+                    element.style.display = DisplayStyle.None;
                     return;
+                }
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(comparable));
                 element.Q<Label>("subtext").text = comparable.Id.ToString();
                 BindListItem(element, index, comparable);
@@ -527,7 +550,10 @@ namespace StatusEffectFramework.Editor
             {
                 var module = modules[index];
                 if (module == null)
+                {
+                    element.style.display = DisplayStyle.None;
                     return;
+                }
                 var foldout = element.Q<Foldout>("foldout");
                 var foldoutToggle = foldout.Q<Toggle>();
                 var modulePropertyCheck = CreateEditor(module).serializedObject.GetIterator();
@@ -638,18 +664,74 @@ namespace StatusEffectFramework.Editor
             pathsBox.AddToClassList(StatusEffectsStyleSheet.BoxGroupClassName);
             pathsTab.Add(pathsBox);
 
+            var defaultStatusDataPathGroup = new VisualElement();
+            defaultStatusDataPathGroup.style.flexDirection = FlexDirection.Row;
+            pathsBox.Add(defaultStatusDataPathGroup);
             var defaultStatusDataPath = new PropertyField();
+            defaultStatusDataPath.style.flexGrow = 1;
             defaultStatusDataPath.BindProperty(defaultStatusDataPathProperty);
-            pathsBox.Add(defaultStatusDataPath);
+            defaultStatusDataPathGroup.Add(defaultStatusDataPath);
+            var defaultStatusDataPathButton = MakePathButton(defaultStatusDataPath);
+            defaultStatusDataPathGroup.Add(defaultStatusDataPathButton);
+
+            var defaultStatusNamesPathGroup = new VisualElement();
+            defaultStatusNamesPathGroup.style.flexDirection = FlexDirection.Row;
+            pathsBox.Add(defaultStatusNamesPathGroup);
             var defaultStatusNamesPath = new PropertyField();
+            defaultStatusNamesPath.style.flexGrow = 1;
             defaultStatusNamesPath.BindProperty(defaultStatusNamesPathProperty);
-            pathsBox.Add(defaultStatusNamesPath);
+            defaultStatusNamesPathGroup.Add(defaultStatusNamesPath);
+            var defaultStatusNamesPathButton = MakePathButton(defaultStatusNamesPath);
+            defaultStatusNamesPathGroup.Add(defaultStatusNamesPathButton);
+
+            var defaultComparableNamesPathGroup = new VisualElement();
+            defaultComparableNamesPathGroup.style.flexDirection = FlexDirection.Row;
+            pathsBox.Add(defaultComparableNamesPathGroup);
             var defaultComparableNamesPath = new PropertyField();
+            defaultComparableNamesPath.style.flexGrow = 1;
             defaultComparableNamesPath.BindProperty(defaultComparableNamesPathProperty);
-            pathsBox.Add(defaultComparableNamesPath);
+            defaultComparableNamesPathGroup.Add(defaultComparableNamesPath);
+            var defaultComparableNamesPathButton = MakePathButton(defaultComparableNamesPath);
+            defaultComparableNamesPathGroup.Add(defaultComparableNamesPathButton);
+
+            var defaultModulesPathGroup = new VisualElement();
+            defaultModulesPathGroup.style.flexDirection = FlexDirection.Row;
+            pathsBox.Add(defaultModulesPathGroup);
             var defaultModulesPath = new PropertyField();
+            defaultModulesPath.style.flexGrow = 1;
             defaultModulesPath.BindProperty(defaultModulesPathProperty);
-            pathsBox.Add(defaultModulesPath);
+            defaultModulesPathGroup.Add(defaultModulesPath);
+            var defaultModulesPathButton = MakePathButton(defaultModulesPath);
+            defaultModulesPathGroup.Add(defaultModulesPathButton);
+
+            Button MakePathButton(PropertyField propertyField)
+            {
+                var button = new Button(EditorGUIUtility.IconContent("FolderOpened Icon").image as Texture2D, () =>
+                {
+                    var path = EditorUtility.OpenFolderPanel("Select Path", "Assets", string.Empty);
+                    path = Path.GetRelativePath(Application.dataPath, path);
+                    if (path.StartsWith('.'))
+                    {
+                        EditorUtility.DisplayDialog("Invalid path", "Please select a folder within the Assets directory.\n", "Ok");
+                        return;
+                    }
+                    propertyField.Q<TextField>().value = path;
+                });
+                button.style.width = 19;
+                button.style.marginLeft = -2;
+                button.style.marginRight = 3;
+                button.style.marginBottom = 1;
+                button.style.marginTop = 1;
+                button.style.paddingBottom = 0;
+                button.style.paddingLeft = 0;
+                button.style.paddingRight = 2;
+                button.style.paddingTop = 0;
+                var image = button.Q<Image>();
+                image.style.position = Position.Absolute;
+                image.style.width = Length.Percent(100);
+                image.style.height = Length.Percent(100);
+                return button;
+            }
 #endif
 
             var groupList = new ListView();

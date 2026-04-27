@@ -26,9 +26,18 @@ namespace StatusEffectFramework
         public int Stacks { get => m_Stacks; set { m_PreviousStacks = m_Stacks; m_Stacks = value; OnStackUpdate?.Invoke(m_PreviousStacks, m_Stacks); } }
 
         internal uint m_Id;
+#if UNITY_EDITOR
+        [SerializeField]
+#endif
         private double m_TimeAdded;
+#if UNITY_EDITOR
+        [SerializeField]
+#endif
         private float m_Duration;
-        [SerializeField] private int m_Stacks;
+#if UNITY_EDITOR
+        [SerializeField]
+#endif
+        private int m_Stacks;
 
         private int m_PreviousStacks;
         private bool m_ModulesEnabled;
@@ -92,7 +101,7 @@ namespace StatusEffectFramework
             {
                 StatusEffectTiming.Infinite => -1f,
                 StatusEffectTiming.Event or StatusEffectTiming.Predicate => Duration,
-                _ => Mathf.Max(0f, Duration - (float)(elapsedTime + TimeAdded))
+                _ => Mathf.Max(0f, Duration - (float)(elapsedTime - TimeAdded))
             };
         }
 

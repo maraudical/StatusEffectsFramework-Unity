@@ -10,38 +10,38 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
-  m_Name: Add Coin Multiplier
-  m_EditorClassIdentifier: 
+  m_Name: Health to Speed
+  m_EditorClassIdentifier: Unity.StatusEffectsFramework::StatusEffectFramework.StatusEffectData
   m_Id:
     serializedVersion: 2
-    Hash: a2070a02334a07a1b03d41fc4510ee52
+    Hash: b056d6106a3383b2d754b3f5d02c8458
   m_AutomaticallyAddToDatabase: 1
   m_Group:
-    Value: 4
+    Value: 0
   m_ComparableName: {fileID: 0}
   m_BaseValue: 1
-  m_Icon: {fileID: 21300000, guid: 7c5e5f5e82bc3ee4e97adfe8bf6e8cd8, type: 3}
-  m_Color: {r: 0, g: 0, b: 0, a: 0}
+  m_Icon: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_StatusEffectName: 
   m_Acronym: 
   m_Description: 
-  m_AllowEffectStacking: 1
-  m_NonStackingBehaviour: 0
+  m_AllowEffectStacking: 0
+  m_NonStackingBehaviour: 2
   m_MaxStacks: -1
   m_Effects:
-  - m_StatusName: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
+  - m_StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
     m_ValueModifier: 0
-    m_ValueSource: 1
+    m_ValueSource: 2
     m_Priority: 0
     m_FloatValue: 0
-    m_IntValue: 1
+    m_IntValue: 0
     m_BoolValue: 0
     m_DynamicFloatEffect: {fileID: 0}
     m_DynamicIntEffect: {fileID: 0}
     m_DynamicBoolEffect: {fileID: 0}
   m_Conditions: []
   m_Modules: []
-  m_EnableIcon: 1
+  m_EnableIcon: 0
   m_EnableColor: 0
   m_EnableName: 0
   m_EnableDescription: 0

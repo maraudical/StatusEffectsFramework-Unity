@@ -9,7 +9,7 @@ namespace StatusEffectFramework.Editor
 {
     [CustomPropertyDrawer(typeof(StatusFloat))]
     [CustomPropertyDrawer(typeof(StatusInt))]
-    internal class StatusNumberDrawer : PropertyDrawer
+    internal class StatusNumericDrawer : PropertyDrawer
     {
         private const string k_SignProtectedTooltip =
         "Toggles whether the value of this variable should limit " +

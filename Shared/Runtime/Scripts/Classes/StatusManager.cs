@@ -12,6 +12,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using System.Runtime.CompilerServices;
 using System;
+using static System.Collections.Specialized.BitVector32;
 
 namespace StatusEffectFramework
 {
@@ -202,24 +203,27 @@ namespace StatusEffectFramework
         private void IterateRemoval(IEnumerable<StatusEffect> statusEffectsToRemove, int? stacks)
         {
             int removedCount = 0;
-            int currentRemoveCount;
-            int currentStackCount;
+            int currentStacks;
+            int previousStacks;
 
             foreach (var statusEffect in statusEffectsToRemove)
             {
-                if (stacks != null)
+                if (stacks.HasValue)
                 {
-                    currentStackCount = statusEffect.Stacks;
+                    previousStacks = statusEffect.Stacks;
 
-                    if (removedCount + currentStackCount > stacks)
+                    if (removedCount + previousStacks > stacks)
                     {
-                        currentRemoveCount = (int)(currentStackCount - (removedCount + currentStackCount - stacks));
-                        statusEffect.Stacks -= currentRemoveCount;
-                        OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStacks, currentStackCount, statusEffect.Stacks);
+                        if (removedCount == stacks)
+                            break;
 
+                        currentStacks = previousStacks - stacks.Value + removedCount;
+                        statusEffect.SetStacks(currentStacks);
+                        OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStacks, previousStacks, currentStacks);
+                        statusEffect.InvokeStackUpdate(previousStacks, currentStacks);
                         break;
                     }
-                    removedCount += currentStackCount;
+                    removedCount += previousStacks;
                 }
                 // If it got to this point we can remove the effect. Either
                 // we removed all its stacks or there was no stack count.
@@ -249,15 +253,12 @@ namespace StatusEffectFramework
             IEnumerator TimedEffect()
 #endif
             {
-                float startTime = Time.time;
-                float startDuration = statusEffect.Duration;
                 // Basic decreasing timer.
-                while (statusEffect.Duration > 0
+                while (statusEffect.TimeRemaining(Time.timeAsDouble) > 0
 #if UNITASK || UNITY_2023_1_OR_NEWER
                    && !token.IsCancellationRequested
 #endif
                    )
-                {
 #if UNITASK
                     await UniTask.NextFrame(token);
 #elif UNITY_2023_1_OR_NEWER
@@ -265,8 +266,6 @@ namespace StatusEffectFramework
 #else
                     yield return null;
 #endif
-                    statusEffect.Duration = startDuration - Time.time + startTime;
-                }
                 // Once it has ended remove the given effect.
 #if UNITASK || UNITY_2023_1_OR_NEWER
                 if (!token.IsCancellationRequested)
@@ -536,7 +535,7 @@ namespace StatusEffectFramework
                     }
                 // Special case where the configurable which is the
                 // current data to be added is tagged for removal.
-                else if (condition.ActionData == statusEffectData)
+                else if (condition.ActionConfigurable is ConditionalConfigurable.Data && condition.ActionData == statusEffectData)
                 {
                     int? conditionalStacks = condition.UseStacks ? condition.Stacks * (condition.Scaled ? stacks : 1) : null;
                     if (!conditionalStacks.HasValue || conditionalStacks.Value >= stacks)
@@ -591,8 +590,7 @@ namespace StatusEffectFramework
                 previousStacks = statusEffect.Stacks;
                 currentStacks += statusEffect.Stacks;
                 statusEffect.SetStacks(currentStacks);
-                arstrtsatrtratratar
-                //action = currentStacks > previousStacks StatusEffectAction.AddedStacks;
+                action = currentStacks > previousStacks ? StatusEffectAction.AddedStacks : StatusEffectAction.RemovedStacks;
                 OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
                 statusEffect.InvokeStackUpdate(previousStacks, currentStacks);
             }

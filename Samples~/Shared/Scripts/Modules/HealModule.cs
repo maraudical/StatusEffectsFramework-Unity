@@ -8,7 +8,6 @@ namespace StatusEffectFramework.Samples
         private void OnStackUpdate(IExamplePlayer player, StatusEffect statusEffect, int previous, int stack)
         {
             player.Health += statusEffect.Data.BaseValue * Mathf.Max(0, stack - previous);
-            UnityEngine.Debug.Log(player.MaxHealth);
             player.Health = Mathf.Min(player.Health, player.MaxHealth);
         }
     }

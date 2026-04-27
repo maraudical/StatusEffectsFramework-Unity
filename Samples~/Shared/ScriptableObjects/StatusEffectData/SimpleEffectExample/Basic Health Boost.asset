@@ -31,7 +31,7 @@ MonoBehaviour:
   m_AutomaticallyAddToDatabase: 1
   m_Group:
     Value: 4
-  m_ComparableName: {fileID: 11400000, guid: 5d59c617e9e27c645b4a95c856dc345e, type: 2}
+  m_ComparableName: {fileID: 0}
   m_BaseValue: 10
   m_Icon: {fileID: 21300000, guid: 2cb9fd87a40eb2b4fb7384c36ccc128e, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}

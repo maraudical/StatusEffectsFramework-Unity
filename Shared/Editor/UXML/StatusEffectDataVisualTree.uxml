@@ -1,9 +1,9 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/Shared/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle"/>
+    <Style src="project://database/Assets/StatusEffectsFramework-Unity/Shared/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle"/>
     <uie:PropertyField name="id" enabled="false"/>
     <uie:PropertyField name="automatically-add-to-database"/>
     <ui:VisualElement name="required-fields-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
-        <ui:Label text="Required Fields" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px; -unity-text-align: lower-left; overflow: hidden;"/>
+        <ui:Label text="Base Fields" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px; -unity-text-align: lower-left; overflow: hidden;"/>
         <ui:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
         <uie:PropertyField name="group"/>
         <uie:PropertyField name="comparable-name"/>
