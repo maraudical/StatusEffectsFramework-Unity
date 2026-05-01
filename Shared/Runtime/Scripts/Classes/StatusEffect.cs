@@ -182,7 +182,7 @@ namespace StatusEffectFramework
 
         internal void SetStacks(int stacks)
         {
-            Stacks = stacks;
+            m_Stacks = stacks;
         }
 
         internal void InvokeStackUpdate(int previousStacks, int currentStacks)

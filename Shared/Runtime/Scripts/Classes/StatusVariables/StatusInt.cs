@@ -85,7 +85,7 @@ namespace StatusEffectFramework
                             dynamicInt.OnValueChanged += UpdatePreEvaluationValue;
                     }
 
-            UpdatePreEvaluationValue();
+            UpdatePreEvaluationValue(true);
         }
 
         protected override void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
@@ -99,7 +99,7 @@ namespace StatusEffectFramework
                             dynamicInt.OnValueChanged += UpdatePreEvaluationValue;
             // Only update if the status effect actually has any effects that have the same StatusName
             if (statusEffect.Data.Effects.Any(effect => effect.StatusName == m_StatusName))
-                UpdatePreEvaluationValue();
+                UpdatePreEvaluationValue(true);
         }
 
         protected int GetPreEvaluationValue()
@@ -156,7 +156,8 @@ namespace StatusEffectFramework
             return statusIntValue.GetValue();
         }
 
-        protected void UpdatePreEvaluationValue()
+        protected void UpdatePreEvaluationValue() => UpdatePreEvaluationValue(false);
+        protected void UpdatePreEvaluationValue(bool updatePostEvaluation)
         {
             m_PreviousPreEvaluationValue = PreEvaluationValue;
             PreEvaluationValue = GetPreEvaluationValue();
@@ -164,7 +165,10 @@ namespace StatusEffectFramework
             {
                 OnPreEvaluationValueChanged?.Invoke(m_PreviousPreEvaluationValue, PreEvaluationValue);
                 UpdatePostEvaluationValue();
-            }
+                return;
+            } 
+            if (updatePostEvaluation)
+                UpdatePostEvaluationValue();
         }
 
         protected void UpdatePostEvaluationValue()

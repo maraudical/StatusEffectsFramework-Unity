@@ -53,9 +53,9 @@ MonoBehaviour:
     m_DynamicIntEffect: {fileID: 0}
     m_DynamicBoolEffect: {fileID: 0}
   m_Conditions:
-  - m_SearchableConfigurable: 1
-    m_SearchableData: {fileID: 0}
-    m_SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
+  - m_SearchableConfigurable: 0
+    m_SearchableData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    m_SearchableComparableName: {fileID: 0}
     m_SearchableGroup:
       Value: 0
     m_Exists: 1
@@ -63,16 +63,16 @@ MonoBehaviour:
     m_Scaled: 1
     m_UseStacks: 0
     m_Stacks: 1
-    m_ActionConfigurable: 1
+    m_ActionConfigurable: 0
     m_ActionData: {fileID: 11400000}
-    m_ActionComparableName: {fileID: 11400000, guid: 7597d7862e7a5b04a923fffbe59908a4, type: 2}
+    m_ActionComparableName: {fileID: 0}
     m_ActionGroup:
       Value: 0
     m_Timing: 0
     m_Duration: 0
-  - m_SearchableConfigurable: 1
-    m_SearchableData: {fileID: 0}
-    m_SearchableComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
+  - m_SearchableConfigurable: 0
+    m_SearchableData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    m_SearchableComparableName: {fileID: 0}
     m_SearchableGroup:
       Value: 0
     m_Exists: 1
@@ -80,9 +80,9 @@ MonoBehaviour:
     m_Scaled: 1
     m_UseStacks: 0
     m_Stacks: 1
-    m_ActionConfigurable: 1
+    m_ActionConfigurable: 0
     m_ActionData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    m_ActionComparableName: {fileID: 11400000, guid: 9d351d480f63e1d4fa8356b0f7365b78, type: 2}
+    m_ActionComparableName: {fileID: 0}
     m_ActionGroup:
       Value: 0
     m_Timing: 0

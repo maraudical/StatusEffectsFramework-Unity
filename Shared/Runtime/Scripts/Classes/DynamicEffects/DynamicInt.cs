@@ -9,7 +9,7 @@ namespace StatusEffectFramework
         public ValueModifier ValueModifier { get; private set; }
         public bool PostEvaluate { get; private set; }
         public int Priority { get; private set; }
-        public int Value { get => m_Value; set { Value = value; OnValueChanged?.Invoke(); } }
+        public int Value { get => m_Value; set { if (value == Value) return; Value = value; OnValueChanged?.Invoke(); } }
         private int m_Value;
 
         public DynamicInt(DynamicIntEffect dynamicIntEffect, Effect effect, int value = 0)

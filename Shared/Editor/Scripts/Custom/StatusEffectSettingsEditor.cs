@@ -282,7 +282,7 @@ namespace StatusEffectFramework.Editor
                     if (removed.Any())
                     {
                         needsRefresh = true;
-                        list.RemoveAll(item => { needsRefresh = true; return removed.Contains(AssetDatabase.GetAssetPath(item)); });
+                        list.RemoveAll(item => { return item == null || removed.Contains(AssetDatabase.GetAssetPath(item)); });
                     }
                     if (updated.Any())
                     {
@@ -380,10 +380,7 @@ namespace StatusEffectFramework.Editor
             {
                 var data = datas[index];
                 if (data == null)
-                {
-                    element.style.display = DisplayStyle.None;
                     return;
-                }
                 var foldout = element.Q<Foldout>("foldout");
                 var icon = element.Q<Image>("icon");
                 SetIcon(data.Icon);
@@ -450,14 +447,8 @@ namespace StatusEffectFramework.Editor
             namesListView.bindItem = (element, index) =>
             {
                 var name = names[index];
-                more shits to fix
-                Debug.Log($"{name} is null? {name == null}");
-                if (name.Equals(null))
-                {
-                    Debug.Log("destroyed");
-                    element.style.display = DisplayStyle.None;
+                if (name == null)
                     return;
-                }
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(name));
                 element.Q<Label>("subtext").text = name.Id.ToString();
                 BindListItem(element, index, name);
@@ -507,10 +498,7 @@ namespace StatusEffectFramework.Editor
             {
                 var comparable = comparables[index];
                 if (comparable == null)
-                {
-                    element.style.display = DisplayStyle.None;
                     return;
-                }
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(comparable));
                 element.Q<Label>("subtext").text = comparable.Id.ToString();
                 BindListItem(element, index, comparable);
@@ -550,10 +538,7 @@ namespace StatusEffectFramework.Editor
             {
                 var module = modules[index];
                 if (module == null)
-                {
-                    element.style.display = DisplayStyle.None;
                     return;
-                }
                 var foldout = element.Q<Foldout>("foldout");
                 var foldoutToggle = foldout.Q<Toggle>();
                 var modulePropertyCheck = CreateEditor(module).serializedObject.GetIterator();
@@ -709,6 +694,8 @@ namespace StatusEffectFramework.Editor
                 var button = new Button(EditorGUIUtility.IconContent("FolderOpened Icon").image as Texture2D, () =>
                 {
                     var path = EditorUtility.OpenFolderPanel("Select Path", "Assets", string.Empty);
+                    if (string.IsNullOrWhiteSpace(path))
+                        return;
                     path = Path.GetRelativePath(Application.dataPath, path);
                     if (path.StartsWith('.'))
                     {

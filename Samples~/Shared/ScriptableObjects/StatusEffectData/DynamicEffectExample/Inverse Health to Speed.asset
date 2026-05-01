@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
-  m_Name: Health to Speed
+  m_Name: Inverse Health to Speed
   m_EditorClassIdentifier: Unity.StatusEffectsFramework::StatusEffectFramework.StatusEffectData
   m_Id:
     serializedVersion: 2
     Hash: b056d6106a3383b2d754b3f5d02c8458
   m_AutomaticallyAddToDatabase: 1
   m_Group:
-    Value: 0
+    Value: 4
   m_ComparableName: {fileID: 0}
   m_BaseValue: 1
   m_Icon: {fileID: 0}
@@ -36,7 +36,7 @@ MonoBehaviour:
     m_FloatValue: 0
     m_IntValue: 0
     m_BoolValue: 0
-    m_DynamicFloatEffect: {fileID: 0}
+    m_DynamicFloatEffect: {fileID: 11400000, guid: 17d78b5f0f1d9924886fda2936689673, type: 2}
     m_DynamicIntEffect: {fileID: 0}
     m_DynamicBoolEffect: {fileID: 0}
   m_Conditions: []

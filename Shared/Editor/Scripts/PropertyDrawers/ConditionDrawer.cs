@@ -42,8 +42,7 @@ namespace StatusEffectFramework.Editor
             root.Add(ifLabel);
 
             var searchableConfigurable = new PropertyField(searchableConfigurableProperty, string.Empty);
-            searchableConfigurable.style.minWidth = 56;
-            searchableConfigurable.style.flexGrow = 1;
+            searchableConfigurable.style.flexGrow = 0;
             searchableConfigurable.style.flexShrink = 0;
             root.Add(searchableConfigurable);
 
@@ -109,8 +108,7 @@ namespace StatusEffectFramework.Editor
             root.Add(ofLabel);
 
             var actionConfigurable = new PropertyField(actionConfigurableProperty, string.Empty);
-            actionConfigurable.style.minWidth = 56;
-            actionConfigurable.style.flexGrow = 1;
+            actionConfigurable.style.flexGrow = 0;
             actionConfigurable.style.flexShrink = 0;
             root.Add(actionConfigurable);
 

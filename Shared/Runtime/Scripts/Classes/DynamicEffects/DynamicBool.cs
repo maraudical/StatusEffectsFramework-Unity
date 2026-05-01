@@ -8,7 +8,7 @@ namespace StatusEffectFramework
         public StatusName StatusName { get; private set; }
         public bool PostEvaluate { get; private set; }
         public int Priority { get; private set; }
-        public bool Value { get => m_Value; set { Value = value; OnValueChanged?.Invoke(); } }
+        public bool Value { get => m_Value; set { if (value == Value) return; Value = value; OnValueChanged?.Invoke(); } }
         private bool m_Value;
 
         public DynamicBool(DynamicBoolEffect dynamicBoolEffect, Effect effect, bool value = false)

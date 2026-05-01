@@ -17,7 +17,7 @@ MonoBehaviour:
     Hash: 7715c1dc2bf5831b3c8f42f8f424928c
   m_AutomaticallyAddToDatabase: 1
   m_Group:
-    Value: 0
+    Value: 4
   m_ComparableName: {fileID: 0}
   m_BaseValue: 1
   m_Icon: {fileID: 0}
@@ -30,13 +30,13 @@ MonoBehaviour:
   m_MaxStacks: -1
   m_Effects:
   - m_StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
-    m_ValueModifier: 0
+    m_ValueModifier: 2
     m_ValueSource: 2
     m_Priority: 0
     m_FloatValue: 0
     m_IntValue: 0
     m_BoolValue: 0
-    m_DynamicFloatEffect: {fileID: 0}
+    m_DynamicFloatEffect: {fileID: 11400000, guid: 286c125fd1ea61d41ba35eee93cdc692, type: 2}
     m_DynamicIntEffect: {fileID: 0}
     m_DynamicBoolEffect: {fileID: 0}
   m_Conditions: []

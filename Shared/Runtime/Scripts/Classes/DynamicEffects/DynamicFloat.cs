@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 
 namespace StatusEffectFramework
 {
@@ -9,7 +10,7 @@ namespace StatusEffectFramework
         public ValueModifier ValueModifier { get; private set; }
         public bool PostEvaluate { get; private set; }
         public int Priority { get; private set; }
-        public float Value { get => m_Value; set { Value = value; OnValueChanged?.Invoke(); } }
+        public float Value { get => m_Value; set { if (value == m_Value) return; m_Value = value; OnValueChanged?.Invoke(); } }
         private float m_Value;
 
         public DynamicFloat(DynamicFloatEffect dynamicFloatEffect, Effect effect, float value = 0)

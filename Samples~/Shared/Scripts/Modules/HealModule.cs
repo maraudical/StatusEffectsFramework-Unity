@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace StatusEffectFramework.Samples
 {
-    [CreateAssetMenu(fileName = "Heal Module", menuName = "Status Effect Framework/Modules/Heal Module", order = 1)]
+    [CreateAssetMenu(fileName = "Heal Module", menuName = "Status Effect Framework/Modules/Heal", order = 1)]
     public partial class HealModule : Module
     {  
         private void OnStackUpdate(IExamplePlayer player, StatusEffect statusEffect, int previous, int stack)

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace StatusEffectFramework
 {
-    public abstract class Name : ScriptableObject, IEquatable<Name>
+    public abstract class Name : ScriptableObject
     {
         public Hash128 Id => m_Id;
         [SerializeField] private Hash128 m_Id;
@@ -42,11 +42,5 @@ namespace StatusEffectFramework
         }
 
 #endif
-        fix this shit
-        public static bool operator ==(Name name1, Name name2) { Debug.Log($"{name1} is null? ({(name1 as UnityEngine.Object) == null}) {name2} is null? ({(name2 as UnityEngine.Object) == null})"); return (name1?.Id ?? default) == (name2?.Id ?? default); }
-        public static bool operator !=(Name name1, Name name2) => (name1?.Id ?? default) != (name2?.Id ?? default);
-        public bool Equals(Name other) => other == this;
-        public override bool Equals(object obj) => Equals(obj as Name);
-        public override int GetHashCode() => m_Id.GetHashCode();
     }
 }
