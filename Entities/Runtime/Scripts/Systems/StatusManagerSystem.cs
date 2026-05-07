@@ -7,6 +7,7 @@ using Unity.Entities;
 using Unity.Mathematics;
 #if NETCODE
 using Unity.NetCode;
+using UnityEngine.LightTransport;
 #endif
 
 namespace StatusEffectFramework.Entities
@@ -68,7 +69,7 @@ namespace StatusEffectFramework.Entities
             var elapsedTime = SystemAPI.Time.ElapsedTime;
             var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 #endif
-
+            
             // Update and check durations.
             var statusEffectsJob = new StatusEffectsJob
             {

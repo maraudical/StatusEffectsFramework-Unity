@@ -10,7 +10,7 @@ using Unity.NetCode;
 namespace StatusEffectFramework.Entities
 {
     [BurstCompile]
-    public struct StatusEffects : IBufferElementData, IComparable<StatusEffects>, IEquatable<uint>
+    public struct StatusEffects : IBufferElementData, IComparable<StatusEffects>, IEquatable<uint>, IEquatable<StatusEffects>
     {
 #if NETCODE
         [GhostField(Composite = true)]
@@ -66,6 +66,8 @@ namespace StatusEffectFramework.Entities
         public int CompareTo(StatusEffects other) => Id.CompareTo(other.Id);
 
         public bool Equals(uint other) => Id.Equals(other);
+
+        public bool Equals(StatusEffects other) => Id.Equals(other.Id);
 
         [BurstCompile]
         /// <summary>

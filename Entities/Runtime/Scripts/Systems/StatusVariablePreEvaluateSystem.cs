@@ -21,7 +21,7 @@ namespace StatusEffectFramework.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, DynamicFloats, DynamicInts, DynamicBools, StatusFloats, StatusInts, StatusBools>().WithAll<StatusVariablePreEvaluateUpdate, Simulate>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, DynamicFloats, DynamicInts, DynamicBools, StatusFloats, StatusInts, StatusBools>().WithAll<StatusVariablePreEvaluateUpdate, Simulate>().WithPresentRW<StatusVariablePostEvaluateUpdate>().Build();
             state.RequireForUpdate(m_EntityQuery);
             state.RequireForUpdate<StatusReferences>();
         }

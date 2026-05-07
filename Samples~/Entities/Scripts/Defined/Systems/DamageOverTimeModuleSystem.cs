@@ -152,10 +152,12 @@ namespace StatusEffectFramework.Entities.Samples
                     if (!References.TryGetReference(statusEffect.StatusEffectDataId, out var reference))
                         continue;
 
-                    if (!StatusEffectsECSUtility.ModuleInfosContainType(ref reference.Value.Modules, TypeIndex))
+                    ref var data = ref reference.Value;
+
+                    if (!StatusEffectsECSUtility.ModuleInfosContainType(ref data.Modules, TypeIndex))
                         continue;
 
-                    ref var modules = ref reference.Value.Modules;
+                    ref var modules = ref data.Modules;
                     for (int i = 0; i < modules.Length; i++)
                     {
                         var moduleInfo = modules[i];

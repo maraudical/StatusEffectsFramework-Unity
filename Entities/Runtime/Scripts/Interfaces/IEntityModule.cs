@@ -44,19 +44,17 @@ namespace StatusEffectFramework.Entities
         /// Creates a new <see cref="ModuleInfo"/> for the specified module struct, allocating a copy of it 
         /// to unmanaged memory and associating it with the module's type.
         /// </summary>
-        public sealed ModuleInfo AllocateModule<T>(T moduleStruct) where T : unmanaged
+        public unsafe sealed ModuleInfo AllocateModule<T>(T moduleStruct) where T : unmanaged
         {
-            unsafe{
-                void* ptr = UnsafeUtility.Malloc(UnsafeUtility.SizeOf<T>(), UnsafeUtility.AlignOf<T>(), Allocator.Persistent);
-                UnsafeUtility.CopyStructureToPtr(ref moduleStruct, ptr);
-                var moduleInfo = new ModuleInfo
-                {
-                    TypeIndex = TypeManager.GetTypeIndex(typeof(Modules<T>)),
-                    Ptr = (IntPtr)ptr,
-                    Size = UnsafeUtility.SizeOf<T>(),
-                };
-                return moduleInfo;
-            }
+            void* ptr = UnsafeUtility.Malloc(UnsafeUtility.SizeOf<T>(), UnsafeUtility.AlignOf<T>(), Allocator.Persistent);
+            UnsafeUtility.CopyStructureToPtr(ref moduleStruct, ptr);
+            var moduleInfo = new ModuleInfo
+            {
+                TypeIndex = TypeManager.GetTypeIndex(typeof(Modules<T>)),
+                Ptr = (IntPtr)ptr,
+                Size = UnsafeUtility.SizeOf<T>(),
+            };
+            return moduleInfo;
         }
     }
 }
