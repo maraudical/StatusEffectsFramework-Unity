@@ -6,9 +6,11 @@ using Unity.Mathematics;
 
 namespace StatusEffectsFramework.Entities.Samples
 {
-    public struct InverseHealthToSpeedComponent : IComponentData
+    public struct InverseHealthToSpeedComponent : IComponentData { }
+
+    public struct InverseHealthToSpeedStruct
     {
-        public float Value;
+        public float ConversionRatio;
     }
 
     [UpdateInGroup(typeof(DynamicEffectPreEvaluateSystemGroup))]
@@ -46,17 +48,29 @@ namespace StatusEffectsFramework.Entities.Samples
 
             public void Execute(EnabledRefRW<StatusVariablePreEvaluateUpdate> preEvaluateUpdate, in DynamicBuffer<StatusFloats> statusFloats, ref ExamplePlayerComponent player, ref DynamicBuffer<DynamicFloats> dynamicFloats)
             {
-                /*if (player.MaxHealth.TryGetValue(player.ComponentId, statusFloats, out var maxHealth))
+                bool update = false;
+
+                if (player.MaxHealth.TryGetValue(player.ComponentId, statusFloats, out var maxHealth))
                 {
-                    float value = math.max(0, 1f - player.Health / maxHealth) * maxHealth * ConversionRatio;
+                    float value = math.max(0, 1f - player.Health / maxHealth) * maxHealth;
                     for (int i = 0; i < dynamicFloats.Length; i++)
                     {
                         ref var dynamicFloat = ref dynamicFloats.ElementAt(i);
 
                         if (!dynamicFloat.PostEvaluate && dynamicFloat.TypeIndex == TypeIndex)
-                            dynamicFloat.Value = value;
+                        {
+                            var convertedValue = value * dynamicFloat.DynamicEffectInfo.GetValue<InverseHealthToSpeedStruct>().ConversionRatio;
+                            if (convertedValue != dynamicFloat.Value)
+                            {
+                                dynamicFloat.Value = convertedValue;
+                                update = true;
+                            }
+                        }
                     }
-                }*/
+                }
+
+                if (update)
+                    preEvaluateUpdate.ValueRW = true;
             }
         }
     }

@@ -6,10 +6,7 @@ using Unity.Mathematics;
 
 namespace StatusEffectsFramework.Entities.Samples
 {
-    public struct CoinMultiplierToSpeedComponent : IComponentData
-    {
-        public float Value;
-    }
+    public struct CoinMultiplierToSpeedComponent : IComponentData { }
 
     [UpdateInGroup(typeof(DynamicEffectPostEvaluateSystemGroup))]
     [BurstCompile]
@@ -27,7 +24,7 @@ namespace StatusEffectsFramework.Entities.Samples
             // always be enabled after pre evaluation updates so it can be used to check for changes.
 
             // If you do not check for StatusVariablePostEvaluateUpdate, you should enable the component 
-            // if changes to the dynamic floats were made.
+            // manually if changes to the dynamic floats were made.
             m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusInts, ExamplePlayerComponent, DynamicFloats>().WithAll<StatusVariablePostEvaluateUpdate, CoinMultiplierToSpeedComponent, Simulate>().Build();
 
             m_TypeIndex = TypeManager.GetTypeIndex<CoinMultiplierToSpeedComponent>();

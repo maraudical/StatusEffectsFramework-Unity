@@ -1,17 +1,20 @@
 using StatusEffectFramework.Entities;
-using System.Threading;
+using StatusEffectsFramework.Entities.Samples;
 using Unity.Entities;
-using UnityEngine;
 
 namespace StatusEffectFramework.Samples
 {
     public partial class InverseHealthToSpeed : DynamicFloatEffect, IEntityDynamicEffect
     {
         public TypeIndex GetTypeIndex() => TypeManager.GetTypeIndex<InverseHealthToSpeedComponent>();
-    }
 
-    public struct InverseHealthToSpeedComponent : IComponentData
-    {
-        public float Value;
+        public DynamicEffectInfo CreateDynamicEffectInfo()
+        {
+            var dynamicEffectStruct = new InverseHealthToSpeedStruct
+            {
+                ConversionRatio = ConversionRatio
+            };
+            return (this as IEntityDynamicEffect).AllocateDynamicEffect(dynamicEffectStruct);
+        }
     }
 }

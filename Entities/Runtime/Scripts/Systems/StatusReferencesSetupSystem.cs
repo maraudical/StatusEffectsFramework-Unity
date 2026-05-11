@@ -1,4 +1,5 @@
 #if ENTITIES
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
@@ -89,6 +90,7 @@ namespace StatusEffectFramework.Entities
                     effect = statusEffectData.Effects[i];
                     ValueType valueType = default;
                     TypeIndex typeIndex = default;
+                    DynamicEffectInfo info = default;
                     bool postEvaluate = default;
 
                     if (effect.StatusName == null)
@@ -101,6 +103,7 @@ namespace StatusEffectFramework.Entities
                                 if (effect.DynamicFloatEffect && effect.DynamicFloatEffect is IEntityDynamicEffect entityDynamicEffect)
                                 {
                                     typeIndex = entityDynamicEffect.GetTypeIndex();
+                                    info = entityDynamicEffect.CreateDynamicEffectInfo();
                                     postEvaluate = effect.DynamicFloatEffect.PostEvaluate;
                                 }  
                                 else
@@ -112,6 +115,7 @@ namespace StatusEffectFramework.Entities
                                 if (effect.DynamicIntEffect && effect.DynamicIntEffect is IEntityDynamicEffect entityDynamicEffect)
                                 {
                                     typeIndex = entityDynamicEffect.GetTypeIndex();
+                                    info = entityDynamicEffect.CreateDynamicEffectInfo();
                                     postEvaluate = effect.DynamicIntEffect.PostEvaluate;
                                 }
                                 else
@@ -123,6 +127,7 @@ namespace StatusEffectFramework.Entities
                                 if (effect.DynamicBoolEffect && effect.DynamicBoolEffect is IEntityDynamicEffect entityDynamicEffect)
                                 {
                                     typeIndex = entityDynamicEffect.GetTypeIndex();
+                                    info = entityDynamicEffect.CreateDynamicEffectInfo();
                                     postEvaluate = effect.DynamicBoolEffect.PostEvaluate;
                                 }
                                 else
@@ -131,7 +136,8 @@ namespace StatusEffectFramework.Entities
                             break;
                     }
 
-                    effects[i] = new UnmanagedEffect
+                    ref var unmanagedEffect = ref effects[i];
+                    unmanagedEffect = new UnmanagedEffect
                     {
                         StatusName = effect.StatusName ? effect.StatusName.Id : default,
                         TypeIndex = typeIndex,
@@ -143,6 +149,7 @@ namespace StatusEffectFramework.Entities
                         FloatValue = effect.FloatValue,
                         IntValue = effect.IntValue,
                         BoolValue = effect.BoolValue,
+                        DynamicEffectInfo = info
                     };
                 }
                 var conditions = subBuilder.Allocate(ref statusEffectDataRoot.Conditions, statusEffectData.Conditions.Count);
@@ -215,6 +222,13 @@ namespace StatusEffectFramework.Entities
                         var modulePtr = statusEffectData.Modules[i];
                         UnsafeUtility.Free(modulePtr.Ptr.ToPointer(), Allocator.Persistent);
                     }
+                    for (int i = 0; i < statusEffectData.Effects.Length; i++)
+                        unsafe
+                        {
+                            ref var dynamicEffectInfo = ref statusEffectData.Effects[i].DynamicEffectInfo;
+                            if (dynamicEffectInfo.Ptr != IntPtr.Zero)
+                                UnsafeUtility.Free(dynamicEffectInfo.Ptr.ToPointer(), Allocator.Persistent);
+                        }
                     blob.Dispose();
                 }
 

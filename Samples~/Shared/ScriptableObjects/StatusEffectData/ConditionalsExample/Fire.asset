@@ -1,18 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-3397718503246941407
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Prefab: {fileID: 3350783055171671458, guid: fe17f8879467d5e4da9540a5249738dd, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -78,16 +65,16 @@ MonoBehaviour:
     m_Timing: 0
     m_Duration: 0
   m_Modules:
-  - m_Module: {fileID: 11400000, guid: 953f3e2a50b26cf4c8c47c3e819094c8, type: 2}
-    m_ModuleInstance: {fileID: 4871838168306289748}
   - m_Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
-    m_ModuleInstance: {fileID: -3397718503246941407}
+    m_ModuleInstance: {fileID: 4074650581014911487}
+  - m_Module: {fileID: 11400000, guid: 953f3e2a50b26cf4c8c47c3e819094c8, type: 2}
+    m_ModuleInstance: {fileID: 2789059770266951864}
   m_EnableIcon: 1
   m_EnableColor: 0
   m_EnableName: 0
   m_EnableDescription: 0
   m_EnableAcronym: 0
---- !u!114 &4871838168306289748
+--- !u!114 &2789059770266951864
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -98,5 +85,18 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce03427ba0d59234d8f769758de73022, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatusEffectFramework.Samples.DamageOverTimeInstance
   IntervalSeconds: 1
+--- !u!114 &4074650581014911487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatusEffectFramework.Samples.VfxInstance
+  Prefab: {fileID: 3350783055171671458, guid: fe17f8879467d5e4da9540a5249738dd, type: 3}

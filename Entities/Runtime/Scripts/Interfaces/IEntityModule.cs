@@ -15,7 +15,7 @@ namespace StatusEffectFramework.Entities
         /// <summary>
         /// Using the values in the <see cref="Module"/> and <see cref="ModuleInstance"/> this method 
         /// should create the default values for the burstable module struct. Make sure to return after 
-        /// passing it as a parameter to the <see cref="AllocateModule{T}(T)"/> method"/>
+        /// passing it as a parameter to the <see cref="AllocateModule{T}(T)"/> method.
         /// </summary>
         /// /// <remarks>
         /// Make sure to always use the <see cref="AllocateModule{T}(T)"/> method to create the 
@@ -30,9 +30,9 @@ namespace StatusEffectFramework.Entities
         ///    var myModuleStruct = new MyModuleStruct
         ///    {
         ///        // Copy values from the module instance to the module struct here
-        ///        MyValue = testModuleInstance.MyValue,
+        ///        MyValue = myModuleInstance.MyValue,
         ///    };
-        ///    return (this as IEntityModule).AllocateModule(testModuleStruct);
+        ///    return (this as IEntityModule).AllocateModule(myModuleStruct);
         ///}
         /// </code>
         /// </remarks>
@@ -46,13 +46,14 @@ namespace StatusEffectFramework.Entities
         /// </summary>
         public unsafe sealed ModuleInfo AllocateModule<T>(T moduleStruct) where T : unmanaged
         {
-            void* ptr = UnsafeUtility.Malloc(UnsafeUtility.SizeOf<T>(), UnsafeUtility.AlignOf<T>(), Allocator.Persistent);
+            int size = UnsafeUtility.SizeOf<T>();
+            void* ptr = UnsafeUtility.Malloc(size, UnsafeUtility.AlignOf<T>(), Allocator.Persistent);
             UnsafeUtility.CopyStructureToPtr(ref moduleStruct, ptr);
             var moduleInfo = new ModuleInfo
             {
                 TypeIndex = TypeManager.GetTypeIndex(typeof(Modules<T>)),
                 Ptr = (IntPtr)ptr,
-                Size = UnsafeUtility.SizeOf<T>(),
+                Size = size,
             };
             return moduleInfo;
         }

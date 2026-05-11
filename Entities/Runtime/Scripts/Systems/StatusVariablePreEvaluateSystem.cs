@@ -72,7 +72,7 @@ namespace StatusEffectFramework.Entities
                     ref UnmanagedStatusEffectData data = ref blob.Value;
                     for (int i = 0; i < data.Effects.Length; i++)
                     {
-                        var effect = data.Effects[i];
+                        ref var effect = ref data.Effects[i];
                         statusNameToEffect.Add(effect.StatusName, (effect, statusEffect.Stacks, data.BaseValue));
                     }
 
@@ -113,17 +113,17 @@ namespace StatusEffectFramework.Entities
             {
                 var statusFloatValue = new StatusFloatValue(statusFloat.BaseValue, statusFloat.SignProtected);
 
-                int effectValue = default;
+                float effectValue = default;
 
                 foreach (var effect in effects)
                 {
                     switch (effect.Effect.ValueSource)
                     {
                         case ValueSource.ExplicitValue:
-                            effectValue = effect.Stacks * effect.Effect.IntValue;
+                            effectValue = effect.Stacks * effect.Effect.FloatValue;
                             break;
                         case ValueSource.BaseValue:
-                            effectValue = effect.Stacks * (int)effect.BaseValue;
+                            effectValue = effect.Stacks * effect.BaseValue;
                             break;
                         case ValueSource.DynamicValue:
                             continue;

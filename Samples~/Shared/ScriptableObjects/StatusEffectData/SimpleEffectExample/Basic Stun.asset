@@ -1,18 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-1739847073860458187
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Prefab: {fileID: 556424116285107890, guid: 067710c4c4c0051478cfec350dda1e57, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55,9 +42,22 @@ MonoBehaviour:
   m_Conditions: []
   m_Modules:
   - m_Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
-    m_ModuleInstance: {fileID: -1739847073860458187}
+    m_ModuleInstance: {fileID: 8404937958904138661}
   m_EnableIcon: 1
   m_EnableColor: 0
   m_EnableName: 0
   m_EnableDescription: 0
   m_EnableAcronym: 0
+--- !u!114 &8404937958904138661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatusEffectFramework.Samples.VfxInstance
+  Prefab: {fileID: 556424116285107890, guid: 067710c4c4c0051478cfec350dda1e57, type: 3}

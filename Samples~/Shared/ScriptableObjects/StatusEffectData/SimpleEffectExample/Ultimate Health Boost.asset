@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &-3842918022963997680
+--- !u!114 &-7090242544092170463
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 780820c511935244e94da41a53692797, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Assembly-CSharp::StatusEffectFramework.Samples.VfxInstance
   Prefab: {fileID: 3165632045659492785, guid: 596723451463a6443aff5842e68ee3c3, type: 3}
 --- !u!114 &11400000
 MonoBehaviour:
@@ -55,7 +55,7 @@ MonoBehaviour:
   m_Conditions: []
   m_Modules:
   - m_Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}
-    m_ModuleInstance: {fileID: -3842918022963997680}
+    m_ModuleInstance: {fileID: -7090242544092170463}
   m_EnableIcon: 1
   m_EnableColor: 0
   m_EnableName: 0

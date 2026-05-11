@@ -1,5 +1,6 @@
 #if ENTITIES
 using System;
+using System.Globalization;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -8,6 +9,7 @@ using Unity.Mathematics;
 #if NETCODE
 using Unity.NetCode;
 using UnityEngine.LightTransport;
+using static Unity.Entities.EntitiesJournaling;
 #endif
 
 namespace StatusEffectFramework.Entities
@@ -33,9 +35,9 @@ namespace StatusEffectFramework.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_RequestsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusEffectEvents>().WithAllRW<DynamicFloats, DynamicInts>().WithAllRW<DynamicBools, StatusVariablePreEvaluateUpdate>().WithAll<Simulate>().WithAllRW<StatusManagerComponent, StatusEffectRequests>().Build();
+            m_RequestsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusEffectEvents, StatusVariablePreEvaluateUpdate>().WithAllRW<DynamicFloats, DynamicInts>().WithAllRW<DynamicBools>().WithAll<Simulate>().WithAllRW<StatusManagerComponent, StatusEffectRequests>().Build();
             m_RequestsQuery.AddChangedVersionFilter(ComponentType.ReadWrite<StatusEffectRequests>());
-            m_StatusEffectsQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithPresentRW<StatusEffectEvents>().WithAllRW<DynamicFloats, DynamicInts>().WithAllRW<DynamicBools, StatusVariablePreEvaluateUpdate>().WithAll<Simulate>().Build();
+            m_StatusEffectsQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithPresentRW<StatusEffectEvents, StatusVariablePreEvaluateUpdate>().WithAllRW<DynamicFloats, DynamicInts>().WithAllRW<DynamicBools>().WithAll<Simulate>().Build();
 
             state.RequireForUpdate(m_StatusEffectsQuery);
             state.RequireForUpdate<StatusReferences>();
@@ -48,7 +50,7 @@ namespace StatusEffectFramework.Entities
         public void OnUpdate(ref SystemState state)
         {
             var references = SystemAPI.GetSingleton<StatusReferences>();
-
+            
 #if NETCODE
             var networkTime = SystemAPI.GetSingleton<NetworkTime>();
             SystemAPI.TryGetSingleton<ClientServerTickRate>(out var tickRate);
@@ -60,6 +62,7 @@ namespace StatusEffectFramework.Entities
             {
                 var checkIfRebuildModulesNeededJob = new CheckIfRebuildModulesNeededJob
                 {
+                    References = references,
                     EndPredictedSimulationEntityCommandBuffer = endPredictedSimulationEntityCommandBuffer,
                     EndStatusEffectEntityCommandBuffer = endStatusEffectEntityCommandBuffer,
                 };
@@ -98,7 +101,68 @@ namespace StatusEffectFramework.Entities
             };
             state.Dependency = statusEffectRequestsJob.ScheduleParallelByRef(m_RequestsQuery, state.Dependency);
         }
-#if NETCODE
+
+        [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
+        internal static void AddDynamicValue(int sortKey, 
+            in Entity entity, 
+            uint id, 
+            ref UnmanagedStatusEffectData statusEffectData, 
+            ref EntityCommandBuffer.ParallelWriter commandBuffer, 
+            ref DynamicBuffer<DynamicFloats> dynamicFloats, 
+            ref DynamicBuffer<DynamicInts> dynamicInts, 
+            ref DynamicBuffer<DynamicBools> dynamicBools)
+        {
+            for (int i = 0; i < statusEffectData.Effects.Length; i++)
+            {
+                ref var effect = ref statusEffectData.Effects[i];
+                if (effect.ValueSource is not ValueSource.DynamicValue)
+                    continue;
+
+                commandBuffer.AddComponent(sortKey, entity, ComponentType.ReadOnly(effect.TypeIndex));
+
+                switch (effect.ValueType)
+                {
+                    case ValueType.Float:
+                        dynamicFloats.Add(new DynamicFloats()
+                        {
+                            Id = id,
+                            TypeIndex = effect.TypeIndex,
+                            StatusName = effect.StatusName,
+                            ValueModifier = effect.ValueModifier,
+                            PostEvaluate = effect.PostEvaluate,
+                            Priority = effect.Priority,
+                            Value = effect.FloatValue,
+                            DynamicEffectInfo = effect.DynamicEffectInfo
+                        });
+                        break;
+                    case ValueType.Int:
+                        dynamicInts.Add(new DynamicInts()
+                        {
+                            Id = id,
+                            TypeIndex = effect.TypeIndex,
+                            StatusName = effect.StatusName,
+                            ValueModifier = effect.ValueModifier,
+                            PostEvaluate = effect.PostEvaluate,
+                            Priority = effect.Priority,
+                            Value = effect.IntValue,
+                            DynamicEffectInfo = effect.DynamicEffectInfo
+                        });
+                        break;
+                    case ValueType.Bool:
+                        dynamicBools.Add(new DynamicBools()
+                        {
+                            Id = id,
+                            TypeIndex = effect.TypeIndex,
+                            StatusName = effect.StatusName,
+                            PostEvaluate = effect.PostEvaluate,
+                            Priority = effect.Priority,
+                            Value = effect.BoolValue,
+                            DynamicEffectInfo = effect.DynamicEffectInfo
+                        });
+                        break;
+                }
+            }
+        }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         internal static void RemoveIdAndBuildTypeList(uint id, ref DynamicBuffer<DynamicFloats> dynamicFloats, ref DynamicBuffer<DynamicInts> dynamicInts , ref DynamicBuffer<DynamicBools> dynamicBools, ref NativeHashSet<TypeIndex> existingTypes, ref NativeHashSet<TypeIndex> removingTypes)
@@ -140,18 +204,23 @@ namespace StatusEffectFramework.Entities
                     existingTypes.Add(dynamicBool.TypeIndex);
             }
         }
+#if NETCODE
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         [WithAll(typeof(Simulate))]
         internal partial struct CheckIfRebuildModulesNeededJob : IJobEntity
         {
+            public StatusReferences References;
             public EntityCommandBuffer.ParallelWriter EndPredictedSimulationEntityCommandBuffer;
             public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
 
             void Execute([ChunkIndexInQuery] int sortKey,
                 Entity entity,
                 in DynamicBuffer<StatusEffects> statusEffects,
-                in DynamicBuffer<InterpolatedStatusEffects> interpolatedStatusEffects)
+                in DynamicBuffer<InterpolatedStatusEffects> interpolatedStatusEffects,
+                ref DynamicBuffer<DynamicFloats> dynamicFloats,
+                ref DynamicBuffer<DynamicInts> dynamicInts,
+                ref DynamicBuffer<DynamicBools> dynamicBools)
             {
                 if (statusEffects.Length != interpolatedStatusEffects.Length)
                     goto AddTag;
@@ -166,6 +235,31 @@ namespace StatusEffectFramework.Entities
 
                 EndStatusEffectEntityCommandBuffer.AddComponent<RebuildModulesTag>(sortKey, entity);
                 EndPredictedSimulationEntityCommandBuffer.RemoveComponent<RebuildModulesTag>(sortKey, entity);
+
+                foreach (var dynamicFloat in dynamicFloats)
+                    EndStatusEffectEntityCommandBuffer.RemoveComponent(sortKey, entity, ComponentType.ReadOnly(dynamicFloat.TypeIndex));
+                foreach (var dynamicInt in dynamicInts)
+                    EndStatusEffectEntityCommandBuffer.RemoveComponent(sortKey, entity, ComponentType.ReadOnly(dynamicInt.TypeIndex));
+                foreach (var dynamicBool in dynamicBools)
+                    EndStatusEffectEntityCommandBuffer.RemoveComponent(sortKey, entity, ComponentType.ReadOnly(dynamicBool.TypeIndex));
+
+                dynamicFloats.Clear();
+                dynamicInts.Clear();
+                dynamicBools.Clear();
+
+                foreach (var statusEffect in statusEffects)
+                    if (References.IdToStatusEffectDataMap.Value.TryGetValue(statusEffect.StatusEffectDataId, out var reference))
+                    {
+                        ref UnmanagedStatusEffectData statusEffectData = ref reference.Value;
+                        AddDynamicValue(sortKey,
+                            entity,
+                            statusEffect.Id,
+                            ref statusEffectData,
+                            ref EndStatusEffectEntityCommandBuffer,
+                            ref dynamicFloats,
+                            ref dynamicInts,
+                            ref dynamicBools);
+                    }
             } 
         }
 #endif
@@ -872,53 +966,14 @@ namespace StatusEffectFramework.Entities
                         if (References.IdToStatusEffectDataMap.Value.TryGetValue(indexedUpdate.StatusEffectDataId, out var reference))
                         {
                             ref UnmanagedStatusEffectData statusEffectData = ref reference.Value;
-                            for (int i = 0; i < statusEffectData.Effects.Length; i++)
-                            {
-                                var effect = statusEffectData.Effects[i];
-                                if (effect.ValueSource is not ValueSource.DynamicValue)
-                                    continue;
-
-                                EndStatusEffectEntityCommandBuffer.AddComponent(sortKey, entity, ComponentType.ReadOnly(effect.TypeIndex));
-
-                                switch (effect.ValueType)
-                                {
-                                    case ValueType.Float:
-                                        dynamicFloats.Add(new DynamicFloats()
-                                        {
-                                            Id = id,
-                                            TypeIndex = effect.TypeIndex,
-                                            StatusName = effect.StatusName,
-                                            ValueModifier = effect.ValueModifier,
-                                            PostEvaluate = effect.PostEvaluate,
-                                            Priority = effect.Priority,
-                                            Value = effect.FloatValue
-                                        });
-                                        break;
-                                    case ValueType.Int:
-                                        dynamicInts.Add(new DynamicInts()
-                                        {
-                                            Id = id,
-                                            TypeIndex = effect.TypeIndex,
-                                            StatusName = effect.StatusName,
-                                            ValueModifier = effect.ValueModifier,
-                                            PostEvaluate = effect.PostEvaluate,
-                                            Priority = effect.Priority,
-                                            Value = effect.IntValue
-                                        });
-                                        break;
-                                    case ValueType.Bool:
-                                        dynamicBools.Add(new DynamicBools()
-                                        {
-                                            Id = id,
-                                            TypeIndex = effect.TypeIndex,
-                                            StatusName = effect.StatusName,
-                                            PostEvaluate = effect.PostEvaluate,
-                                            Priority = effect.Priority,
-                                            Value = effect.BoolValue
-                                        });
-                                        break;
-                                }
-                            }
+                            AddDynamicValue(sortKey, 
+                                entity, 
+                                id, 
+                                ref statusEffectData, 
+                                ref EndStatusEffectEntityCommandBuffer, 
+                                ref dynamicFloats, 
+                                ref dynamicInts, 
+                                ref dynamicBools);
                         }
                         continue;
                     }

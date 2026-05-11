@@ -15,6 +15,7 @@ namespace StatusEffectFramework.Entities
         public float FloatValue;
         public int IntValue;
         public bool BoolValue;
+        public DynamicEffectInfo DynamicEffectInfo;
     }
 }
 #endif
