@@ -1,6 +1,6 @@
 namespace StatusEffectFramework
 {
-    public abstract class DynamicFloatEffect : DynamicEffect
+    public abstract class DynamicEffectFloat : DynamicEffect
     {
         public abstract DynamicFloat ValueEvent(StatusManager manager, StatusEffect statusEffect, Effect effect);
     }

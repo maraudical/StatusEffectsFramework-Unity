@@ -13,7 +13,7 @@ namespace StatusEffectFramework
         public float Value { get => m_Value; set { if (value == m_Value) return; m_Value = value; OnValueChanged?.Invoke(); } }
         private float m_Value;
 
-        public DynamicFloat(DynamicFloatEffect dynamicFloatEffect, Effect effect, float value = 0)
+        public DynamicFloat(DynamicEffectFloat dynamicFloatEffect, Effect effect, float value = 0)
         {
             StatusName = effect.StatusName;
             ValueModifier = effect.ValueModifier;

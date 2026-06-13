@@ -19,7 +19,7 @@ namespace StatusEffectFramework.Samples
                 Prefab = instance.Prefab,
                 IsLooping = isLooping,
             };
-            return (this as IEntityModule).AllocateModule(moduleStruct);
+            return IEntityModule.AllocateModule(moduleStruct);
         }
     }
 }

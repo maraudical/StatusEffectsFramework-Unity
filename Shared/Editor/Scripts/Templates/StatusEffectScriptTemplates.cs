@@ -237,6 +237,54 @@ public class #SCRIPTNAME# : ModuleInstance
 {
         
 }";
+
+        internal const string DynamicEffectFloatScriptContent =
+@"using StatusEffectFramework
+
+public class #SCRIPTNAME# : DynamicEffectFloat
+{
+        
+}";
+
+        internal const string EntityDynamicEffectFloatScriptContent =
+@"using StatusEffectFramework
+
+public class #SCRIPTNAME# : DynamicEffectFloat, IEntityDynamicEffect
+{
+        
+}";
+
+        internal const string DynamicEffectIntScriptContent =
+@"using StatusEffectFramework
+
+public class #SCRIPTNAME# : DynamicEffectInt
+{
+        
+}";
+
+        internal const string EntityDynamicEffectIntScriptContent =
+@"using StatusEffectFramework
+
+public class #SCRIPTNAME# : DynamicEffectInt, IEntityDynamicEffect
+{
+        
+}";
+
+        internal const string DynamicEffectBoolScriptContent =
+@"using StatusEffectFramework
+
+public class #SCRIPTNAME# : DynamicEffectBool
+{
+        
+}";
+
+        internal const string EntityDynamicEffectBoolScriptContent =
+@"using StatusEffectFramework
+
+public class #SCRIPTNAME# : DynamicEffectBool, IEntityDynamicEffect
+{
+        
+}";
     }
 }
 #endif

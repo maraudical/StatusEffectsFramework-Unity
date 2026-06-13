@@ -7,7 +7,7 @@ using System.Collections;
 
 namespace StatusEffectFramework.Samples
 {
-    public partial class InverseHealthToSpeed : DynamicFloatEffect
+    public partial class InverseHealthToSpeed : DynamicEffectFloat
     {
         public override DynamicFloat ValueEvent(StatusManager manager, StatusEffect statusEffect, Effect effect)
         {

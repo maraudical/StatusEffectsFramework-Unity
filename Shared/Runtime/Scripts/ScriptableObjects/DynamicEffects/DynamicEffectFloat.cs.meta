@@ -1,5 +1,7 @@
 fileFormatVersion: 2
-guid: 1c5dcc092280f4e4087498ca987f2ce6
+guid: a4b45e58680ca0f4f99627e1db6f6c96
+labels:
+- DynamicEffects
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2

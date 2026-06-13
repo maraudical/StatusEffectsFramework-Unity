@@ -12,7 +12,7 @@ namespace StatusEffectFramework
         public int Value { get => m_Value; set { if (value == Value) return; Value = value; OnValueChanged?.Invoke(); } }
         private int m_Value;
 
-        public DynamicInt(DynamicIntEffect dynamicIntEffect, Effect effect, int value = 0)
+        public DynamicInt(DynamicEffectInt dynamicIntEffect, Effect effect, int value = 0)
         {
             StatusName = effect.StatusName;
             ValueModifier = effect.ValueModifier;

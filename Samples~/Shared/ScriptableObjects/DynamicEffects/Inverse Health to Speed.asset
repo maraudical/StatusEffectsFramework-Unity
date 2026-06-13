@@ -11,5 +11,4 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 208c364a15e0c254b807444618fc489c, type: 3}
   m_Name: Inverse Health to Speed
-  m_EditorClassIdentifier: Assembly-CSharp-firstpass::StatusEffectFramework.Samples.InverseHealthToSpeed
   m_PostEvaluate: 0

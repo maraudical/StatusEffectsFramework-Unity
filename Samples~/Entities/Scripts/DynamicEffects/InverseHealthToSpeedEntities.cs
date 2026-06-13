@@ -4,7 +4,7 @@ using Unity.Entities;
 
 namespace StatusEffectFramework.Samples
 {
-    public partial class InverseHealthToSpeed : DynamicFloatEffect, IEntityDynamicEffect
+    public partial class InverseHealthToSpeed : DynamicEffectFloat, IEntityDynamicEffect
     {
         public TypeIndex GetTypeIndex() => TypeManager.GetTypeIndex<InverseHealthToSpeedComponent>();
 
@@ -14,7 +14,7 @@ namespace StatusEffectFramework.Samples
             {
                 ConversionRatio = ConversionRatio
             };
-            return (this as IEntityDynamicEffect).AllocateDynamicEffect(dynamicEffectStruct);
+            return IEntityDynamicEffect.AllocateDynamicEffect(dynamicEffectStruct);
         }
     }
 }

@@ -8,11 +8,17 @@ using UnityEngine;
 namespace StatusEffectFramework.Editor
 {
     // Script inspired by https://github.com/unity-atoms/unity-atoms/blob/master/Packages/Core/Editor/PostProcessors/EditorIconPostProcessor.cs
-    public class ModuleIconPostProcessor : AssetPostprocessor
+    public class IconPostProcessor : AssetPostprocessor
     {
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[]movedAssets, string[] movedFromAssetPaths)
         {
             var metaChangedForAssets = new List<string>();
+            string moduleInstanceGuid = null;
+            string moduleGuid = null;
+            string dynamicEffectIntGuid = null;
+            string dynamicEffectFloatGuid = null;
+            string dynamicEffectBoolGuid = null;
+
             foreach (string assetPath in importedAssets)
             {
                 var metaPath = $"{assetPath}.meta";
@@ -25,15 +31,38 @@ namespace StatusEffectFramework.Editor
                         continue;
 
                     if (scriptText.Contains(": ModuleInstance"))
-                        WriteIconToMeta(AssetDatabase.FindAssets("ModuleInstance l:Modules t:monoScript"));
-                    else if (scriptText.Contains(": Module"))
-                        WriteIconToMeta(AssetDatabase.FindAssets("Module l:Modules t:monoScript"));
-
-                    void WriteIconToMeta(string[] monoScriptGuids)
                     {
-                        var monoScriptGuidsList = monoScriptGuids.ToList();
-                        var monoScriptGuid = monoScriptGuidsList.FirstOrDefault();
-                        
+                        if (string.IsNullOrEmpty(moduleInstanceGuid))
+                            moduleInstanceGuid = AssetDatabase.FindAssets("ModuleInstance l:Modules t:monoScript").FirstOrDefault();
+                        WriteIconToMeta(moduleInstanceGuid);
+                    }
+                    else if (scriptText.Contains(": Module"))
+                    {
+                        if (string.IsNullOrEmpty(moduleGuid))
+                            moduleGuid = AssetDatabase.FindAssets("Module l:Modules t:monoScript").FirstOrDefault();
+                        WriteIconToMeta(moduleGuid);
+                    }
+                    else if (scriptText.Contains(": DynamicEffectInt"))
+                    {
+                        if (string.IsNullOrEmpty(dynamicEffectIntGuid))
+                            dynamicEffectIntGuid = AssetDatabase.FindAssets("DynamicEffectInt l:DynamicEffects t:monoScript").FirstOrDefault();
+                        WriteIconToMeta(dynamicEffectIntGuid);
+                    }
+                    else if (scriptText.Contains(": DynamicEffectFloat"))
+                    {
+                        if (string.IsNullOrEmpty(dynamicEffectFloatGuid))
+                            dynamicEffectFloatGuid = AssetDatabase.FindAssets("DynamicEffectFloat l:DynamicEffects t:monoScript").FirstOrDefault();
+                        WriteIconToMeta(dynamicEffectFloatGuid);
+                    }
+                    else if (scriptText.Contains(": DynamicEffectBool"))
+                    {
+                        if (string.IsNullOrEmpty(dynamicEffectBoolGuid))
+                            dynamicEffectBoolGuid = AssetDatabase.FindAssets("DynamicEffectBool l:DynamicEffects t:monoScript").FirstOrDefault();
+                        WriteIconToMeta(dynamicEffectBoolGuid);
+                    }
+
+                    void WriteIconToMeta(string monoScriptGuid)
+                    {
                         if (!string.IsNullOrEmpty(monoScriptGuid))
                         {
                             var baseClassPath = AssetDatabase.GUIDToAssetPath(monoScriptGuid);

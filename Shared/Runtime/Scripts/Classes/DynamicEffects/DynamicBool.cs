@@ -11,7 +11,7 @@ namespace StatusEffectFramework
         public bool Value { get => m_Value; set { if (value == Value) return; Value = value; OnValueChanged?.Invoke(); } }
         private bool m_Value;
 
-        public DynamicBool(DynamicBoolEffect dynamicBoolEffect, Effect effect, bool value = false)
+        public DynamicBool(DynamicEffectBool dynamicBoolEffect, Effect effect, bool value = false)
         {
             StatusName = effect.StatusName;
             PostEvaluate = dynamicBoolEffect.PostEvaluate;

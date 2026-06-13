@@ -9,7 +9,7 @@ namespace StatusEffectFramework
     // Create a new type of Settings Asset.
     public class StatusEffectSettings : ScriptableObject
     {
-        public const string MyCustomSettingsPath = "Assets/Resources/StatusEffectSettings.asset";
+        public const string MyCustomSettingsPath = "Assets/Settings/Resources/StatusEffectSettings.asset";
         [Space]
         [NonReorderable]
         public string[] Groups = new string[32];
@@ -22,6 +22,8 @@ namespace StatusEffectFramework
         public string DefaultComparableNamesPath = "ScriptableObjects/ComparableNames";
         [SerializeField]
         public string DefaultModulesPath = "ScriptableObjects/Modules";
+        [SerializeField]
+        public string DefaultDynamicEffectsPath = "ScriptableObjects/DynamicEffects";
 
         public static StatusEffectSettings GetOrCreateSettings()
         {

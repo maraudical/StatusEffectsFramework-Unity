@@ -11,5 +11,4 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b0d69a3eba5d73a4b9174d87d4bb35f2, type: 3}
   m_Name: Coin Multiplier to Speed
-  m_EditorClassIdentifier: Assembly-CSharp-firstpass::StatusEffectFramework.Samples.CoinMultiplierToSpeed
   m_PostEvaluate: 1
