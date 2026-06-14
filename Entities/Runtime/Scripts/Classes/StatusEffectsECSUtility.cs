@@ -1,12 +1,9 @@
 #if ENTITIES
 using System;
-using System.Globalization;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine.Rendering;
-using static Unity.Entities.EntitiesJournaling;
 
 namespace StatusEffectFramework.Entities
 {
