@@ -39,6 +39,9 @@ namespace StatusEffectFramework.Entities
             
             commandBuffer.SetName(referencesEntity, "Status References");
 
+            commandBuffer.AddBuffer<ModuleDynamicTypeHandles>(referencesEntity);
+            commandBuffer.SetComponentEnabled<ModuleDynamicTypeHandles>(referencesEntity, false);
+
             var idToStatusEffectDataMapBuilder = new BlobBuilder(Allocator.Temp);
             ref var idToStatusEffectDataMapRoot = ref idToStatusEffectDataMapBuilder.ConstructRoot<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>>();
             var idToStatusEffectDataMap = idToStatusEffectDataMapBuilder.AllocateHashMap(ref idToStatusEffectDataMapRoot, statusEffectDatas.Count);
@@ -178,7 +181,7 @@ namespace StatusEffectFramework.Entities
                 
                 // Modules just stores the buffer index for the module. This is
                 // because we cannot store Entity references directly on a blob asset.
-                List<ModuleContainer> entityModuleContainers = statusEffectData.Modules.Where((m) => m.Module is IEntityModule).ToList();
+                List<ModuleContainer> entityModuleContainers = statusEffectData.Modules.Where((m) => m.Module is IEntityModule).OrderBy(m => m.Module.GetType().AssemblyQualifiedName).ToList();
                 var modules = subBuilder.Allocate(ref statusEffectDataRoot.Modules, entityModuleContainers.Count);
 
                 if (entityModuleContainers.Count > 0)

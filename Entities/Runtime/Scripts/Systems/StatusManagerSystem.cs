@@ -8,8 +8,6 @@ using Unity.Entities;
 using Unity.Mathematics;
 #if NETCODE
 using Unity.NetCode;
-using UnityEngine.LightTransport;
-using static Unity.Entities.EntitiesJournaling;
 #endif
 
 namespace StatusEffectFramework.Entities

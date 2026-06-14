@@ -1,8 +1,12 @@
 #if ENTITIES
 using System;
+using System.Globalization;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
+using UnityEngine.Rendering;
+using static Unity.Entities.EntitiesJournaling;
 
 namespace StatusEffectFramework.Entities
 {
@@ -31,7 +35,77 @@ namespace StatusEffectFramework.Entities
             statusEffect = foundIndex ? buffer[index] : default;
             return foundIndex;
         }
-        
+
+        /*/// <summary>
+        /// Processes an event <see cref="Modules{T}"/> with the same <paramref name="id"/> value.
+        /// </summary>
+        [BurstCompile]
+        public unsafe static bool ProcessEventForModulesBuffer<T>(ref DynamicBuffer<Modules<T>> buffer, 
+            ref DynamicBuffer<StatusEffects> statusEffects,
+            ref UnmanagedStatusEffectData data,
+            ref EntityCommandBuffer.ParallelWriter commandBuffer,
+            ref bool foundBuffer,
+            in StatusEffectEvents statusEffectEvent, 
+            in TypeIndex typeIndex, 
+            in Entity entity,
+            in int sortKey,
+            out StatusEffects statusEffect, 
+            out ReadOnlySpan<ModuleInfo> moduleInfos) where T : unmanaged
+        {
+            statusEffect = default;
+            moduleInfos = ReadOnlySpan<ModuleInfo>.Empty;
+
+            if (!ModuleInfosContainType(ref data.Modules, typeIndex))
+                return false;
+
+            switch (statusEffectEvent.Event)
+            {
+                case StatusEffectEvent.Added:
+                    if (!TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
+                        return false;
+
+                    moduleInfos = new ReadOnlySpan<ModuleInfo>(data.Modules.GetUnsafePtr(), data.Modules.Length);
+                    int length = 0;
+                    int startIndex = moduleInfos.Length;
+
+                    for (int i = 0; i < moduleInfos.Length; i++)
+                    {
+                        var moduleInfo = moduleInfos[i];
+
+                        if (moduleInfo.TypeIndex != typeIndex)
+                            continue;
+
+                        if (i < startIndex)
+                            startIndex = i;
+
+                        length++;
+
+                        if (!foundBuffer)
+                        {
+                            foundBuffer = true;
+                            buffer = commandBuffer.AddBuffer<Modules<T>>(sortKey, entity);
+                        }
+                        AddModuleToBuffer(ref buffer, moduleInfo, statusEffectEvent.Id);
+                    }
+
+                    if (length <= 0)
+                        moduleInfos
+                    moduleInfos.Slice(startIndex, length);
+
+                    break;
+                case StatusEffectEvent.Removed:
+                    if (foundBuffer)
+                        RemoveModulesFromBuffer(ref buffer, statusEffectEvent.Id);
+                    break;
+                case StatusEffectEvent.Updated:
+                    if (!TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
+                        return false;
+                    break;
+            }
+
+            return true;
+        }*/
+
         [BurstCompile]
         public static bool ModuleInfosContainType(ref BlobArray<ModuleInfo> array, TypeIndex type)
         {
