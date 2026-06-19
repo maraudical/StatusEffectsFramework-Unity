@@ -32,7 +32,7 @@ namespace StatusEffectFramework.Entities
         ///        // Copy values from the module instance to the module struct here
         ///        MyValue = myModuleInstance.MyValue,
         ///    };
-        ///    return IEntityModule.AllocateModule(myModuleStruct);
+        ///    return ModuleInfo.AllocateModule(myModuleStruct);
         ///}
         /// </code>
         /// </remarks>
@@ -40,23 +40,6 @@ namespace StatusEffectFramework.Entities
         /// the attached <see cref="ModuleInstance"/> defined from the 
         /// <see cref="AttachModuleInstanceAttribute"/></param>
         public ModuleInfo CreateModuleInfo(ModuleInstance moduleInstance);
-        /// <summary>
-        /// Creates a new <see cref="ModuleInfo"/> for the specified module struct, allocating a copy of it 
-        /// to unmanaged memory and associating it with the module's type.
-        /// </summary>
-        public static unsafe ModuleInfo AllocateModule<T>(T moduleStruct) where T : unmanaged
-        {
-            int size = UnsafeUtility.SizeOf<T>();
-            void* ptr = UnsafeUtility.Malloc(size, UnsafeUtility.AlignOf<T>(), Allocator.Persistent);
-            UnsafeUtility.CopyStructureToPtr(ref moduleStruct, ptr);
-            var moduleInfo = new ModuleInfo
-            {
-                TypeIndex = TypeManager.GetTypeIndex(typeof(Modules<T>)),
-                Ptr = (IntPtr)ptr,
-                Size = size,
-            };
-            return moduleInfo;
-        }
     }
 }
 #endif

@@ -2,12 +2,14 @@
 using System;
 using System.Globalization;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 #if NETCODE
 using Unity.NetCode;
+using static Unity.Entities.EntitiesJournaling;
 #endif
 
 namespace StatusEffectFramework.Entities
@@ -29,6 +31,7 @@ namespace StatusEffectFramework.Entities
     {
         private EntityQuery m_RequestsQuery;
         private EntityQuery m_StatusEffectsQuery;
+        private EntityQuery m_AddModuleDynamicTypeHandlesQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -36,6 +39,7 @@ namespace StatusEffectFramework.Entities
             m_RequestsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusEffectEvents, StatusVariablePreEvaluateUpdate>().WithAllRW<DynamicFloats, DynamicInts>().WithAllRW<DynamicBools>().WithAll<Simulate>().WithAllRW<StatusManagerComponent, StatusEffectRequests>().Build();
             m_RequestsQuery.AddChangedVersionFilter(ComponentType.ReadWrite<StatusEffectRequests>());
             m_StatusEffectsQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithPresentRW<StatusEffectEvents, StatusVariablePreEvaluateUpdate>().WithAllRW<DynamicFloats, DynamicInts>().WithAllRW<DynamicBools>().WithAll<Simulate>().Build();
+            m_AddModuleDynamicTypeHandlesQuery = SystemAPI.QueryBuilder().WithAllRW<ModuleDynamicTypeHandles>().WithAll<Simulate>().Build();
 
             state.RequireForUpdate(m_StatusEffectsQuery);
             state.RequireForUpdate<StatusReferences>();
@@ -47,8 +51,10 @@ namespace StatusEffectFramework.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var references = SystemAPI.GetSingleton<StatusReferences>();
-            
+            ref var references = ref SystemAPI.GetSingletonRW<StatusReferences>().ValueRW;
+            var typeHandlesHashset = new UnsafeParallelHashSet<TypeIndex>(references.ModuleTypesCapacity, Allocator.TempJob);
+            references.ModuleTypesCapacity = references.DefaultModuleTypesCapacity;
+
 #if NETCODE
             var networkTime = SystemAPI.GetSingleton<NetworkTime>();
             SystemAPI.TryGetSingleton<ClientServerTickRate>(out var tickRate);
@@ -82,7 +88,9 @@ namespace StatusEffectFramework.Entities
 #else
                 ElapsedTime = elapsedTime,
 #endif
+                References = references,
                 EndStatusEffectEntityCommandBuffer = endStatusEffectEntityCommandBuffer,
+                TypeIndices = typeHandlesHashset.AsParallelWriter()
             };
             state.Dependency = statusEffectsJob.ScheduleParallelByRef(m_StatusEffectsQuery, state.Dependency);
 
@@ -96,8 +104,17 @@ namespace StatusEffectFramework.Entities
 #endif
                 References = references,
                 EndStatusEffectEntityCommandBuffer = endStatusEffectEntityCommandBuffer,
+                TypeIndices = typeHandlesHashset.AsParallelWriter()
             };
             state.Dependency = statusEffectRequestsJob.ScheduleParallelByRef(m_RequestsQuery, state.Dependency);
+            
+            var addModuleDynamicTypeHandlesJob = new AddModuleDynamicTypeHandlesJob
+            {
+                TypeIndices = typeHandlesHashset
+            };
+            state.Dependency = addModuleDynamicTypeHandlesJob.ScheduleByRef(m_AddModuleDynamicTypeHandlesQuery, state.Dependency);
+
+            state.Dependency = typeHandlesHashset.Dispose(state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -163,7 +180,7 @@ namespace StatusEffectFramework.Entities
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
-        internal static void RemoveIdAndBuildTypeList(uint id, ref DynamicBuffer<DynamicFloats> dynamicFloats, ref DynamicBuffer<DynamicInts> dynamicInts , ref DynamicBuffer<DynamicBools> dynamicBools, ref NativeHashSet<TypeIndex> existingTypes, ref NativeHashSet<TypeIndex> removingTypes)
+        internal static void RemoveIdAndBuildTypeList(uint id, ref DynamicBuffer<DynamicFloats> dynamicFloats, ref DynamicBuffer<DynamicInts> dynamicInts , ref DynamicBuffer<DynamicBools> dynamicBools, ref UnsafeHashSet<TypeIndex> existingTypes, ref UnsafeHashSet<TypeIndex> removingTypes)
         {
             for (int v = dynamicFloats.Length - 1; v >= 0; v--)
             {
@@ -273,7 +290,9 @@ namespace StatusEffectFramework.Entities
 #else
             public double ElapsedTime;
 #endif
+            public StatusReferences References;
             public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
+            public UnsafeParallelHashSet<TypeIndex>.ParallelWriter TypeIndices;
 
             void Execute([ChunkIndexInQuery] int sortKey,
                 Entity entity,
@@ -295,8 +314,8 @@ namespace StatusEffectFramework.Entities
                 }
 
 #endif
-                NativeHashSet<TypeIndex> existingTypes = new NativeHashSet<TypeIndex>(1, Allocator.Temp);
-                NativeHashSet<TypeIndex> removingTypes = new NativeHashSet<TypeIndex>(1, Allocator.Temp);
+                UnsafeHashSet<TypeIndex> existingTypes = new UnsafeHashSet<TypeIndex>(0, Allocator.Temp);
+                UnsafeHashSet<TypeIndex> removingTypes = new UnsafeHashSet<TypeIndex>(0, Allocator.Temp);
                 DynamicBuffer<StatusEffects> statusEffectsCopy = default;
                 bool statusEffectEventsEnabled = statusEffectEventsEnabledRW.ValueRO;
 
@@ -343,6 +362,21 @@ namespace StatusEffectFramework.Entities
                                 foreach (var type in removingTypes)
                                     if (!existingTypes.Contains(type))
                                         EndStatusEffectEntityCommandBuffer.RemoveComponent(sortKey, entity, ComponentType.ReadOnly(type));
+
+                                if (Hint.Unlikely(!References.IdToStatusEffectDataMap.Value.TryGetValue(statusEffect.StatusEffectDataId, out var reference)))
+                                {
+                                    UnityEngine.Debug.LogError($"Failed to find status effect data for hash ID: {statusEffect.StatusEffectDataId}");
+                                    continue;
+                                }
+
+                                ref UnmanagedStatusEffectData statusEffectData = ref reference.Value;
+                                // Add module types to the list to process.
+                                ref var modules = ref statusEffectData.Modules;
+                                for (int v = 0; v < modules.Length; v++)
+                                {
+                                    var moduleInfo = modules[v];
+                                    TypeIndices.Add(moduleInfo.TypeIndex);
+                                }
                             }
                             break;
                     }
@@ -366,6 +400,7 @@ namespace StatusEffectFramework.Entities
 #endif
             public StatusReferences References;
             public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
+            public UnsafeParallelHashSet<TypeIndex>.ParallelWriter TypeIndices;
 
             unsafe void Execute([ChunkIndexInQuery] int sortKey, 
                 Entity entity,
@@ -921,8 +956,8 @@ namespace StatusEffectFramework.Entities
 
                 // Remove and add status effects from buffer.
                 statusEffectStackUpdates.Sort(new IndexedStatusEffectComparer(References, true));
-                NativeHashSet<TypeIndex> existingTypes = new NativeHashSet<TypeIndex>(1, Allocator.Temp);
-                NativeHashSet<TypeIndex> removingTypes = new NativeHashSet<TypeIndex>(1, Allocator.Temp);
+                UnsafeHashSet<TypeIndex> existingTypes = new UnsafeHashSet<TypeIndex>(1, Allocator.Temp);
+                UnsafeHashSet<TypeIndex> removingTypes = new UnsafeHashSet<TypeIndex>(1, Allocator.Temp);
                 bool statusEffectEventsEnabled = statusEffectEventsEnabledRW.ValueRO;
                 
                 // Iterate in reverse to not skip any that get removed.
@@ -932,6 +967,21 @@ namespace StatusEffectFramework.Entities
 
                     if (indexedUpdate.Stacks == 0)
                         continue;
+
+                    if (Hint.Unlikely(!References.IdToStatusEffectDataMap.Value.TryGetValue(indexedUpdate.StatusEffectDataId, out var reference)))
+                    {
+                        UnityEngine.Debug.LogError($"Failed to find status effect data for hash ID: {indexedUpdate.StatusEffectDataId}");
+                        continue;
+                    }
+
+                    ref UnmanagedStatusEffectData statusEffectData = ref reference.Value;
+                    // Add module types to the list to process.
+                    ref var modules = ref statusEffectData.Modules;
+                    for (int i = 0; i < modules.Length; i++)
+                    {
+                        var moduleInfo = modules[i];
+                        TypeIndices.Add(moduleInfo.TypeIndex);
+                    }
 
                     // Check if we add a new status effect.
                     if (indexedUpdate.Index < 0)
@@ -960,19 +1010,17 @@ namespace StatusEffectFramework.Entities
                             Stacks = indexedUpdate.Stacks,
                             EventId = indexedUpdate.EventId,
                         });
+
                         // Add dynamic effects to the buffers.
-                        if (References.IdToStatusEffectDataMap.Value.TryGetValue(indexedUpdate.StatusEffectDataId, out var reference))
-                        {
-                            ref UnmanagedStatusEffectData statusEffectData = ref reference.Value;
-                            AddDynamicValue(sortKey, 
-                                entity, 
-                                id, 
-                                ref statusEffectData, 
-                                ref EndStatusEffectEntityCommandBuffer, 
-                                ref dynamicFloats, 
-                                ref dynamicInts, 
-                                ref dynamicBools);
-                        }
+                        AddDynamicValue(sortKey,
+                            entity,
+                            id,
+                            ref statusEffectData,
+                            ref EndStatusEffectEntityCommandBuffer,
+                            ref dynamicFloats,
+                            ref dynamicInts,
+                            ref dynamicBools);
+
                         continue;
                     }
 
@@ -1017,6 +1065,24 @@ namespace StatusEffectFramework.Entities
                 removingTypes.Dispose();
 
                 statusEffectStackUpdates.Dispose();
+            }
+        }
+
+
+        [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
+        internal partial struct AddModuleDynamicTypeHandlesJob : IJobEntity
+        {
+            public UnsafeParallelHashSet<TypeIndex> TypeIndices;
+
+            void Execute(ref DynamicBuffer<ModuleDynamicTypeHandles> moduleDynamicTypeHandles)
+            {
+                moduleDynamicTypeHandles.Clear();
+
+                if (TypeIndices.IsEmpty)
+                    return;
+
+                foreach (var typeIndex in TypeIndices)
+                    moduleDynamicTypeHandles.Add(new ModuleDynamicTypeHandles() { TypeIndex = typeIndex });
             }
         }
     }

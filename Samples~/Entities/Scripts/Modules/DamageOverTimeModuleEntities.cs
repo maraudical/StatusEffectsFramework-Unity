@@ -12,7 +12,7 @@ namespace StatusEffectFramework.Samples
             {
                 IntervalSeconds = instance.IntervalSeconds,
             };
-            return IEntityModule.AllocateModule(moduleStruct);
+            return ModuleInfo.AllocateModule(moduleStruct);
         }
     }
 }

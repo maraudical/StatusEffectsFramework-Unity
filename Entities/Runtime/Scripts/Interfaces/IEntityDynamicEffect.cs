@@ -1,6 +1,3 @@
-using System;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace StatusEffectFramework.Entities
@@ -32,26 +29,10 @@ namespace StatusEffectFramework.Entities
         ///        // Copy values from the dynamic effect to the struct here
         ///        MyValue = this.MyValue,
         ///    };
-        ///    return IEntityDynamicEffect.AllocateDynamicEffect(myDynamicEffectStruct);
+        ///    return DynamicEffectInfo.AllocateDynamicEffect(myDynamicEffectStruct);
         ///}
         /// </code>
         /// </remarks>
         public DynamicEffectInfo CreateDynamicEffectInfo();
-        /// <summary>
-        /// Creates a new <see cref="DynamicEffectInfo"/> for the specified dynamic effect struct, allocating a copy of it 
-        /// to unmanaged memory.
-        /// </summary>
-        public static unsafe DynamicEffectInfo AllocateDynamicEffect<T>(T dynamicEffectStruct) where T : unmanaged
-        {
-            int size = UnsafeUtility.SizeOf<T>();
-            void* ptr = UnsafeUtility.Malloc(size, UnsafeUtility.AlignOf<T>(), Allocator.Persistent);
-            UnsafeUtility.CopyStructureToPtr(ref dynamicEffectStruct, ptr);
-            var dynamicEffectInfo = new DynamicEffectInfo
-            {
-                Ptr = (IntPtr)ptr,
-                Size = size,
-            };
-            return dynamicEffectInfo;
-        }
     }
 }

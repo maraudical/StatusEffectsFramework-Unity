@@ -3,7 +3,7 @@ using Unity.Entities;
 
 namespace StatusEffectFramework.Entities
 {
-    internal struct ModuleDynamicTypeHandles : IBufferElementData, IEnableableComponent
+    internal struct ModuleDynamicTypeHandles : IBufferElementData
     {
         public TypeIndex TypeIndex;
     }

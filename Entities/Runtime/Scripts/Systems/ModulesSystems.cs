@@ -5,7 +5,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Entities.LowLevel.Unsafe;
-using UnityEngine.Rendering;
 
 namespace StatusEffectFramework.Entities
 {
@@ -34,7 +33,16 @@ namespace StatusEffectFramework.Entities
         public void OnUpdate(ref SystemState state)
         {
             var buffer = SystemAPI.GetSingletonBuffer<ModuleDynamicTypeHandles>();
+
+            if(buffer.IsEmpty)
+                return;
+            
             var typeHandles = new UnsafeHashMap<TypeIndex, DynamicComponentTypeHandle>(buffer.Length, Allocator.TempJob);
+#if NETCODE
+            var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+#else
+            var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
+#endif
 
             for (int i = 0; i < buffer.Length; i++)
             {
@@ -46,11 +54,13 @@ namespace StatusEffectFramework.Entities
             var job = new ModulesJob()
             {
                 References = SystemAPI.GetSingleton<StatusReferences>(),
-                CommandBuffer = 
+                CommandBuffer = endStatusEffectEntityCommandBuffer,
                 StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(true),
                 TypeHandles = typeHandles
             };
             state.Dependency = job.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
+
+            state.Dependency = typeHandles.Dispose(state.Dependency);
         }
 
         [BurstCompile]
@@ -59,7 +69,6 @@ namespace StatusEffectFramework.Entities
             public StatusReferences References;
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
             public BufferTypeHandle<StatusEffectEvents> StatusEffectEventsHandle;
-            [DeallocateOnJobCompletion]
             public UnsafeHashMap<TypeIndex, DynamicComponentTypeHandle> TypeHandles;
 
             [BurstCompile]
@@ -68,7 +77,7 @@ namespace StatusEffectFramework.Entities
                 BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
                 ModuleInfo moduleInfo;
                 UnsafeUntypedBufferAccessor bufferAccessor;
-
+                
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
                 {
@@ -78,7 +87,7 @@ namespace StatusEffectFramework.Entities
                     {
                         if (!References.TryGetReference(statusEffectEvent.StatusEffectDataId, out var reference))
                             continue;
-
+                        
                         ref var data = ref reference.Value;
                         ref var modules = ref data.Modules;
 
@@ -87,14 +96,16 @@ namespace StatusEffectFramework.Entities
                             case StatusEffectEvent.Added:
                                 for (int v = 0; v < modules.Length; v++)
                                 {
-                                    moduleInfo = modules[v];
-                                    ref var typeHandle = ref TypeHandles.TryGetValueByRef(moduleInfo.TypeIndex, out var typeFound);
+                                    //moduleInfo = modules[v];
+                                    //ref var typeHandle = ref TypeHandles.TryGetValueByRef(moduleInfo.TypeIndex, out var typeFound);
+                                    
+                                    //if (!typeFound)
+                                    //    continue;
 
-                                    if (!typeFound)
-                                        continue;
-
-                                    bufferAccessor = chunk.GetUntypedBufferAccessor(ref typeHandle);
-                                    UnityEngine.Debug.Log(bufferAccessor.Length);
+                                    //var readOnly = typeHandle.CopyToReadOnly();
+                                    //UnityEngine.Debug.Log($"Type handle is readonly: {readOnly}");
+                                    //bufferAccessor = chunk.GetUntypedBufferAccessor(ref readOnly);
+                                    //UnityEngine.Debug.Log($"Adding module for type: {moduleInfo.TypeIndex} checking the size of chunk: {chunk.Count} accessor size: {bufferAccessor.Length}");
                                     //if (!chunk.Has(ref typeHandle))
                                     //    bufferAccessor = chunk.GetUntypedBufferAccessor(ref typeHandle);
                                     //bufferAccessor.GetUnsafePtrAndLength(i, out var ptr, out var length);

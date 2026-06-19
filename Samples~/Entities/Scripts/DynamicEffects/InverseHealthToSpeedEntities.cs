@@ -14,7 +14,7 @@ namespace StatusEffectFramework.Samples
             {
                 ConversionRatio = ConversionRatio
             };
-            return IEntityDynamicEffect.AllocateDynamicEffect(dynamicEffectStruct);
+            return DynamicEffectInfo.AllocateDynamicEffect(dynamicEffectStruct);
         }
     }
 }

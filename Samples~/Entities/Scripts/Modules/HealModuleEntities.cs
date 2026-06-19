@@ -7,7 +7,7 @@ namespace StatusEffectFramework.Samples
     {
         public ModuleInfo CreateModuleInfo(ModuleInstance moduleInstance)
         {
-            return IEntityModule.AllocateModule(new HealModuleStruct());
+            return ModuleInfo.AllocateModule(new HealModuleStruct());
         }
     }
 }

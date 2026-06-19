@@ -14,6 +14,9 @@ namespace Unity.Collections.LowLevel.Unsafe
             ref var data = ref hashMap.m_Data;
             int idx = data.Find(key);
             found = idx != -1;
+            
+            using var keys = data.GetKeyArray(Allocator.Temp);
+            using var values = data.GetValueArray<TValue>(Allocator.Temp);
 
             if (found)
                 return ref UnsafeUtility.ArrayElementAsRef<TValue>(data.Ptr, idx);
