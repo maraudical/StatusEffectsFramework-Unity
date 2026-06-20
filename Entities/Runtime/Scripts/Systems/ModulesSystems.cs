@@ -1,10 +1,11 @@
 #if ENTITIES
+using Unity.Assertions;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
-using Unity.Entities.LowLevel.Unsafe;
+using Unity.Entities.UniversalDelegates;
 
 namespace StatusEffectFramework.Entities
 {
@@ -17,7 +18,7 @@ namespace StatusEffectFramework.Entities
     [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
 #endif
     [BurstCompile]
-    public partial struct ModulesSystem : ISystem
+    public unsafe partial struct ModulesSystem : ISystem
     {
         EntityQuery m_EntityQuery;
 
@@ -26,41 +27,28 @@ namespace StatusEffectFramework.Entities
         {
             m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents>().Build();
 
-            state.RequireForUpdate<ModuleDynamicTypeHandles>();
+            state.RequireForUpdate<StatusReferences>();
+            state.RequireForUpdate(m_EntityQuery);
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var buffer = SystemAPI.GetSingletonBuffer<ModuleDynamicTypeHandles>();
-
-            if(buffer.IsEmpty)
-                return;
-            
-            var typeHandles = new UnsafeHashMap<TypeIndex, DynamicComponentTypeHandle>(buffer.Length, Allocator.TempJob);
 #if NETCODE
             var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 #else
             var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 #endif
 
-            for (int i = 0; i < buffer.Length; i++)
-            {
-                var handle = buffer[i];
-                if (!typeHandles.ContainsKey(handle.TypeIndex))
-                    typeHandles.Add(handle.TypeIndex, state.GetDynamicComponentTypeHandle(ComponentType.FromTypeIndex(handle.TypeIndex)));
-            }
-
             var job = new ModulesJob()
             {
                 References = SystemAPI.GetSingleton<StatusReferences>(),
                 CommandBuffer = endStatusEffectEntityCommandBuffer,
+                EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
                 StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(true),
-                TypeHandles = typeHandles
+                GlobalSystemVersion = state.GlobalSystemVersion,
             };
             state.Dependency = job.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
-
-            state.Dependency = typeHandles.Dispose(state.Dependency);
         }
 
         [BurstCompile]
@@ -68,20 +56,26 @@ namespace StatusEffectFramework.Entities
         {
             public StatusReferences References;
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
+            public EntityTypeHandle EntityTypeHandle;
             public BufferTypeHandle<StatusEffectEvents> StatusEffectEventsHandle;
-            public UnsafeHashMap<TypeIndex, DynamicComponentTypeHandle> TypeHandles;
+            public uint GlobalSystemVersion;
 
             [BurstCompile]
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
+                NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
                 BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
                 ModuleInfo moduleInfo;
-                UnsafeUntypedBufferAccessor bufferAccessor;
-                
+
+                var typeToIndex = new UnsafeHashMap<TypeIndex, int>(1, Allocator.Temp);
+                var bufferLengthInEntity = new UnsafeHashMap<TypeIndex, (int Length, TypeIndex EventType)>(1, Allocator.Temp);
+
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
                 {
+                    var entity = entities[i];
                     var statusEffectEvents = statusEffectEventsAccessor[i];
+                    bufferLengthInEntity.Clear();
 
                     foreach (var statusEffectEvent in statusEffectEvents)
                     {
@@ -91,43 +85,70 @@ namespace StatusEffectFramework.Entities
                         ref var data = ref reference.Value;
                         ref var modules = ref data.Modules;
 
-                        switch (statusEffectEvent.Event)
+                        for (int v = 0; v < modules.Length; v++)
                         {
-                            case StatusEffectEvent.Added:
-                                for (int v = 0; v < modules.Length; v++)
-                                {
-                                    //moduleInfo = modules[v];
-                                    //ref var typeHandle = ref TypeHandles.TryGetValueByRef(moduleInfo.TypeIndex, out var typeFound);
-                                    
-                                    //if (!typeFound)
-                                    //    continue;
+                            moduleInfo = modules[v];
 
-                                    //var readOnly = typeHandle.CopyToReadOnly();
-                                    //UnityEngine.Debug.Log($"Type handle is readonly: {readOnly}");
-                                    //bufferAccessor = chunk.GetUntypedBufferAccessor(ref readOnly);
-                                    //UnityEngine.Debug.Log($"Adding module for type: {moduleInfo.TypeIndex} checking the size of chunk: {chunk.Count} accessor size: {bufferAccessor.Length}");
-                                    //if (!chunk.Has(ref typeHandle))
-                                    //    bufferAccessor = chunk.GetUntypedBufferAccessor(ref typeHandle);
-                                    //bufferAccessor.GetUnsafePtrAndLength(i, out var ptr, out var length);
-                                    //if (!foundBuffer)
-                                    //{
-                                    //    foundBuffer = true;
-                                    //    buffer = CommandBuffer.AddBuffer<Modules<HealModuleStruct>>(sortKey, entity);
-                                    //}
-                                    //StatusEffectsECSUtility.AddModuleToBuffer(ref buffer, moduleInfo, statusEffectEvent.Id);
-                                }
+                            if (!typeToIndex.TryGetValue(moduleInfo.TypeIndex, out var indexInTypeArray))
+                            {
+                                indexInTypeArray = StatusEffectsECSInternals.GetIndexInTypeArray(chunk, moduleInfo.TypeIndex);
+                                typeToIndex.TryAdd(moduleInfo.TypeIndex, indexInTypeArray);
+                            }
 
-                                break;
-                            //case StatusEffectEvent.Removed:
-                            //    if (foundBuffer)
-                            //        StatusEffectsECSUtility.RemoveModulesFromBuffer(ref buffer, statusEffectEvent.Id);
-                            //    break;
-                            //case StatusEffectEvent.Updated:
-                                
-                            //    break;
+                            switch (statusEffectEvent.Event)
+                            {
+                                // The actual adding to the buffer will be done in another system since there is a
+                                // chance we will have to wait for structural changes before making any changes.
+                                case StatusEffectEvent.Added:
+                                    ref var addInfo = ref bufferLengthInEntity.TryGetValueByRef(moduleInfo.TypeIndex, out bool aFoundLength);
+
+                                    if (aFoundLength)
+                                        addInfo.Length++;
+                                    else
+                                        bufferLengthInEntity.TryAdd(moduleInfo.TypeIndex, (1, moduleInfo.EventsTypeIndex));
+                                    break;
+                                case StatusEffectEvent.Removed:
+                                    Assert.IsTrue(StatusEffectsECSInternals.TryGetBufferWithTypeRW(chunk, i, typeToIndex[moduleInfo.TypeIndex], GlobalSystemVersion, out var header, out var buffer, out var length));
+
+                                    ref var removeLength = ref bufferLengthInEntity.TryGetValueByRef(moduleInfo.TypeIndex, out bool rFoundLength);
+
+                                    if (rFoundLength)
+                                        removeLength.Length--;
+                                    else
+                                        bufferLengthInEntity.TryAdd(moduleInfo.TypeIndex, (length, moduleInfo.EventsTypeIndex));
+
+                                    // Handle add/remove
+
+                                    break;
+                                case StatusEffectEvent.Updated:
+
+                                    break;
+                            }
+                        }
+                    }
+
+                    foreach (var kvp in bufferLengthInEntity)
+                    {
+                        if (kvp.Value.Length > 0)
+                        {
+
+                            // Check if the buffer exists in this chunk, if it doesn't, we have to add it.
+                            if (StatusEffectsECSInternals.TryGetBufferWithTypeRW(chunk, i, typeToIndex[kvp.Key], GlobalSystemVersion, out var header, out var buffer, out var length))
+                                continue;
+
+                            UnityEngine.Debug.Log("this shit don't exist in the chunk yet bro");
+                            CommandBuffer.AddComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Key));
+                            CommandBuffer.AddComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Value.EventType));
+                        }
+                        else
+                        {
+
                         }
                     }
                 }
+
+                typeToIndex.Dispose();
+                bufferLengthInEntity.Dispose();
             }
         }
     }

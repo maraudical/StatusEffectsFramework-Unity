@@ -11,8 +11,6 @@ namespace StatusEffectFramework.Entities
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
     public partial class StatusReferencesSetupSystem : SystemBase
     {
-        public const int DefaultModuleTypesCapacity = 15;
-
         public EntityQuery m_ReferencesQuery;
         public EntityQuery m_RequestQuery;
 
@@ -40,8 +38,6 @@ namespace StatusEffectFramework.Entities
             var referencesEntity = commandBuffer.CreateEntity();
             
             commandBuffer.SetName(referencesEntity, "Status References");
-
-            commandBuffer.AddBuffer<ModuleDynamicTypeHandles>(referencesEntity);
 
             var idToStatusEffectDataMapBuilder = new BlobBuilder(Allocator.Temp);
             ref var idToStatusEffectDataMapRoot = ref idToStatusEffectDataMapBuilder.ConstructRoot<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>>();
@@ -208,8 +204,6 @@ namespace StatusEffectFramework.Entities
 
             commandBuffer.AddComponent(referencesEntity, new StatusReferences
             {
-                DefaultModuleTypesCapacity = DefaultModuleTypesCapacity,
-                ModuleTypesCapacity = DefaultModuleTypesCapacity,
                 IdToStatusEffectDataMap = statusEffectDataMapBlob,
             });
         }

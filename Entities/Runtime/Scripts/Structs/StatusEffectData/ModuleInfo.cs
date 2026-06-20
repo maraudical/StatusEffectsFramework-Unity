@@ -11,6 +11,7 @@ namespace StatusEffectFramework.Entities
     public struct ModuleInfo
     {
         public TypeIndex TypeIndex { get; internal set; }
+        public TypeIndex EventsTypeIndex { get; internal set; }
         internal IntPtr Ptr;
         internal int Size;
 
@@ -18,6 +19,7 @@ namespace StatusEffectFramework.Entities
         /// Creates a new <see cref="ModuleInfo"/> for the specified module struct, allocating a copy of it 
         /// to unmanaged memory and associating it with the module's type.
         /// </summary>
+        [BurstDiscard]
         public static unsafe ModuleInfo AllocateModule<T>(T moduleStruct) where T : unmanaged
         {
             int size = UnsafeUtility.SizeOf<T>();
@@ -26,6 +28,7 @@ namespace StatusEffectFramework.Entities
             var moduleInfo = new ModuleInfo
             {
                 TypeIndex = TypeManager.GetTypeIndex(typeof(Modules<T>)),
+                EventsTypeIndex = TypeManager.GetTypeIndex(typeof(ModuleEvents<T>)),
                 Ptr = (IntPtr)ptr,
                 Size = size,
             };
