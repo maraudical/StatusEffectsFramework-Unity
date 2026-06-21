@@ -6,6 +6,7 @@ using Unity.Mathematics;
 using Unity.NetCode;
 
 [assembly: RegisterGenericComponentType(typeof(Modules<StatusEffectFramework.Entities.Samples.HealModuleStruct>))]
+[assembly: RegisterGenericComponentType(typeof(ModuleEvents<StatusEffectFramework.Entities.Samples.HealModuleStruct>))]
 
 namespace StatusEffectFramework.Entities.Samples
 {
@@ -33,6 +34,7 @@ namespace StatusEffectFramework.Entities.Samples
             m_EventQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusEffectEvents>().WithAll<Simulate>().Build();
 
             m_TypeIndex = TypeManager.GetTypeIndex<Modules<HealModuleStruct>>();
+            UnityEngine.Debug.Log(m_TypeIndex.Value);
 
 #if NETCODE
             m_RebuildModulesTagQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithAll<RebuildModulesTag>().Build();

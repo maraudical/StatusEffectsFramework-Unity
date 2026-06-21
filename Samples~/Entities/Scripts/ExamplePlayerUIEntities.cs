@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UI;
@@ -21,27 +22,21 @@ namespace StatusEffectFramework.Entities.Samples
         private DynamicBuffer<StatusInts> m_StatusIntBuffer;
         private DynamicBuffer<StatusBools> m_StatusBoolBuffer;
 
+        protected virtual void Start()
+        {
+            m_Manager = World.DefaultGameObjectInjectionWorld.EntityManager;
+
+            m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
+        }
+
         private void Update()
         {
-            Entity entity = Entity.Null;
-            bool foundPlayer = false;
-            foreach (var world in World.All)
-            {   
-                if (!world.Unmanaged.Flags.HasFlag(WorldFlags.Live))
-                    continue;
+            using var array = m_PlayerQuery.ToEntityArray(Allocator.Temp);
 
-                m_Manager = world.EntityManager;
-                m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
-                
-                if (!m_PlayerQuery.TryGetSingletonEntity<ExamplePlayerComponent>(out entity))
-                    continue;
-                
-                foundPlayer = true;
-                break;
-            }
-
-            if (!foundPlayer)
+            if (array.Length <= 0)
                 return;
+
+            var entity = array[0];
             
             var player = m_Manager.GetComponentData<ExamplePlayerComponent>(entity);
 

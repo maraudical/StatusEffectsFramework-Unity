@@ -39,7 +39,7 @@ namespace StatusEffectFramework.Entities
 #else
             var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 #endif
-
+            
             var job = new ModulesJob()
             {
                 References = SystemAPI.GetSingleton<StatusReferences>(),
@@ -64,6 +64,11 @@ namespace StatusEffectFramework.Entities
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
+                var aindexInTypeArray = StatusEffectsECSInternals.GetIndexInTypeArray(chunk, new TypeIndex { Value = References.typeIndex });
+                var aenumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (aenumerator.NextEntityIndex(out var i))
+                    UnityEngine.Debug.Log($"Checking if entity contains the type? {StatusEffectsECSInternals.TryGetBufferWithTypeRW(chunk, i, aindexInTypeArray, GlobalSystemVersion, out var aheader, out var abuffer, out var alength)} (aheader? {aheader != null} abuffer? {abuffer != null} alength? {alength}");
+                return;
                 BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
                 ModuleInfo moduleInfo;
 
@@ -131,18 +136,23 @@ namespace StatusEffectFramework.Entities
                     {
                         if (kvp.Value.Length > 0)
                         {
-
+                            // CHEAPER HAS COMPONENT METHOD???
                             // Check if the buffer exists in this chunk, if it doesn't, we have to add it.
                             if (StatusEffectsECSInternals.TryGetBufferWithTypeRW(chunk, i, typeToIndex[kvp.Key], GlobalSystemVersion, out var header, out var buffer, out var length))
                                 continue;
 
-                            UnityEngine.Debug.Log("this shit don't exist in the chunk yet bro");
+                            UnityEngine.Debug.Log($"this shit {kvp.Key} don't exist in the chunk yet bro");
                             CommandBuffer.AddComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Key));
                             CommandBuffer.AddComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Value.EventType));
                         }
                         else
                         {
+                            if (!StatusEffectsECSInternals.TryGetBufferWithTypeRW(chunk, i, typeToIndex[kvp.Key], GlobalSystemVersion, out var header, out var buffer, out var length))
+                                continue;
 
+                            UnityEngine.Debug.Log($"module {kvp.Key} has been eradicated");
+                            CommandBuffer.RemoveComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Key));
+                            CommandBuffer.RemoveComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Value.EventType));
                         }
                     }
                 }
