@@ -6,7 +6,6 @@ using Unity.Mathematics;
 using Unity.NetCode;
 
 [assembly: RegisterGenericComponentType(typeof(Modules<StatusEffectFramework.Entities.Samples.DamageOverTimeModuleStruct>))]
-[assembly: RegisterGenericComponentType(typeof(ModuleEvents<StatusEffectFramework.Entities.Samples.DamageOverTimeModuleStruct>))]
 
 namespace StatusEffectFramework.Entities.Samples
 {

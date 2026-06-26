@@ -1,6 +1,9 @@
 #if ENTITIES
+using System.Drawing;
+using System.Reflection;
 using Unity.Assertions;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -64,23 +67,18 @@ namespace StatusEffectFramework.Entities
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
-                var aindexInTypeArray = StatusEffectsECSInternals.GetIndexInTypeArray(chunk, new TypeIndex { Value = References.typeIndex });
-                var aenumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
-                while (aenumerator.NextEntityIndex(out var i))
-                    UnityEngine.Debug.Log($"Checking if entity contains the type? {StatusEffectsECSInternals.TryGetBufferWithTypeRW(chunk, i, aindexInTypeArray, GlobalSystemVersion, out var aheader, out var abuffer, out var alength)} (aheader? {aheader != null} abuffer? {abuffer != null} alength? {alength}");
-                return;
                 BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
                 ModuleInfo moduleInfo;
 
-                var typeToIndex = new UnsafeHashMap<TypeIndex, int>(1, Allocator.Temp);
-                var bufferLengthInEntity = new UnsafeHashMap<TypeIndex, (int Length, TypeIndex EventType)>(1, Allocator.Temp);
+                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(1, Allocator.Temp);
+                var typeToLength = new UnsafeHashMap<TypeIndex, int>(1, Allocator.Temp);
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
                 {
                     var entity = entities[i];
                     var statusEffectEvents = statusEffectEventsAccessor[i];
-                    bufferLengthInEntity.Clear();
+                    typeToLength.Clear();
 
                     foreach (var statusEffectEvent in statusEffectEvents)
                     {
@@ -94,71 +92,78 @@ namespace StatusEffectFramework.Entities
                         {
                             moduleInfo = modules[v];
 
-                            if (!typeToIndex.TryGetValue(moduleInfo.TypeIndex, out var indexInTypeArray))
+                            if (!typeToIndexAndTypeInfo.TryGetValue(moduleInfo.TypeIndex, out var info))
                             {
-                                indexInTypeArray = StatusEffectsECSInternals.GetIndexInTypeArray(chunk, moduleInfo.TypeIndex);
-                                typeToIndex.TryAdd(moduleInfo.TypeIndex, indexInTypeArray);
+                                info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, moduleInfo.TypeIndex), TypeManager.GetTypeInfo(moduleInfo.TypeIndex));
+                                
+                                typeToIndexAndTypeInfo.TryAdd(moduleInfo.TypeIndex, info);
                             }
+
+                            int sizeOfModule = info.TypeInfo.ElementSize;
 
                             switch (statusEffectEvent.Event)
                             {
                                 // The actual adding to the buffer will be done in another system since there is a
                                 // chance we will have to wait for structural changes before making any changes.
                                 case StatusEffectEvent.Added:
-                                    ref var addInfo = ref bufferLengthInEntity.TryGetValueByRef(moduleInfo.TypeIndex, out bool aFoundLength);
+                                    ref var addLength = ref typeToLength.TryGetValueByRef(moduleInfo.TypeIndex, out bool aFoundLength);
+                                    var componentType = ComponentType.FromTypeIndex(moduleInfo.TypeIndex);
 
                                     if (aFoundLength)
-                                        addInfo.Length++;
+                                        addLength++;
                                     else
-                                        bufferLengthInEntity.TryAdd(moduleInfo.TypeIndex, (1, moduleInfo.EventsTypeIndex));
+                                    {
+                                        typeToLength.TryAdd(moduleInfo.TypeIndex, 1);
+                                        if (info.IndexInTypeArray < 0)
+                                            CommandBuffer.AddComponent(unfilteredChunkIndex, entity, componentType);
+                                    }
+                                    
+                                    var value = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
+                                    var sizeOfInt = UnsafeUtility.SizeOf<uint>();
+                                    UnsafeUtility.MemCpy(value, &statusEffectEvent.Id, sizeOfInt);
+                                    UnsafeUtility.MemCpy(value + sizeOfInt, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
+                                    StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, value);
+                                    UnsafeUtility.Free(value, Allocator.Temp);
                                     break;
                                 case StatusEffectEvent.Removed:
-                                    Assert.IsTrue(StatusEffectsECSInternals.TryGetBufferWithTypeRW(chunk, i, typeToIndex[moduleInfo.TypeIndex], GlobalSystemVersion, out var header, out var buffer, out var length));
+                                    var header = StatusEffectsECSInternals.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
 
-                                    ref var removeLength = ref bufferLengthInEntity.TryGetValueByRef(moduleInfo.TypeIndex, out bool rFoundLength);
+                                    if (Hint.Unlikely(!StatusEffectsECSInternals.TryGetElementPointerAndLength(header, out var buffer, out var length)))
+                                        UnityEngine.Debug.LogError($"There was an issue with the provided module type <b>{info.TypeInfo.DebugTypeName}</b>.");
+
+                                    ref var removeLength = ref typeToLength.TryGetValueByRef(moduleInfo.TypeIndex, out bool rFoundLength);
 
                                     if (rFoundLength)
-                                        removeLength.Length--;
+                                        removeLength--;
                                     else
-                                        bufferLengthInEntity.TryAdd(moduleInfo.TypeIndex, (length, moduleInfo.EventsTypeIndex));
+                                        typeToLength.TryAdd(moduleInfo.TypeIndex, length - 1);
 
-                                    // Handle add/remove
+                                    for (int n = length - 1; n >= 0; n--)
+                                    {
+                                        int id = *(int*)(buffer + sizeOfModule * n);
+                                        if (id != statusEffectEvent.Id)
+                                            continue;
 
+                                        StatusEffectsECSInternals.RemoveAtSwapBack(header, sizeOfModule, n);
+                                        break;
+                                    }
                                     break;
                                 case StatusEffectEvent.Updated:
-
+                                    StatusEffectsECSInternals.SetChangeVersion(chunk, info.IndexInTypeArray, GlobalSystemVersion);
                                     break;
                             }
                         }
                     }
 
-                    foreach (var kvp in bufferLengthInEntity)
+                    foreach (var kvp in typeToLength)
                     {
-                        if (kvp.Value.Length > 0)
-                        {
-                            // CHEAPER HAS COMPONENT METHOD???
-                            // Check if the buffer exists in this chunk, if it doesn't, we have to add it.
-                            if (StatusEffectsECSInternals.TryGetBufferWithTypeRW(chunk, i, typeToIndex[kvp.Key], GlobalSystemVersion, out var header, out var buffer, out var length))
-                                continue;
-
-                            UnityEngine.Debug.Log($"this shit {kvp.Key} don't exist in the chunk yet bro");
-                            CommandBuffer.AddComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Key));
-                            CommandBuffer.AddComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Value.EventType));
-                        }
-                        else
-                        {
-                            if (!StatusEffectsECSInternals.TryGetBufferWithTypeRW(chunk, i, typeToIndex[kvp.Key], GlobalSystemVersion, out var header, out var buffer, out var length))
-                                continue;
-
-                            UnityEngine.Debug.Log($"module {kvp.Key} has been eradicated");
+                        if (kvp.Value <= 0)
                             CommandBuffer.RemoveComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Key));
-                            CommandBuffer.RemoveComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Value.EventType));
-                        }
                     }
                 }
 
-                typeToIndex.Dispose();
-                bufferLengthInEntity.Dispose();
+                typeToIndexAndTypeInfo.Dispose();
+                typeToLength.Dispose();
             }
         }
     }

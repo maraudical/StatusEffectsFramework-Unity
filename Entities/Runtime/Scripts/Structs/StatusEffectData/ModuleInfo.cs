@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -11,7 +12,6 @@ namespace StatusEffectFramework.Entities
     public struct ModuleInfo
     {
         public TypeIndex TypeIndex { get; internal set; }
-        public TypeIndex EventsTypeIndex { get; internal set; }
         internal IntPtr Ptr;
         internal int Size;
 
@@ -28,7 +28,6 @@ namespace StatusEffectFramework.Entities
             var moduleInfo = new ModuleInfo
             {
                 TypeIndex = TypeManager.GetTypeIndex(typeof(Modules<T>)),
-                EventsTypeIndex = TypeManager.GetTypeIndex(typeof(ModuleEvents<T>)),
                 Ptr = (IntPtr)ptr,
                 Size = size,
             };

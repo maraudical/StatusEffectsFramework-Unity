@@ -2,7 +2,7 @@ using System;
 
 namespace Unity.Collections.LowLevel.Unsafe
 {
-    public static class UnsafeHashMapAsRefExtensions
+    public static class UnsafeHashMapExtensions
     {
         public unsafe static ref TValue TryGetValueByRef<TKey, TValue>(
             this ref UnsafeHashMap<TKey, TValue> hashMap,

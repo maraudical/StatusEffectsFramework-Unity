@@ -16,16 +16,26 @@ namespace StatusEffectFramework.Entities
     [BurstCompile]
     public struct StatusEffectRequests : IBufferElementData
     {
+        [GhostField]
         public StatusEffectRequestType Type;
+        [GhostField]
         public StatusEffectRemovalType RemovalType;
+        [GhostField]
         public StatusEffectGroup Group;
+        [GhostField]
         public uint Id;
+        [GhostField]
         public Hash128 Hash;
+        [GhostField]
         public StatusEffectTiming Timing;
+        [GhostField(Quantization = 1000)]
         public float Duration;
+        [GhostField(Quantization = 1000)]
         public float Interval;
+        [GhostField]
         public int Stacks;
         /// <inheritdoc cref="StatusEffects.EventId"/>
+        [GhostField]
         public Hash128 EventId;
 
         /// <summary>

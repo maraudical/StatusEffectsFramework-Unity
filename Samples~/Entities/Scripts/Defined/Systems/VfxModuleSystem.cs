@@ -5,7 +5,6 @@ using Unity.Transforms;
 using UnityEngine;
 
 [assembly: RegisterGenericComponentType(typeof(Modules<StatusEffectFramework.Entities.Samples.VfxModuleStruct>))]
-[assembly: RegisterGenericComponentType(typeof(ModuleEvents<StatusEffectFramework.Entities.Samples.VfxModuleStruct>))]
 
 namespace StatusEffectFramework.Entities.Samples
 {

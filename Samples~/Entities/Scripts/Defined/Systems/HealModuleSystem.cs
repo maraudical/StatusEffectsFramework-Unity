@@ -6,7 +6,6 @@ using Unity.Mathematics;
 using Unity.NetCode;
 
 [assembly: RegisterGenericComponentType(typeof(Modules<StatusEffectFramework.Entities.Samples.HealModuleStruct>))]
-[assembly: RegisterGenericComponentType(typeof(ModuleEvents<StatusEffectFramework.Entities.Samples.HealModuleStruct>))]
 
 namespace StatusEffectFramework.Entities.Samples
 {
@@ -32,9 +31,14 @@ namespace StatusEffectFramework.Entities.Samples
         public void OnCreate(ref SystemState state)
         {
             m_EventQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusEffectEvents>().WithAll<Simulate>().Build();
-
             m_TypeIndex = TypeManager.GetTypeIndex<Modules<HealModuleStruct>>();
-            UnityEngine.Debug.Log(m_TypeIndex.Value);
+
+            if (state.WorldUnmanaged.IsServer())
+            {
+                
+                UnityEngine.Debug.Log($"Heal: {m_TypeIndex.Value}");
+                UnityEngine.Debug.Log($"DamageOverTime: {TypeManager.GetTypeIndex<Modules<DamageOverTimeModuleStruct>>().Value}");
+            }
 
 #if NETCODE
             m_RebuildModulesTagQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithAll<RebuildModulesTag>().Build();
