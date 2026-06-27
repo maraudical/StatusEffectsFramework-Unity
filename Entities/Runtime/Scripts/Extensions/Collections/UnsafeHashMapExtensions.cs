@@ -1,6 +1,8 @@
 using System;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
-namespace Unity.Collections.LowLevel.Unsafe
+namespace StatusEffectFramework.Entities
 {
     public static class UnsafeHashMapExtensions
     {

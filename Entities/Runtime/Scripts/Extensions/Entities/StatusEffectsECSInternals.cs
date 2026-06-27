@@ -2,10 +2,9 @@ using System;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine.LightTransport;
-using UnityEngine.UIElements;
+using Unity.Entities;
 
-namespace Unity.Entities
+namespace StatusEffectFramework.Entities
 {
     [BurstCompile]
     public static unsafe class StatusEffectsECSInternals

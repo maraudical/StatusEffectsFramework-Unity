@@ -7,22 +7,15 @@ namespace StatusEffectFramework.Editor
 {
     public class NamePostProcessor : AssetPostprocessor
     {
-        private static Dictionary<Hash128, Name> s_NameIds;
-        private static Name m_NameReference;
-
         static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths, bool didDomainReload)
         {
-            if (s_NameIds != null)
-                for (int i = s_NameIds.Count - 1; i >= 0; i--)
-                {
-                    var kvp = s_NameIds.ElementAt(i);
-                    if (kvp.Value == null || kvp.Key != kvp.Value.Id)
-                        s_NameIds.Remove(kvp.Key);
-                }
+            Dictionary<Hash128, Name> nameIds;
+            Name nameReference;
+
+            nameIds = new();
 
             if (didDomainReload)
             {
-                s_NameIds = new();
                 var guids = AssetDatabase.FindAssets($"t:{nameof(Name)}");
                 var assetPaths = guids.Select((guid) => AssetDatabase.GUIDToAssetPath(guid));
 
@@ -45,20 +38,20 @@ namespace StatusEffectFramework.Editor
                 if (asset is Name name)
                 {
                     if (name.Id != default)
-                        if (s_NameIds.TryGetValue(name.Id, out m_NameReference))
+                        if (nameIds.TryGetValue(name.Id, out nameReference))
                         {
-                            if (!ReferenceEquals(m_NameReference, name))
+                            if (!ReferenceEquals(nameReference, name))
                                 GenerateUntilAddable();
                         }
                         else
-                            s_NameIds.Add(name.Id, name);
+                            nameIds.Add(name.Id, name);
                     else
                         GenerateUntilAddable();
 
                     void GenerateUntilAddable()
                     {
                         name.GenerateId();
-                        if (!s_NameIds.TryAdd(name.Id, name))
+                        if (!nameIds.TryAdd(name.Id, name))
                             GenerateUntilAddable();
                     }
                 }

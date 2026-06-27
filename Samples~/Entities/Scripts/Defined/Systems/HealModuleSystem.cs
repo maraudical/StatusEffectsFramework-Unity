@@ -10,7 +10,7 @@ using Unity.NetCode;
 namespace StatusEffectFramework.Entities.Samples
 {
     public struct HealModuleStruct { }
-
+    
 #if NETCODE
     [UpdateInGroup(typeof(PredictedSimulationSystemGroup))]
 #else
@@ -25,21 +25,13 @@ namespace StatusEffectFramework.Entities.Samples
         private NativeArray<EntityQuery> m_Queries;
 
 #endif
-        private TypeIndex m_TypeIndex;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EventQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusEffectEvents>().WithAll<Simulate>().Build();
-            m_TypeIndex = TypeManager.GetTypeIndex<Modules<HealModuleStruct>>();
-
-            if (state.WorldUnmanaged.IsServer())
-            {
-                
-                UnityEngine.Debug.Log($"Heal: {m_TypeIndex.Value}");
-                UnityEngine.Debug.Log($"DamageOverTime: {TypeManager.GetTypeIndex<Modules<DamageOverTimeModuleStruct>>().Value}");
-            }
-
+            m_EventQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusEffectEvents, Modules<HealModuleStruct>, ExamplePlayerComponent, StatusFloats>().WithAll<Simulate>().Build();
+            m_EventQuery.AddChangedVersionFilter(ComponentType.ReadWrite<Modules<HealModuleStruct>>());
+            
 #if NETCODE
             m_RebuildModulesTagQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithAll<RebuildModulesTag>().Build();
 
@@ -75,7 +67,6 @@ namespace StatusEffectFramework.Entities.Samples
             var firstPredictionTickJob = new HealModuleFirstPredictionTickJob
             {
                 IsServer = state.WorldUnmanaged.IsServer(),
-                TypeIndex = m_TypeIndex,
                 References = statusReferences,
                 CommandBuffer = commandBuffer,
                 Lookup = lookup,
@@ -86,12 +77,8 @@ namespace StatusEffectFramework.Entities.Samples
 
             var eventJob = new HealEventJob
             {
-                TypeIndex = m_TypeIndex,
                 References = statusReferences,
                 CommandBuffer = commandBuffer,
-                Lookup = lookup,
-                PlayerLookup = playerLookup,
-                StatusFloatsLookup = statusFloatsLookup,
             };
             state.Dependency = eventJob.ScheduleParallelByRef(m_EventQuery, state.Dependency);
         }
@@ -169,21 +156,21 @@ namespace StatusEffectFramework.Entities.Samples
             public TypeIndex TypeIndex;
             public StatusReferences References;
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
-            [NativeDisableParallelForRestriction]
-            public BufferLookup<Modules<HealModuleStruct>> Lookup;
-            [NativeDisableParallelForRestriction]
-            public ComponentLookup<ExamplePlayerComponent> PlayerLookup;
-            [ReadOnly]
-            public BufferLookup<StatusFloats> StatusFloatsLookup;
 
-            public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<StatusEffects> statusEffects, in DynamicBuffer<StatusEffectEvents> statusEffectEvents)
+            public void Execute([ChunkIndexInQuery] int sortKey, 
+                Entity entity, 
+                in DynamicBuffer<StatusEffects> statusEffects,
+                in DynamicBuffer<StatusEffectEvents> statusEffectEvents,
+                ref DynamicBuffer<Modules<HealModuleStruct>> healModules,
+                ref ExamplePlayerComponent player,
+                in DynamicBuffer<StatusFloats> statusFloats)
             {
-                bool foundBuffer = Lookup.TryGetBuffer(entity, out var buffer);
-                bool foundPlayer = PlayerLookup.TryGetComponent(entity, out var player);
-                bool foundStatusFloats = StatusFloatsLookup.TryGetBuffer(entity, out var statusFloats);
-                float maxHealth = default;
-                bool isValid = foundPlayer && foundStatusFloats && player.MaxHealth.TryGetValue(player.ComponentId, statusFloats, out maxHealth);
-                StatusEffects statusEffect;
+                // AsNativeArray does not create a copy of the data so any changes will effect the source buffer.
+                var healModulesArray = healModules.AsNativeArray();
+                healModulesArray.Sort();
+                
+                if (!player.MaxHealth.TryGetValue(player.ComponentId, statusFloats, out var maxHealth))
+                    return;
 
                 foreach (var statusEffectEvent in statusEffectEvents)
                 {
@@ -192,63 +179,35 @@ namespace StatusEffectFramework.Entities.Samples
 
                     ref var data = ref reference.Value;
 
-                    if (!StatusEffectsECSUtility.ModuleInfosContainType(ref data.Modules, TypeIndex))
-                        continue;
-
                     switch (statusEffectEvent.Event)
                     {
                         case StatusEffectEvent.Added:
-                            if (!StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
-                                continue;
+                            if (!StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out var statusEffect))
+                                break;
 
                             ref var modules = ref data.Modules;
                             for (int i = 0; i < modules.Length; i++)
                             {
                                 var moduleInfo = modules[i];
 
-                                if (moduleInfo.TypeIndex != TypeIndex)
-                                    continue;
-
-                                if (!foundBuffer)
-                                {
-                                    foundBuffer = true;
-                                    buffer = CommandBuffer.AddBuffer<Modules<HealModuleStruct>>(sortKey, entity);
-                                }
-                                StatusEffectsECSUtility.AddModuleToBuffer(ref buffer, moduleInfo, statusEffectEvent.Id);
-
-                                if (!isValid)
-                                    continue;
-
                                 player.Health += data.BaseValue * math.max(0, statusEffect.Stacks);
                             }
 
                             break;
-                        case StatusEffectEvent.Removed:
-                            if (foundBuffer)
-                                StatusEffectsECSUtility.RemoveModulesFromBuffer(ref buffer, statusEffectEvent.Id);
-                            break;
                         case StatusEffectEvent.Updated:
-                            if (!isValid)
+                            int index = healModulesArray.BinarySearchFirst(statusEffectEvent.Id);
+                            
+                            if (index < 0 || !StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
                                 break;
 
-                            if (!StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
-                                continue;
-
-                            foreach (var module in buffer)
-                                if (module.Id == statusEffectEvent.Id)
+                            for (int i = index; i < healModulesArray.Length; i++)
+                                if (healModulesArray[i].Id != statusEffectEvent.Id)
                                     player.Health += data.BaseValue * math.max(0, statusEffect.Stacks - statusEffectEvent.PreviousStacks);
                             break;
                     }
                 }
 
-                if (foundBuffer && buffer.Length <= 0)
-                    CommandBuffer.RemoveComponent<Modules<HealModuleStruct>>(sortKey, entity);
-
-                if (isValid)
-                {
-                    player.Health = math.min(player.Health, maxHealth);
-                    PlayerLookup[entity] = player;
-                }
+                player.Health = math.min(player.Health, maxHealth);
             }
         }
     }

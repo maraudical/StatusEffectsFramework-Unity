@@ -14,13 +14,14 @@ namespace StatusEffectFramework.Entities.Samples
         public float IntervalSeconds;
         public int TimesDamaged;
     }
-
+    /*
 #if NETCODE
     [UpdateInGroup(typeof(PredictedSimulationSystemGroup))]
 #else
     [UpdateInGroup(typeof(SimulationSystemGroup))]
 #endif
     [BurstCompile]
+    [DisableAutoCreation]
     public partial struct DamageOverTimeModuleSystem : ISystem
     {
         private EntityQuery m_ModuleQuery;
@@ -289,5 +290,5 @@ namespace StatusEffectFramework.Entities.Samples
                 player.Health = math.max(player.Health, 0);
             }
         }
-    }
+    }*/
 }

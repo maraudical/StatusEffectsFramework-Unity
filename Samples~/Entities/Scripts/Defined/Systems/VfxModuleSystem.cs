@@ -19,12 +19,13 @@ namespace StatusEffectFramework.Entities.Samples
         public uint Id;
         public UnityObjectRef<GameObject> Value;
     }
-
+    /*
 #if NETCODE
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
 #endif
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateBefore(typeof(TransformSystemGroup))]
+    [DisableAutoCreation]
     public partial class VfxModuleSystem : SystemBase
     {
         private EntityQuery m_CleanupQuery;
@@ -214,5 +215,5 @@ namespace StatusEffectFramework.Entities.Samples
                     commandBuffer.RemoveComponent<VfxModuleCleanup>(entity);
             }
         }
-    }
+    }*/
 }
