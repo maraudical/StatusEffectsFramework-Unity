@@ -23,8 +23,6 @@ namespace StatusEffectFramework.Entities
             SetComponentEnabled<StatusVariablePreEvaluateUpdate>(entity, false);
             AddComponent<StatusVariablePostEvaluateUpdate>(entity);
             SetComponentEnabled<StatusVariablePostEvaluateUpdate>(entity, false);
-            AddBuffer<ModuleBuffersAdded>(entity);
-            SetComponentEnabled<ModuleBuffersAdded>(entity, false);
             AddBuffer<DynamicFloats>(entity);
             AddBuffer<DynamicInts>(entity);
             AddBuffer<DynamicBools>(entity);

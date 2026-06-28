@@ -1,6 +1,5 @@
 #if ENTITIES
 using System;
-using System.Globalization;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -9,7 +8,6 @@ using Unity.Entities;
 using Unity.Mathematics;
 #if NETCODE
 using Unity.NetCode;
-using static Unity.Entities.EntitiesJournaling;
 #endif
 
 namespace StatusEffectFramework.Entities
@@ -63,7 +61,6 @@ namespace StatusEffectFramework.Entities
                 var checkIfRebuildModulesNeededJob = new CheckIfRebuildModulesNeededJob
                 {
                     References = references,
-                    EndPredictedSimulationEntityCommandBuffer = endPredictedSimulationEntityCommandBuffer,
                     EndStatusEffectEntityCommandBuffer = endStatusEffectEntityCommandBuffer,
                 };
                 state.Dependency = checkIfRebuildModulesNeededJob.ScheduleParallelByRef(state.Dependency);
@@ -211,7 +208,6 @@ namespace StatusEffectFramework.Entities
         internal partial struct CheckIfRebuildModulesNeededJob : IJobEntity
         {
             public StatusReferences References;
-            public EntityCommandBuffer.ParallelWriter EndPredictedSimulationEntityCommandBuffer;
             public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
 
             void Execute([ChunkIndexInQuery] int sortKey,
@@ -232,9 +228,6 @@ namespace StatusEffectFramework.Entities
                 return;
 
                 AddTag:
-
-                EndStatusEffectEntityCommandBuffer.AddComponent<RebuildModulesTag>(sortKey, entity);
-                EndPredictedSimulationEntityCommandBuffer.RemoveComponent<RebuildModulesTag>(sortKey, entity);
 
                 foreach (var dynamicFloat in dynamicFloats)
                     EndStatusEffectEntityCommandBuffer.RemoveComponent(sortKey, entity, ComponentType.ReadOnly(dynamicFloat.TypeIndex));

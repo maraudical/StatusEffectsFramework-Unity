@@ -31,6 +31,26 @@ namespace StatusEffectFramework.Entities
             return true;
         }
 
+        public static ref int LengthAsRef(byte* header)
+        {
+            var bufferHeader = (BufferHeader*)header;
+
+            if (Hint.Unlikely(bufferHeader == null))
+                throw new InvalidOperationException("Invalid pointer to buffer header.");
+
+            return ref bufferHeader->Length;
+        }
+
+        public static void EnsureCapacity(byte* header, int count, int typeSize, int alignment)
+        {
+            var bufferHeader = (BufferHeader*)header;
+
+            if (Hint.Unlikely(bufferHeader == null))
+                throw new InvalidOperationException("Invalid pointer to buffer header.");
+
+            BufferHeader.EnsureCapacity(bufferHeader, count, typeSize, alignment, BufferHeader.TrashMode.RetainOldData, false, 0);
+        }
+
         public static unsafe void AppendToBuffer(ref EntityCommandBuffer.ParallelWriter ecb, int sortKey, Entity e, ComponentType componentType, int typeSize, void* value)
         {
 #if ENABLE_UNITY_COLLECTIONS_CHECKS || UNITY_DOTS_DEBUG
