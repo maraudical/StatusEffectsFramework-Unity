@@ -11,15 +11,17 @@ namespace StatusEffectFramework.Entities
     [BurstCompile]
     public partial struct InterpolatedStatusEffectEventsSystem : ISystem
     {
-        private EntityQuery m_EntityQuery;
+        private EntityQuery m_StatusEffectEventsQuery;
+        private EntityQuery m_StatusEffectsInterpolatedEventsQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithAllRW<InterpolatedStatusEffects>().WithPresentRW<StatusEffectEvents>().Build();
-            m_EntityQuery.SetChangedVersionFilter(ComponentType.ReadOnly<StatusEffects>());
+            m_StatusEffectEventsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffectEvents>().WithAll<InterpolatedStatusEffects>().Build();
+            m_StatusEffectsInterpolatedEventsQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithAllRW<InterpolatedStatusEffects>().WithPresentRW<StatusEffectEvents>().Build();
+            m_StatusEffectsInterpolatedEventsQuery.SetChangedVersionFilter(ComponentType.ReadOnly<StatusEffects>());
 
-            state.RequireForUpdate(m_EntityQuery);
+            state.RequireForUpdate(m_StatusEffectsInterpolatedEventsQuery);
             state.RequireForUpdate<NetworkTime>();
         }
 
@@ -29,11 +31,25 @@ namespace StatusEffectFramework.Entities
             SystemAPI.TryGetSingleton<ClientServerTickRate>(out var tickRate);
             tickRate.ResolveDefaults();
 
+            state.Dependency = new ClearStatusEffectEventsJob().ScheduleParallel(m_StatusEffectEventsQuery, state.Dependency);
+
             var statusEffectsInterpolatedEventsJob = new StatusEffectsInterpolatedEventsJob
             {
-                NetworkTime = SystemAPI.GetSingleton<NetworkTime>()
+                NetworkTime = SystemAPI.GetSingleton<NetworkTime>(),
+                TickRate = tickRate,
             };
-            state.Dependency = statusEffectsInterpolatedEventsJob.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
+            state.Dependency = statusEffectsInterpolatedEventsJob.ScheduleParallelByRef(m_StatusEffectsInterpolatedEventsQuery, state.Dependency);
+        }
+
+        [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
+        partial struct ClearStatusEffectEventsJob : IJobEntity
+        {
+            public void Execute(EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW,
+                ref DynamicBuffer<StatusEffectEvents> statusEffectEvents)
+            {
+                statusEffectEventsEnabledRW.ValueRW = false;
+                statusEffectEvents.Clear();
+            } 
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
@@ -42,15 +58,13 @@ namespace StatusEffectFramework.Entities
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
 
-            public unsafe void Execute([ChunkIndexInQuery] int sortKey, 
+            public void Execute([ChunkIndexInQuery] int sortKey, 
                 Entity entity, 
                 EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW,
                 in DynamicBuffer<StatusEffects> statusEffects,
                 ref DynamicBuffer<StatusEffectEvents> statusEffectEvents, 
                 ref DynamicBuffer<InterpolatedStatusEffects> interpolatedStatusEffects)
             {
-                statusEffectEvents.Clear();
-
                 int length = statusEffects.Length;
                 int interpolatedLength = interpolatedStatusEffects.Length;
                 // We copy to a new array here so that we don't sort the underlying
@@ -65,7 +79,7 @@ namespace StatusEffectFramework.Entities
 
                 statusEffectsArray.Sort();
                 interpolatedStatusEffectsArray.Sort();
-
+                
                 var enumerator = statusEffectsArray.GetEnumerator();
                 var interpolatedEnumerator = interpolatedStatusEffectsArray.GetEnumerator();
 
@@ -74,7 +88,7 @@ namespace StatusEffectFramework.Entities
                 StatusEffects statusEffect;
                 InterpolatedStatusEffects interpolatedStatusEffect;
 
-                bool statusEffectEventsEnabled = statusEffectEventsEnabledRW.ValueRO;;
+                bool statusEffectEventsEnabled = statusEffectEventsEnabledRW.ValueRO;
 
                 for (; ; )
                 {
@@ -173,9 +187,6 @@ namespace StatusEffectFramework.Entities
                     else
                         break;
                 }
-
-                if (statusEffectEventsEnabled && statusEffectEvents.Length == 0)
-                    statusEffectEventsEnabledRW.ValueRW = false;
             }
         }
     }

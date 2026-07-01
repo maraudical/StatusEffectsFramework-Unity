@@ -31,6 +31,16 @@ namespace StatusEffectFramework.Entities
             return true;
         }
 
+        public static bool IsEmpty(in ArchetypeChunk chunk, int baseEntityIndex, int indexInTypeArray)
+        {
+            var bufferHeader = (BufferHeader*)ChunkDataUtility.GetComponentDataRO(chunk.m_Chunk, chunk.Archetype.Archetype, baseEntityIndex, indexInTypeArray);
+
+            if (Hint.Unlikely(bufferHeader == null))
+                throw new InvalidOperationException("Invalid pointer to buffer header.");
+
+            return bufferHeader->Length > 0;
+        }
+
         public static ref int LengthAsRef(byte* header)
         {
             var bufferHeader = (BufferHeader*)header;

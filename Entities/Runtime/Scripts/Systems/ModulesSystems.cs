@@ -1,25 +1,22 @@
 #if ENTITIES
-using System.Linq;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.NetCode;
 
 namespace StatusEffectFramework.Entities
 {
     [BurstCompile]
-    public unsafe struct ModulesJob : IJobChunk
+    internal unsafe struct ModulesJob : IJobChunk
     {
-        public FixedString128Bytes SystemName;
-        public bool IsServer;
         public StatusReferences References;
         public EntityCommandBuffer.ParallelWriter CommandBuffer;
         public EntityTypeHandle EntityTypeHandle;
         public BufferTypeHandle<StatusEffectEvents> StatusEffectEventsHandle;
+        public BufferTypeHandle<ZeroLengthModules> ZeroLengthModulesHandle;
         public uint GlobalSystemVersion;
 
         [BurstCompile]
@@ -27,16 +24,19 @@ namespace StatusEffectFramework.Entities
         {
             NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
             BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
+            BufferAccessor<ZeroLengthModules> zeroLengthModulesAccessor = chunk.GetBufferAccessorRW(ref ZeroLengthModulesHandle);
             ModuleInfo moduleInfo;
             
             var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_ModuleCollectionsInitialCapacity, Allocator.Temp);
             var typeToLength = new UnsafeHashMap<TypeIndex, int>(StatusReferences.k_ModuleCollectionsInitialCapacity, Allocator.Temp);
 
             var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+            
             while (enumerator.NextEntityIndex(out var i))
             {
                 var entity = entities[i];
                 var statusEffectEvents = statusEffectEventsAccessor[i];
+                var zeroLengthModules = zeroLengthModulesAccessor[i].Reinterpret<TypeIndex>();
                 typeToLength.Clear();
 
                 foreach (var statusEffectEvent in statusEffectEvents)
@@ -75,8 +75,7 @@ namespace StatusEffectFramework.Entities
                                     if (info.IndexInTypeArray < 0)
                                         CommandBuffer.AddComponent(unfilteredChunkIndex, entity, componentType);
                                 }
-                                if (IsServer)
-                                    UnityEngine.Debug.Log("SERVER system: " + SystemName + " is adding " + componentType.GetDebugTypeName());
+
                                 var value = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
                                 var sizeOfInt = UnsafeUtility.SizeOf<uint>();
                                 UnsafeUtility.MemCpy(value, &statusEffectEvent.Id, sizeOfInt);
@@ -121,10 +120,28 @@ namespace StatusEffectFramework.Entities
                     }
                 }
 
+                foreach (var typeIndex in zeroLengthModules)
+                {
+                    if (!typeToIndexAndTypeInfo.TryGetValue(typeIndex, out var info))
+                        info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
+
+                    if (info.IndexInTypeArray < 0)
+                        continue;
+
+                    if (typeToLength.TryGetValue(typeIndex, out var length))
+                        if (length > 0)
+                            continue;
+
+                    if (StatusEffectsECSInternals.IsEmpty(chunk, i, info.IndexInTypeArray))
+                        CommandBuffer.RemoveComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(typeIndex));
+                }
+
+                zeroLengthModules.Clear();
+
                 foreach (var kvp in typeToLength)
                 {
                     if (kvp.Value <= 0)
-                        CommandBuffer.RemoveComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Key));
+                        zeroLengthModules.Add(kvp.Key);
                 }
             }
 
@@ -133,6 +150,9 @@ namespace StatusEffectFramework.Entities
         }
     }
 
+#if NETCODE
+    [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation)]
+#endif
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
     [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
     [BurstCompile]
@@ -143,7 +163,11 @@ namespace StatusEffectFramework.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+#if NETCODE
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents>().WithNone<PredictedGhost>().Build();
+#else
             m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents>().Build();
+#endif
 
             state.RequireForUpdate(m_EntityQuery);
             state.RequireForUpdate<StatusReferences>();
@@ -154,12 +178,11 @@ namespace StatusEffectFramework.Entities
         {
             var job = new ModulesJob()
             {
-                SystemName = new FixedString128Bytes("Regular"),
-                IsServer = state.WorldUnmanaged.IsServer(),
                 References = SystemAPI.GetSingleton<StatusReferences>(),
                 CommandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
                 StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(true),
+                ZeroLengthModulesHandle = SystemAPI.GetBufferTypeHandle<ZeroLengthModules>(),
                 GlobalSystemVersion = state.GlobalSystemVersion,
             };
             state.Dependency = job.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
@@ -177,7 +200,7 @@ namespace StatusEffectFramework.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, PredictedGhost>().Build();
 
             state.RequireForUpdate(m_EntityQuery);
             state.RequireForUpdate<StatusReferences>();
@@ -188,12 +211,11 @@ namespace StatusEffectFramework.Entities
         {
             var job = new ModulesJob()
             {
-                SystemName = new FixedString128Bytes("PREdicted"),
-                IsServer = state.WorldUnmanaged.IsServer(),
                 References = SystemAPI.GetSingleton<StatusReferences>(),
                 CommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
                 StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(true),
+                ZeroLengthModulesHandle = SystemAPI.GetBufferTypeHandle<ZeroLengthModules>(),
                 GlobalSystemVersion = state.GlobalSystemVersion,
             };
             state.Dependency = job.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
@@ -227,6 +249,7 @@ namespace StatusEffectFramework.Entities
             
             var firstPredictionTickJob = new ModulesFirstPredictionTickJob()
             {
+                NetworkTime = networkTime,
                 References = SystemAPI.GetSingleton<StatusReferences>(),
                 CommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
@@ -241,6 +264,7 @@ namespace StatusEffectFramework.Entities
         [BurstCompile]
         partial struct ModulesFirstPredictionTickJob : IJobChunk
         {
+            public NetworkTime NetworkTime;
             public StatusReferences References;
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
             public EntityTypeHandle EntityTypeHandle;
@@ -273,17 +297,16 @@ namespace StatusEffectFramework.Entities
                     typeAlreadyProcessed.Clear();
 
                     bool noChange = true;
-                    int statusEffectsLength = math.min(statusEffects.Length, interpolatedStatusEffects.Length);
                     
-                    for (int v = 0; v < statusEffectsLength; v++)
+                    for (int v = 0; v < interpolatedStatusEffects.Length; v++)
                     {
                         var interpolatedStatusEffect = interpolatedStatusEffects[v];
 
-                        if (statusEffects[v].Id != interpolatedStatusEffect.Id)
+                        if (v >= statusEffects.Length || statusEffects[v].Id != interpolatedStatusEffect.Id)
                             noChange = false;
                         else
                             continue;
-
+                        
                         if (!Hint.Unlikely(References.TryGetReference(interpolatedStatusEffect.StatusEffectDataId, out var reference)))
                             continue;
 
@@ -296,7 +319,7 @@ namespace StatusEffectFramework.Entities
                     
                     if (noChange && statusEffects.Length == interpolatedStatusEffects.Length)
                         continue;
-                    UnityEngine.Debug.Log("prediction rollback for modules in chunk " + unfilteredChunkIndex);
+                    
                     var entity = entities[i];
                     var statusEffectEvents = statusEffectEventsAccessor[i].AsNativeArray();
 
@@ -341,7 +364,6 @@ namespace StatusEffectFramework.Entities
                                 UnsafeUtility.MemCpy(value + sizeOfInt, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
                                 StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, value);
                                 UnsafeUtility.Free(value, Allocator.Temp);
-                                UnityEngine.Debug.Log(componentType.GetDebugTypeName() + " appendign to " + entity);
                             }
                             else
                             {
@@ -359,21 +381,17 @@ namespace StatusEffectFramework.Entities
                                 }
 
                                 StatusEffectsECSInternals.EnsureCapacity(header, lengthAsRef + 1, sizeOfModule, info.TypeInfo.AlignmentInBytes);
-
-                                var newElement = buffer + length * sizeOfModule;
+                                
+                                var newElement = buffer + lengthAsRef * sizeOfModule;
                                 UnsafeUtility.MemCpy(newElement, &statusEffect.Id, sizeOfInt);
                                 UnsafeUtility.MemCpy(newElement + sizeOfInt, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
-                                
                                 lengthAsRef++;
                             }
                         }
                     }
                     // These are old module buffers leftover from before rollback.
                     foreach (var typeIndex in interpolatedTypes)
-                    {
-                        UnityEngine.Debug.Log(ComponentType.FromTypeIndex(typeIndex).GetDebugTypeName() + " was removed");
                         CommandBuffer.RemoveComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(typeIndex));
-                    }
                 }
 
                 typeToIndexAndTypeInfo.Dispose();

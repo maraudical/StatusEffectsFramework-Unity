@@ -1,8 +1,11 @@
 using StatusEffectFramework.Entities;
+using System;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
+using static UnityEngine.Analytics.IAnalytic;
 
 [assembly: RegisterGenericComponentType(typeof(Modules<StatusEffectFramework.Entities.Samples.VfxModuleStruct>))]
 
@@ -19,13 +22,12 @@ namespace StatusEffectFramework.Entities.Samples
         public uint Id;
         public UnityObjectRef<GameObject> Value;
     }
-    /*
+
 #if NETCODE
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
 #endif
     [UpdateInGroup(typeof(SimulationSystemGroup))]
     [UpdateBefore(typeof(TransformSystemGroup))]
-    [DisableAutoCreation]
     public partial class VfxModuleSystem : SystemBase
     {
         private EntityQuery m_CleanupQuery;
@@ -56,51 +58,46 @@ namespace StatusEffectFramework.Entities.Samples
             var statusReferences = SystemAPI.GetSingleton<StatusReferences>();
             var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
             var statusEffectsLookup = SystemAPI.GetBufferLookup<StatusEffects>(true);
-            var statusEffectEventsLookup = SystemAPI.GetBufferLookup<StatusEffectEvents>(true);
             var localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
-            var moduleLookup = SystemAPI.GetBufferLookup<Modules<VfxModuleStruct>>();
             var cleanupLookup = SystemAPI.GetBufferLookup<VfxModuleCleanup>();
-
-            using var entities = m_EventQuery.ToEntityArray(Allocator.Temp);
+            
             StatusEffects statusEffect;
 
-            foreach (var entity in entities)
+            foreach (var (modules, statusEffectEvents, entity) in SystemAPI.Query<DynamicBuffer<Modules<VfxModuleStruct>>, DynamicBuffer<StatusEffectEvents>>().WithEntityAccess())
             {
-                var statusEffects = statusEffectsLookup[entity];
-                var statusEffectEvents = statusEffectEventsLookup[entity];
+                // AsNativeArray does not create a copy of the data so any changes will effect the source buffer.
+                var modulesArray = modules.AsNativeArray();
+                modulesArray.Sort();
 
-                bool foundBuffer = moduleLookup.TryGetBuffer(entity, out var buffer);
+                var statusEffects = statusEffectsLookup[entity];
                 bool foundCleanupBuffer = cleanupLookup.TryGetBuffer(entity, out var cleanupBuffer);
+                int index;
 
                 foreach (var statusEffectEvent in statusEffectEvents)
                 {
-                    if (!statusReferences.TryGetReference(statusEffectEvent.StatusEffectDataId, out var reference))
-                        continue;
-
-                    ref var data = ref reference.Value;
-
-                    if (!StatusEffectsECSUtility.ModuleInfosContainType(ref data.Modules, m_TypeIndex))
-                        continue;
-
                     switch (statusEffectEvent.Event)
                     {
                         case StatusEffectEvent.Added:
-                            if (!StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
-                                continue;
+                            index = modulesArray.BinarySearchFirst(statusEffectEvent.Id);
 
-                            ref var modules = ref data.Modules;
-                            for (int i = 0; i < modules.Length; i++)
+                            if (index < 0 || !StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
+                                return;
+
+                            for (int i = index; i < modulesArray.Length; i++)
                             {
-                                var moduleInfo = modules[i];
+                                var module = modulesArray[i];
 
-                                if (moduleInfo.TypeIndex != m_TypeIndex)
+                                if (module.Id != statusEffectEvent.Id)
+                                    break;
+
+#if NETCODE
+                                // Special case where we don't want old events to instantiate VFX.
+                                if (!module.Value.IsLooping && statusEffectEvent.IsOld)
                                     continue;
 
-                                if (!foundBuffer)
-                                {
-                                    foundBuffer = true;
-                                    buffer = commandBuffer.AddBuffer<Modules<VfxModuleStruct>>(entity);
-                                }
+#endif
+                                var localToWorld = localToWorldLookup[entity];
+                                var vfxObject = UnityEngine.Object.Instantiate(module.Value.Prefab, localToWorld.Position, localToWorld.Rotation) as GameObject;
 
                                 if (!foundCleanupBuffer)
                                 {
@@ -108,28 +105,14 @@ namespace StatusEffectFramework.Entities.Samples
                                     cleanupBuffer = commandBuffer.AddBuffer<VfxModuleCleanup>(entity);
                                 }
 
-                                var module = StatusEffectsECSUtility.AddModuleToBuffer(ref buffer, moduleInfo, statusEffectEvent.Id);
-#if NETCODE
-                                // Special case where we don't want old events to instantiate VFX.
-                                if (!module.Value.IsLooping && statusEffectEvent.IsOld)
-                                    continue;
-
-#endif
-                                localToWorldLookup.TryGetComponent(entity, out var localToWorld);
-                                var vfxObject = UnityEngine.Object.Instantiate(module.Value.Prefab, localToWorld.Position, localToWorld.Rotation) as GameObject;
-
                                 cleanupBuffer.Add(new VfxModuleCleanup
                                 {
                                     Id = module.Id,
                                     Value = vfxObject,
                                 });
                             }
-
                             break;
                         case StatusEffectEvent.Removed:
-                            if (foundBuffer)
-                                StatusEffectsECSUtility.RemoveModulesFromBuffer(ref buffer, statusEffectEvent.Id);
-
                             if (!foundCleanupBuffer)
                                 break;
 
@@ -142,10 +125,8 @@ namespace StatusEffectFramework.Entities.Samples
 
                                 cleanupBuffer.RemoveAtSwapBack(i);
 
-                                if (!cleanup.Value.IsValid())
-                                    continue;
-
-                                cleanup.Value.Value.GetComponent<ParticleSystem>()?.Stop();
+                                if (cleanup.Value.IsValid())
+                                    cleanup.Value.Value.GetComponent<ParticleSystem>()?.Stop();
                             }
 
                             break;
@@ -156,22 +137,29 @@ namespace StatusEffectFramework.Entities.Samples
                                 continue;
 
 #endif
-                            if (!foundCleanupBuffer)
-                            {
-                                foundCleanupBuffer = true;
-                                cleanupBuffer = commandBuffer.AddBuffer<VfxModuleCleanup>(entity);
-                            }
+                            index = modulesArray.BinarySearchFirst(statusEffectEvent.Id);
 
-                            if (!StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
-                                continue;
+                            if (index < 0 || !StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
+                                return;
 
-                            foreach (var module in buffer)
+                            for (int i = index; i < modulesArray.Length; i++)
                             {
-                                if (module.Value.IsLooping || module.Id != statusEffectEvent.Id || statusEffect.Stacks < statusEffectEvent.PreviousStacks)
+                                var module = modulesArray[i];
+
+                                if (module.Id != statusEffectEvent.Id)
+                                    break;
+
+                                if (module.Value.IsLooping || statusEffect.Stacks < statusEffectEvent.PreviousStacks)
                                     continue;
 
-                                localToWorldLookup.TryGetComponent(entity, out var localToWorld);
+                                var localToWorld = localToWorldLookup[entity];
                                 var vfxObject = UnityEngine.Object.Instantiate(module.Value.Prefab, localToWorld.Position, localToWorld.Rotation) as GameObject;
+
+                                if (!foundCleanupBuffer)
+                                {
+                                    foundCleanupBuffer = true;
+                                    cleanupBuffer = commandBuffer.AddBuffer<VfxModuleCleanup>(entity);
+                                }
 
                                 cleanupBuffer.Add(new VfxModuleCleanup
                                 {
@@ -182,9 +170,6 @@ namespace StatusEffectFramework.Entities.Samples
                             break;
                     }
                 }
-
-                if (foundBuffer && buffer.Length <= 0)
-                    commandBuffer.RemoveComponent<Modules<VfxModuleStruct>>(entity);
             }
 
             foreach (var (cleanupBuffer, entity) in SystemAPI.Query<DynamicBuffer<VfxModuleCleanup>>().WithEntityAccess())
@@ -215,5 +200,5 @@ namespace StatusEffectFramework.Entities.Samples
                     commandBuffer.RemoveComponent<VfxModuleCleanup>(entity);
             }
         }
-    }*/
+    }
 }

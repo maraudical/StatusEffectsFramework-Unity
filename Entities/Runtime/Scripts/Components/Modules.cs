@@ -1,11 +1,9 @@
 #if ENTITIES
 using System;
-using Unity.Burst;
 using Unity.Entities;
 
 namespace StatusEffectFramework.Entities
 {
-    [BurstCompile]
     public struct Modules<T> : IBufferElementData, IComparable<Modules<T>>, IComparable<uint>, IEquatable<uint> where T : unmanaged
     {
         public uint Id;
