@@ -1,10 +1,10 @@
 using Cysharp.Threading.Tasks;
-using StatusEffectFramework.Entities;
+using StatusEffectsFramework.Entities;
 using System.Reflection;
 using System.Threading;
 using UnityEngine;
 
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     public partial class HealModule : Module
     {

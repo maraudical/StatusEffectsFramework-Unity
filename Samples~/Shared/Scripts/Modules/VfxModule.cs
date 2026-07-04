@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     [CreateAssetMenu(fileName = "Vfx Module", menuName = "Status Effect Framework/Modules/Vfx", order = 1)]
     [AttachModuleInstance(typeof(VfxInstance))]

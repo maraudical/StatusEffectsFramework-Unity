@@ -2,7 +2,7 @@ using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     public static class UnsafeHashMapExtensions
     {

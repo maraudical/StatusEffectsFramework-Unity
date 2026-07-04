@@ -1,4 +1,4 @@
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     public enum StatusEffectAction
     {

@@ -1,8 +1,8 @@
-using StatusEffectFramework.Entities;
+using StatusEffectsFramework.Entities;
 using Unity.Entities;
 using Hash128 = Unity.Entities.Hash128;
 
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     // Just adding on the IEntityStatus implemenation to the existing base class.
     public partial class ExamplePlayer : IEntityStatus

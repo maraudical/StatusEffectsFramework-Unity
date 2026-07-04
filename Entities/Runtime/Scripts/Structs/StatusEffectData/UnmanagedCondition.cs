@@ -2,7 +2,7 @@
 using UnityEngine;
 using Hash128 = Unity.Entities.Hash128;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     public struct UnmanagedCondition
     {

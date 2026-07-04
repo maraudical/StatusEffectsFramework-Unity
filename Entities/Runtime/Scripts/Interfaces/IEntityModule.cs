@@ -1,5 +1,5 @@
 #if ENTITIES
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     /// <summary>
     /// To allow a module to be used with Entities, the <see cref="Module"/> must implement this 

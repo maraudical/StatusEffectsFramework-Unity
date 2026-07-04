@@ -1,12 +1,13 @@
-using StatusEffectFramework.Entities;
+using StatusEffectsFramework.Entities;
 using StatusEffectsFramework.Entities.Samples;
-using Unity.Entities;
 
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     public partial class CoinMultiplierToSpeed : DynamicEffectFloat, IEntityDynamicEffect
     {
-        public TypeIndex GetTypeIndex() => TypeManager.GetTypeIndex<CoinMultiplierToSpeedComponent>();
-        public DynamicEffectInfo CreateDynamicEffectInfo() => default;
+        public DynamicEffectInfo CreateDynamicEffectInfo()
+        {
+            return DynamicEffectInfo.AllocateDynamicEffect(new CoinMultiplierToSpeedStruct(), ValueType.Float);
+        }
     }
 }

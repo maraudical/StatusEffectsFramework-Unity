@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffectFramework.Editor
+namespace StatusEffectsFramework.Editor
 {
     // Script inspired by https://github.com/unity-atoms/unity-atoms/blob/master/Packages/Core/Editor/PostProcessors/EditorIconPostProcessor.cs
     public class IconPostProcessor : AssetPostprocessor

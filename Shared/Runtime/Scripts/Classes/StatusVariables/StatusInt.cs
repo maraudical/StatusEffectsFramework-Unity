@@ -8,7 +8,7 @@ using Unity.Mathematics;
 #endif
 
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     [Serializable]
     public class StatusInt : StatusVariable

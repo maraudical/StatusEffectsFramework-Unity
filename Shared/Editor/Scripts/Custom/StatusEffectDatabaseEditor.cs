@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace StatusEffectFramework.Editor
+namespace StatusEffectsFramework.Editor
 {
     [CustomEditor(typeof(StatusEffectDatabase))]
     internal class StatusEffectDatabaseEditor : UnityEditor.Editor

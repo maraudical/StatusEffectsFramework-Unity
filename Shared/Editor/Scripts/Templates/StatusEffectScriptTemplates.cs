@@ -4,7 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace StatusEffectFramework.Templates
+namespace StatusEffectsFramework.Templates
 {
     public static class StatusEffectScriptTemplates
     {
@@ -68,7 +68,7 @@ namespace StatusEffectFramework.Templates
         }
 
         internal const string UniTaskModuleScriptContent =
-@"using StatusEffectFramework
+@"using StatusEffectsFramework
 using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
@@ -84,7 +84,7 @@ public class #SCRIPTNAME# : Module
 }";
 
         internal const string ModuleScriptContent =
-@"using StatusEffectFramework
+@"using StatusEffectsFramework
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -100,8 +100,8 @@ public class #SCRIPTNAME# : Module
 }";
 
         internal const string EntityModuleScriptContent =
-@"using StatusEffectFramework;
-using StatusEffectFramework.Entities;
+@"using StatusEffectsFramework;
+using StatusEffectsFramework.Entities;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -231,7 +231,7 @@ public partial struct #SCRIPTNAME#System : ISystem
 }";
 
         internal const string ModuleInstanceScriptContent =
-@"using StatusEffectFramework
+@"using StatusEffectsFramework
 
 public class #SCRIPTNAME# : ModuleInstance
 {
@@ -239,7 +239,7 @@ public class #SCRIPTNAME# : ModuleInstance
 }";
 
         internal const string DynamicEffectFloatScriptContent =
-@"using StatusEffectFramework
+@"using StatusEffectsFramework
 
 public class #SCRIPTNAME# : DynamicEffectFloat
 {
@@ -247,7 +247,7 @@ public class #SCRIPTNAME# : DynamicEffectFloat
 }";
 
         internal const string EntityDynamicEffectFloatScriptContent =
-@"using StatusEffectFramework
+@"using StatusEffectsFramework
 
 public class #SCRIPTNAME# : DynamicEffectFloat, IEntityDynamicEffect
 {
@@ -255,7 +255,7 @@ public class #SCRIPTNAME# : DynamicEffectFloat, IEntityDynamicEffect
 }";
 
         internal const string DynamicEffectIntScriptContent =
-@"using StatusEffectFramework
+@"using StatusEffectsFramework
 
 public class #SCRIPTNAME# : DynamicEffectInt
 {
@@ -263,7 +263,7 @@ public class #SCRIPTNAME# : DynamicEffectInt
 }";
 
         internal const string EntityDynamicEffectIntScriptContent =
-@"using StatusEffectFramework
+@"using StatusEffectsFramework
 
 public class #SCRIPTNAME# : DynamicEffectInt, IEntityDynamicEffect
 {
@@ -271,7 +271,7 @@ public class #SCRIPTNAME# : DynamicEffectInt, IEntityDynamicEffect
 }";
 
         internal const string DynamicEffectBoolScriptContent =
-@"using StatusEffectFramework
+@"using StatusEffectsFramework
 
 public class #SCRIPTNAME# : DynamicEffectBool
 {
@@ -279,7 +279,7 @@ public class #SCRIPTNAME# : DynamicEffectBool
 }";
 
         internal const string EntityDynamicEffectBoolScriptContent =
-@"using StatusEffectFramework
+@"using StatusEffectsFramework
 
 public class #SCRIPTNAME# : DynamicEffectBool, IEntityDynamicEffect
 {

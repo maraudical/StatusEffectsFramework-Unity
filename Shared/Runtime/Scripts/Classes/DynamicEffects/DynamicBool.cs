@@ -1,6 +1,6 @@
 using System;
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     public class DynamicBool
     {

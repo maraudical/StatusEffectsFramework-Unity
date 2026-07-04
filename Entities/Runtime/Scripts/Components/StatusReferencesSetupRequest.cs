@@ -1,7 +1,7 @@
 #if ENTITIES
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     public struct StatusReferencesSetupRequest : IComponentData { }
 }

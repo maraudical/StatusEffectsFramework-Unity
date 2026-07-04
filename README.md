@@ -11,7 +11,7 @@
   <a href="https://github.com/maraudical/StatusEffectsFramework/pulls"><img src="https://img.shields.io/github/issues-pr-raw/maraudical/StatusEffectsFramework" alt=""></a>
 </p>
 <p align="center">
-  <strong>Status Effect Framework</strong> is a framework for implementing status effects into any game. It is easy to use, and fully customizable.
+  <strong>Status Effects Framework</strong> is a framework for implementing status effects into any game. It is easy to use, and fully customizable.
 </p><br>
 
 <p align="center">
@@ -44,10 +44,10 @@
 - Unity - Netcode for Entities
 - Cysharp - UniTask
 
-# Getting started with the **Status Effect Framework**
+# Getting started with the **Status Effects Framework**
 
 1. Add the **Status Effect Framework** through the package manager
-> [Install via git](https://maraudical.gitbook.io/status-effect-framework/setup) with this URL: 
+> [Install via git](https://maraudical.gitbook.io/status-effects-framework/setup) with this URL: 
 >```
 >https://github.com/maraudical/StatusEffectsFramework-Unity.git
 >```
@@ -58,7 +58,7 @@
 6. Implement any **StatusFloat/StatusInt/StatusBools** into scripts that will be affected
 7. Link the **StatusVariables** to the **StatusManager** and simply add or remove effects
 
-Check the [documentation](https://maraudical.gitbook.io/status-effect-framework/) for more information.
+Check the [documentation](https://maraudical.gitbook.io/status-effects-framework/) for more information.
 
 # Author
 **Grady Milligan** - *Game Designer*

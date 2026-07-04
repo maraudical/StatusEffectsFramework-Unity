@@ -1,8 +1,8 @@
-using StatusEffectFramework.Samples;
+using StatusEffectsFramework.Samples;
 using Unity.Entities;
 using UnityEngine;
 
-namespace StatusEffectFramework.Entities.Samples
+namespace StatusEffectsFramework.Entities.Samples
 {
     public class ExamplePlayerBaker : Baker<ExamplePlayer>
     {

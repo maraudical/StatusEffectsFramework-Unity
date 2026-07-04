@@ -3,7 +3,7 @@ using System.Collections;
 using Unity.Collections;
 using Unity.NetCode;
 
-namespace StatusEffectFramework.Entities.Samples
+namespace StatusEffectsFramework.Entities.Samples
 {
     // This would be more optimized and scalable from a SystemBase.
     // For simplicity everything is done in this MonoBehaviour.

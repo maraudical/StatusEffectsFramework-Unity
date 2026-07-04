@@ -1,2 +1,2 @@
 using System.Runtime.CompilerServices;
-[assembly: InternalsVisibleTo("Unity.StatusEffectsFramework.NetCode.Editor")]
+[assembly: InternalsVisibleTo("StatusEffectsFramework.NetCode.Editor")]

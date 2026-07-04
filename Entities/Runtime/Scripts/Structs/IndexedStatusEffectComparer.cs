@@ -1,7 +1,7 @@
 #if ENTITIES
 using System.Collections.Generic;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     internal struct IndexedStatusEffectComparer : IComparer<IndexedStatusEffects>
     {

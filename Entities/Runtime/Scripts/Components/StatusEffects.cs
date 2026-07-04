@@ -7,7 +7,7 @@ using Unity.Mathematics;
 using Unity.NetCode;
 #endif
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     [BurstCompile]
     public struct StatusEffects : IBufferElementData, IComparable<StatusEffects>, IEquatable<uint>, IEquatable<StatusEffects>

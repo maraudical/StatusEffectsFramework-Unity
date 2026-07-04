@@ -1,4 +1,4 @@
-using StatusEffectFramework.Samples;
+using StatusEffectsFramework.Samples;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using Hash128 = Unity.Entities.Hash128;
 
-namespace StatusEffectFramework.Entities.Samples
+namespace StatusEffectsFramework.Entities.Samples
 {
     // This would be more optimized and scalable from a SystemBase.
     // For simplicity everything is done in this MonoBehaviour.

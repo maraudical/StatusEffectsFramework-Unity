@@ -4,7 +4,7 @@ using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace StatusEffectFramework.NetCode
+namespace StatusEffectsFramework.NetCode
 {
     /// <summary>
     /// A class that captures Status Effects into values that are 

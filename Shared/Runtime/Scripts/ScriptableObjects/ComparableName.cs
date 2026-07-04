@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     [CreateAssetMenu(fileName = "New Comparable Name", menuName = "Status Effect Framework/Comparable Name", order = -4)]
     public class ComparableName : Name { }

@@ -7,7 +7,7 @@ using System;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     /// <summary>
     /// A read only multihashmap that can be used as inside blob asset

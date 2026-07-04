@@ -1,7 +1,7 @@
 using Unity.Entities;
 using Unity.NetCode;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
 #if NETCODE
     [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]

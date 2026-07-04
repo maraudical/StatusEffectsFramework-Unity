@@ -8,7 +8,7 @@ using NUnit.Framework.Internal;
 using Unity.Burst;
 #endif
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     [Serializable]
     public class StatusBool : StatusVariable

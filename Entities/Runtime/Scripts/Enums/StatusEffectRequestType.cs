@@ -1,5 +1,5 @@
 #if ENTITIES
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     public enum StatusEffectRequestType
     {

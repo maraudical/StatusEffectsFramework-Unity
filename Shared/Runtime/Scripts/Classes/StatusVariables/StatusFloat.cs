@@ -7,7 +7,7 @@ using Unity.Burst;
 using Unity.Mathematics;
 #endif
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     [Serializable]
     public class StatusFloat : StatusVariable

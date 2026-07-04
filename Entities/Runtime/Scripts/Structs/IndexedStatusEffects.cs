@@ -2,7 +2,7 @@
 using System;
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     /// <summary>
     /// A simple struct simply for reordering <see cref="StatusEffects"/> 

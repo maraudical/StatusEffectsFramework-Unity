@@ -5,7 +5,7 @@ using System.Collections.ObjectModel;
 using UnityEngine.Localization;
 #endif
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effect Framework/Status Effect Data", order = -5)]
     public class StatusEffectData : ScriptableObject

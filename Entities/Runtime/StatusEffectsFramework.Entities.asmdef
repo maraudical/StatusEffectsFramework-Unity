@@ -1,6 +1,6 @@
 {
-    "name": "Unity.StatusEffectsFramework.Entities",
-    "rootNamespace": "StatusEffectFramework.Entities",
+    "name": "StatusEffectsFramework.Entities",
+    "rootNamespace": "StatusEffectsFramework.Entities",
     "references": [
         "GUID:c1d753aaef5f86c4488844bae8cb6730",
         "GUID:df380645f10b7bc4b97d4f5eb6303d95",

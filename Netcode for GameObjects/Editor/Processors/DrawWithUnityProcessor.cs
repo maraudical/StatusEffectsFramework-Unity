@@ -4,7 +4,7 @@ using Sirenix.OdinInspector;
 using System.Collections.Generic;
 using System;
 
-namespace StatusEffectFramework.NetCode.Editor
+namespace StatusEffectsFramework.NetCode.Editor
 {
     public class NetworkStatusVariableProcessor : OdinAttributeProcessor<NetworkStatusVariable>
     {

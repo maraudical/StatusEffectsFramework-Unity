@@ -1,10 +1,10 @@
 #if NETCODE
-using StatusEffectFramework.Editor;
+using StatusEffectsFramework.Editor;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace StatusEffectFramework.NetCode.Editor
+namespace StatusEffectsFramework.NetCode.Editor
 {
     [CustomEditor(typeof(NetworkStatusManager))]
     [CanEditMultipleObjects]

@@ -4,7 +4,7 @@ using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace StatusEffectFramework.Entities.Samples
+namespace StatusEffectsFramework.Entities.Samples
 {
     // This would be more optimized and scalable from a SystemBase.
     // For simplicity everything is done in this MonoBehaviour.

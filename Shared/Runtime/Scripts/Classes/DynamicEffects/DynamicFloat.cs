@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics;
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     public class DynamicFloat
     {

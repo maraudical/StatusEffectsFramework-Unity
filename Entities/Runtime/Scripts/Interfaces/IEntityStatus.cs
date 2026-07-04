@@ -1,7 +1,7 @@
 #if ENTITIES
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     /// <summary>
     /// Entities that need to have their <see cref="StatusVariable"/>s baked must 

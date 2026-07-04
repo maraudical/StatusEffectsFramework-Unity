@@ -14,7 +14,7 @@ using System.Runtime.CompilerServices;
 using System;
 using static System.Collections.Specialized.BitVector32;
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     /// <summary>
     /// A component that manages currently active Status Effects.

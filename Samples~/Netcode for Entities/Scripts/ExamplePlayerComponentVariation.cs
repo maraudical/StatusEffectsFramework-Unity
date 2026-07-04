@@ -1,6 +1,6 @@
 using Unity.NetCode;
 
-namespace StatusEffectFramework.Entities.Samples
+namespace StatusEffectsFramework.Entities.Samples
 {
     [GhostComponentVariation(typeof(ExamplePlayerComponent), "Default")]
     [GhostComponent]

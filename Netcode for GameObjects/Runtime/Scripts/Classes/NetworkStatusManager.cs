@@ -14,9 +14,9 @@ using UnityEngine.Events;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
-using EventType = Unity.Netcode.NetworkListEvent<StatusEffectFramework.NetCode.NetworkStatusEffect>.EventType;
+using EventType = Unity.Netcode.NetworkListEvent<StatusEffectsFramework.NetCode.NetworkStatusEffect>.EventType;
 
-namespace StatusEffectFramework.NetCode
+namespace StatusEffectsFramework.NetCode
 {
     /// <summary>
     /// A component for a network synced StatusManager.

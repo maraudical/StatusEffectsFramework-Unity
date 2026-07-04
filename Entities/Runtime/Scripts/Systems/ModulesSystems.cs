@@ -7,7 +7,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     [BurstCompile]
     internal unsafe struct ModulesJob : IJobChunk
@@ -27,11 +27,11 @@ namespace StatusEffectFramework.Entities
             BufferAccessor<ZeroLengthModules> zeroLengthModulesAccessor = chunk.GetBufferAccessorRW(ref ZeroLengthModulesHandle);
             ModuleInfo moduleInfo;
             
-            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_ModuleCollectionsInitialCapacity, Allocator.Temp);
-            var typeToLength = new UnsafeHashMap<TypeIndex, int>(StatusReferences.k_ModuleCollectionsInitialCapacity, Allocator.Temp);
+            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+            var typeToLength = new UnsafeHashMap<TypeIndex, int>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+            var sizeOfUint = UnsafeUtility.SizeOf<uint>();
 
             var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
-            
             while (enumerator.NextEntityIndex(out var i))
             {
                 var entity = entities[i];
@@ -77,9 +77,8 @@ namespace StatusEffectFramework.Entities
                                 }
 
                                 var value = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                var sizeOfInt = UnsafeUtility.SizeOf<uint>();
-                                UnsafeUtility.MemCpy(value, &statusEffectEvent.Id, sizeOfInt);
-                                UnsafeUtility.MemCpy(value + sizeOfInt, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
+                                UnsafeUtility.MemCpy(value, &statusEffectEvent.Id, sizeOfUint);
+                                UnsafeUtility.MemCpy(value + References.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
                                 StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, value);
                                 UnsafeUtility.Free(value, Allocator.Temp);
                                 break;
@@ -156,7 +155,7 @@ namespace StatusEffectFramework.Entities
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
     [UpdateBefore(typeof(EndStatusEffectEntityCommandBufferSystem))]
     [BurstCompile]
-    public unsafe partial struct ModulesSystem : ISystem
+    public partial struct ModulesSystem : ISystem
     {
         EntityQuery m_EntityQuery;
 
@@ -164,9 +163,9 @@ namespace StatusEffectFramework.Entities
         public void OnCreate(ref SystemState state)
         {
 #if NETCODE
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents>().WithNone<PredictedGhost>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, ZeroLengthModules>().WithNone<PredictedGhost>().Build();
 #else
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, ZeroLengthModules>().Build();
 #endif
 
             state.RequireForUpdate(m_EntityQuery);
@@ -193,14 +192,14 @@ namespace StatusEffectFramework.Entities
     [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
     [UpdateBefore(typeof(EndPredictedStatusEffectEntityCommandBufferSystem))]
     [BurstCompile]
-    public unsafe partial struct PredictedModulesSystem : ISystem
+    public partial struct PredictedModulesSystem : ISystem
     {
         EntityQuery m_EntityQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, PredictedGhost>().Build();
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, ZeroLengthModules, Simulate>().Build();
 
             state.RequireForUpdate(m_EntityQuery);
             state.RequireForUpdate<StatusReferences>();
@@ -262,7 +261,7 @@ namespace StatusEffectFramework.Entities
         }
 
         [BurstCompile]
-        partial struct ModulesFirstPredictionTickJob : IJobChunk
+        internal struct ModulesFirstPredictionTickJob : IJobChunk
         {
             public NetworkTime NetworkTime;
             public StatusReferences References;
@@ -283,9 +282,10 @@ namespace StatusEffectFramework.Entities
 
                 ModuleInfo moduleInfo;
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_ModuleCollectionsInitialCapacity, Allocator.Temp);
-                var interpolatedTypes = new UnsafeHashSet<TypeIndex>(StatusReferences.k_ModuleCollectionsInitialCapacity, Allocator.Temp);
-                var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(StatusReferences.k_ModuleCollectionsInitialCapacity, Allocator.Temp);
+                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+                var interpolatedTypes = new UnsafeHashSet<TypeIndex>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+                var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+                var sizeOfUint = UnsafeUtility.SizeOf<uint>();
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
@@ -350,7 +350,6 @@ namespace StatusEffectFramework.Entities
                             }
 
                             int sizeOfModule = info.TypeInfo.ElementSize;
-                            var sizeOfInt = UnsafeUtility.SizeOf<uint>();
 
                             if (info.IndexInTypeArray < 0)
                             {
@@ -360,8 +359,8 @@ namespace StatusEffectFramework.Entities
                                     typeAlreadyProcessed.Add(moduleInfo.TypeIndex);
                                 }
                                 var value = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                UnsafeUtility.MemCpy(value, &statusEffect.Id, sizeOfInt);
-                                UnsafeUtility.MemCpy(value + sizeOfInt, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
+                                UnsafeUtility.MemCpy(value, &statusEffect.Id, sizeOfUint);
+                                UnsafeUtility.MemCpy(value + References.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
                                 StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, value);
                                 UnsafeUtility.Free(value, Allocator.Temp);
                             }
@@ -383,8 +382,8 @@ namespace StatusEffectFramework.Entities
                                 StatusEffectsECSInternals.EnsureCapacity(header, lengthAsRef + 1, sizeOfModule, info.TypeInfo.AlignmentInBytes);
                                 
                                 var newElement = buffer + lengthAsRef * sizeOfModule;
-                                UnsafeUtility.MemCpy(newElement, &statusEffect.Id, sizeOfInt);
-                                UnsafeUtility.MemCpy(newElement + sizeOfInt, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
+                                UnsafeUtility.MemCpy(newElement, &statusEffect.Id, sizeOfUint);
+                                UnsafeUtility.MemCpy(newElement + References.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
                                 lengthAsRef++;
                             }
                         }

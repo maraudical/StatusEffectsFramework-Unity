@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     // Require the StatusEffectsInstance so that StatusVariables can be setup.
     [RequireComponent(typeof(StatusManager))]

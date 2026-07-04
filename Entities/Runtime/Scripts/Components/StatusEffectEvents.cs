@@ -3,7 +3,7 @@ using System;
 using Unity.Burst;
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     [BurstCompile]
     public struct StatusEffectEvents : IBufferElementData, IEnableableComponent, IEquatable<uint>

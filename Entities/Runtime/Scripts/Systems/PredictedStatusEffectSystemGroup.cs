@@ -4,7 +4,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.NetCode;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     /// <summary>
     /// The <see cref="EntityCommandBufferSystem"/> at the end of the <see cref="StatusEffectSystemGroup"/>.

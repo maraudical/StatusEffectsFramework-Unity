@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     public abstract class Name : ScriptableObject
     {

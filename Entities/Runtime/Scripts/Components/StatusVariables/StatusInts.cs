@@ -4,7 +4,7 @@ using Unity.Entities;
 using Unity.NetCode;
 #endif
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     public struct StatusInts : IBufferElementData
     {

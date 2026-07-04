@@ -3,7 +3,7 @@ using System;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     /*
      * Basically the same implementation as Unity's NativeHashMap, except it uses BlobArray

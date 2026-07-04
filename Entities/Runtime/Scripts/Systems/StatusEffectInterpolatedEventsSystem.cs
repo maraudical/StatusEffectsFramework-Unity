@@ -4,7 +4,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.ThinClientSimulation)]
     [UpdateInGroup(typeof(StatusEffectSystemGroup))]

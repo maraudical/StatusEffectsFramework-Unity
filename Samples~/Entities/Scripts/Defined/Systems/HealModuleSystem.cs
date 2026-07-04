@@ -1,13 +1,12 @@
-using StatusEffectFramework.Entities;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
 
-[assembly: RegisterGenericComponentType(typeof(Modules<StatusEffectFramework.Entities.Samples.HealModuleStruct>))]
+[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.Modules<StatusEffectsFramework.Entities.Samples.HealModuleStruct>))]
 
-namespace StatusEffectFramework.Entities.Samples
+namespace StatusEffectsFramework.Entities.Samples
 {
     public struct HealModuleStruct { }
     
@@ -19,15 +18,15 @@ namespace StatusEffectFramework.Entities.Samples
     [BurstCompile]
     public partial struct HealModuleSystem : ISystem
     {
-        private EntityQuery m_EntityQuery;
+        private EntityQuery m_EventQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusEffectEvents, Modules<HealModuleStruct>, ExamplePlayerComponent, StatusFloats>().WithAll<Simulate>().Build();
-            m_EntityQuery.AddChangedVersionFilter(ComponentType.ReadWrite<Modules<HealModuleStruct>>());
+            m_EventQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusEffectEvents, Modules<HealModuleStruct>, ExamplePlayerComponent, StatusFloats>().WithAll<Simulate>().Build();
+            m_EventQuery.AddChangedVersionFilter(ComponentType.ReadWrite<Modules<HealModuleStruct>>());
             
-            state.RequireForUpdate(m_EntityQuery);
+            state.RequireForUpdate(m_EventQuery);
             state.RequireForUpdate<StatusReferences>();
         }
 
@@ -40,16 +39,16 @@ namespace StatusEffectFramework.Entities.Samples
             var playerLookup = SystemAPI.GetComponentLookup<ExamplePlayerComponent>();
             var statusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>();
 
-            var job = new HealModuleJob
+            var eventJob = new HealEventJob
             {
                 References = statusReferences,
                 CommandBuffer = commandBuffer,
             };
-            state.Dependency = job.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
+            state.Dependency = eventJob.ScheduleParallelByRef(m_EventQuery, state.Dependency);
         }
 
         [BurstCompile]
-        partial struct HealModuleJob : IJobEntity
+        partial struct HealEventJob : IJobEntity
         {
             public TypeIndex TypeIndex;
             public StatusReferences References;
@@ -63,15 +62,13 @@ namespace StatusEffectFramework.Entities.Samples
                 ref ExamplePlayerComponent player,
                 in DynamicBuffer<StatusFloats> statusFloats)
             {
+                UnityEngine.Debug.Log("heal changed");
                 // AsNativeArray does not create a copy of the data so any changes will effect the source buffer.
                 var healModulesArray = healModules.AsNativeArray();
                 healModulesArray.Sort();
                 
                 if (!player.MaxHealth.TryGetValue(player.ComponentId, statusFloats, out var maxHealth))
                     return;
-
-                StatusEffects statusEffect;
-                int index;
 
                 foreach (var statusEffectEvent in statusEffectEvents)
                 {
@@ -83,26 +80,28 @@ namespace StatusEffectFramework.Entities.Samples
                     switch (statusEffectEvent.Event)
                     {
                         case StatusEffectEvent.Added:
-                            AddHealth(0, statusEffectEvent.Id, ref player, in data, in statusEffects);
+                            if (!StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out var statusEffect))
+                                break;
+                            UnityEngine.Debug.Log("added");
+                            ref var modules = ref data.Modules;
+                            for (int i = 0; i < modules.Length; i++)
+                            {
+                                var moduleInfo = modules[i];
+
+                                player.Health += data.BaseValue * math.max(0, statusEffect.Stacks);
+                            }
+
                             break;
                         case StatusEffectEvent.Updated:
-                            AddHealth(statusEffectEvent.PreviousStacks, statusEffectEvent.Id, ref player, in data, in statusEffects);
-                            break;
-                    }
-
-                    void AddHealth(float subtract, uint id, ref ExamplePlayerComponent player, in UnmanagedStatusEffectData data, in DynamicBuffer<StatusEffects> statusEffects)
-                    {
-                        index = healModulesArray.BinarySearchFirst(id);
-
-                        if (index < 0 || !StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, id, out statusEffect))
-                            return;
-
-                        for (int i = index; i < healModulesArray.Length; i++)
-                        {
-                            if (healModulesArray[i].Id != id)
+                            int index = healModulesArray.BinarySearchFirst(statusEffectEvent.Id);
+                            
+                            if (index < 0 || !StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
                                 break;
-                            player.Health += data.BaseValue * math.max(0, statusEffect.Stacks - subtract);
-                        }
+                            UnityEngine.Debug.Log("updated");
+                            for (int i = index; i < healModulesArray.Length; i++)
+                                if (healModulesArray[i].Id != statusEffectEvent.Id)
+                                    player.Health += data.BaseValue * math.max(0, statusEffect.Stacks - statusEffectEvent.PreviousStacks);
+                            break;
                     }
                 }
 

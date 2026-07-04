@@ -1,12 +1,11 @@
 #if ENTITIES
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     public struct UnmanagedEffect
     {
         public Hash128 StatusName;
-        public TypeIndex TypeIndex;
         public ValueType ValueType;
         public ValueModifier ValueModifier;
         public ValueSource ValueSource;

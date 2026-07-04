@@ -2,7 +2,7 @@ using System.Collections;
 using System.Linq;
 using System;
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     /// <summary>
     /// Specifies groups for status effects.

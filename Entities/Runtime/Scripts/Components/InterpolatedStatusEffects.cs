@@ -3,7 +3,7 @@ using System;
 using Unity.Entities;
 using Unity.NetCode;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     [GhostComponent(PrefabType = GhostPrefabType.Client)]
     internal struct InterpolatedStatusEffects : IBufferElementData, IComparable<InterpolatedStatusEffects>

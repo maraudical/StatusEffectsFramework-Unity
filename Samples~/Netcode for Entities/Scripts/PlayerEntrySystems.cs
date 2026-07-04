@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 
-namespace StatusEffectFramework.Entities.Samples
+namespace StatusEffectsFramework.Entities.Samples
 {
     public struct PlayerEntryRequest : IRpcCommand { }
 

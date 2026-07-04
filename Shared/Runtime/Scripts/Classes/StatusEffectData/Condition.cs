@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     [Serializable]
     public class Condition

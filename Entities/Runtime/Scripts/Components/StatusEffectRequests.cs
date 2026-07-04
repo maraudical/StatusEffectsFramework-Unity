@@ -3,7 +3,7 @@ using Unity.Burst;
 using Unity.Entities;
 using Unity.NetCode;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     /// <summary>
     /// Adding this to any <see cref="Entity"> will make a request to add/remove a 

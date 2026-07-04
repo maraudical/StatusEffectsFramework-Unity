@@ -1,7 +1,7 @@
 #if ENTITIES
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     public class StatusManagerBaker : Baker<StatusManager>
     {
@@ -24,9 +24,6 @@ namespace StatusEffectFramework.Entities
             AddComponent<StatusVariablePostEvaluateUpdate>(entity);
             SetComponentEnabled<StatusVariablePostEvaluateUpdate>(entity, false);
             AddBuffer<ZeroLengthModules>(entity);
-            AddBuffer<DynamicFloats>(entity);
-            AddBuffer<DynamicInts>(entity);
-            AddBuffer<DynamicBools>(entity);
 
             IEntityStatus[] statuses = authoring.GetComponents<IEntityStatus>();
 

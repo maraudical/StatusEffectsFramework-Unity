@@ -6,7 +6,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
     public partial class StatusReferencesSetupSystem : SystemBase
@@ -89,7 +89,6 @@ namespace StatusEffectFramework.Entities
                 {
                     effect = statusEffectData.Effects[i];
                     ValueType valueType = default;
-                    TypeIndex typeIndex = default;
                     DynamicEffectInfo info = default;
                     bool postEvaluate = default;
 
@@ -102,7 +101,6 @@ namespace StatusEffectFramework.Entities
                             if (effect.ValueSource is ValueSource.DynamicValue)
                                 if (effect.DynamicFloatEffect && effect.DynamicFloatEffect is IEntityDynamicEffect entityDynamicEffect)
                                 {
-                                    typeIndex = entityDynamicEffect.GetTypeIndex();
                                     info = entityDynamicEffect.CreateDynamicEffectInfo();
                                     postEvaluate = effect.DynamicFloatEffect.PostEvaluate;
                                 }  
@@ -114,7 +112,6 @@ namespace StatusEffectFramework.Entities
                             if (effect.ValueSource is ValueSource.DynamicValue)
                                 if (effect.DynamicIntEffect && effect.DynamicIntEffect is IEntityDynamicEffect entityDynamicEffect)
                                 {
-                                    typeIndex = entityDynamicEffect.GetTypeIndex();
                                     info = entityDynamicEffect.CreateDynamicEffectInfo();
                                     postEvaluate = effect.DynamicIntEffect.PostEvaluate;
                                 }
@@ -126,7 +123,6 @@ namespace StatusEffectFramework.Entities
                             if (effect.ValueSource is ValueSource.DynamicValue)
                                 if (effect.DynamicBoolEffect && effect.DynamicBoolEffect is IEntityDynamicEffect entityDynamicEffect)
                                 {
-                                    typeIndex = entityDynamicEffect.GetTypeIndex();
                                     info = entityDynamicEffect.CreateDynamicEffectInfo();
                                     postEvaluate = effect.DynamicBoolEffect.PostEvaluate;
                                 }
@@ -140,7 +136,6 @@ namespace StatusEffectFramework.Entities
                     unmanagedEffect = new UnmanagedEffect
                     {
                         StatusName = effect.StatusName ? effect.StatusName.Id : default,
-                        TypeIndex = typeIndex,
                         ValueType = valueType,
                         ValueModifier = effect.ValueModifier,
                         ValueSource = effect.ValueSource,
@@ -199,11 +194,43 @@ namespace StatusEffectFramework.Entities
             var statusEffectDataMapBlob = idToStatusEffectDataMapBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>>(Allocator.Persistent);
             idToStatusEffectDataMapBuilder.Dispose();
 
-            // Copy module to system type dictionary to blob hash map
-            var moduleToSystemTypeMapBlob = BlobAssetReference<BlobHashMap<TypeIndex, SystemTypeIndex>>.Null;
+            Type moduleType = typeof(Modules<>);
+            Type dynamicFloatType = typeof(DynamicFloats<>);
+            Type dynamicIntType = typeof(DynamicInts<>);
+            Type dynamicBoolType = typeof(DynamicBools<>);
 
             commandBuffer.AddComponent(referencesEntity, new StatusReferences
             {
+                ModuleOffsets = new ModuleOffsets
+                {
+                    Struct = UnsafeUtility.GetFieldOffset(moduleType.GetField(nameof(ModuleOffsets.Struct)))
+                },
+                DynamicFloatOffsets = new DynamicFloatOffsets
+                {
+                    StatusName = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.StatusName))),
+                    ValueModifier = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.ValueModifier))),
+                    PostEvaluate = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.PostEvaluate))),
+                    Priority = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.Priority))),
+                    Value = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.Value))),
+                    Struct = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.Struct)))
+                },
+                DynamicIntOffsets = new DynamicIntOffsets
+                {
+                    StatusName = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.StatusName))),
+                    ValueModifier = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.ValueModifier))),
+                    PostEvaluate = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.PostEvaluate))),
+                    Priority = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.Priority))),
+                    Value = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.Value))),
+                    Struct = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.Struct)))
+                },
+                DynamicBoolOffsets = new DynamicBoolOffsets
+                {
+                    StatusName = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.StatusName))),
+                    PostEvaluate = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.PostEvaluate))),
+                    Priority = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.Priority))),
+                    Value = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.Value))),
+                    Struct = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.Struct)))
+                },
                 IdToStatusEffectDataMap = statusEffectDataMapBlob,
             });
         }

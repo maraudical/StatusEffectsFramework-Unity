@@ -1,4 +1,4 @@
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     public class DamageOverTimeInstance : ModuleInstance
     {

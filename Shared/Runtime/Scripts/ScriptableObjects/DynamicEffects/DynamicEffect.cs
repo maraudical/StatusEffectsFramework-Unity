@@ -1,11 +1,9 @@
 using UnityEngine;
 
-namespace StatusEffectFramework
+namespace StatusEffectsFramework
 {
     public abstract class DynamicEffect : ScriptableObject 
     {
-        public bool PostEvaluate => m_PostEvaluate;
-        [SerializeField]
-        private bool m_PostEvaluate;
+        public abstract bool PostEvaluate { get; }
     }
 }

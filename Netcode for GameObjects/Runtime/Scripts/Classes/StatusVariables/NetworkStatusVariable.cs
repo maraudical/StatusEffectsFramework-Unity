@@ -2,7 +2,7 @@
 using Unity.Netcode;
 using UnityEngine;
 
-namespace StatusEffectFramework.NetCode
+namespace StatusEffectsFramework.NetCode
 {
     public abstract class NetworkStatusVariable : NetworkVariableBase
     {

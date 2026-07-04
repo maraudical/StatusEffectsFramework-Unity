@@ -1,13 +1,11 @@
-using StatusEffectFramework.Entities;
 using Unity.Burst;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
 
-[assembly: RegisterGenericComponentType(typeof(Modules<StatusEffectFramework.Entities.Samples.DamageOverTimeModuleStruct>))]
+[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.Modules<StatusEffectsFramework.Entities.Samples.DamageOverTimeModuleStruct>))]
 
-namespace StatusEffectFramework.Entities.Samples
+namespace StatusEffectsFramework.Entities.Samples
 {
     public struct DamageOverTimeModuleStruct
     {
@@ -97,7 +95,7 @@ namespace StatusEffectFramework.Entities.Samples
                         continue;
                     
                     float timeSinceAdded = NetworkTime.ServerTick.TimeSince(statusEffect.TickAdded, NetworkTime.ServerTickFraction, TickRate);
-                    module.Value.TimesDamaged = (int)(timeSinceAdded / module.Value.IntervalSeconds);
+                    module.Struct.TimesDamaged = (int)(timeSinceAdded / module.Struct.IntervalSeconds);
                 }
             }
         }
@@ -134,12 +132,12 @@ namespace StatusEffectFramework.Entities.Samples
 
 #if NETCODE
                     float timeSinceAdded = NetworkTime.ServerTick.TimeSince(statusEffect.TickAdded, NetworkTime.ServerTickFraction, TickRate);
-                    while (timeSinceAdded >= module.Value.IntervalSeconds * module.Value.TimesDamaged)
+                    while (timeSinceAdded >= module.Struct.IntervalSeconds * module.Struct.TimesDamaged)
 #else
-                    while (Time >= module.Value.TimesDamaged * module.Value.IntervalSeconds + statusEffect.TimeAdded)
+                    while (Time >= module.Struct.TimesDamaged * module.Struct.IntervalSeconds + statusEffect.TimeAdded)
 #endif
                     {
-                        module.Value.TimesDamaged++;
+                        module.Struct.TimesDamaged++;
                         player.Health -= data.BaseValue * statusEffect.Stacks;
                     }
                 }

@@ -4,7 +4,7 @@ using Unity.Burst.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     [BurstCompile]
     public static unsafe class StatusEffectsECSInternals
@@ -12,6 +12,8 @@ namespace StatusEffectFramework.Entities
         public static int GetIndexInTypeArray(in ArchetypeChunk chunk, TypeIndex typeIndex) => ChunkDataUtility.GetIndexInTypeArray(chunk.Archetype.Archetype, typeIndex);
 
         public static void SetChangeVersion(in ArchetypeChunk chunk, int indexInTypeArray, uint globalSystemVersion) => chunk.Archetype.Archetype->Chunks.SetChangeVersion(indexInTypeArray, chunk.m_Chunk.ListIndex, globalSystemVersion);
+
+        public static byte* GetComponentDataWithTypeRO(in ArchetypeChunk chunk, int baseEntityIndex, int indexInTypeArray) => ChunkDataUtility.GetComponentDataRO(chunk.m_Chunk, chunk.Archetype.Archetype, baseEntityIndex, indexInTypeArray);
 
         public static byte* GetComponentDataWithTypeRW(in ArchetypeChunk chunk, int baseEntityIndex, int indexInTypeArray, uint globalSystemVersion) => ChunkDataUtility.GetComponentDataRW(chunk.m_Chunk, chunk.Archetype.Archetype, baseEntityIndex, indexInTypeArray, globalSystemVersion);
 

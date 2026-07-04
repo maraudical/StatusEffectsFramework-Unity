@@ -1,4 +1,4 @@
-using StatusEffectFramework.Templates;
+using StatusEffectsFramework.Templates;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,11 +9,11 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.UIElements.Experimental;
-using static StatusEffectFramework.Editor.ModulePopup;
-using static StatusEffectFramework.Editor.StatusNamePopup;
-using static StatusEffectFramework.Editor.DynamicEffectPopup;
+using static StatusEffectsFramework.Editor.ModulePopup;
+using static StatusEffectsFramework.Editor.StatusNamePopup;
+using static StatusEffectsFramework.Editor.DynamicEffectPopup;
 
-namespace StatusEffectFramework.Editor
+namespace StatusEffectsFramework.Editor
 {
     public class StatusNamePopup : PopupWindowContent
     {
@@ -959,7 +959,7 @@ namespace StatusEffectFramework.Editor
         {
             // First parameter is the path in the Settings window.
             // Second parameter is the scope of this setting: it only appears in the Project Settings window.
-            var provider = new SettingsProvider("Project/StatusEffectFramework", SettingsScope.Project)
+            var provider = new SettingsProvider("Project/StatusEffectsFramework", SettingsScope.Project)
             {
                 // By default the last token of the path is used as display name if no label is provided.
                 label = "Status Effect Framework",

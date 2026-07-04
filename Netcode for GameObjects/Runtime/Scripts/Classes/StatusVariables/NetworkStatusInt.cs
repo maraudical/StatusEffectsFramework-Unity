@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Unity.Netcode;
 using UnityEngine;
 
-namespace StatusEffectFramework.NetCode
+namespace StatusEffectsFramework.NetCode
 {
     [Serializable]
     public class NetworkStatusInt : NetworkStatusVariable

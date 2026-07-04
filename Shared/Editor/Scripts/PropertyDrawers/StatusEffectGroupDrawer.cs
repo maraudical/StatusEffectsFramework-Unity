@@ -6,7 +6,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace StatusEffectFramework.Editor
+namespace StatusEffectsFramework.Editor
 {
     [CustomPropertyDrawer(typeof(StatusEffectGroup))]
     internal class StatusEffectGroupDrawer : PropertyDrawer

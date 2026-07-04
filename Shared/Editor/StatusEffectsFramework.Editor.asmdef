@@ -1,14 +1,14 @@
 {
-    "name": "Unity.StatusEffectsFramework",
-    "rootNamespace": "StatusEffectFramework",
+    "name": "StatusEffectsFramework.Editor",
+    "rootNamespace": "StatusEffectsFramework.Editor",
     "references": [
+        "GUID:c1d753aaef5f86c4488844bae8cb6730",
         "GUID:df380645f10b7bc4b97d4f5eb6303d95",
-        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5",
-        "GUID:f51ebe6a0ceec4240a699833d6309b23",
-        "GUID:d8b63aba1907145bea998dd612889d6b",
-        "GUID:2665a8d13d1b3f18800f46e256720795"
+        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
@@ -27,9 +27,9 @@
             "define": "LOCALIZED"
         },
         {
-            "name": "com.unity.burst",
+            "name": "com.unity.entities",
             "expression": "",
-            "define": "BURST"
+            "define": "ENTITIES"
         }
     ],
     "noEngineReferences": false

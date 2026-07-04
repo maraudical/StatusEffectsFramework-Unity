@@ -2,12 +2,12 @@
 using System;
 using Unity.Entities;
 
-namespace StatusEffectFramework.Entities
+namespace StatusEffectsFramework.Entities
 {
     public struct Modules<T> : IBufferElementData, IComparable<Modules<T>>, IComparable<uint>, IEquatable<uint> where T : unmanaged
     {
         public uint Id;
-        public T Value;
+        public T Struct;
 
         public bool Equals(uint other) => Id.Equals(other);
         public int CompareTo(uint other) => Id.CompareTo(other);

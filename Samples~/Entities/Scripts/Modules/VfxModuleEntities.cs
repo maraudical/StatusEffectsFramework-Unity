@@ -1,8 +1,8 @@
-using StatusEffectFramework.Entities;
-using StatusEffectFramework.Entities.Samples;
+using StatusEffectsFramework.Entities;
+using StatusEffectsFramework.Entities.Samples;
 using UnityEngine;
 
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     public partial class VfxModule : Module, IEntityModule
     {

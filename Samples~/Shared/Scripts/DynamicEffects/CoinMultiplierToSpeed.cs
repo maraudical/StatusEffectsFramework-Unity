@@ -1,10 +1,12 @@
 using UnityEngine;
 
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     [CreateAssetMenu(fileName = "Coin Multiplier to Speed", menuName = "Status Effect Framework/Dynamic Effects/Coin Multiplier To Speed", order = 1)]
     public partial class CoinMultiplierToSpeed : DynamicEffectFloat 
     {
+        public override bool PostEvaluate => true;
+
         public override DynamicFloat ValueEvent(StatusManager manager, StatusEffect statusEffect, Effect effect)
         {
             var dynamicFloat = new DynamicFloat(this, effect);

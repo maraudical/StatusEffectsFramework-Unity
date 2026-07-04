@@ -1,7 +1,7 @@
 using System.Threading;
 using UnityEngine;
 
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     public partial class InverseHealthToSpeed : DynamicEffectFloat
     {
