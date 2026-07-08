@@ -1,8 +1,8 @@
 {
-  "name": "com.maraudical.sef",
+  "name": "com.maraudical.statuseffectsframework",
   "version": "5.0.0",
   "displayName": "Status Effects Framework",
-  "description": "A framework for implementing status effects into any game.",
+  "description": "A framework for implementing custom status effects.",
   "license": "MIT",
   "dependencies" : {
 	  "com.unity.render-pipelines.core": "12.1.15"
@@ -25,6 +25,8 @@
 	"url": "https://gradymilligan.com/"
   },
   "documentationUrl": "https://maraudical.gitbook.io/status-effects-framework/",
+  "licensesUrl": "https://github.com/maraudical/StatusEffectsFramework-Unity/blob/main/LICENSE.md",
+  "changelogUrl": "https://github.com/maraudical/StatusEffectsFramework-Unity/blob/main/CHANGELOG.md",
   "samples": [
   {
 	"displayName": "Shared Resources",
