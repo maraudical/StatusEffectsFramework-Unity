@@ -40,7 +40,7 @@ namespace StatusEffectsFramework.Entities
             if (Hint.Unlikely(bufferHeader == null))
                 throw new InvalidOperationException("Invalid pointer to buffer header.");
 
-            return bufferHeader->Length > 0;
+            return bufferHeader->Length <= 0;
         }
 
         public static ref int LengthAsRef(byte* header)

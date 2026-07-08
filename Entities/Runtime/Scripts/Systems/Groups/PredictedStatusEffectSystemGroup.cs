@@ -79,6 +79,7 @@ namespace StatusEffectsFramework.Entities
 
     [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.ThinClientSimulation)]
     [UpdateInGroup(typeof(PredictedSimulationSystemGroup), OrderFirst = true)]
+    [UpdateAfter(typeof(CopyCommandBufferToInputSystemGroup))]
     [UpdateBefore(typeof(PredictedFixedStepSimulationSystemGroup))]
     public partial class PredictedStatusEffectSystemGroup : ComponentSystemGroup { }
 }

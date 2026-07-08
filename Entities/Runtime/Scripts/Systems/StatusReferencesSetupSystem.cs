@@ -194,11 +194,11 @@ namespace StatusEffectsFramework.Entities
             var statusEffectDataMapBlob = idToStatusEffectDataMapBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>>(Allocator.Persistent);
             idToStatusEffectDataMapBuilder.Dispose();
 
-            Type moduleType = typeof(Modules<>);
-            Type dynamicFloatType = typeof(DynamicFloats<>);
-            Type dynamicIntType = typeof(DynamicInts<>);
-            Type dynamicBoolType = typeof(DynamicBools<>);
-
+            Type moduleType = typeof(Modules<int>);
+            Type dynamicFloatType = typeof(DynamicFloats<int>);
+            Type dynamicIntType = typeof(DynamicInts<int>);
+            Type dynamicBoolType = typeof(DynamicBools<int>);
+            
             commandBuffer.AddComponent(referencesEntity, new StatusReferences
             {
                 ModuleOffsets = new ModuleOffsets

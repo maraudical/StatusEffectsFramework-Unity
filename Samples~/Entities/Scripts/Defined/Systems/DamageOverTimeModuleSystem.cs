@@ -117,7 +117,7 @@ namespace StatusEffectsFramework.Entities.Samples
                 ref DynamicBuffer<Modules<DamageOverTimeModuleStruct>> modules)
             {
                 StatusEffects statusEffect;
-
+                
                 for (int i = 0; i < modules.Length; i++)
                 {
                     ref var module = ref modules.ElementAt(i);

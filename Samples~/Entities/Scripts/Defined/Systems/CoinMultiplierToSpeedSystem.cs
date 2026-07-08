@@ -43,7 +43,8 @@ namespace StatusEffectsFramework.Entities.Samples
                 if (!player.CoinMultiplier.TryGetElement(player.ComponentId, statusInts, out var coinMultiplier))
                     return;
 
-                float value = math.max(0, coinMultiplier.PreEvaluationValue - 1);
+                float value = math.max(0, coinMultiplier.PreEvaluationValue - coinMultiplier.BaseValue);
+                
                 for (int i = 0; i < dynamicFloats.Length; i++)
                 {
                     ref var dynamicFloat = ref dynamicFloats.ElementAt(i);

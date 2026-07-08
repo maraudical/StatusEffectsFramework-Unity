@@ -222,7 +222,6 @@ namespace StatusEffectsFramework.Entities
 
                 foreach (var dynamicFloat in dynamicFloats)
                     statusFloatValue.ApplyEffect(dynamicFloat.ValueModifier, dynamicFloat.Stacks * dynamicFloat.Value, dynamicFloat.Priority);
-
                 statusFloat.PostEvaluationValue = statusFloatValue.GetValue();
             }
 

@@ -131,20 +131,20 @@ namespace StatusEffectsFramework.Entities
                                         case ValueType.Float:
                                             UnsafeUtility.MemCpy(value + References.DynamicFloatOffsets.StatusName, &effect.StatusName, sizeOfHash128);
                                             UnsafeUtility.MemCpy(value + References.DynamicFloatOffsets.ValueModifier, &effect.ValueModifier, sizeOfValueModifier);
-                                            UnsafeUtility.MemCpy(value + References.DynamicFloatOffsets.PostEvaluate, &effect.BoolValue, sizeOfBool);
+                                            UnsafeUtility.MemCpy(value + References.DynamicFloatOffsets.PostEvaluate, &effect.PostEvaluate, sizeOfBool);
                                             UnsafeUtility.MemCpy(value + References.DynamicFloatOffsets.Priority, &effect.Priority, sizeOfInt);
                                             UnsafeUtility.MemCpy(value + References.DynamicFloatOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
                                             break;
                                         case ValueType.Int:
                                             UnsafeUtility.MemCpy(value + References.DynamicIntOffsets.StatusName, &effect.StatusName, sizeOfHash128);
                                             UnsafeUtility.MemCpy(value + References.DynamicIntOffsets.ValueModifier, &effect.ValueModifier, sizeOfValueModifier);
-                                            UnsafeUtility.MemCpy(value + References.DynamicIntOffsets.PostEvaluate, &effect.BoolValue, sizeOfBool);
+                                            UnsafeUtility.MemCpy(value + References.DynamicIntOffsets.PostEvaluate, &effect.PostEvaluate, sizeOfBool);
                                             UnsafeUtility.MemCpy(value + References.DynamicIntOffsets.Priority, &effect.Priority, sizeOfInt);
                                             UnsafeUtility.MemCpy(value + References.DynamicIntOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
                                             break;
                                         case ValueType.Bool:
                                             UnsafeUtility.MemCpy(value + References.DynamicBoolOffsets.StatusName, &effect.StatusName, sizeOfHash128);
-                                            UnsafeUtility.MemCpy(value + References.DynamicBoolOffsets.PostEvaluate, &effect.BoolValue, sizeOfBool);
+                                            UnsafeUtility.MemCpy(value + References.DynamicBoolOffsets.PostEvaluate, &effect.PostEvaluate, sizeOfBool);
                                             UnsafeUtility.MemCpy(value + References.DynamicBoolOffsets.Priority, &effect.Priority, sizeOfInt);
                                             UnsafeUtility.MemCpy(value + References.DynamicBoolOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
                                             break;

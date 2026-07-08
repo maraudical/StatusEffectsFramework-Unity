@@ -82,7 +82,7 @@ namespace StatusEffectsFramework.Entities
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
                 {
-                    chunk.SetComponentEnabled(ref StatusVariablePreEvaluateUpdateHandle, i, true);
+                    chunk.SetComponentEnabled(ref StatusVariablePostEvaluateUpdateHandle, i, true);
 
                     valueTypeToDynamicEffectTypes.Clear();
                     idToStatusEffect.Clear();

@@ -24,6 +24,7 @@ namespace StatusEffectsFramework.Entities
             AddComponent<StatusVariablePostEvaluateUpdate>(entity);
             SetComponentEnabled<StatusVariablePostEvaluateUpdate>(entity, false);
             AddBuffer<ZeroLengthModules>(entity);
+            SetComponentEnabled<ZeroLengthModules>(entity, false);
 
             IEntityStatus[] statuses = authoring.GetComponents<IEntityStatus>();
 
