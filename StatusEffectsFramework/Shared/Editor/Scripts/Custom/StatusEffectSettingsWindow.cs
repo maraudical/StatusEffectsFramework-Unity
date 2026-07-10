@@ -5,7 +5,7 @@ namespace StatusEffectsFramework.Editor
 {
     public class StatusEffectSettingsWindow : EditorWindow
     {
-        [MenuItem("Tools/Status Effect Framework/Settings")]
+        [MenuItem("Tools/Status Effects Framework/Settings")]
         public static void OpenStatusEffectSettingsWindow()
         {
             EditorWindow window = GetWindow<StatusEffectSettingsWindow>();

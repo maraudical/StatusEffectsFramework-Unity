@@ -48,6 +48,7 @@ namespace StatusEffectsFramework
 
 #if UNITASK || UNITY_2023_1_OR_NEWER
         private List<CancellationTokenSource> m_ModuleTokenSources;
+        [NonSerialized]
         public CancellationTokenSource TimedTokenSource;
 #else
         private List<Coroutine> m_EffectCoroutines;

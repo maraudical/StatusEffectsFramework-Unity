@@ -1,7 +1,11 @@
+using System;
+
 namespace StatusEffectsFramework
 {
+    [Serializable]
     public abstract class StatusVariable
     {
+        [NonSerialized]
         protected IStatusManager Manager;
         /// <summary>
         /// Sets up the <see cref="StatusVariable"/>. This must be set before trying to get any value from it.

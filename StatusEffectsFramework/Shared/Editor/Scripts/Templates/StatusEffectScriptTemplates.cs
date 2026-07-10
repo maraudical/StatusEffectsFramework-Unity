@@ -8,7 +8,7 @@ namespace StatusEffectsFramework.Templates
 {
     public static class StatusEffectScriptTemplates
     {
-        [MenuItem("Assets/Create/Status Effect Framework/Module Script", secondaryPriority = -2)]
+        [MenuItem("Assets/Create/Status Effects Framework/Module Script", secondaryPriority = -2)]
         static void MenuCreateModuleScript()
         {
             Texture2D icon = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D;
@@ -24,7 +24,7 @@ namespace StatusEffectsFramework.Templates
                 );
         }
 
-        [MenuItem("Assets/Create/Status Effect Framework/Module Instance Script", secondaryPriority = -1)]
+        [MenuItem("Assets/Create/Status Effects Framework/Module Instance Script", secondaryPriority = -1)]
         static void MenuCreateModuleInstanceScript()
         {
             Texture2D icon = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D;
@@ -73,7 +73,7 @@ using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Modules/#DISPLAYNAME#"", order = 1)]
 //[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
 public class #SCRIPTNAME# : Module
 {
@@ -89,7 +89,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Modules/#DISPLAYNAME#"", order = 1)]
 //[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
 public class #SCRIPTNAME# : Module
 {
@@ -109,7 +109,7 @@ using UnityEngine;
 
 [assembly: RegisterGenericComponentType(typeof(Modules<#SCRIPTNAME#Struct>))]
 
-[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effect Framework/Modules/#DISPLAYNAME#"", order = 1)]
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Modules/#DISPLAYNAME#"", order = 1)]
 //[AttachModuleInstance(typeof(#SCRIPTNAME#Instance))]
 public class #SCRIPTNAME# : Module, IEntityModule
 {

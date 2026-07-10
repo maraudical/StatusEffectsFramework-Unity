@@ -82,6 +82,7 @@ namespace StatusEffectsFramework.Editor
             var stacks = new PropertyField(stacksProperty, string.Empty);
             stacks.style.flexShrink = 0;
             stacks.style.width = 42;
+            stacks.style.marginRight = 5;
             stacks.SetEnabled(false);
             root.Add(stacks);
 

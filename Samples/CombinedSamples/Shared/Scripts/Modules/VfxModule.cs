@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace StatusEffectsFramework.Samples
 {
-    [CreateAssetMenu(fileName = "Vfx Module", menuName = "Status Effect Framework/Modules/Vfx", order = 1)]
+    [CreateAssetMenu(fileName = "Vfx Module", menuName = "Status Effects Framework/Modules/Vfx", order = 1)]
     [AttachModuleInstance(typeof(VfxInstance))]
     public partial class VfxModule : Module
     {

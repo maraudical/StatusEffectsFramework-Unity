@@ -962,14 +962,14 @@ namespace StatusEffectsFramework.Editor
             var provider = new SettingsProvider("Project/StatusEffectsFramework", SettingsScope.Project)
             {
                 // By default the last token of the path is used as display name if no label is provided.
-                label = "Status Effect Framework",
+                label = "Status Effects Framework",
                 // activateHandler is called when the user clicks on the Settings item in the Settings window.
                 activateHandler = (searchContext, root) =>
                 {
                     root.style.paddingLeft = 10;
                     root.style.paddingRight = 8;
                     root.style.paddingBottom = 8;
-                    var header = new Label("Status Effect Framework");
+                    var header = new Label("Status Effects Framework");
                     header.style.marginTop = 2;
                     header.style.unityFontStyleAndWeight = FontStyle.Bold;
                     header.style.fontSize = 19;

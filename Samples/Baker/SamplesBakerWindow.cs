@@ -46,7 +46,7 @@ namespace StatusEffectsFramework.Editor
         private Config _config = new Config();
         private Vector2 _scroll;
 
-        [MenuItem("Tools/Samples/Define Baker")]
+        [MenuItem("Tools/Status Effects Framework/Samples Baker")]
         public static void Open()
         {
             var window = GetWindow<SamplesBakerWindow>("Samples Baker");

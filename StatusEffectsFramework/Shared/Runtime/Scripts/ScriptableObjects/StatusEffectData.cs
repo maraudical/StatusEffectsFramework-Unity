@@ -7,7 +7,7 @@ using UnityEngine.Localization;
 
 namespace StatusEffectsFramework
 {
-    [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effect Framework/Status Effect Data", order = -5)]
+    [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effects Framework/Status Effect Data", order = -5)]
     public class StatusEffectData : ScriptableObject
     {
         public Hash128 Id => m_Id;
