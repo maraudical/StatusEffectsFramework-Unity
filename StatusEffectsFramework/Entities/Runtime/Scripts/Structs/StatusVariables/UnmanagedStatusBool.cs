@@ -11,9 +11,9 @@ namespace StatusEffectsFramework.Entities
     public struct UnmanagedStatusBool
     {
 #if NETCODE
-        [GhostField(Composite = true)]
+        [GhostField]
 #endif
-        public Hash128 Id;
+        public ushort StatusName;
 #if NETCODE
         [GhostField(SendData = false)]
 #endif
@@ -24,9 +24,9 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetValue(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out bool value)
+        public bool TryGetValue(in TypeIndex typeIndex, in DynamicBuffer<StatusBools> buffer, out bool value)
         {
-            if (TryGetIndex(componentId, buffer, out int index))
+            if (TryGetIndex(typeIndex, buffer, out int index))
             {
                 value = buffer[index].Value;
                 return true;
@@ -41,9 +41,9 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetElement(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out StatusBools value)
+        public bool TryGetElement(in TypeIndex typeIndex, in DynamicBuffer<StatusBools> buffer, out StatusBools value)
         {
-            if (TryGetIndex(componentId, buffer, out int index))
+            if (TryGetIndex(typeIndex, buffer, out int index))
             {
                 value = buffer[index];
                 return true;
@@ -57,7 +57,7 @@ namespace StatusEffectsFramework.Entities
         /// Attempt to retrieve the <see cref="StatusBools"/> index value for this <see cref="UnmanagedStatusBool"/>.
         /// </summary>
         [BurstCompile]
-        public bool TryGetIndex(in Hash128 componentId, in DynamicBuffer<StatusBools> buffer, out int index)
+        public bool TryGetIndex(in TypeIndex ypeIndex, in DynamicBuffer<StatusBools> buffer, out int index)
         {
             StatusBools statusBool;
             int length = buffer.Length;
@@ -65,7 +65,7 @@ namespace StatusEffectsFramework.Entities
             if (index >= 0 && index < buffer.Length)
             {
                 statusBool = buffer[index];
-                if (statusBool.ComponentId == componentId && statusBool.StatusName == Id)
+                if (statusBool.TypeIndex == ypeIndex && statusBool.StatusName == StatusName)
                     return true;
             }
             
@@ -74,7 +74,7 @@ namespace StatusEffectsFramework.Entities
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusBool = buffer[i];
-                if (statusBool.ComponentId == componentId && statusBool.StatusName == Id)
+                if (statusBool.TypeIndex == ypeIndex && statusBool.StatusName == StatusName)
                 {
                     index = i;
                     break;
@@ -85,14 +85,12 @@ namespace StatusEffectsFramework.Entities
             return index >= 0;
         }
 
-        public UnmanagedStatusBool(Hash128 id)
+        public UnmanagedStatusBool(ushort statusName)
         {
-            Id = id;
+            StatusName = statusName;
             m_CachedIndex = -1;
         }
-
-        public static implicit operator UnmanagedStatusBool(UnityEngine.Hash128 value) => new UnmanagedStatusBool(value);
-        public static implicit operator UnmanagedStatusBool(Hash128 value) => new UnmanagedStatusBool(value);
+        
         public static implicit operator UnmanagedStatusBool(StatusBool value) => new UnmanagedStatusBool(value != null && value.StatusName ? value.StatusName.Id : default);
     }
 }

@@ -9,7 +9,9 @@ namespace StatusEffectsFramework
     // Create a new type of Settings Asset.
     public class StatusEffectSettings : ScriptableObject
     {
-        public const string MyCustomSettingsPath = "Assets/Settings/Resources/StatusEffectSettings.asset";
+        public const string SettingsName = "StatusEffectSettings";
+        public const string SettingsPath = "Assets/Settings/Resources/" + SettingsName + ".asset";
+
         [Space]
         [NonReorderable]
         public string[] Groups = new string[32];
@@ -36,8 +38,8 @@ namespace StatusEffectsFramework
                 settings.Groups[0] = "Static";
                 settings.Groups[1] = "Negative";
                 settings.Groups[2] = "Positive";
-                Directory.CreateDirectory(Path.Combine(Application.dataPath, "Resources"));
-                AssetDatabase.CreateAsset(settings, MyCustomSettingsPath);
+                AssetDatabase.CreateAsset(settings, SettingsPath);
+                AssetDatabase.SaveAssets();
             }
 #endif
             return settings;

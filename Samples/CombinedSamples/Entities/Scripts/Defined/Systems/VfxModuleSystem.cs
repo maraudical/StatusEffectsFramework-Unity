@@ -72,7 +72,7 @@ namespace StatusEffectsFramework.Entities.Samples
                         case StatusEffectEvent.Added:
                             index = modulesArray.BinarySearchFirst(statusEffectEvent.Id);
 
-                            if (index < 0 || !StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
+                            if (index < 0 || !StatusEffects.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
                                 return;
 
                             for (int i = index; i < modulesArray.Length; i++)
@@ -131,7 +131,7 @@ namespace StatusEffectsFramework.Entities.Samples
 #endif
                             index = modulesArray.BinarySearchFirst(statusEffectEvent.Id);
 
-                            if (index < 0 || !StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
+                            if (index < 0 || !StatusEffects.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
                                 return;
 
                             for (int i = index; i < modulesArray.Length; i++)

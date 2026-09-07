@@ -444,7 +444,7 @@ namespace StatusEffectsFramework.Editor
                 var foldout = element.Q<Foldout>("foldout");
                 var icon = element.Q<Image>("icon");
                 SetIcon(data.Icon);
-                element.Q<Label>("subtext").text = data.Id.ToString();
+                //element.Q<Label>("subtext").text = data.Id.ToString();
                 BindListItem(element, index, data);
                 foldout.Q<Toggle>().RegisterValueChangedCallback((changeEvent) =>
                 {
@@ -510,7 +510,7 @@ namespace StatusEffectsFramework.Editor
                 if (name == null)
                     return;
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(name));
-                element.Q<Label>("subtext").text = name.Id.ToString();
+                //element.Q<Label>("subtext").text = name.Id.ToString();
                 BindListItem(element, index, name);
             };
             namesListView.onAdd += (listView) =>
@@ -560,7 +560,7 @@ namespace StatusEffectsFramework.Editor
                 if (comparable == null)
                     return;
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(comparable));
-                element.Q<Label>("subtext").text = comparable.Id.ToString();
+                //element.Q<Label>("subtext").text = comparable.Id.ToString();
                 BindListItem(element, index, comparable);
             };
             comparablesListView.onAdd += (listView) =>

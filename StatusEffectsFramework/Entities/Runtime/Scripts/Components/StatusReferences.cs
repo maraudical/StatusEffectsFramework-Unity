@@ -5,17 +5,16 @@ namespace StatusEffectsFramework.Entities
 {
     public struct StatusReferences : IComponentData
     {
-        public bool TryGetReference(Hash128 id, out BlobAssetReference<UnmanagedStatusEffectData> reference) => IdToStatusEffectDataMap.Value.TryGetValue(id, out reference);
+        public bool TryGetReference(ushort id, out BlobAssetReference<UnmanagedStatusEffectData> reference) => IdToStatusEffectDataMap.Value.TryGetValue(id, out reference);
 
-        internal const int k_CollectionsInitialCapacity = 16;
-
-        public bool onlyOne;
+        internal const int CollectionsInitialCapacity = 16;
+        
         internal ModuleOffsets ModuleOffsets;
         internal DynamicFloatOffsets DynamicFloatOffsets;
         internal DynamicIntOffsets DynamicIntOffsets;
         internal DynamicBoolOffsets DynamicBoolOffsets;
 
-        internal BlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>> IdToStatusEffectDataMap;
+        internal BlobAssetReference<BlobHashMap<ushort, BlobAssetReference<UnmanagedStatusEffectData>>> IdToStatusEffectDataMap;
     }
 
     internal struct ModuleOffsets

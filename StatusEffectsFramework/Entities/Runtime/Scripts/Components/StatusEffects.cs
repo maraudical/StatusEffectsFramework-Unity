@@ -3,6 +3,7 @@ using System;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Collections;
 #if NETCODE
 using Unity.NetCode;
 #endif
@@ -29,7 +30,7 @@ namespace StatusEffectsFramework.Entities
 #if NETCODE
         [GhostField(Composite = true)]
 #endif
-        public Hash128 StatusEffectDataId;
+        public ushort StatusEffectDataId;
 #if NETCODE
         [GhostField]
 #endif
@@ -61,7 +62,7 @@ namespace StatusEffectsFramework.Entities
 #if NETCODE
         [GhostField(Composite = true)]
 #endif
-        public Hash128 EventId;
+        public ushort EventId;
 
         public int CompareTo(StatusEffects other) => Id.CompareTo(other.Id);
 
@@ -69,10 +70,10 @@ namespace StatusEffectsFramework.Entities
 
         public bool Equals(StatusEffects other) => Id.Equals(other.Id);
 
-        [BurstCompile]
         /// <summary>
         /// Calculated remaining time until the status effect expires.
         /// </summary>
+        [BurstCompile]
         public float TimeRemaining
 #if NETCODE
             (NetworkTick currentTick, ClientServerTickRate tickRate)
@@ -100,6 +101,28 @@ namespace StatusEffectsFramework.Entities
             };
         } 
 #endif
+
+        /// <summary>
+        /// Finds the index in the <see cref="DynamicBuffer{T}"/> where the <see cref="StatusEffects.Id"/> equals a given <paramref name="id"/>.
+        /// </summary>
+        /// <returns>The index of the first occurrence of the value in the buffer. Returns -1 if no occurrence is found.</returns>
+        [BurstCompile]
+        public static int IndexOfStatusEffect(in DynamicBuffer<StatusEffects> buffer, uint id)
+        {
+            return buffer.AsNativeArray().IndexOf(id);
+        }
+
+        /// <summary>
+        /// Attempts to find the <see cref="StatusEffects"/> in a <see cref="DynamicBuffer{T}"/> where the <see cref="StatusEffects.Id"/> equals a given <paramref name="id"/>.
+        /// </summary>
+        [BurstCompile]
+        public static bool TryGetStatusEffect(in DynamicBuffer<StatusEffects> buffer, uint id, out StatusEffects statusEffect)
+        {
+            var index = IndexOfStatusEffect(buffer, id);
+            bool foundIndex = index >= 0;
+            statusEffect = foundIndex ? buffer[index] : default;
+            return foundIndex;
+        }
     }
 }
 #endif

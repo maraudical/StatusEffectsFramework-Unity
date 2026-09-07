@@ -12,7 +12,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using System.Runtime.CompilerServices;
 using System;
-using static System.Collections.Specialized.BitVector32;
 
 namespace StatusEffectsFramework
 {

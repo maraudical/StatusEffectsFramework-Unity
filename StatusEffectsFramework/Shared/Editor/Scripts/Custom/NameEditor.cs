@@ -11,9 +11,9 @@ namespace StatusEffectsFramework.Editor
         {
             VisualElement root = new();
 
-            var id = new PropertyField() { bindingPath = $"m_{nameof(Name.Id)}" };
+/*            var id = new PropertyField() { bindingPath = $"m_{nameof(Name.Id)}" };
             id.SetEnabled(false);
-            root.Add(id);
+            root.Add(id);*/
 
             return root;
         }

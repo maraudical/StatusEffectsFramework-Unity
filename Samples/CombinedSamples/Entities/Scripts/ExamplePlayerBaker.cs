@@ -1,6 +1,5 @@
 using StatusEffectsFramework.Samples;
 using Unity.Entities;
-using UnityEngine;
 
 namespace StatusEffectsFramework.Entities.Samples
 {
@@ -12,7 +11,6 @@ namespace StatusEffectsFramework.Entities.Samples
             var entity = GetEntity(TransformUsageFlags.Dynamic);
             AddComponent(entity, new ExamplePlayerComponent
             {
-                ComponentId = authoring.ComponentId,
                 MaxHealth = authoring.StatusMaxHealth,
                 Speed = authoring.StatusSpeed,
                 CoinMultiplier = authoring.StatusCoinMultiplier,

@@ -12,7 +12,6 @@ namespace StatusEffectsFramework.Editor
     [CanEditMultipleObjects]
     internal class StatusEffectDataEditor : UnityEditor.Editor
     {
-        private StatusEffectDatabase m_Database;
         private StatusEffectData m_Data;
         private Condition m_Condition;
 
@@ -21,7 +20,6 @@ namespace StatusEffectsFramework.Editor
         public override VisualElement CreateInspectorGUI()
         {
             bool isPlaying = EditorApplication.isPlaying;
-            m_Database = StatusEffectDatabase.Get();
 
             // Remove any loose nested scriptable objects and
             // iterate in reverse, to match the selected object order.
@@ -32,12 +30,6 @@ namespace StatusEffectsFramework.Editor
                 var path = AssetDatabase.GetAssetPath(target);
 
                 m_Data = target as StatusEffectData;
-
-                if (!EditorApplication.isPlaying && !m_Database.ContainsKey(m_Data.Id))
-                {
-                    m_Database.Add(m_Data.Id, m_Data);
-                    EditorUtility.SetDirty(m_Database);
-                }
 
                 var modules = m_Data.Modules.Select(m => m.ModuleInstance);
                 var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
@@ -56,10 +48,8 @@ namespace StatusEffectsFramework.Editor
 
                 AssetDatabase.SaveAssetIfDirty(target);
             }
-            AssetDatabase.SaveAssetIfDirty(m_Database);
-
-            var idProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Id)}");
-            var automaticallyAddToDatabaseProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.AutomaticallyAddToDatabase)}");
+            
+            var uniqueKeyProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.UniqueKey)}");
             var groupProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Group)}");
             var comparableNameProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.ComparableName)}");
             var baseValueProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.BaseValue)}");
@@ -79,12 +69,8 @@ namespace StatusEffectsFramework.Editor
 
             VisualTree.CloneTree(root);
 
-            var id = root.Q<PropertyField>("id");
-            id.BindProperty(idProperty);
-            id.SetEnabled(false);
-
-            var automaticallyAddToDatabase = root.Q<PropertyField>("automatically-add-to-database");
-            automaticallyAddToDatabase.BindProperty(automaticallyAddToDatabaseProperty);
+            var uniqueKey = root.Q<PropertyField>("unique-key");
+            uniqueKey.BindProperty(uniqueKeyProperty);
 
             var group = root.Q<PropertyField>("group");
             group.BindProperty(groupProperty);
@@ -245,8 +231,6 @@ namespace StatusEffectsFramework.Editor
             }
 #endif
 
-            automaticallyAddToDatabase.RegisterCallback<ChangeEvent<bool>>(AutomaticallyAddToDatabaseChanged);
-
             BaseValueChanged(default);
             baseValue.RegisterValueChangeCallback(BaseValueChanged);
 
@@ -256,31 +240,6 @@ namespace StatusEffectsFramework.Editor
             allowEffectStacking.RegisterValueChangeCallback(AllowEffectStackingChanged);
 
             return root;
-
-            void AutomaticallyAddToDatabaseChanged(ChangeEvent<bool> changeEvent)
-            {
-                foreach (var target in targets)
-                {
-                    m_Data = target as StatusEffectData;
-                    if (changeEvent.newValue)
-                    {
-                        if (!m_Database.Values.ContainsKey(m_Data.Id))
-                        {
-                            m_Database.Values.Add(m_Data.Id, m_Data);
-                            EditorUtility.SetDirty(m_Database);
-                        }
-                    }
-                    else
-                    {
-                        if (m_Database.Values.ContainsKey(m_Data.Id))
-                        {
-                            m_Database.Values.Remove(m_Data.Id);
-                            EditorUtility.SetDirty(m_Database);
-                        }
-                    }
-                }
-                AssetDatabase.SaveAssetIfDirty(m_Database);
-            }
 
             void BaseValueChanged(SerializedPropertyChangeEvent changeEvent)
             {

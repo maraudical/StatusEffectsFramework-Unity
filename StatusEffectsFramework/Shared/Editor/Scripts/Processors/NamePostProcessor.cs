@@ -7,7 +7,7 @@ namespace StatusEffectsFramework.Editor
 {
     public class NamePostProcessor : AssetPostprocessor
     {
-        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths, bool didDomainReload)
+        /*static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths, bool didDomainReload)
         {
             Dictionary<Hash128, Name> nameIds;
             Name nameReference;
@@ -56,6 +56,6 @@ namespace StatusEffectsFramework.Editor
                     }
                 }
             }
-        }
+        }*/
     }
 }

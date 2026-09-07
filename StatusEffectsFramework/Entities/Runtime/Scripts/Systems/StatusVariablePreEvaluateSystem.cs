@@ -70,14 +70,14 @@ namespace StatusEffectsFramework.Entities
                 BufferAccessor<StatusInts> statusIntsAccessor = chunk.GetBufferAccessorRW(ref StatusIntsHandle);
                 BufferAccessor<StatusBools> statusBoolsAccessor = chunk.GetBufferAccessorRW(ref StatusBoolsHandle);
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
 
-                var valueTypeToDynamicEffectTypes = new UnsafeParallelMultiHashMap<int, TypeIndex>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-                var idToStatusEffect = new UnsafeHashMap<uint, StatusEffects>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-                var statusNameToEffect = new UnsafeParallelMultiHashMap<Hash128, (UnmanagedEffect, int, float)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-                var statusNameToDynamicFloat = new UnsafeParallelMultiHashMap<Hash128, (ValueModifier, float, int, int)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-                var statusNameToDynamicInt = new UnsafeParallelMultiHashMap<Hash128, (ValueModifier, int, int, int)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-                var statusNameToDynamicBool = new UnsafeParallelMultiHashMap<Hash128, (bool, int)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+                var valueTypeToDynamicEffectTypes = new UnsafeParallelMultiHashMap<int, TypeIndex>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var idToStatusEffect = new UnsafeHashMap<uint, StatusEffects>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var statusNameToEffect = new UnsafeParallelMultiHashMap<Hash128, (UnmanagedEffect, int, float)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var statusNameToDynamicFloat = new UnsafeParallelMultiHashMap<Hash128, (ValueModifier, float, int, int)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var statusNameToDynamicInt = new UnsafeParallelMultiHashMap<Hash128, (ValueModifier, int, int, int)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var statusNameToDynamicBool = new UnsafeParallelMultiHashMap<Hash128, (bool, int)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))

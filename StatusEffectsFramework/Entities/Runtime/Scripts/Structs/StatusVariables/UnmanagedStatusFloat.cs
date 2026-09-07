@@ -11,9 +11,9 @@ namespace StatusEffectsFramework.Entities
     public struct UnmanagedStatusFloat
     {
 #if NETCODE
-        [GhostField(Composite = true)]
+        [GhostField]
 #endif
-        public Hash128 Id;
+        public ushort StatusName;
 #if NETCODE
         [GhostField(SendData = false)]
 #endif
@@ -24,9 +24,9 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetValue(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out float value)
+        public bool TryGetValue(in TypeIndex typeIndex, in DynamicBuffer<StatusFloats> buffer, out float value)
         {
-            if (TryGetIndex(componentId, buffer, out int index))
+            if (TryGetIndex(typeIndex, buffer, out int index))
             {
                 value = buffer[index].Value;
                 return true;
@@ -41,9 +41,9 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetElement(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out StatusFloats value)
+        public bool TryGetElement(in TypeIndex typeIndex, in DynamicBuffer<StatusFloats> buffer, out StatusFloats value)
         {
-            if (TryGetIndex(componentId, buffer, out int index))
+            if (TryGetIndex(typeIndex, buffer, out int index))
             {
                 value = buffer[index];
                 return true;
@@ -57,7 +57,7 @@ namespace StatusEffectsFramework.Entities
         /// Attempt to retrieve the <see cref="StatusFloats"/> index value for this <see cref="UnmanagedStatusFloat"/>.
         /// </summary>
         [BurstCompile]
-        public bool TryGetIndex(in Hash128 componentId, in DynamicBuffer<StatusFloats> buffer, out int index)
+        public bool TryGetIndex(in TypeIndex typeIndex, in DynamicBuffer<StatusFloats> buffer, out int index)
         {
             StatusFloats statusFloat;
             int length = buffer.Length;
@@ -65,7 +65,7 @@ namespace StatusEffectsFramework.Entities
             if (index >= 0 && index < buffer.Length)
             {
                 statusFloat = buffer[index];
-                if (statusFloat.ComponentId == componentId && statusFloat.StatusName == Id)
+                if (statusFloat.TypeIndex == typeIndex && statusFloat.StatusName == StatusName)
                     return true;
             }
 
@@ -74,7 +74,7 @@ namespace StatusEffectsFramework.Entities
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusFloat = buffer[i];
-                if (statusFloat.ComponentId == componentId && statusFloat.StatusName == Id)
+                if (statusFloat.TypeIndex == typeIndex && statusFloat.StatusName == StatusName)
                 {
                     index = i;
                     break;
@@ -85,14 +85,12 @@ namespace StatusEffectsFramework.Entities
             return index >= 0;
         }
 
-        public UnmanagedStatusFloat(Hash128 id)
+        public UnmanagedStatusFloat(ushort statusName)
         {
-            Id = id;
+            StatusName = statusName;
             m_CachedIndex = -1;
         }
-
-        public static implicit operator UnmanagedStatusFloat(UnityEngine.Hash128 value) => new UnmanagedStatusFloat(value);
-        public static implicit operator UnmanagedStatusFloat(Hash128 value) => new UnmanagedStatusFloat(value);
+        
         public static implicit operator UnmanagedStatusFloat(StatusFloat value) => new UnmanagedStatusFloat(value != null && value.StatusName ? value.StatusName.Id : default);
     }
 }

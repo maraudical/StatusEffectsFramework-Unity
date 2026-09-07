@@ -13,6 +13,7 @@ namespace StatusEffectsFramework.Entities.Samples
     // For simplicity everything is done in this MonoBehaviour.
     public class StatusEffectUIManagerEntities : MonoBehaviour
     {
+        public bool onlyOne = true;
         [SerializeField] protected Transform m_EffectParent;
         [SerializeField] protected GameObject m_EffectPrefab;
         [SerializeField] protected Dropdown m_EffectDropdown;
@@ -137,7 +138,7 @@ namespace StatusEffectsFramework.Entities.Samples
             {
                 var buffer = m_Manager.GetBuffer<StatusEffectRequests>(entity);
                 buffer.Add(StatusEffectRequests.Add(m_StatusEffectData.Id));
-                if (statusReferences.onlyOne)
+                if (onlyOne)
                     return;
             }
         }
@@ -153,7 +154,7 @@ namespace StatusEffectsFramework.Entities.Samples
             {
                 var buffer = m_Manager.GetBuffer<StatusEffectRequests>(entity);
                 buffer.Add(StatusEffectRequests.RemoveWithStatusEffectDataId(m_StatusEffectData.Id, 1));
-                if (statusReferences.onlyOne)
+                if (onlyOne)
                     return;
             }
         }

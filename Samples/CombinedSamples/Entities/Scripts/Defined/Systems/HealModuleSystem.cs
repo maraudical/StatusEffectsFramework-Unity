@@ -93,7 +93,7 @@ namespace StatusEffectsFramework.Entities.Samples
                     {
                         index = healModulesArray.BinarySearchFirst(id);
 
-                        if (index < 0 || !StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, id, out statusEffect))
+                        if (index < 0 || !StatusEffects.TryGetStatusEffect(statusEffects, id, out statusEffect))
                             return;
 
                         for (int i = index; i < healModulesArray.Length && healModulesArray[i].Id == id; i++)

@@ -8,7 +8,7 @@ namespace StatusEffectsFramework.Entities
 {
     public struct UnmanagedStatusEffectData
     {
-        public Hash128 Id;
+        public ushort Id;
         public StatusEffectGroup Group;
         public Hash128 ComparableName;
         public float BaseValue;

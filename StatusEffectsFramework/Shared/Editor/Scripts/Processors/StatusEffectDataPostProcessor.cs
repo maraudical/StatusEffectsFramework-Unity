@@ -6,7 +6,7 @@ namespace StatusEffectsFramework.Editor
 {
     public class StatusEffectDataPostProcessor : AssetPostprocessor
     {
-        static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths, bool didDomainReload)
+        /*static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths, bool didDomainReload)
         {
             var database = StatusEffectDatabase.Get();
             StatusEffectData statusEffectData;
@@ -72,6 +72,6 @@ namespace StatusEffectsFramework.Editor
                     EditorUtility.SetDirty(database);
                 }
             }
-        }
+        }*/
     }
 }

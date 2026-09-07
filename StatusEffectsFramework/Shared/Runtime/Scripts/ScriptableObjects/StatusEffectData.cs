@@ -10,45 +10,8 @@ namespace StatusEffectsFramework
     [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effects Framework/Status Effect Data", order = -5)]
     public class StatusEffectData : ScriptableObject
     {
-        public Hash128 Id => m_Id;
-        [SerializeField] private Hash128 m_Id;
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            if (m_Id == default)
-            {
-                GenerateAndImport();
-            }
-        }
-
-        private void Reset()
-        {
-            GenerateAndImport();
-        }
-
-        [ContextMenu("Generate New ID")]
-        private void GenerateAndImport()
-        {
-            string path = UnityEditor.AssetDatabase.GetAssetPath(this);
-            if (string.IsNullOrWhiteSpace(path))
-                return;
-            GenerateId();
-            UnityEditor.AssetDatabase.ImportAsset(path);
-        }
-        /// <summary>
-        /// This will be called automatically from a post processor.
-        /// </summary>
-        internal void GenerateId()
-        {
-            m_Id = StatusEffectsUtility.GenerateId();
-            UnityEditor.EditorUtility.SetDirty(this);
-            UnityEditor.AssetDatabase.SaveAssetIfDirty(this);
-        }
-
-#endif
         #region Public Properties
-        internal bool AutomaticallyAddToDatabase => m_AutomaticallyAddToDatabase;
+        public string UniqueKey => m_UniqueKey;
         public StatusEffectGroup Group => m_Group;
         public ComparableName ComparableName => m_ComparableName;
         public float BaseValue => m_BaseValue;
@@ -72,8 +35,8 @@ namespace StatusEffectsFramework
         #endregion
 
         #region Private Fields
-        [Tooltip("Unless you are trying to do something with Addressables and loading new Status Effect Data at runtime you can leave this checked on.")]
-        [SerializeField] private bool m_AutomaticallyAddToDatabase = true;
+        [Tooltip("Should be a unique key identifier for this effect. On startup, all non-bundles/addressable status effect datas will be added to the database and assigned a numeric ID.")]
+        [SerializeField] private string m_UniqueKey = "namespace:name";
         [SerializeField] private StatusEffectGroup m_Group;
         [Tooltip("This name can be used to categorize a series of Status Effects. For example, \"Poison\" may be used for multiple different poison effects.")]
         [SerializeField] private ComparableName m_ComparableName;

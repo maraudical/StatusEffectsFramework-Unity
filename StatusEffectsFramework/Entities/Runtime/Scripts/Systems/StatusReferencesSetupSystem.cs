@@ -42,8 +42,6 @@ namespace StatusEffectsFramework.Entities
             var idToStatusEffectDataMapBuilder = new BlobBuilder(Allocator.Temp);
             ref var idToStatusEffectDataMapRoot = ref idToStatusEffectDataMapBuilder.ConstructRoot<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>>();
             var idToStatusEffectDataMap = idToStatusEffectDataMapBuilder.AllocateHashMap(ref idToStatusEffectDataMapRoot, statusEffectDatas.Count);
-            Effect effect;
-            Condition condition;
             
             // Dispose of old blobs after copying
             if (SystemAPI.TryGetSingletonEntity<StatusReferences>(out var oldReferencesEntity))
@@ -87,7 +85,7 @@ namespace StatusEffectsFramework.Entities
                 var effects = subBuilder.Allocate(ref statusEffectDataRoot.Effects, statusEffectData.Effects.Count);
                 for (int i = 0; i < effects.Length; i++)
                 {
-                    effect = statusEffectData.Effects[i];
+                    var effect = statusEffectData.Effects[i];
                     ValueType valueType = default;
                     DynamicEffectInfo info = default;
                     bool postEvaluate = default;
@@ -150,7 +148,7 @@ namespace StatusEffectsFramework.Entities
                 var conditions = subBuilder.Allocate(ref statusEffectDataRoot.Conditions, statusEffectData.Conditions.Count);
                 for (int i = 0; i < conditions.Length; i++)
                 {
-                    condition = statusEffectData.Conditions[i];
+                    var condition = statusEffectData.Conditions[i];
                     conditions[i] = new UnmanagedCondition()
                     {
                         SearchableConfigurable = condition.SearchableConfigurable,

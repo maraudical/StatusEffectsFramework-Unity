@@ -7,7 +7,7 @@ using Unity.Entities;
 namespace StatusEffectsFramework.Entities
 {
     [BurstCompile]
-    public static unsafe class StatusEffectsECSInternals
+    internal static unsafe class StatusEffectsECSInternals
     {
         public static int GetIndexInTypeArray(in ArchetypeChunk chunk, TypeIndex typeIndex) => ChunkDataUtility.GetIndexInTypeArray(chunk.Archetype.Archetype, typeIndex);
 

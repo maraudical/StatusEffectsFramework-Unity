@@ -28,8 +28,8 @@ namespace StatusEffectsFramework.Entities
             BufferAccessor<ZeroLengthModules> zeroLengthModulesAccessor = chunk.GetBufferAccessorRW(ref ZeroLengthModulesHandle);
             ModuleInfo moduleInfo;
             
-            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-            var typeToLength = new UnsafeHashMap<TypeIndex, int>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+            var typeToLength = new UnsafeHashMap<TypeIndex, int>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
             var sizeOfUint = UnsafeUtility.SizeOf<uint>();
 
             var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
@@ -164,7 +164,7 @@ namespace StatusEffectsFramework.Entities
             NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
             BufferAccessor<ZeroLengthModules> zeroLengthModulesAccessor = chunk.GetBufferAccessorRW(ref ZeroLengthModulesHandle);
 
-            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
             
             var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
             while (enumerator.NextEntityIndex(out var i))
@@ -342,9 +342,9 @@ namespace StatusEffectsFramework.Entities
 
                 ModuleInfo moduleInfo;
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-                var interpolatedTypes = new UnsafeHashSet<TypeIndex>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-                var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var interpolatedTypes = new UnsafeHashSet<TypeIndex>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
                 var sizeOfUint = UnsafeUtility.SizeOf<uint>();
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);

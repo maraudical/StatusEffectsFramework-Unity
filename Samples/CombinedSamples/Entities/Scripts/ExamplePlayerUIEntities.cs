@@ -16,6 +16,7 @@ namespace StatusEffectsFramework.Entities.Samples
         [SerializeField] private Text m_CoinMultiplier;
         [SerializeField] private Text m_Stunned;
 
+        private TypeIndex m_TypeIndex;
         private EntityManager m_Manager;
         private EntityQuery m_PlayerQuery;
         private DynamicBuffer<StatusFloats> m_StatusFloatBuffer;
@@ -24,6 +25,8 @@ namespace StatusEffectsFramework.Entities.Samples
 
         protected virtual void Start()
         {
+            m_TypeIndex = TypeManager.GetTypeIndex<ExamplePlayerComponent>();
+
             m_Manager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
             m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
@@ -45,10 +48,10 @@ namespace StatusEffectsFramework.Entities.Samples
             m_StatusBoolBuffer = m_Manager.GetBuffer<StatusBools>(entity);
 
             // May want to check for structural changes to the Status Buffers but in this example it is assumed there aren't any.
-            if (!player.MaxHealth.TryGetElement(player.ComponentId, m_StatusFloatBuffer, out var maxHealth)
-                || !player.Speed.TryGetElement(player.ComponentId, m_StatusFloatBuffer, out var speed)
-                || !player.CoinMultiplier.TryGetElement(player.ComponentId, m_StatusIntBuffer, out var coinMultiplier)
-                || !player.Stunned.TryGetElement(player.ComponentId, m_StatusBoolBuffer, out var stunned))
+            if (!player.MaxHealth.TryGetElement(m_TypeIndex, m_StatusFloatBuffer, out var maxHealth)
+                || !player.Speed.TryGetElement(m_TypeIndex, m_StatusFloatBuffer, out var speed)
+                || !player.CoinMultiplier.TryGetElement(m_TypeIndex, m_StatusIntBuffer, out var coinMultiplier)
+                || !player.Stunned.TryGetElement(m_TypeIndex, m_StatusBoolBuffer, out var stunned))
                 return;
 
             m_Health.text = player.Health.ToString("0.0");

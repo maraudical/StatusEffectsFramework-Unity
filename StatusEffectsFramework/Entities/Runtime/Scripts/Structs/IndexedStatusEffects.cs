@@ -12,12 +12,12 @@ namespace StatusEffectsFramework.Entities
     {
         public int Index;
 
-        public Hash128 StatusEffectDataId;
+        public ushort StatusEffectDataId;
         public StatusEffectTiming Timing;
         public float Duration;
         public float Interval;
         public int Stacks;
-        public Hash128 EventId;
+        public ushort EventId;
 
         public IndexedStatusEffects(int index, StatusEffects statusEffect)
         {

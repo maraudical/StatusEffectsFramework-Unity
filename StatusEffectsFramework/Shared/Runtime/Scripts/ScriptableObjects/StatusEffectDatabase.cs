@@ -1,10 +1,9 @@
 using UnityEngine;
-using System.IO;
-using UnityEngine.Rendering;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.ObjectModel;
+using System;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -14,17 +13,33 @@ namespace StatusEffectsFramework
     // Create a new type of Database Asset.
     public class StatusEffectDatabase : ScriptableObject
     {
-        private const string k_MyCustomDatabasePath = "Assets/Resources/StatusEffectDatabase.asset";
-        
-        public int Count => Values.Count;
-        public ReadOnlyDictionary<Hash128, StatusEffectData> ReadOnlyDictionary => new(Values);
+        public const string DatabaseName = "StatusEffectDatabase";
+        public const string DatabasePath = "Assets/Settings/Resources/" + DatabaseName + ".asset";
 
-        [SerializeField] internal SerializedDictionary<Hash128, StatusEffectData> Values;
+        public event Action StatusEffectDatasRebuilt;
         
-#if UNITY_EDITOR
-        [SerializeField, HideInInspector] internal SerializedDictionary<Hash128, StatusEffectData> HiddenValues;
+        public IReadOnlyDictionary<ushort, StatusEffectData> ReadOnlyDictionary => Values;
 
+        internal Dictionary<ushort, StatusEffectData> Values;
+
+        [SerializeField] private List<StatusEffectData> m_StatusEffectDatas;
+
+/*#if UNITY_EDITOR
+        public static bool IsLoadedDynamically(string guid)
+        {
+            var addressableSettings = AddressableAssetSettingsDefaultObject.Settings;
+            if (addressableSettings != null && addressableSettings.FindAssetEntry(guid) != null)
+                return true;
+
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            var importer = AssetImporter.GetAtPath(path);
+            if (importer != null && !string.IsNullOrEmpty(importer.assetBundleName))
+                return true;
+
+            return false;
+        }
 #endif
+
         public void Add(Hash128 key, StatusEffectData value)
         {
 #if UNITY_EDITOR
@@ -135,8 +150,7 @@ namespace StatusEffectsFramework
             if (database == null || database.Values == null)
             {
                 database = CreateInstance<StatusEffectDatabase>();
-                Directory.CreateDirectory($"{Application.dataPath}/Resources");
-                AssetDatabase.CreateAsset(database, k_MyCustomDatabasePath);
+                AssetDatabase.CreateAsset(database, DatabasePath);
             }
 #endif
             return database;
@@ -179,6 +193,6 @@ namespace StatusEffectsFramework
             if (state is PlayModeStateChange.ExitingPlayMode)
                 SynchronizeValues(Get());
         }
-#endif
+#endif*/
     }
 }

@@ -65,8 +65,8 @@ namespace StatusEffectsFramework.Entities
                 UnmanagedEffect effect;
                 TypeIndex typeIndex;
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-                var typeToLength = new UnsafeHashMap<TypeIndex, int>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var typeToLength = new UnsafeHashMap<TypeIndex, int>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
                 var sizeOfUint = UnsafeUtility.SizeOf<uint>();
                 var sizeOfHash128 = UnsafeUtility.SizeOf<Hash128>();
                 var sizeOfValueModifier = UnsafeUtility.SizeOf<ValueModifier>();
@@ -267,9 +267,9 @@ namespace StatusEffectsFramework.Entities
                 UnmanagedEffect effect;
                 TypeIndex typeIndex;
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-                var interpolatedTypes = new UnsafeHashSet<TypeIndex>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
-                var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(StatusReferences.k_CollectionsInitialCapacity, Allocator.Temp);
+                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var interpolatedTypes = new UnsafeHashSet<TypeIndex>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
                 var sizeOfUint = UnsafeUtility.SizeOf<uint>();
                 var sizeOfHash128 = UnsafeUtility.SizeOf<Hash128>();
                 var sizeOfValueModifier = UnsafeUtility.SizeOf<ValueModifier>();

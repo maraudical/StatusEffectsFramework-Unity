@@ -11,9 +11,9 @@ namespace StatusEffectsFramework.Entities
     public struct UnmanagedStatusInt
     {
 #if NETCODE
-        [GhostField(Composite = true)]
+        [GhostField]
 #endif
-        public Hash128 Id;
+        public ushort StatusName;
 #if NETCODE
         [GhostField(SendData = false)]
 #endif
@@ -24,9 +24,9 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetValue(in Hash128 componentId, in DynamicBuffer<StatusInts> buffer, out int value)
+        public bool TryGetValue(in TypeIndex typeIndex, in DynamicBuffer<StatusInts> buffer, out int value)
         {
-            if (TryGetIndex(componentId, buffer, out int index))
+            if (TryGetIndex(typeIndex, buffer, out int index))
             {
                 value = buffer[index].Value;
                 return true;
@@ -41,9 +41,9 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetElement(in Hash128 componentId, in DynamicBuffer<StatusInts> buffer, out StatusInts value)
+        public bool TryGetElement(in TypeIndex typeIndex, in DynamicBuffer<StatusInts> buffer, out StatusInts value)
         {
-            if (TryGetIndex(componentId, buffer, out int index))
+            if (TryGetIndex(typeIndex, buffer, out int index))
             {
                 value = buffer[index];
                 return true;
@@ -57,7 +57,7 @@ namespace StatusEffectsFramework.Entities
         /// Attempt to retrieve the <see cref="StatusInts"/> index value for this <see cref="UnmanagedStatusInt"/>.
         /// </summary>
         [BurstCompile]
-        public bool TryGetIndex(in Hash128 componentId, in DynamicBuffer<StatusInts> buffer, out int index)
+        public bool TryGetIndex(in TypeIndex typeIndex, in DynamicBuffer<StatusInts> buffer, out int index)
         {
             StatusInts statusInts;
             int length = buffer.Length;
@@ -65,7 +65,7 @@ namespace StatusEffectsFramework.Entities
             if (index >= 0 && index < buffer.Length)
             {
                 statusInts = buffer[index];
-                if (statusInts.ComponentId == componentId && statusInts.StatusName == Id)
+                if (statusInts.TypeIndex == typeIndex && statusInts.StatusName == Id)
                     return true;
             }
 
@@ -74,7 +74,7 @@ namespace StatusEffectsFramework.Entities
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusInts = buffer[i];
-                if (statusInts.ComponentId == componentId && statusInts.StatusName == Id)
+                if (statusInts.TypeIndex == typeIndex && statusInts.StatusName == Id)
                 {
                     index = i;
                     break;
@@ -85,14 +85,12 @@ namespace StatusEffectsFramework.Entities
             return index >= 0;
         }
 
-        public UnmanagedStatusInt(Hash128 id)
+        public UnmanagedStatusInt(ushort statusName)
         {
-            Id = id;
+            StatusName = statusName;
             m_CachedIndex = -1;
         }
-
-        public static implicit operator UnmanagedStatusInt(UnityEngine.Hash128 value) => new UnmanagedStatusInt(value);
-        public static implicit operator UnmanagedStatusInt(Hash128 value) => new UnmanagedStatusInt(value);
+        
         public static implicit operator UnmanagedStatusInt(StatusInt value) => new UnmanagedStatusInt(value != null && value.StatusName ? value.StatusName.Id : default);
     }
 }

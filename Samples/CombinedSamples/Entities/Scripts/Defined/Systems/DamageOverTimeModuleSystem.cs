@@ -91,7 +91,7 @@ namespace StatusEffectsFramework.Entities.Samples
                 {
                     ref var module = ref damageOverTimeModules.ElementAt(i);
 
-                    if (!StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, module.Id, out var statusEffect))
+                    if (!StatusEffects.TryGetStatusEffect(statusEffects, module.Id, out var statusEffect))
                         continue;
                     
                     float timeSinceAdded = NetworkTime.ServerTick.TimeSince(statusEffect.TickAdded, NetworkTime.ServerTickFraction, TickRate);
@@ -122,7 +122,7 @@ namespace StatusEffectsFramework.Entities.Samples
                 {
                     ref var module = ref modules.ElementAt(i);
 
-                    if (!StatusEffectsECSUtility.TryGetStatusEffect(statusEffects, module.Id, out statusEffect))
+                    if (!StatusEffects.TryGetStatusEffect(statusEffects, module.Id, out statusEffect))
                         continue;
 
                     if (!References.TryGetReference(statusEffect.StatusEffectDataId, out var reference))

@@ -11,11 +11,11 @@ namespace StatusEffectsFramework.Entities
 #if NETCODE
         [GhostField(Composite = true)]
 #endif
-        public Hash128 ComponentId;
+        public TypeIndex TypeIndex;
 #if NETCODE
-        [GhostField(Composite = true)]
+        [GhostField]
 #endif
-        public Hash128 StatusName;
+        public ushort StatusName;
 #if NETCODE
         [GhostField]
 #endif
@@ -34,19 +34,20 @@ namespace StatusEffectsFramework.Entities
         public int PostEvaluationValue;
         public int Value => PostEvaluationValue;
 
-        public StatusInts(Hash128 componentId, Hash128 id, int baseValue, bool signProtected)
+        public StatusInts(TypeIndex typeIndex, ushort statusName, int baseValue, bool signProtected)
         {
-            ComponentId = componentId;
-            StatusName = id;
+            TypeIndex = typeIndex;
+            StatusName = statusName;
             SignProtected = signProtected;
             BaseValue = baseValue;
             PreEvaluationValue = baseValue;
             PostEvaluationValue = baseValue;
         }
 
-        public StatusInts(Hash128 componentId, StatusInt statusInt)
+        public StatusInts(TypeIndex typeIndex, StatusInt statusInt)
         {
-            ComponentId = componentId;
+            TypeIndex = typeIndex;
+
             if (statusInt != null && statusInt.StatusName)
             {
                 StatusName = statusInt.StatusName.Id;
