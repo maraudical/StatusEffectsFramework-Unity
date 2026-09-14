@@ -5,7 +5,7 @@
   "description": "A framework for implementing custom status effects.",
   "license": "MIT",
   "dependencies" : {
-	  "com.unity.render-pipelines.core": "12.1.15"
+	  "com.unity.burst": "1.8.25"
   },
   "repository": {
 	"type": "git",

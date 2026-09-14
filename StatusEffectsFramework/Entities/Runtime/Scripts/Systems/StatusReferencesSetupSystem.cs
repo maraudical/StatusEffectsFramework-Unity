@@ -26,7 +26,7 @@ namespace StatusEffectsFramework.Entities
 
         protected override void OnUpdate() 
         {
-            var statusEffectDatas = StatusEffectDatabase.Get().ReadOnlyDictionary.Values;
+            var statusEffectDatas = StatusEffectRegistry.Get().ReadOnlyDictionary.Values;
 
             if (statusEffectDatas.Count <= 0)
                 return;

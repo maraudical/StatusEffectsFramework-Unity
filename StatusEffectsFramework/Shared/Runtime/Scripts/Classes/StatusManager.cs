@@ -32,12 +32,13 @@ namespace StatusEffectsFramework
         IEnumerable<StatusEffect> IStatusManager.StatusEffects => StatusEffects;
         public IEnumerable<StatusEffect> StatusEffects => m_StatusEffects?.Values ?? Enumerable.Empty<StatusEffect>();
         
-        [SerializeField] private Dictionary<uint, StatusEffect> m_StatusEffects;
+        private Dictionary<uint, StatusEffect> m_StatusEffects;
         
         internal uint AvailableId;
 
 #if UNITY_EDITOR
         [SerializeField] private List<StatusEffect> m_EditorOnlyEffects;
+
 #endif
         private void Awake()
         {
@@ -75,7 +76,7 @@ namespace StatusEffectsFramework
 
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, int stacks = 1)
         {
-            return AddStatusEffect(statusEffectData, StatusEffectTiming.Infinite, null, null, null, null, stacks);
+            return AddStatusEffect(statusEffectData, StatusEffectTiming.Infinite, null, null, null, stacks);
         }
 
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, int stacks = 1)
@@ -84,7 +85,7 @@ namespace StatusEffectsFramework
             if (!statusEffectData)
                 Debug.LogError("The given Status Effect Data is null!");
 
-            StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Duration, duration, null, null, null, stacks);
+            StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Duration, duration, null, null, stacks);
 
             if (statusEffect == null)
                 return null;
@@ -94,25 +95,25 @@ namespace StatusEffectsFramework
             return statusEffect;
         }
         
-        public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, UnityEvent unityEvent, float interval = 1, int stacks = 1)
+        public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, StatusEvent statusEvent, int stacks = 1)
         {
             // Check for null values
             if (!statusEffectData)
                 Debug.LogError("The given Status Effect Data is null!");
-            if (unityEvent == null)
-                Debug.LogError("The given Unity Event is null!");
+            if (statusEvent == null)
+                Debug.LogError("The given Status Event is null!");
             // Create the effect
-            StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Event, duration, null, unityEvent, interval, stacks);
+            StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Event, duration, null, statusEvent, stacks);
             // Check for null or 0 duration effect
             if (statusEffect == null)
                 return null;
-            // Begin a unity event on the monobehaviour.
-            CreateUnityEvent(statusEffect, unityEvent, interval);
+            // Subscribe to the status event.
+            CreateStatusEvent(statusEffect, statusEvent);
 
             return statusEffect;
         }
         
-        public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, System.Func<bool> predicate, int stacks = 1)
+        public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, Func<bool> predicate, int stacks = 1)
         {
             // Check for null values
             if (!statusEffectData)
@@ -120,7 +121,7 @@ namespace StatusEffectsFramework
             if (predicate == null)
                 Debug.LogError("The given predicate is null!");
 
-            StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Predicate, null, predicate, null, null, stacks);
+            StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Predicate, null, predicate, null, stacks);
 
             if (statusEffect == null)
                 return null;
@@ -274,7 +275,7 @@ namespace StatusEffectsFramework
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CreateUnityEvent(StatusEffect statusEffect, UnityEvent unityEvent, float interval, bool remove = true)
+        private void CreateStatusEvent(StatusEffect statusEffect, StatusEvent statusEvent, bool remove = true)
         {
             // Check for 0 duration effect
             if (statusEffect.Duration <= 0)
@@ -284,12 +285,12 @@ namespace StatusEffectsFramework
                 return;
             }
             // Subscribe to the decrement method.
-            unityEvent.AddListener(Decrement);
+            statusEvent.Invoked += Decrement;
             statusEffect.Stopped += Unsubscribe;
 
-            void Decrement()
+            void Decrement(float value)
             {
-                statusEffect.Duration -= interval;
+                statusEffect.Duration -= value;
 
                 if (statusEffect.Duration <= 0)
                 {
@@ -301,7 +302,7 @@ namespace StatusEffectsFramework
 
             void Unsubscribe()
             {
-                unityEvent.RemoveListener(Decrement);
+                statusEvent.Invoked -= Decrement;
                 statusEffect.Stopped -= Unsubscribe;
             }
         }
@@ -342,7 +343,7 @@ namespace StatusEffectsFramework
         }
 
 #nullable enable
-        private StatusEffect AddStatusEffect(StatusEffectData statusEffectData, StatusEffectTiming timing, float? duration, System.Func<bool> predicate, UnityEvent unityEvent, float? interval, int stacks)
+        private StatusEffect AddStatusEffect(StatusEffectData statusEffectData, StatusEffectTiming timing, float? duration, System.Func<bool> predicate, StatusEvent statusEvent, int stacks)
 #nullable disable
         {
 #if UNITY_EDITOR
@@ -518,7 +519,7 @@ namespace StatusEffectsFramework
                                     AddStatusEffect(condition.ActionData, durationValue, condition.Stacks * (condition.Scaled ? stacks : 1));
                                     break;
                                 case StatusEffectTiming.Event:
-                                    AddStatusEffect(condition.ActionData, durationValue, unityEvent, interval.Value, condition.Stacks * (condition.Scaled ? stacks : 1));
+                                    AddStatusEffect(condition.ActionData, durationValue, statusEvent, condition.Stacks * (condition.Scaled ? stacks : 1));
                                     break;
                                 case StatusEffectTiming.Predicate:
                                     AddStatusEffect(condition.ActionData, predicate, condition.Stacks * (condition.Scaled ? stacks : 1));

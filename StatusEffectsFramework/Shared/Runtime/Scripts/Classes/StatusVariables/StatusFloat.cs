@@ -2,10 +2,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-#if BURST
 using Unity.Burst;
 using Unity.Mathematics;
-#endif
 
 namespace StatusEffectsFramework
 {
@@ -215,9 +213,7 @@ namespace StatusEffectsFramework
 #endif
     }
 
-#if BURST
     [BurstCompile]
-#endif
     internal struct StatusFloatValue
     {
         public float BaseValue;
@@ -246,22 +242,14 @@ namespace StatusEffectsFramework
             OverwriteValue = 0;
             if (signProtected)
             {
-                if (
-#if BURST
-                    math.sign
-#else
-                    Mathf.Sign
-#endif
-                    (baseValue) >= 0)
+                if (math.sign(baseValue) >= 0)
                     MinimumValue = 0;
                 else
                     MaximumValue = 0;
             }
         }
 
-#if BURST
         [BurstCompile]
-#endif
         public void ApplyEffect(ValueModifier valueModifier, float value, int priority)
         {
             switch (valueModifier)
@@ -282,13 +270,7 @@ namespace StatusEffectsFramework
                         MinimumValue = value;
                     }
                     else if (MinimumPriority == priority)
-                        MinimumValue =
-#if BURST
-                        math.max
-#else
-                        Mathf.Max
-#endif
-                        (MinimumValue, value);
+                        MinimumValue = math.max(MinimumValue, value);
                     break;
                 case ValueModifier.Maximum:
                     if (MaximumPriority < priority)
@@ -297,13 +279,7 @@ namespace StatusEffectsFramework
                         MaximumValue = value;
                     }
                     else if (MaximumPriority == priority)
-                        MaximumValue =
-#if BURST
-                        math.min
-#else
-                        Mathf.Min
-#endif
-                        (MaximumValue, value);
+                        MaximumValue = math.min(MaximumValue, value);
                     break;
                 case ValueModifier.Overwrite:
                     if (OverwritePriority <= priority)
@@ -314,28 +290,14 @@ namespace StatusEffectsFramework
                     break;
             }
         }
-
-#if BURST
+        
         [BurstCompile]
-#endif
         public float GetValue()
         {
             if (OverwritePriority >= 0)
-                return
-#if BURST
-                    math.clamp
-#else
-                    Mathf.Clamp
-#endif
-                    (OverwriteValue, OverwritePriority <= MinimumPriority ? MinimumValue : float.NegativeInfinity, OverwritePriority <= MaximumPriority ? MaximumValue : float.PositiveInfinity);
+                return math.clamp(OverwriteValue, OverwritePriority <= MinimumPriority ? MinimumValue : float.NegativeInfinity, OverwritePriority <= MaximumPriority ? MaximumValue : float.PositiveInfinity);
             else
-                return
-#if BURST
-                    math.clamp
-#else
-                    Mathf.Clamp
-#endif
-                    ((BaseValue + AdditiveValue) * MultiplicativeValue + PostAdditiveValue, MinimumValue, MaximumValue);
+                return math.clamp((BaseValue + AdditiveValue) * MultiplicativeValue + PostAdditiveValue, MinimumValue, MaximumValue);
         }
     }
 }

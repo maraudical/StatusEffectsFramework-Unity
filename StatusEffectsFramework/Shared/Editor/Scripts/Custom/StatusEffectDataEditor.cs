@@ -48,7 +48,10 @@ namespace StatusEffectsFramework.Editor
 
                 AssetDatabase.SaveAssetIfDirty(target);
             }
-            
+
+#if ADDRESSABLES
+            var optionalRegistryDependencyProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.OptionalRegistryDependency)}");
+#endif
             var uniqueKeyProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.UniqueKey)}");
             var groupProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Group)}");
             var comparableNameProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.ComparableName)}");
@@ -69,6 +72,11 @@ namespace StatusEffectsFramework.Editor
 
             VisualTree.CloneTree(root);
 
+#if ADDRESSABLES
+            var optionalRegistryDependency = root.Q<PropertyField>("optional-registry-dependency");
+            optionalRegistryDependency.BindProperty(optionalRegistryDependencyProperty);
+
+#endif
             var uniqueKey = root.Q<PropertyField>("unique-key");
             uniqueKey.BindProperty(uniqueKeyProperty);
 

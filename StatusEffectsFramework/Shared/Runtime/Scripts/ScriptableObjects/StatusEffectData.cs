@@ -7,11 +7,13 @@ using UnityEngine.Localization;
 
 namespace StatusEffectsFramework
 {
+    /// <summary>
+    /// A data container for everything related to the readonly values in a <see cref="StatusEffect"/>.
+    /// </summary>
     [CreateAssetMenu(fileName = "New Status Effect Data", menuName = "Status Effects Framework/Status Effect Data", order = -5)]
-    public class StatusEffectData : ScriptableObject
+    public class StatusEffectData : Registrant
     {
         #region Public Properties
-        public string UniqueKey => m_UniqueKey;
         public StatusEffectGroup Group => m_Group;
         public ComparableName ComparableName => m_ComparableName;
         public float BaseValue => m_BaseValue;
@@ -35,8 +37,6 @@ namespace StatusEffectsFramework
         #endregion
 
         #region Private Fields
-        [Tooltip("Should be a unique key identifier for this effect. On startup, all non-bundles/addressable status effect datas will be added to the database and assigned a numeric ID.")]
-        [SerializeField] private string m_UniqueKey = "namespace:name";
         [SerializeField] private StatusEffectGroup m_Group;
         [Tooltip("This name can be used to categorize a series of Status Effects. For example, \"Poison\" may be used for multiple different poison effects.")]
         [SerializeField] private ComparableName m_ComparableName;

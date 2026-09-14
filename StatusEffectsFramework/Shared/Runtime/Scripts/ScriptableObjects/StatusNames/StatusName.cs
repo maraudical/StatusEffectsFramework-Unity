@@ -1,4 +1,4 @@
 namespace StatusEffectsFramework
 {
-    public abstract class StatusName : Name { }
+    public abstract class StatusName : Registrant { }
 }

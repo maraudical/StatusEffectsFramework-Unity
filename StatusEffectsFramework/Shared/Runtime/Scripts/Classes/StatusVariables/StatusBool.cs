@@ -2,11 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
-using NUnit.Framework.Internal;
-
-#if BURST
 using Unity.Burst;
-#endif
 
 namespace StatusEffectsFramework
 {
@@ -191,9 +187,7 @@ namespace StatusEffectsFramework
 #endif
     }
 
-#if BURST
     [BurstCompile]
-#endif
     internal struct StatusBoolValue
     {
         public bool Value;
@@ -206,9 +200,7 @@ namespace StatusEffectsFramework
             Priority = int.MinValue;
         }
 
-#if BURST
         [BurstCompile]
-#endif
         public void ApplyEffect(bool value, int priority)
         {
             if (Priority < priority)
@@ -218,9 +210,7 @@ namespace StatusEffectsFramework
             }
         }
 
-#if BURST
         [BurstCompile]
-#endif
         public bool GetValue() => Value;
     }
 }

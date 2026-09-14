@@ -51,11 +51,11 @@ namespace StatusEffectsFramework
         /// <summary>
         /// Adds a <see cref="StatusEffect"/> to the <see cref="StatusManager"/>. 
         /// The given <see cref="float"/> time will limit the duration of the 
-        /// effect where each invocation of the <see cref="UnityEvent"/> 
+        /// effect where each invocation of the <see cref="StatusEvent"/> 
         /// will reduce the duration by the given interval. Returns null if no 
         /// <see cref="StatusEffect"/> was added.
         /// </summary>
-        public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, UnityEvent unityEvent, float interval = 1, int stacks = 1);
+        public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, StatusEvent statusEvent, int stacks = 1);
         /// <summary>
         /// Adds a <see cref="StatusEffect"/> to a <see cref="StatusManager"/>. 
         /// The StatusEffect will be removed when the given 

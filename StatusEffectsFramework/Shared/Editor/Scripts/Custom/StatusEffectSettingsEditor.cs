@@ -303,7 +303,7 @@ namespace StatusEffectsFramework.Editor
                 }
                 element.Q<Button>("ping-button").clicked += () => EditorGUIUtility.PingObject(item);
                 var title = element.Q<Label>("name");
-                title.text = item.name;
+                title.bindingPath = nameof(name);
                 var renameField = element.Q<TextField>("rename-field");
                 renameField.RegisterCallback<BlurEvent>((_) =>
                 {
@@ -444,7 +444,7 @@ namespace StatusEffectsFramework.Editor
                 var foldout = element.Q<Foldout>("foldout");
                 var icon = element.Q<Image>("icon");
                 SetIcon(data.Icon);
-                //element.Q<Label>("subtext").text = data.Id.ToString();
+                element.Q<Label>("subtext").bindingPath = nameof(data.UniqueKey);
                 BindListItem(element, index, data);
                 foldout.Q<Toggle>().RegisterValueChangedCallback((changeEvent) =>
                 {
@@ -510,7 +510,7 @@ namespace StatusEffectsFramework.Editor
                 if (name == null)
                     return;
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(name));
-                //element.Q<Label>("subtext").text = name.Id.ToString();
+                element.Q<Label>("subtext").bindingPath = nameof(name.UniqueKey);
                 BindListItem(element, index, name);
             };
             namesListView.onAdd += (listView) =>
@@ -560,7 +560,7 @@ namespace StatusEffectsFramework.Editor
                 if (comparable == null)
                     return;
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(comparable));
-                //element.Q<Label>("subtext").text = comparable.Id.ToString();
+                element.Q<Label>("subtext").bindingPath = nameof(comparable.UniqueKey);
                 BindListItem(element, index, comparable);
             };
             comparablesListView.onAdd += (listView) =>

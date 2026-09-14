@@ -178,7 +178,7 @@ namespace StatusEffectsFramework.Entities
         /// <summary>
         /// Remove any amount of <see cref="StatusEffects"/> given a 
         /// <see cref="Hash128"/> <paramref name="name"/> of the 
-        /// <see cref="ComparableName"/> <see cref="Name.Id"/> reference. Optional 
+        /// <see cref="ComparableName"/> <see cref="Registr"/> reference. Optional 
         /// <paramref name="stacks"/> count.
         /// </summary>
         [BurstCompile]
