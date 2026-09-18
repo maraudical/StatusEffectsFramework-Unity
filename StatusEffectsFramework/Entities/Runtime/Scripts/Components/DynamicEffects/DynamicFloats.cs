@@ -6,8 +6,8 @@ namespace StatusEffectsFramework.Entities
 {
     public struct DynamicFloats<T> : IBufferElementData, IComparable<DynamicFloats<T>>, IComparable<uint>, IEquatable<uint> where T : unmanaged
     {
-        public uint Id;
-        public Hash128 StatusName;
+        public uint InstanceId;
+        public ushort Id;
         public ValueModifier ValueModifier;
         public bool PostEvaluate;
         public int Priority;
@@ -15,9 +15,9 @@ namespace StatusEffectsFramework.Entities
 
         public T Struct;
 
-        public bool Equals(uint other) => Id.Equals(other);
-        public int CompareTo(uint other) => Id.CompareTo(other);
-        public int CompareTo(DynamicFloats<T> other) => Id.CompareTo(other.Id);
+        public bool Equals(uint other) => InstanceId.Equals(other);
+        public int CompareTo(uint other) => InstanceId.CompareTo(other);
+        public int CompareTo(DynamicFloats<T> other) => InstanceId.CompareTo(other.InstanceId);
     }
 }
 #endif

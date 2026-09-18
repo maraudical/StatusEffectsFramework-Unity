@@ -20,7 +20,7 @@ namespace StatusEffectsFramework
         /// </summary>
         public static int GetGroup(params string[] groupNames)
         {
-            var groups = StatusEffectSettings.GetOrCreateSettings().Groups;
+            var groups = StatusSettings.GetOrCreateSettings().Groups;
 
             BitArray bits = new BitArray(new[] { 0 });
 
@@ -32,20 +32,20 @@ namespace StatusEffectsFramework
             return result[0];
         }
         /// <summary>
-        /// Given an <see cref="int"/> index, returns the name of the group as defined in the <see cref="StatusEffectSettings"/>.
+        /// Given an <see cref="int"/> index, returns the name of the group as defined in the <see cref="StatusSettings"/>.
         /// </summary>
         public static string IndexToName(int group)
         {
-            var groups = StatusEffectSettings.GetOrCreateSettings().Groups;
+            var groups = StatusSettings.GetOrCreateSettings().Groups;
 
             return groups.ElementAtOrDefault(group);
         }
         /// <summary>
-        /// Given a group name, returns the <see cref="int"/> index as defined in the <see cref="StatusEffectSettings"/>.
+        /// Given a group name, returns the <see cref="int"/> index as defined in the <see cref="StatusSettings"/>.
         /// </summary>
         public static int NameToIndex(string groupName)
         {
-            var groups = StatusEffectSettings.GetOrCreateSettings().Groups;
+            var groups = StatusSettings.GetOrCreateSettings().Groups;
 
             return Array.IndexOf(groups, groupName);
         }

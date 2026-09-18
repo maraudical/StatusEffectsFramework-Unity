@@ -1,5 +1,4 @@
 using UnityEngine;
-using System.IO;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -7,9 +6,9 @@ using UnityEditor;
 namespace StatusEffectsFramework
 {
     // Create a new type of Settings Asset.
-    public class StatusEffectSettings : ScriptableObject
+    public class StatusSettings : ScriptableObject
     {
-        public const string SettingsName = "StatusEffectSettings";
+        public const string SettingsName = "StatusSettings";
         public const string SettingsPath = "Assets/Settings/Resources/" + SettingsName + ".asset";
 
         [Space]
@@ -27,13 +26,13 @@ namespace StatusEffectsFramework
         [SerializeField]
         public string DefaultDynamicEffectsPath = "ScriptableObjects/DynamicEffects";
 
-        public static StatusEffectSettings GetOrCreateSettings()
+        public static StatusSettings GetOrCreateSettings()
         {
-            var settings = Resources.Load<StatusEffectSettings>("StatusEffectSettings");
+            var settings = Resources.Load<StatusSettings>("StatusEffectSettings");
 #if UNITY_EDITOR
             if (settings == null || settings.Groups == null || settings.Groups.Length != 32)
             {
-                settings = CreateInstance<StatusEffectSettings>();
+                settings = CreateInstance<StatusSettings>();
                 settings.Groups = new string[32];
                 settings.Groups[0] = "Static";
                 settings.Groups[1] = "Negative";

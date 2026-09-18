@@ -12,7 +12,7 @@ namespace StatusEffectsFramework.Entities
     [BurstCompile]
     internal unsafe struct ModulesJob : IJobChunk
     {
-        public StatusReferences References;
+        public UnmanagedStatusRegistry Registry;
         public EntityCommandBuffer.ParallelWriter CommandBuffer;
         public EntityCommandBuffer.ParallelWriter LateCommandBuffer;
         public EntityTypeHandle EntityTypeHandle;
@@ -28,8 +28,8 @@ namespace StatusEffectsFramework.Entities
             BufferAccessor<ZeroLengthModules> zeroLengthModulesAccessor = chunk.GetBufferAccessorRW(ref ZeroLengthModulesHandle);
             ModuleInfo moduleInfo;
             
-            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
-            var typeToLength = new UnsafeHashMap<TypeIndex, int>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+            var typeToLength = new UnsafeHashMap<TypeIndex, int>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
             var sizeOfUint = UnsafeUtility.SizeOf<uint>();
 
             var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
@@ -43,15 +43,14 @@ namespace StatusEffectsFramework.Entities
 
                 foreach (var statusEffectEvent in statusEffectEvents)
                 {
-                    if (!Hint.Unlikely(References.TryGetReference(statusEffectEvent.StatusEffectDataId, out var reference)))
+                    if (Hint.Unlikely(!Registry.TryGetStatusEffectData(statusEffectEvent.Id, out var reference)))
                         continue;
 
                     ref var data = ref reference.Value;
-                    ref var modules = ref data.Modules;
 
-                    for (int v = 0; v < modules.Length; v++)
+                    for (int v = 0; v < data.Modules.Length; v++)
                     {
-                        moduleInfo = modules[v];
+                        moduleInfo = data.Modules[v];
 
                         if (!typeToIndexAndTypeInfo.TryGetValue(moduleInfo.TypeIndex, out var info))
                         {
@@ -79,8 +78,8 @@ namespace StatusEffectsFramework.Entities
                                 }
 
                                 var value = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                UnsafeUtility.MemCpy(value, &statusEffectEvent.Id, sizeOfUint);
-                                UnsafeUtility.MemCpy(value + References.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
+                                UnsafeUtility.MemCpy(value, &statusEffectEvent.InstanceId, sizeOfUint);
+                                UnsafeUtility.MemCpy(value + Registry.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
                                 StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, value);
                                 UnsafeUtility.Free(value, Allocator.Temp);
                                 break;
@@ -98,7 +97,7 @@ namespace StatusEffectsFramework.Entities
                                 for (int n = length - 1; n >= 0; n--)
                                 {
                                     int id = *(int*)(buffer + sizeOfModule * n);
-                                    if (id != statusEffectEvent.Id)
+                                    if (id != statusEffectEvent.InstanceId)
                                         continue;
                                     
                                     StatusEffectsECSInternals.RemoveAtSwapBack(header, sizeOfModule, n);
@@ -164,7 +163,7 @@ namespace StatusEffectsFramework.Entities
             NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
             BufferAccessor<ZeroLengthModules> zeroLengthModulesAccessor = chunk.GetBufferAccessorRW(ref ZeroLengthModulesHandle);
 
-            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
             
             var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
             while (enumerator.NextEntityIndex(out var i))
@@ -213,7 +212,7 @@ namespace StatusEffectsFramework.Entities
 #endif
 
             state.RequireForUpdate<StatusEffects>();
-            state.RequireForUpdate<StatusReferences>();
+            state.RequireForUpdate<UnmanagedStatusRegistry>();
         }
 
         [BurstCompile]
@@ -224,7 +223,7 @@ namespace StatusEffectsFramework.Entities
 
             var modulesJob = new ModulesJob()
             {
-                References = SystemAPI.GetSingleton<StatusReferences>(),
+                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
                 CommandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 LateCommandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 EntityTypeHandle = entityTypeHandle,
@@ -258,7 +257,7 @@ namespace StatusEffectsFramework.Entities
             m_ModulesQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, Simulate>().WithPresent<ZeroLengthModules>().Build();
 
             state.RequireForUpdate<NetworkTime>();
-            state.RequireForUpdate<StatusReferences>();
+            state.RequireForUpdate<UnmanagedStatusRegistry>();
             state.RequireForUpdate(m_ModulesQuery);
         }
 
@@ -271,7 +270,7 @@ namespace StatusEffectsFramework.Entities
 
             var modulesJob = new ModulesJob()
             {
-                References = SystemAPI.GetSingleton<StatusReferences>(),
+                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
                 CommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 LateCommandBuffer = lateCommandBuffer,
                 EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
@@ -297,7 +296,7 @@ namespace StatusEffectsFramework.Entities
             m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, InterpolatedStatusEffects, Simulate>().WithPresent<StatusEffectEvents>().Build();
 
             state.RequireForUpdate<NetworkTime>();
-            state.RequireForUpdate<StatusReferences>();
+            state.RequireForUpdate<UnmanagedStatusRegistry>();
             state.RequireForUpdate(m_EntityQuery);
         }
 
@@ -310,7 +309,7 @@ namespace StatusEffectsFramework.Entities
             
             var firstPredictionTickJob = new ModulesFirstPredictionTickJob()
             {
-                References = SystemAPI.GetSingleton<StatusReferences>(),
+                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
                 CommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
                 StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(true),
@@ -324,7 +323,7 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         internal struct ModulesFirstPredictionTickJob : IJobChunk
         {
-            public StatusReferences References;
+            public UnmanagedStatusRegistry Registry;
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
             public EntityTypeHandle EntityTypeHandle;
             public BufferTypeHandle<StatusEffectEvents> StatusEffectEventsHandle;
@@ -342,9 +341,9 @@ namespace StatusEffectsFramework.Entities
 
                 ModuleInfo moduleInfo;
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
-                var interpolatedTypes = new UnsafeHashSet<TypeIndex>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
-                var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                var interpolatedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 var sizeOfUint = UnsafeUtility.SizeOf<uint>();
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
@@ -362,19 +361,18 @@ namespace StatusEffectsFramework.Entities
                     {
                         var interpolatedStatusEffect = interpolatedStatusEffects[v];
 
-                        if (v >= statusEffects.Length || statusEffects[v].Id != interpolatedStatusEffect.Id)
+                        if (v >= statusEffects.Length || statusEffects[v].InstanceId != interpolatedStatusEffect.InstanceId)
                             noChange = false;
                         else
                             continue;
                         
-                        if (!Hint.Unlikely(References.TryGetReference(interpolatedStatusEffect.StatusEffectDataId, out var reference)))
+                        if (Hint.Unlikely(!Registry.TryGetStatusEffectData(interpolatedStatusEffect.Id, out var reference)))
                             continue;
 
                         ref var data = ref reference.Value;
-                        ref var modules = ref data.Modules;
 
-                        for (int m = 0; m < modules.Length; m++)
-                            interpolatedTypes.Add(modules[m].TypeIndex);
+                        for (int m = 0; m < data.Modules.Length; m++)
+                            interpolatedTypes.Add(data.Modules[m].TypeIndex);
                     }
                     
                     if (noChange && statusEffects.Length == interpolatedStatusEffects.Length)
@@ -385,19 +383,18 @@ namespace StatusEffectsFramework.Entities
 
                     foreach (var statusEffect in statusEffects)
                     {
-                        int index = statusEffectEvents.IndexOf(statusEffect.Id);
+                        int index = statusEffectEvents.IndexOf(statusEffect.InstanceId);
                         if (index >= 0 && statusEffectEvents[index].Event is StatusEffectEvent.Added)
                             continue;
 
-                        if (!Hint.Unlikely(References.TryGetReference(statusEffect.StatusEffectDataId, out var reference)))
+                        if (Hint.Unlikely(!Registry.TryGetStatusEffectData(statusEffect.Id, out var reference)))
                             continue;
 
                         ref var data = ref reference.Value;
-                        ref var modules = ref data.Modules;
 
-                        for (int v = 0; v < modules.Length; v++)
+                        for (int v = 0; v < data.Modules.Length; v++)
                         {
-                            moduleInfo = modules[v];
+                            moduleInfo = data.Modules[v];
                             var componentType = ComponentType.FromTypeIndex(moduleInfo.TypeIndex);
 
                             interpolatedTypes.Remove(moduleInfo.TypeIndex);
@@ -419,8 +416,8 @@ namespace StatusEffectsFramework.Entities
                                     typeAlreadyProcessed.Add(moduleInfo.TypeIndex);
                                 }
                                 var value = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                UnsafeUtility.MemCpy(value, &statusEffect.Id, sizeOfUint);
-                                UnsafeUtility.MemCpy(value + References.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
+                                UnsafeUtility.MemCpy(value, &statusEffect.InstanceId, sizeOfUint);
+                                UnsafeUtility.MemCpy(value + Registry.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
                                 StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, value);
                                 UnsafeUtility.Free(value, Allocator.Temp);
                             }
@@ -442,8 +439,8 @@ namespace StatusEffectsFramework.Entities
                                 StatusEffectsECSInternals.EnsureCapacity(header, lengthAsRef + 1, sizeOfModule, info.TypeInfo.AlignmentInBytes);
                                 
                                 var newElement = buffer + lengthAsRef * sizeOfModule;
-                                UnsafeUtility.MemCpy(newElement, &statusEffect.Id, sizeOfUint);
-                                UnsafeUtility.MemCpy(newElement + References.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
+                                UnsafeUtility.MemCpy(newElement, &statusEffect.InstanceId, sizeOfUint);
+                                UnsafeUtility.MemCpy(newElement + Registry.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
                                 lengthAsRef++;
                             }
                         }

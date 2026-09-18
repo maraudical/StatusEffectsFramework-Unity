@@ -23,9 +23,9 @@ namespace StatusEffectsFramework.Entities
         [GhostField]
         public StatusEffectGroup Group;
         [GhostField]
-        public uint Id;
+        public uint InstanceId;
         [GhostField]
-        public Hash128 Hash;
+        public ushort Id;
         [GhostField]
         public StatusEffectTiming Timing;
         [GhostField(Quantization = 1000)]
@@ -36,19 +36,19 @@ namespace StatusEffectsFramework.Entities
         public int Stacks;
         /// <inheritdoc cref="StatusEffects.EventId"/>
         [GhostField]
-        public Hash128 EventId;
+        public ushort EventId;
 
         /// <summary>
         /// Constructs a <see cref="StatusEffectRequests"/> to request adding a new 
         /// effect. Optional <paramref name="stacks"/> count.
         /// </summary>
         [BurstCompile]
-        public static StatusEffectRequests Add(Hash128 statusEffectData, int stacks = 1)
+        public static StatusEffectRequests Add(ushort id, int stacks = 1)
         {
             return new StatusEffectRequests
             {
                 Type = StatusEffectRequestType.Add,
-                Hash = statusEffectData,
+                Id = id,
                 Timing = StatusEffectTiming.Infinite,
                 Duration = -1,
                 Stacks = stacks,
@@ -61,12 +61,12 @@ namespace StatusEffectsFramework.Entities
         /// <paramref name="stacks"/> count.
         /// </summary>
         [BurstCompile]
-        public static StatusEffectRequests AddWithDuration(Hash128 statusEffectData, float duration, int stacks = 1)
+        public static StatusEffectRequests AddWithDuration(ushort id, float duration, int stacks = 1)
         {
             return new StatusEffectRequests
             {
                 Type = StatusEffectRequestType.Add,
-                Hash = statusEffectData,
+                Id = id,
                 Timing = StatusEffectTiming.Duration,
                 Duration = duration,
                 Stacks = stacks,
@@ -86,12 +86,12 @@ namespace StatusEffectsFramework.Entities
         /// <paramref name="eventId"/>.
         /// </remarks>
         [BurstCompile]
-        public static StatusEffectRequests AddWithEvent(Hash128 statusEffectData, float duration, Hash128 eventId, float interval = 1, int stacks = 1)
+        public static StatusEffectRequests AddWithEvent(ushort id, float duration, ushort eventId, float interval = 1, int stacks = 1)
         {
             return new StatusEffectRequests
             {
                 Type = StatusEffectRequestType.Add,
-                Hash = statusEffectData,
+                Id = id,
                 Timing = StatusEffectTiming.Event,
                 Duration = duration,
                 Interval = interval,
@@ -113,12 +113,12 @@ namespace StatusEffectsFramework.Entities
         /// <see cref="StatusEffects.Duration"/> to 0.
         /// </remarks>
         [BurstCompile]
-        public static StatusEffectRequests AddWithPredicate(Hash128 statusEffectData, Hash128 eventId, int stacks = 1)
+        public static StatusEffectRequests AddWithPredicate(ushort id, ushort eventId, int stacks = 1)
         {
             return new StatusEffectRequests
             {
                 Type = StatusEffectRequestType.Add,
-                Hash = statusEffectData,
+                Id = id,
                 Timing = StatusEffectTiming.Duration,
                 Duration = 1,
                 Stacks = stacks,
@@ -142,11 +142,29 @@ namespace StatusEffectsFramework.Entities
 
         /// <summary>
         /// Remove any amount of <see cref="StatusEffects"/> given a 
-        /// <see cref="uint"/> <paramref name="id"/>. Optional 
+        /// <see cref="uint"/> <paramref name="instanceId"/>. Optional 
         /// <paramref name="stacks"/> count.
         /// </summary>
         [BurstCompile]
-        public static StatusEffectRequests RemoveWithId(uint id, int stacks = -1)
+        public static StatusEffectRequests RemoveWithInstanceId(uint instanceId, int stacks = -1)
+        {
+            return new StatusEffectRequests
+            {
+                Type = StatusEffectRequestType.Remove,
+                RemovalType = StatusEffectRemovalType.InstanceId,
+                InstanceId = instanceId,
+                Stacks = stacks
+            };
+        }
+
+        /// <summary>
+        /// Remove any amount of <see cref="StatusEffects"/> given a 
+        /// <see cref="Hash128"/> <paramref name="id"/> of the 
+        /// <see cref="UnmanagedStatusEffectData.Id"/> reference. Optional 
+        /// <paramref name="stacks"/> count.
+        /// </summary>
+        [BurstCompile]
+        public static StatusEffectRequests RemoveWithId(ushort id, int stacks = -1)
         {
             return new StatusEffectRequests
             {
@@ -159,36 +177,18 @@ namespace StatusEffectsFramework.Entities
 
         /// <summary>
         /// Remove any amount of <see cref="StatusEffects"/> given a 
-        /// <see cref="Hash128"/> <paramref name="id"/> of the 
-        /// <see cref="UnmanagedStatusEffectData.Id"/> reference. Optional 
-        /// <paramref name="stacks"/> count.
-        /// </summary>
-        [BurstCompile]
-        public static StatusEffectRequests RemoveWithStatusEffectDataId(Hash128 id, int stacks = -1)
-        {
-            return new StatusEffectRequests
-            {
-                Type = StatusEffectRequestType.Remove,
-                RemovalType = StatusEffectRemovalType.StatusEffectDataId,
-                Hash = id,
-                Stacks = stacks
-            };
-        }
-
-        /// <summary>
-        /// Remove any amount of <see cref="StatusEffects"/> given a 
         /// <see cref="Hash128"/> <paramref name="name"/> of the 
         /// <see cref="ComparableName"/> <see cref="Registr"/> reference. Optional 
         /// <paramref name="stacks"/> count.
         /// </summary>
         [BurstCompile]
-        public static StatusEffectRequests RemoveWithComparableName(Hash128 name, int stacks = -1)
+        public static StatusEffectRequests RemoveWithComparableName(ushort name, int stacks = -1)
         {
             return new StatusEffectRequests
             {
                 Type = StatusEffectRequestType.Remove,
                 RemovalType = StatusEffectRemovalType.ComparableName,
-                Hash = name,
+                Id = name,
                 Stacks = stacks
             };
         }

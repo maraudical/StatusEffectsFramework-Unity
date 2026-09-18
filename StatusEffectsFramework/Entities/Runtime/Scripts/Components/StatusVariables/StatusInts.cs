@@ -1,4 +1,5 @@
 #if ENTITIES
+using Unity.Assertions;
 using Unity.Entities;
 #if NETCODE
 using Unity.NetCode;
@@ -8,6 +9,7 @@ namespace StatusEffectsFramework.Entities
 {
     public struct StatusInts : IBufferElementData
     {
+        internal Hash128 UniqueKey;
 #if NETCODE
         [GhostField(Composite = true)]
 #endif
@@ -15,7 +17,7 @@ namespace StatusEffectsFramework.Entities
 #if NETCODE
         [GhostField]
 #endif
-        public ushort StatusName;
+        public ushort Id;
 #if NETCODE
         [GhostField]
 #endif
@@ -34,10 +36,11 @@ namespace StatusEffectsFramework.Entities
         public int PostEvaluationValue;
         public int Value => PostEvaluationValue;
 
-        public StatusInts(TypeIndex typeIndex, ushort statusName, int baseValue, bool signProtected)
+        public StatusInts(TypeIndex typeIndex, Hash128 uniqueKey, int baseValue, bool signProtected = true)
         {
+            UniqueKey = uniqueKey;
             TypeIndex = typeIndex;
-            StatusName = statusName;
+            Id = default;
             SignProtected = signProtected;
             BaseValue = baseValue;
             PreEvaluationValue = baseValue;
@@ -46,24 +49,16 @@ namespace StatusEffectsFramework.Entities
 
         public StatusInts(TypeIndex typeIndex, StatusInt statusInt)
         {
-            TypeIndex = typeIndex;
+            Assert.IsNotNull(statusInt, $"{nameof(StatusInt)} cannot be null when creating a {nameof(StatusInts)} buffer element.");
+            Assert.IsNotNull(statusInt.StatusName, $"{nameof(StatusInt.StatusName)} cannot be null when creating a {nameof(StatusInts)} buffer element.");
 
-            if (statusInt != null && statusInt.StatusName)
-            {
-                StatusName = statusInt.StatusName.Id;
-                SignProtected = statusInt.SignProtected;
-                BaseValue = statusInt.BaseValue;
-                PreEvaluationValue = statusInt.BaseValue;
-                PostEvaluationValue = statusInt.BaseValue;
-            }
-            else
-            {
-                StatusName = default;
-                SignProtected = default;
-                BaseValue = default;
-                PreEvaluationValue = default;
-                PostEvaluationValue = default;
-            }
+            UniqueKey = statusInt.StatusName.GetUniqueKeyHash(); 
+            TypeIndex = typeIndex;
+            Id = default;
+            SignProtected = statusInt.SignProtected;
+            BaseValue = statusInt.BaseValue;
+            PreEvaluationValue = statusInt.BaseValue;
+            PostEvaluationValue = statusInt.BaseValue;
         }
     }
 }

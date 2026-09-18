@@ -5,7 +5,7 @@ namespace StatusEffectsFramework.Entities
 {
     public struct UnmanagedEffect
     {
-        public Hash128 StatusName;
+        public ushort Id;
         public ValueType ValueType;
         public ValueModifier ValueModifier;
         public ValueSource ValueSource;

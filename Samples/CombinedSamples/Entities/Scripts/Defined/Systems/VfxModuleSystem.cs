@@ -42,12 +42,12 @@ namespace StatusEffectsFramework.Entities.Samples
             };
 
             RequireAnyForUpdate(m_Queries);
-            RequireForUpdate<StatusReferences>();
+            RequireForUpdate<UnmanagedStatusRegistryrrrr>();
         }
 
         protected override void OnUpdate()
         {
-            var statusReferences = SystemAPI.GetSingleton<StatusReferences>();
+            var statusReferences = SystemAPI.GetSingleton<UnmanagedStatusRegistryrrrr>();
             var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
             var statusEffectsLookup = SystemAPI.GetBufferLookup<StatusEffects>(true);
             var localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);
@@ -70,16 +70,16 @@ namespace StatusEffectsFramework.Entities.Samples
                     switch (statusEffectEvent.Event)
                     {
                         case StatusEffectEvent.Added:
-                            index = modulesArray.BinarySearchFirst(statusEffectEvent.Id);
+                            index = modulesArray.BinarySearchFirst(statusEffectEvent.InstanceId);
 
-                            if (index < 0 || !StatusEffects.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
+                            if (index < 0 || !StatusEffects.TryGetStatusEffect(statusEffects, statusEffectEvent.InstanceId, out statusEffect))
                                 return;
 
                             for (int i = index; i < modulesArray.Length; i++)
                             {
                                 var module = modulesArray[i];
 
-                                if (module.Id != statusEffectEvent.Id)
+                                if (module.Id != statusEffectEvent.InstanceId)
                                     break;
 
 #if NETCODE
@@ -112,7 +112,7 @@ namespace StatusEffectsFramework.Entities.Samples
                             {
                                 var cleanup = cleanupBuffer[i];
 
-                                if (cleanup.Id != statusEffectEvent.Id)
+                                if (cleanup.Id != statusEffectEvent.InstanceId)
                                     continue;
 
                                 cleanupBuffer.RemoveAtSwapBack(i);
@@ -129,16 +129,16 @@ namespace StatusEffectsFramework.Entities.Samples
                                 continue;
 
 #endif
-                            index = modulesArray.BinarySearchFirst(statusEffectEvent.Id);
+                            index = modulesArray.BinarySearchFirst(statusEffectEvent.InstanceId);
 
-                            if (index < 0 || !StatusEffects.TryGetStatusEffect(statusEffects, statusEffectEvent.Id, out statusEffect))
+                            if (index < 0 || !StatusEffects.TryGetStatusEffect(statusEffects, statusEffectEvent.InstanceId, out statusEffect))
                                 return;
 
                             for (int i = index; i < modulesArray.Length; i++)
                             {
                                 var module = modulesArray[i];
 
-                                if (module.Id != statusEffectEvent.Id)
+                                if (module.Id != statusEffectEvent.InstanceId)
                                     break;
 
                                 if (module.Struct.IsLooping || statusEffect.Stacks < statusEffectEvent.PreviousStacks)

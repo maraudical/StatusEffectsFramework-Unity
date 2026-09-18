@@ -4,7 +4,7 @@ using UnityEngine.UIElements;
 
 namespace StatusEffectsFramework.Editor
 {
-    [CustomEditor(typeof(StatusEffectRegistry))]
+    [CustomEditor(typeof(StatusRegistry))]
     internal class StatusEffectDatabaseEditor : UnityEditor.Editor
     {
         public override VisualElement CreateInspectorGUI()

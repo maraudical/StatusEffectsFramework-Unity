@@ -27,13 +27,13 @@ namespace StatusEffectsFramework.Entities.Samples
             m_EntityQuery.AddChangedVersionFilter(ComponentType.ReadWrite<Modules<HealModuleStruct>>());
 
             state.RequireForUpdate(m_EntityQuery);
-            state.RequireForUpdate<StatusReferences>();
+            state.RequireForUpdate<UnmanagedStatusRegistryrrrr>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var statusReferences = SystemAPI.GetSingleton<StatusReferences>();
+            var statusReferences = SystemAPI.GetSingleton<UnmanagedStatusRegistryrrrr>();
             var commandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             var lookup = SystemAPI.GetBufferLookup<Modules<HealModuleStruct>>();
             var playerLookup = SystemAPI.GetComponentLookup<ExamplePlayerComponent>();
@@ -51,7 +51,7 @@ namespace StatusEffectsFramework.Entities.Samples
         partial struct HealModuleJob : IJobEntity
         {
             public TypeIndex TypeIndex;
-            public StatusReferences References;
+            public UnmanagedStatusRegistryrrrr References;
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
 
             public void Execute([ChunkIndexInQuery] int sortKey,
@@ -74,7 +74,7 @@ namespace StatusEffectsFramework.Entities.Samples
 
                 foreach (var statusEffectEvent in statusEffectEvents)
                 {
-                    if (!References.TryGetReference(statusEffectEvent.StatusEffectDataId, out var reference))
+                    if (!References.TryGetReference(statusEffectEvent.Id, out var reference))
                         continue;
 
                     ref var data = ref reference.Value;
@@ -82,10 +82,10 @@ namespace StatusEffectsFramework.Entities.Samples
                     switch (statusEffectEvent.Event)
                     {
                         case StatusEffectEvent.Added:
-                            AddHealth(0, statusEffectEvent.Id, ref player, in data, in statusEffects);
+                            AddHealth(0, statusEffectEvent.InstanceId, ref player, in data, in statusEffects);
                             break;
                         case StatusEffectEvent.Updated:
-                            AddHealth(statusEffectEvent.PreviousStacks, statusEffectEvent.Id, ref player, in data, in statusEffects);
+                            AddHealth(statusEffectEvent.PreviousStacks, statusEffectEvent.InstanceId, ref player, in data, in statusEffects);
                             break;
                     }
 

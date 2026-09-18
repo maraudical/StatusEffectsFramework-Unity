@@ -14,7 +14,7 @@ namespace StatusEffectsFramework.Editor
 
         public void CreateGUI()
         {
-            rootVisualElement.Add(UnityEditor.Editor.CreateEditor(StatusEffectSettings.GetOrCreateSettings()).CreateInspectorGUI());
+            rootVisualElement.Add(UnityEditor.Editor.CreateEditor(StatusSettings.GetOrCreateSettings()).CreateInspectorGUI());
             rootVisualElement.style.paddingLeft = 10;
             rootVisualElement.style.paddingRight = 8;
             rootVisualElement.style.paddingBottom = 8;

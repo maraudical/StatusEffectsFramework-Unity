@@ -3,6 +3,6 @@ using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
 {
-    public struct StatusReferencesSetupRequest : IComponentData { }
+    public struct UnmanagedStatusRegistrySetupRequest : IComponentData { }
 }
 #endif

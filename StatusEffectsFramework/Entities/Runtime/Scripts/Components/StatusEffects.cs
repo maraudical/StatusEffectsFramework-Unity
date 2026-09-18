@@ -26,11 +26,11 @@ namespace StatusEffectsFramework.Entities
 #if NETCODE
         [GhostField]
 #endif
-        public uint Id;
+        public uint InstanceId;
 #if NETCODE
-        [GhostField(Composite = true)]
+        [GhostField]
 #endif
-        public ushort StatusEffectDataId;
+        public ushort Id;
 #if NETCODE
         [GhostField]
 #endif
@@ -60,15 +60,15 @@ namespace StatusEffectsFramework.Entities
         /// decrement them.
         /// </summary>
 #if NETCODE
-        [GhostField(Composite = true)]
+        [GhostField]
 #endif
         public ushort EventId;
 
-        public int CompareTo(StatusEffects other) => Id.CompareTo(other.Id);
+        public int CompareTo(StatusEffects other) => InstanceId.CompareTo(other.InstanceId);
 
-        public bool Equals(uint other) => Id.Equals(other);
+        public bool Equals(uint other) => InstanceId.Equals(other);
 
-        public bool Equals(StatusEffects other) => Id.Equals(other.Id);
+        public bool Equals(StatusEffects other) => InstanceId.Equals(other.InstanceId);
 
         /// <summary>
         /// Calculated remaining time until the status effect expires.
@@ -103,7 +103,7 @@ namespace StatusEffectsFramework.Entities
 #endif
 
         /// <summary>
-        /// Finds the index in the <see cref="DynamicBuffer{T}"/> where the <see cref="StatusEffects.Id"/> equals a given <paramref name="id"/>.
+        /// Finds the index in the <see cref="DynamicBuffer{T}"/> where the <see cref="StatusEffects.InstanceId"/> equals a given <paramref name="id"/>.
         /// </summary>
         /// <returns>The index of the first occurrence of the value in the buffer. Returns -1 if no occurrence is found.</returns>
         [BurstCompile]
@@ -113,7 +113,7 @@ namespace StatusEffectsFramework.Entities
         }
 
         /// <summary>
-        /// Attempts to find the <see cref="StatusEffects"/> in a <see cref="DynamicBuffer{T}"/> where the <see cref="StatusEffects.Id"/> equals a given <paramref name="id"/>.
+        /// Attempts to find the <see cref="StatusEffects"/> in a <see cref="DynamicBuffer{T}"/> where the <see cref="StatusEffects.InstanceId"/> equals a given <paramref name="id"/>.
         /// </summary>
         [BurstCompile]
         public static bool TryGetStatusEffect(in DynamicBuffer<StatusEffects> buffer, uint id, out StatusEffects statusEffect)

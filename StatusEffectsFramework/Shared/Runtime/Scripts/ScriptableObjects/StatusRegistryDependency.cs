@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace StatusEffectsFramework
 {
-    public class StatusEffectRegistryDependency : ScriptableObject
+    public class StatusRegistryDependency : ScriptableObject
     {
         public IReadOnlyList<StatusEffectData> StatusEffectDatas => m_StatusEffectDatas;
         public IReadOnlyList<StatusName> StatusNames => m_StatusNames;

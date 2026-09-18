@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+#if ENTITIES
+using Hash128 = Unity.Entities.Hash128;
+#endif
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.Build.Reporting;
@@ -15,7 +18,7 @@ namespace StatusEffectsFramework
     /// management of status effects in the game. The database can be dynamically updated 
     /// during runtime.
     /// </summary>
-    public class StatusEffectRegistry : ScriptableObject
+    public class StatusRegistry : ScriptableObject
 #if UNITY_EDITOR
         , IPreprocessBuildWithReport
     {
@@ -72,34 +75,22 @@ namespace StatusEffectsFramework
 #else
     {
 #endif
-        public const string RegistryName = "StatusEffectRegistry";
+        public const string RegistryName = "StatusRegistry";
         public const string RegistryPath = "Assets/Settings/Resources/" + RegistryName + ".asset";
 
         public event Action RegistryRebuilt;
 
         public IReadOnlyDictionary<ushort, StatusEffectData> IdToStatusEffectData => m_IdToStatusEffectData;
-        public IReadOnlyDictionary<string, ushort> KeyToIdForStatusEffectData => m_KeyToIdForStatusEffectData;
-
         public IReadOnlyDictionary<ushort, StatusName> IdToStatusName => m_IdToStatusName;
-        public IReadOnlyDictionary<string, ushort> KeyToIdForStatusName => m_KeyToIdForStatusName;
-
         public IReadOnlyDictionary<ushort, ComparableName> IdToComparableName => m_IdToComparableName;
-        public IReadOnlyDictionary<string, ushort> KeyToIdForComparableName => m_KeyToIdForComparableName;
-
         public IReadOnlyDictionary<ushort, StatusEvent> IdToStatusEvent => m_IdToStatusEvent;
-        public IReadOnlyDictionary<string, ushort> KeyToIdForStatusEvent => m_KeyToIdForStatusEvent;
+        public IReadOnlyDictionary<Hash128, ushort> KeyToId => m_KeyToId;
 
         private Dictionary<ushort, StatusEffectData> m_IdToStatusEffectData;
-        private Dictionary<string, ushort> m_KeyToIdForStatusEffectData;
-
         private Dictionary<ushort, StatusName> m_IdToStatusName;
-        private Dictionary<string, ushort> m_KeyToIdForStatusName;
-
         private Dictionary<ushort, ComparableName> m_IdToComparableName;
-        private Dictionary<string, ushort> m_KeyToIdForComparableName;
-
         private Dictionary<ushort, StatusEvent> m_IdToStatusEvent;
-        private Dictionary<string, ushort> m_KeyToIdForStatusEvent;
+        private Dictionary<Hash128, ushort> m_KeyToId;
 
         public IReadOnlyList<StatusEffectData> StatusEffectDatas => m_StatusEffectDatas;
         public IReadOnlyList<StatusName> StatusNames => m_StatusNames;
@@ -116,17 +107,17 @@ namespace StatusEffectsFramework
         private List<StatusEvent> m_StatusEvents;
 
 #if ADDRESSABLES
-        private HashSet<StatusEffectRegistryDependency> m_Dependencies;
+        private HashSet<StatusRegistryDependency> m_Dependencies;
 
 #endif
-        public static StatusEffectRegistry Get()
+        public static StatusRegistry Get()
         {
-            var registry = Resources.Load<StatusEffectRegistry>(RegistryName);
+            var registry = Resources.Load<StatusRegistry>(RegistryName);
 
 #if UNITY_EDITOR
             if (registry == null)
             {
-                registry = CreateInstance<StatusEffectRegistry>();
+                registry = CreateInstance<StatusRegistry>();
                 AssetDatabase.CreateAsset(registry, RegistryPath);
                 AssetDatabase.SaveAssets();
             }
@@ -141,7 +132,7 @@ namespace StatusEffectsFramework
             var registry = Get();
             if (registry == null)
             {
-                Debug.LogError($"{nameof(StatusEffectRegistry)} could not be found at path {RegistryPath}. Please ensure that the registry exists and is located in the Resources folder.");
+                Debug.LogError($"{nameof(StatusRegistry)} could not be found at path {RegistryPath}. Please ensure that the registry exists and is located in the Resources folder.");
                 return;
             }
             registry.Rebuild();
@@ -154,48 +145,44 @@ namespace StatusEffectsFramework
         {
             ushort statusEffectId = 0;
             m_IdToStatusEffectData = new();
-            m_KeyToIdForStatusEffectData = new();
 
-            AddToDictionary(ref statusEffectId, m_StatusEffectDatas, m_IdToStatusEffectData, m_KeyToIdForStatusEffectData);
+            AddToDictionary(ref statusEffectId, m_StatusEffectDatas, m_IdToStatusEffectData, m_KeyToId);
 
             ushort statusNameId = 0;
             m_IdToStatusName = new();
-            m_KeyToIdForStatusName = new();
 
-            AddToDictionary(ref statusNameId, m_StatusNames, m_IdToStatusName, m_KeyToIdForStatusName);
+            AddToDictionary(ref statusNameId, m_StatusNames, m_IdToStatusName, m_KeyToId);
 
             ushort comparableNameId = 0;
             m_IdToComparableName = new();
-            m_KeyToIdForComparableName = new();
 
-            AddToDictionary(ref comparableNameId, m_ComparableNames, m_IdToComparableName, m_KeyToIdForComparableName);
+            AddToDictionary(ref comparableNameId, m_ComparableNames, m_IdToComparableName, m_KeyToId);
 
             ushort statusEventId = 0;
             m_IdToStatusEvent = new();
-            m_KeyToIdForStatusEvent = new();
 
-            AddToDictionary(ref statusEventId, m_StatusEvents, m_IdToStatusEvent, m_KeyToIdForStatusEvent);
+            AddToDictionary(ref statusEventId, m_StatusEvents, m_IdToStatusEvent, m_KeyToId);
 
 #if ADDRESSABLES
             if (m_Dependencies != null)
                 foreach (var dependency in m_Dependencies)
                 {
-                    AddToDictionary(ref statusEffectId, dependency.StatusEffectDatas, m_IdToStatusEffectData, m_KeyToIdForStatusEffectData);
-                    AddToDictionary(ref statusNameId, dependency.StatusNames, m_IdToStatusName, m_KeyToIdForStatusName);
-                    AddToDictionary(ref comparableNameId, dependency.ComparableNames, m_IdToComparableName, m_KeyToIdForComparableName);
-                    AddToDictionary(ref statusEventId, dependency.StatusEvents, m_IdToStatusEvent, m_KeyToIdForStatusEvent);
+                    AddToDictionary(ref statusEffectId, dependency.StatusEffectDatas, m_IdToStatusEffectData, m_KeyToId);
+                    AddToDictionary(ref statusNameId, dependency.StatusNames, m_IdToStatusName, m_KeyToId);
+                    AddToDictionary(ref comparableNameId, dependency.ComparableNames, m_IdToComparableName, m_KeyToId);
+                    AddToDictionary(ref statusEventId, dependency.StatusEvents, m_IdToStatusEvent, m_KeyToId);
                 }
 #endif
             RegistryRebuilt?.Invoke();
 
-            void AddToDictionary<T>(ref ushort id, IEnumerable<T> list, Dictionary<ushort, T> idToItem, Dictionary<string, ushort> keyToId) where T : Registrant
+            void AddToDictionary<T>(ref ushort id, IEnumerable<T> list, Dictionary<ushort, T> idToItem, Dictionary<Hash128, ushort> keyToId) where T : Registrant
             {
                 foreach (var item in list)
                 {
                     if (item == null)
                         continue;
 
-                    if (!keyToId.TryAdd(item.UniqueKey, id))
+                    if (!keyToId.TryAdd(item.GetUniqueKeyHash(), id))
                     {
                         Debug.LogWarning($"Duplicate key found: {item.UniqueKey}. Skipping registration for this {nameof(T)}.");
                         continue;
@@ -213,7 +200,7 @@ namespace StatusEffectsFramework
         /// better to call <see cref="RegisterDependencyWithoutNotify"/> for each one and then manually 
         /// invoke <see cref="Rebuild"/> once the loading of all dependenciesis complete.
         /// </summary>
-        public void RegisterDependency(StatusEffectRegistryDependency dependency)
+        public void RegisterDependency(StatusRegistryDependency dependency)
         {
             RegisterDependencyWithoutNotify(dependency);
             Rebuild();
@@ -222,7 +209,7 @@ namespace StatusEffectsFramework
         /// <summary>
         /// Registers a dependency for the registry. 
         /// </summary>
-        public void RegisterDependencyWithoutNotify(StatusEffectRegistryDependency dependency)
+        public void RegisterDependencyWithoutNotify(StatusRegistryDependency dependency)
         {
             if (m_Dependencies == null)
                 m_Dependencies = new();

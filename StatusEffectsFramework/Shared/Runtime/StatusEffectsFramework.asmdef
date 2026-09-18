@@ -2,13 +2,12 @@
     "name": "StatusEffectsFramework",
     "rootNamespace": "StatusEffectsFramework",
     "references": [
-        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5",
-        "GUID:9e24947de15b9834991c9d8411ea37cf",
-        "GUID:f51ebe6a0ceec4240a699833d6309b23",
         "GUID:d8b63aba1907145bea998dd612889d6b",
         "GUID:2665a8d13d1b3f18800f46e256720795",
         "GUID:734d92eba21c94caba915361bd5ac177",
-        "GUID:e0cd26848372d4e5c891c569017e11f1"
+        "GUID:e0cd26848372d4e5c891c569017e11f1",
+        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5",
+        "GUID:9e24947de15b9834991c9d8411ea37cf"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -19,24 +18,19 @@
     "defineConstraints": [],
     "versionDefines": [
         {
-            "name": "com.cysharp.unitask",
-            "expression": "",
-            "define": "UNITASK"
-        },
-        {
             "name": "com.unity.localization",
             "expression": "",
             "define": "LOCALIZED"
         },
         {
-            "name": "com.unity.addressables",
-            "expression": "",
-            "define": "ADDRESSABLES"
-        },
-        {
             "name": "com.unity.entities",
             "expression": "",
             "define": "ENTITIES"
+        },
+        {
+            "name": "com.unity.addressables",
+            "expression": "",
+            "define": "ADDRESSABLES"
         }
     ],
     "noEngineReferences": false

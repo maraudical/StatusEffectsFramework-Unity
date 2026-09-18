@@ -12,7 +12,7 @@ namespace StatusEffectsFramework.Entities
     {
         public int Index;
 
-        public ushort StatusEffectDataId;
+        public ushort Id;
         public StatusEffectTiming Timing;
         public float Duration;
         public float Interval;
@@ -23,7 +23,7 @@ namespace StatusEffectsFramework.Entities
         {
             Index = index;
 
-            StatusEffectDataId = statusEffect.StatusEffectDataId;
+            Id = statusEffect.Id;
             Timing = statusEffect.Timing;
             Duration = statusEffect.Duration;
             Interval = statusEffect.Interval;
@@ -33,7 +33,7 @@ namespace StatusEffectsFramework.Entities
 
         public bool Equals(int other) => Index.Equals(other);
 
-        public bool Equals(Hash128 other) => StatusEffectDataId.Equals(other);
+        public bool Equals(Hash128 other) => Id.Equals(other);
     }
 }
 #endif

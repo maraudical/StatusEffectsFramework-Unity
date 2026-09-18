@@ -9,8 +9,8 @@ namespace StatusEffectsFramework.Entities
     public struct StatusEffectEvents : IBufferElementData, IEnableableComponent, IEquatable<uint>
     {
         public StatusEffectEvent Event;
-        public uint Id;
-        public Hash128 StatusEffectDataId;
+        public uint InstanceId;
+        public ushort Id;
         public int PreviousStacks;
 #if NETCODE
         /// <summary>
@@ -28,37 +28,37 @@ namespace StatusEffectsFramework.Entities
         public const float SecondsTillOldThreshold = 0.5f;
 #endif
 
-        public StatusEffectEvents(uint id, Hash128 statusEffectDataId
+        public StatusEffectEvents(uint id, ushort statusEffectDataId
 #if NETCODE
             , bool isOld = false
 #endif
             )
         {
             Event = StatusEffectEvent.Added;
-            Id = id;
-            StatusEffectDataId = statusEffectDataId;
+            InstanceId = id;
+            Id = statusEffectDataId;
             PreviousStacks = 0;
 #if NETCODE
             IsOld = isOld;
 #endif
         }
 
-        public StatusEffectEvents(uint id, Hash128 statusEffectDataId, int previousStacks, StatusEffectEvent statusEffectEvent
+        public StatusEffectEvents(uint id, ushort statusEffectDataId, int previousStacks, StatusEffectEvent statusEffectEvent
 #if NETCODE
             , bool isOld = false
 #endif
             )
         {
             Event = statusEffectEvent;
-            Id = id;
-            StatusEffectDataId = statusEffectDataId;
+            InstanceId = id;
+            Id = statusEffectDataId;
             PreviousStacks = previousStacks;
 #if NETCODE
             IsOld = isOld;
 #endif
         }
 
-        public bool Equals(uint other) => Id.Equals(other);
+        public bool Equals(uint other) => InstanceId.Equals(other);
     }
 }
 #endif

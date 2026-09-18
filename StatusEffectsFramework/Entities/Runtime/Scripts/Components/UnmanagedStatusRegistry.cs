@@ -3,9 +3,12 @@ using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
 {
-    public struct StatusReferences : IComponentData
+    public struct UnmanagedStatusRegistry : IComponentData
     {
-        public bool TryGetReference(ushort id, out BlobAssetReference<UnmanagedStatusEffectData> reference) => IdToStatusEffectDataMap.Value.TryGetValue(id, out reference);
+        public ushort Version { get; internal set; }
+
+        public bool TryGetStatusEffectData(ushort id, out BlobAssetReference<UnmanagedStatusEffectData> reference) => IdToStatusEffectData.Value.TryGetValue(id, out reference);
+        public bool TryGetId(Hash128 key, out ushort id) => KeyToId.Value.TryGetValue(key, out id);
 
         internal const int CollectionsInitialCapacity = 16;
         
@@ -14,7 +17,8 @@ namespace StatusEffectsFramework.Entities
         internal DynamicIntOffsets DynamicIntOffsets;
         internal DynamicBoolOffsets DynamicBoolOffsets;
 
-        internal BlobAssetReference<BlobHashMap<ushort, BlobAssetReference<UnmanagedStatusEffectData>>> IdToStatusEffectDataMap;
+        internal BlobAssetReference<BlobHashMap<ushort, BlobAssetReference<UnmanagedStatusEffectData>>> IdToStatusEffectData;
+        internal BlobAssetReference<BlobHashMap<Hash128, ushort>> KeyToId;
     }
 
     internal struct ModuleOffsets
@@ -24,7 +28,7 @@ namespace StatusEffectsFramework.Entities
 
     internal struct DynamicFloatOffsets
     {
-        public int StatusName;
+        public int Id;
         public int ValueModifier;
         public int PostEvaluate;
         public int Priority;
@@ -34,7 +38,7 @@ namespace StatusEffectsFramework.Entities
 
     internal struct DynamicIntOffsets
     {
-        public int StatusName;
+        public int Id;
         public int ValueModifier;
         public int PostEvaluate;
         public int Priority;
@@ -44,7 +48,7 @@ namespace StatusEffectsFramework.Entities
 
     internal struct DynamicBoolOffsets
     {
-        public int StatusName;
+        public int Id;
         public int PostEvaluate;
         public int Priority;
         public int Value;

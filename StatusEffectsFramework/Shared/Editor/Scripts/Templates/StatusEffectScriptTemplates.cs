@@ -16,8 +16,6 @@ namespace StatusEffectsFramework.Templates
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(EntityId.None, ScriptableObject.CreateInstance<CreateScriptTemplateAssetsAction>(), "NewModuleScript.cs", icon,
 #if ENTITIES
                 EntityModuleScriptContent
-#elif UNITASK
-                UniTaskModuleScriptContent
 #else
                 ModuleScriptContent
 #endif
@@ -66,22 +64,6 @@ namespace StatusEffectsFramework.Templates
 
             return content;
         }
-
-        internal const string UniTaskModuleScriptContent =
-@"using StatusEffectsFramework
-using Cysharp.Threading.Tasks;
-using System.Threading;
-using UnityEngine;
-
-[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Modules/#DISPLAYNAME#"", order = 1)]
-//[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
-public class #SCRIPTNAME# : Module
-{
-    public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
-    {
-        await UniTask.CompletedTask;
-    }
-}";
 
         internal const string ModuleScriptContent =
 @"using StatusEffectsFramework

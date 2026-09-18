@@ -1,4 +1,5 @@
 #if ENTITIES
+using Unity.Assertions;
 using Unity.Entities;
 #if NETCODE
 using Unity.NetCode;
@@ -8,6 +9,7 @@ namespace StatusEffectsFramework.Entities
 {
     public struct StatusBools : IBufferElementData
     {
+        internal Hash128 UniqueKey;
 #if NETCODE
         [GhostField(Composite = true)]
 #endif
@@ -15,7 +17,7 @@ namespace StatusEffectsFramework.Entities
 #if NETCODE
         [GhostField]
 #endif
-        public ushort StatusName;
+        public ushort Id;
 #if NETCODE
         [GhostField]
 #endif
@@ -30,10 +32,11 @@ namespace StatusEffectsFramework.Entities
         public bool PostEvaluationValue;
         public bool Value => PostEvaluationValue;
 
-        public StatusBools(TypeIndex typeIndex, ushort statusName, bool baseValue)
+        public StatusBools(TypeIndex typeIndex, Hash128 uniqueKey, bool baseValue)
         {
+            UniqueKey = uniqueKey;
             TypeIndex = typeIndex;
-            StatusName = statusName;
+            Id = default;
             BaseValue = baseValue;
             PreEvaluationValue = baseValue;
             PostEvaluationValue = baseValue;
@@ -41,21 +44,15 @@ namespace StatusEffectsFramework.Entities
 
         public StatusBools(TypeIndex typeIndex, StatusBool statusBool)
         {
+            Assert.IsNotNull(statusBool, $"{nameof(StatusBool)} cannot be null when creating a {nameof(StatusBools)} buffer element.");
+            Assert.IsNotNull(statusBool.StatusName, $"{nameof(StatusBool.StatusName)} cannot be null when creating a {nameof(StatusBools)} buffer element.");
+
+            UniqueKey = statusBool.StatusName.GetUniqueKeyHash(); 
             TypeIndex = typeIndex;
-            if (statusBool != null && statusBool.StatusName)
-            {
-                StatusName = statusBool.StatusName.Id;
-                BaseValue = statusBool.BaseValue;
-                PreEvaluationValue = statusBool.BaseValue;
-                PostEvaluationValue = statusBool.BaseValue;
-            }
-            else
-            {
-                StatusName = default;
-                BaseValue = default;
-                PreEvaluationValue = default;
-                PostEvaluationValue = default;
-            }
+            Id = default;
+            BaseValue = statusBool.BaseValue;
+            PreEvaluationValue = statusBool.BaseValue;
+            PostEvaluationValue = statusBool.BaseValue;
         }
     }
 }

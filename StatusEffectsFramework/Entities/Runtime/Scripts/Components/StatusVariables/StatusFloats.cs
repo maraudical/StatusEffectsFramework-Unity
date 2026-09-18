@@ -1,5 +1,5 @@
 #if ENTITIES
-using NUnit.Framework;
+using Unity.Assertions;
 using Unity.Entities;
 #if NETCODE
 using Unity.NetCode;
@@ -9,6 +9,7 @@ namespace StatusEffectsFramework.Entities
 {
     public struct StatusFloats : IBufferElementData
     {
+        internal Hash128 UniqueKey;
 #if NETCODE
         [GhostField(Composite = true)]
 #endif
@@ -16,7 +17,7 @@ namespace StatusEffectsFramework.Entities
 #if NETCODE
         [GhostField]
 #endif
-        public ushort StatusName;
+        public ushort Id;
 #if NETCODE
         [GhostField]
 #endif
@@ -35,10 +36,11 @@ namespace StatusEffectsFramework.Entities
         public float PostEvaluationValue;
         public float Value => PostEvaluationValue;
 
-        public StatusFloats(TypeIndex typeIndex, ushort statusName, float baseValue, bool signProtected)
+        public StatusFloats(TypeIndex typeIndex, Hash128 uniqueKey, float baseValue, bool signProtected = true)
         {
+            UniqueKey = uniqueKey;
             TypeIndex = typeIndex;
-            StatusName = statusName;
+            Id = default;
             SignProtected = signProtected;
             BaseValue = baseValue;
             PreEvaluationValue = baseValue;
@@ -47,24 +49,16 @@ namespace StatusEffectsFramework.Entities
 
         public StatusFloats(TypeIndex typeIndex, StatusFloat statusFloat)
         {
-            TypeIndex = typeIndex;
+            Assert.IsNotNull(statusFloat, $"{nameof(StatusFloat)} cannot be null when creating a {nameof(StatusFloats)} buffer element.");
+            Assert.IsNotNull(statusFloat.StatusName, $"{nameof(StatusFloat.StatusName)} cannot be null when creating a {nameof(StatusFloats)} buffer element.");
 
-            if (statusFloat != null && statusFloat.StatusName != null)
-            {
-                StatusName = statusFloat.StatusName.Id;
-                SignProtected = statusFloat.SignProtected;
-                BaseValue = statusFloat.BaseValue;
-                PreEvaluationValue = statusFloat.BaseValue;
-                PostEvaluationValue = statusFloat.BaseValue;
-            }
-            else
-            {
-                StatusName = default;
-                SignProtected = default;
-                BaseValue = default;
-                PreEvaluationValue = default;
-                PostEvaluationValue = default;
-            }
+            UniqueKey = statusFloat.StatusName.GetUniqueKeyHash();
+            TypeIndex = typeIndex;
+            Id = default;
+            SignProtected = statusFloat.SignProtected;
+            BaseValue = statusFloat.BaseValue;
+            PreEvaluationValue = statusFloat.BaseValue;
+            PostEvaluationValue = statusFloat.BaseValue;
         }
     }
 }

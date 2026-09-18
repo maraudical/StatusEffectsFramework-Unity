@@ -31,7 +31,7 @@ namespace StatusEffectsFramework.Entities
         {
             var statusVariablePostEvaluateJob = new StatusVariablePostEvaluateJob
             {
-                References = SystemAPI.GetSingleton<StatusReferences>(),
+                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
                 EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
                 StatusEffectsHandle = SystemAPI.GetBufferTypeHandle<StatusEffects>(true),
                 StatusFloatsHandle = SystemAPI.GetBufferTypeHandle<StatusFloats>(),
@@ -46,7 +46,7 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
         partial struct StatusVariablePostEvaluateJob : IJobChunk
         {
-            public StatusReferences References;
+            public UnmanagedStatusRegistry Registry;
             public EntityTypeHandle EntityTypeHandle;
             [ReadOnly]
             public BufferTypeHandle<StatusEffects> StatusEffectsHandle;
@@ -65,22 +65,22 @@ namespace StatusEffectsFramework.Entities
                 BufferAccessor<StatusInts> statusIntsAccessor = chunk.GetBufferAccessorRW(ref StatusIntsHandle);
                 BufferAccessor<StatusBools> statusBoolsAccessor = chunk.GetBufferAccessorRW(ref StatusBoolsHandle);
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
 
-                var valueTypeToDynamicEffectTypes = new UnsafeParallelMultiHashMap<int, TypeIndex>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
-                var idToStatusEffect = new UnsafeHashMap<uint, StatusEffects>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
-                var statusNameToDynamicFloat = new UnsafeParallelMultiHashMap<Hash128, (ValueModifier, float, int, int)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
-                var statusNameToDynamicInt = new UnsafeParallelMultiHashMap<Hash128, (ValueModifier, int, int, int)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
-                var statusNameToDynamicBool = new UnsafeParallelMultiHashMap<Hash128, (bool, int)>(StatusReferences.CollectionsInitialCapacity, Allocator.Temp);
+                using var valueTypeToDynamicEffectTypes = new UnsafeParallelMultiHashMap<int, TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var instanceIdToStatusEffect = new UnsafeHashMap<uint, StatusEffects>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var idToDynamicFloat = new UnsafeParallelMultiHashMap<ushort, (ValueModifier, float, int, int)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var idToDynamicInt = new UnsafeParallelMultiHashMap<ushort, (ValueModifier, int, int, int)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var idToDynamicBool = new UnsafeParallelMultiHashMap<ushort, (bool, int)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
                 {
                     valueTypeToDynamicEffectTypes.Clear();
-                    idToStatusEffect.Clear();
-                    statusNameToDynamicFloat.Clear();
-                    statusNameToDynamicInt.Clear();
-                    statusNameToDynamicBool.Clear();
+                    instanceIdToStatusEffect.Clear();
+                    idToDynamicFloat.Clear();
+                    idToDynamicInt.Clear();
+                    idToDynamicBool.Clear();
 
                     var entity = entities[i];
                     var statusEffects = statusEffectsAccessor[i];
@@ -91,10 +91,10 @@ namespace StatusEffectsFramework.Entities
                     // Map ids to status effects to quickly find all status effects affecting a specific status variable.
                     foreach (var statusEffect in statusEffects)
                     {
-                        if (!References.TryGetReference(statusEffect.StatusEffectDataId, out var blob))
+                        if (!Registry.TryGetStatusEffectData(statusEffect.Id, out var reference))
                             continue;
 
-                        ref UnmanagedStatusEffectData data = ref blob.Value;
+                        ref UnmanagedStatusEffectData data = ref reference.Value;
                         for (int v = 0; v < data.Effects.Length; v++)
                         {
                             ref var effect = ref data.Effects[v];
@@ -102,7 +102,7 @@ namespace StatusEffectsFramework.Entities
                                 valueTypeToDynamicEffectTypes.Add((int)effect.ValueType, effect.DynamicEffectInfo.TypeIndex);
                         }
 
-                        idToStatusEffect.Add(statusEffect.Id, statusEffect);
+                        instanceIdToStatusEffect.Add(statusEffect.InstanceId, statusEffect);
                     }
 
                     foreach (var typeIndex in valueTypeToDynamicEffectTypes.GetValuesForKey((int)ValueType.Float))
@@ -126,9 +126,9 @@ namespace StatusEffectsFramework.Entities
                         for (int n = 0; n < length; n++)
                         {
                             var element = buffer + sizeOfDynamicEffect * n;
-                            if (!*(bool*)(element + References.DynamicFloatOffsets.PostEvaluate))
+                            if (!*(bool*)(element + Registry.DynamicFloatOffsets.PostEvaluate))
                                 continue;
-                            statusNameToDynamicFloat.Add(*(Hash128*)(element + References.DynamicFloatOffsets.StatusName), (*(ValueModifier*)(element + References.DynamicFloatOffsets.ValueModifier), *(float*)(element + References.DynamicFloatOffsets.Value), *(int*)(element + References.DynamicFloatOffsets.Priority), idToStatusEffect[*(uint*)element].Stacks));
+                            idToDynamicFloat.Add(*(ushort*)(element + Registry.DynamicFloatOffsets.Id), (*(ValueModifier*)(element + Registry.DynamicFloatOffsets.ValueModifier), *(float*)(element + Registry.DynamicFloatOffsets.Value), *(int*)(element + Registry.DynamicFloatOffsets.Priority), instanceIdToStatusEffect[*(uint*)element].Stacks));
                         }
                     }
 
@@ -153,9 +153,9 @@ namespace StatusEffectsFramework.Entities
                         for (int n = 0; n < length; n++)
                         {
                             var element = buffer + sizeOfDynamicEffect * n;
-                            if (!*(bool*)(element + References.DynamicIntOffsets.PostEvaluate))
+                            if (!*(bool*)(element + Registry.DynamicIntOffsets.PostEvaluate))
                                 continue;
-                            statusNameToDynamicInt.Add(*(Hash128*)(element + References.DynamicIntOffsets.StatusName), (*(ValueModifier*)(element + References.DynamicIntOffsets.ValueModifier), *(int*)(element + References.DynamicIntOffsets.Value), *(int*)(element + References.DynamicIntOffsets.Priority), idToStatusEffect[*(uint*)element].Stacks));
+                            idToDynamicInt.Add(*(ushort*)(element + Registry.DynamicIntOffsets.Id), (*(ValueModifier*)(element + Registry.DynamicIntOffsets.ValueModifier), *(int*)(element + Registry.DynamicIntOffsets.Value), *(int*)(element + Registry.DynamicIntOffsets.Priority), instanceIdToStatusEffect[*(uint*)element].Stacks));
                         }
                     }
 
@@ -180,43 +180,36 @@ namespace StatusEffectsFramework.Entities
                         for (int n = 0; n < length; n++)
                         {
                             var element = buffer + sizeOfDynamicEffect * n;
-                            if (!*(bool*)(element + References.DynamicBoolOffsets.PostEvaluate))
+                            if (!*(bool*)(element + Registry.DynamicBoolOffsets.PostEvaluate))
                                 continue;
-                            statusNameToDynamicBool.Add(*(Hash128*)(element + References.DynamicBoolOffsets.StatusName), (*(bool*)(element + References.DynamicBoolOffsets.Value), *(int*)(element + References.DynamicBoolOffsets.Priority)));
+                            idToDynamicBool.Add(*(ushort*)(element + Registry.DynamicBoolOffsets.Id), (*(bool*)(element + Registry.DynamicBoolOffsets.Value), *(int*)(element + Registry.DynamicBoolOffsets.Priority)));
                         }
                     }
 
                     for (int v = 0; v < statusFloats.Length; v++)
                     {
                         ref var statusFloat = ref statusFloats.ElementAt(v);
-                        GetValue(ref statusFloat, statusNameToDynamicFloat.GetValuesForKey(statusFloat.StatusName));
+                        GetValue(ref statusFloat, idToDynamicFloat.GetValuesForKey(statusFloat.Id));
                     }
 
                     for (int v = 0; v < statusInts.Length; v++)
                     {
                         ref var statusInt = ref statusInts.ElementAt(v);
-                        GetValue(ref statusInt, statusNameToDynamicInt.GetValuesForKey(statusInt.StatusName));
+                        GetValue(ref statusInt, idToDynamicInt.GetValuesForKey(statusInt.Id));
                     }
 
                     for (int v = 0; v < statusBools.Length; v++)
                     {
                         ref var statusBool = ref statusBools.ElementAt(v);
-                        GetValue(ref statusBool, statusNameToDynamicBool.GetValuesForKey(statusBool.StatusName));
+                        GetValue(ref statusBool, idToDynamicBool.GetValuesForKey(statusBool.Id));
                     }
                 }
 
                 chunk.SetComponentEnabledForAll(ref StatusVariablePostEvaluateUpdateHandle, false);
-
-                typeToIndexAndTypeInfo.Dispose();
-                valueTypeToDynamicEffectTypes.Dispose();
-                idToStatusEffect.Dispose();
-                statusNameToDynamicFloat.Dispose();
-                statusNameToDynamicInt.Dispose();
-                statusNameToDynamicBool.Dispose();
             }
 
             public void GetValue(ref StatusFloats statusFloat,
-                in UnsafeParallelMultiHashMap<Hash128, (ValueModifier ValueModifier, float Value, int Priority, int Stacks)>.Enumerator dynamicFloats)
+                in UnsafeParallelMultiHashMap<ushort, (ValueModifier ValueModifier, float Value, int Priority, int Stacks)>.Enumerator dynamicFloats)
             {
                 var statusFloatValue = new StatusFloatValue(statusFloat.PreEvaluationValue, statusFloat.SignProtected);
 
@@ -226,7 +219,7 @@ namespace StatusEffectsFramework.Entities
             }
 
             public void GetValue(ref StatusInts statusInt,
-                in UnsafeParallelMultiHashMap<Hash128, (ValueModifier ValueModifier, int Value, int Priority, int Stacks)>.Enumerator dynamicInts)
+                in UnsafeParallelMultiHashMap<ushort, (ValueModifier ValueModifier, int Value, int Priority, int Stacks)>.Enumerator dynamicInts)
             {
                 var statusIntValue = new StatusIntValue(statusInt.PreEvaluationValue, statusInt.SignProtected);
 
@@ -237,7 +230,7 @@ namespace StatusEffectsFramework.Entities
             }
 
             public void GetValue(ref StatusBools statusBool,
-                in UnsafeParallelMultiHashMap<Hash128, (bool Value, int Priority)>.Enumerator dynamicBools)
+                in UnsafeParallelMultiHashMap<ushort, (bool Value, int Priority)>.Enumerator dynamicBools)
             {
                 var statusBoolValue = new StatusBoolValue(statusBool.PreEvaluationValue);
 

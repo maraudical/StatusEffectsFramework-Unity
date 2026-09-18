@@ -2,36 +2,37 @@
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
-using Hash128 = Unity.Entities.Hash128;
 
 namespace StatusEffectsFramework.Entities
 {
     public struct UnmanagedStatusEffectData
     {
-        public ushort Id;
-        public StatusEffectGroup Group;
-        public Hash128 ComparableName;
-        public float BaseValue;
-        public UnityObjectRef<Sprite> Icon;
-        public float4 Color;
+        #region Public Properties
+        public ushort Id { get; internal set; }
+        public StatusEffectGroup Group { get; internal set; }
+        public ushort ComparableName { get; internal set; }
+        public float BaseValue { get; internal set; }
+        public UnityObjectRef<Sprite> Icon { get; internal set; }
+        public float4 Color { get; internal set; }
 #if LOCALIZED
-        public BlobString StatusEffectNameTable;
-        public BlobString StatusEffectNameEntry;
-        public BlobString AcronymTable;
-        public BlobString AcronymEntry;
-        public BlobString DescriptionTable;
-        public BlobString DescriptionEntry;
+        public BlobString StatusEffectNameTable { get; internal set; }
+        public BlobString StatusEffectNameEntry { get; internal set; }
+        public BlobString AcronymTable { get; internal set; }
+        public BlobString AcronymEntry { get; internal set; }
+        public BlobString DescriptionTable { get; internal set; }
+        public BlobString DescriptionEntry { get; internal set; }
 #else
-        public BlobString StatusEffectName;
-        public BlobString Acronym;
-        public BlobString Description;
+        public BlobString StatusEffectName  { get; internal set; }
+        public BlobString Acronym  { get; internal set; }
+        public BlobString Description  { get; internal set; }
 #endif
-        public bool AllowEffectStacking;
-        public NonStackingBehaviour NonStackingBehaviour;
-        public int MaxStacks;
-        public BlobArray<UnmanagedEffect> Effects;
-        public BlobArray<UnmanagedCondition> Conditions;
-        public BlobArray<ModuleInfo> Modules;
+        public bool AllowEffectStacking { get; internal set; }
+        public NonStackingBehaviour NonStackingBehaviour { get; internal set; }
+        public int MaxStacks { get; internal set; }
+        public BlobArray<UnmanagedEffect> Effects { get; internal set; }
+        public BlobArray<UnmanagedCondition> Conditions { get; internal set; }
+        public BlobArray<ModuleInfo> Modules { get; internal set; }
+        #endregion
     }
 }
 #endif

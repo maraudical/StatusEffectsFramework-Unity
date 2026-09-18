@@ -75,7 +75,7 @@ namespace StatusEffectsFramework.Entities
 
                 interpolatedStatusEffects.Clear();
                 foreach (var copy in statusEffects)
-                    interpolatedStatusEffects.Add(new InterpolatedStatusEffects { Id = copy.Id, StatusEffectDataId = copy.StatusEffectDataId, Stacks = copy.Stacks });
+                    interpolatedStatusEffects.Add(new InterpolatedStatusEffects { InstanceId = copy.InstanceId, Id = copy.Id, Stacks = copy.Stacks });
 
                 statusEffectsArray.Sort();
                 interpolatedStatusEffectsArray.Sort();
@@ -104,7 +104,7 @@ namespace StatusEffectsFramework.Entities
                             {
                                 statusEffect = enumerator.Current;
                                 bool isOld = NetworkTime.InterpolationTick.TimeSince(statusEffect.TickAdded, TickRate) > StatusEffectEvents.SecondsTillOldThreshold;
-                                statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, isOld));
+                                statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, isOld));
                                 if (!statusEffectEventsEnabled)
                                 {
                                     statusEffectEventsEnabled = true;
@@ -114,30 +114,30 @@ namespace StatusEffectsFramework.Entities
                             while (enumerator.MoveNext());
                             break;
                         }
-                        else if (statusEffect.Id < interpolatedStatusEffect.Id)
+                        else if (statusEffect.InstanceId < interpolatedStatusEffect.InstanceId)
                         {
                             hasStatusEffects = enumerator.MoveNext();
                             // Status effect was added, trigger added event.
                             bool isOld = NetworkTime.InterpolationTick.TimeSince(statusEffect.TickAdded, TickRate) > StatusEffectEvents.SecondsTillOldThreshold;
-                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, isOld));
+                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, isOld));
                             if (!statusEffectEventsEnabled)
                             {
                                 statusEffectEventsEnabled = true;
                                 statusEffectEventsEnabledRW.ValueRW = true;
                             }
                         }
-                        else if (statusEffect.Id > interpolatedStatusEffect.Id)
+                        else if (statusEffect.InstanceId > interpolatedStatusEffect.InstanceId)
                         {
                             hasInterpolatedStatusEffects = interpolatedEnumerator.MoveNext();
                             // Status effect was removed, trigger removed event.
-                            statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.Id, interpolatedStatusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
+                            statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.InstanceId, interpolatedStatusEffect.Id, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
                             if (!statusEffectEventsEnabled)
                             {
                                 statusEffectEventsEnabled = true;
                                 statusEffectEventsEnabledRW.ValueRW = true;
                             }
                         }
-                        else if (statusEffect.StatusEffectDataId == interpolatedStatusEffect.StatusEffectDataId)
+                        else if (statusEffect.Id == interpolatedStatusEffect.Id)
                         {
                             hasStatusEffects = enumerator.MoveNext();
                             hasInterpolatedStatusEffects = interpolatedEnumerator.MoveNext();
@@ -146,7 +146,7 @@ namespace StatusEffectsFramework.Entities
                                 continue;
                             // Status effect was updated, trigger updated event.
                             bool isOld = NetworkTime.InterpolationTick.TimeSince(statusEffect.TickUpdated, TickRate) > StatusEffectEvents.SecondsTillOldThreshold;
-                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Updated, isOld));
+                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, interpolatedStatusEffect.Stacks, StatusEffectEvent.Updated, isOld));
                             if (!statusEffectEventsEnabled)
                             {
                                 statusEffectEventsEnabled = true;
@@ -158,9 +158,9 @@ namespace StatusEffectsFramework.Entities
                             hasStatusEffects = enumerator.MoveNext();
                             hasInterpolatedStatusEffects = interpolatedEnumerator.MoveNext();
                             // Status effect was updated with a different status effect data, trigger removed and added events.
-                            statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.Id, interpolatedStatusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
+                            statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.InstanceId, interpolatedStatusEffect.Id, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
                             bool isOld = NetworkTime.InterpolationTick.TimeSince(statusEffect.TickAdded, TickRate) > StatusEffectEvents.SecondsTillOldThreshold;
-                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.Id, statusEffect.StatusEffectDataId, isOld));
+                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, isOld));
                             if (!statusEffectEventsEnabled)
                             {
                                 statusEffectEventsEnabled = true;
@@ -174,7 +174,7 @@ namespace StatusEffectsFramework.Entities
                         do
                         {
                             interpolatedStatusEffect = interpolatedEnumerator.Current;
-                            statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.Id, interpolatedStatusEffect.StatusEffectDataId, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
+                            statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.InstanceId, interpolatedStatusEffect.Id, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
                             if (!statusEffectEventsEnabled)
                             {
                                 statusEffectEventsEnabled = true;

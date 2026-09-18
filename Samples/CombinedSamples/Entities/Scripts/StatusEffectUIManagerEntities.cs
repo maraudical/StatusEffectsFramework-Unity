@@ -62,7 +62,7 @@ namespace StatusEffectsFramework.Entities.Samples
             m_Manager = World.DefaultGameObjectInjectionWorld.EntityManager;
             
             m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
-            m_StatusReferencesQuery = m_Manager.CreateEntityQuery(typeof(StatusReferences));
+            m_StatusReferencesQuery = m_Manager.CreateEntityQuery(typeof(UnmanagedStatusRegistryrrrr));
         }
 
         protected virtual void Update()
@@ -74,7 +74,7 @@ namespace StatusEffectsFramework.Entities.Samples
 
             var entity = array[0];
 
-            if (!m_StatusReferencesQuery.TryGetSingleton(out StatusReferences statusReferences))
+            if (!m_StatusReferencesQuery.TryGetSingleton(out UnmanagedStatusRegistryrrrr statusReferences))
                 return;
             
             m_CurrentStackCounts.Clear();
@@ -82,10 +82,10 @@ namespace StatusEffectsFramework.Entities.Samples
             var buffer = m_Manager.GetBuffer<StatusEffects>(entity);
 
             foreach (var statusEffect in buffer)
-                if (m_CurrentStackCounts.TryGetValue(statusEffect.StatusEffectDataId, out int value))
-                    m_CurrentStackCounts[statusEffect.StatusEffectDataId] = value + statusEffect.Stacks;
+                if (m_CurrentStackCounts.TryGetValue(statusEffect.Id, out int value))
+                    m_CurrentStackCounts[statusEffect.Id] = value + statusEffect.Stacks;
                 else
-                    m_CurrentStackCounts.Add(statusEffect.StatusEffectDataId, statusEffect.Stacks);
+                    m_CurrentStackCounts.Add(statusEffect.Id, statusEffect.Stacks);
 
             m_CombinedStatusEffects = m_CurrentStackCounts.Keys.Concat(m_StatusEffectUIs.Keys).ToHashSet();
             
@@ -129,7 +129,7 @@ namespace StatusEffectsFramework.Entities.Samples
 
         protected virtual void AddButtonClicked()
         {
-            if (!m_StatusReferencesQuery.TryGetSingleton(out StatusReferences statusReferences))
+            if (!m_StatusReferencesQuery.TryGetSingleton(out UnmanagedStatusRegistryrrrr statusReferences))
                 return;
 
             using var array = m_PlayerQuery.ToEntityArray(Allocator.Temp);
@@ -145,7 +145,7 @@ namespace StatusEffectsFramework.Entities.Samples
 
         protected virtual void RemoveButtonClicked()
         {
-            if (!m_StatusReferencesQuery.TryGetSingleton(out StatusReferences statusReferences))
+            if (!m_StatusReferencesQuery.TryGetSingleton(out UnmanagedStatusRegistryrrrr statusReferences))
                 return;
 
             using var array = m_PlayerQuery.ToEntityArray(Allocator.Temp);

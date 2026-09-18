@@ -11,22 +11,25 @@ namespace StatusEffectsFramework.Entities
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
     public partial class StatusReferencesSetupSystem : SystemBase
     {
-        public EntityQuery m_ReferencesQuery;
+        public EntityQuery m_RegistryQuery;
         public EntityQuery m_RequestQuery;
+        private ushort m_Version;
 
         protected override void OnCreate()
         {
-            EntityManager.CreateEntity(typeof(StatusReferencesSetupRequest));
+            EntityManager.CreateEntity(typeof(UnmanagedStatusRegistrySetupRequest));
 
-            m_ReferencesQuery = SystemAPI.QueryBuilder().WithAll<StatusReferences>().Build();
-            m_RequestQuery = SystemAPI.QueryBuilder().WithAll<StatusReferencesSetupRequest>().Build();
+            m_RegistryQuery = SystemAPI.QueryBuilder().WithAll<UnmanagedStatusRegistry>().Build();
+            m_RequestQuery = SystemAPI.QueryBuilder().WithAll<UnmanagedStatusRegistrySetupRequest>().Build();
+
+            m_Version = 1;
 
             RequireForUpdate(m_RequestQuery);
         }
 
         protected override void OnUpdate() 
         {
-            var statusEffectDatas = StatusEffectRegistry.Get().ReadOnlyDictionary.Values;
+            var statusEffectDatas = StatusRegistry.Get().ReadOnlyDictionary.Values;
 
             if (statusEffectDatas.Count <= 0)
                 return;
@@ -35,19 +38,20 @@ namespace StatusEffectsFramework.Entities
 
             commandBuffer.DestroyEntity(m_RequestQuery, EntityQueryCaptureMode.AtPlayback);
 
-            var referencesEntity = commandBuffer.CreateEntity();
+            var registryEntity = commandBuffer.CreateEntity();
             
-            commandBuffer.SetName(referencesEntity, "Status References");
+            commandBuffer.SetName(registryEntity, "Status Registry");
 
             var idToStatusEffectDataMapBuilder = new BlobBuilder(Allocator.Temp);
             ref var idToStatusEffectDataMapRoot = ref idToStatusEffectDataMapBuilder.ConstructRoot<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>>();
             var idToStatusEffectDataMap = idToStatusEffectDataMapBuilder.AllocateHashMap(ref idToStatusEffectDataMapRoot, statusEffectDatas.Count);
-            
+
             // Dispose of old blobs after copying
-            if (SystemAPI.TryGetSingletonEntity<StatusReferences>(out var oldReferencesEntity))
+            if (SystemAPI.TryGetSingletonEntity<UnmanagedStatusRegistry>(out var oldRegistryEntity))
             {
                 OnDestroy();
-                commandBuffer.DestroyEntity(oldReferencesEntity);
+                m_Version++;
+                commandBuffer.DestroyEntity(oldRegistryEntity);
             }
 
             // Setup status effect datas
@@ -197,8 +201,9 @@ namespace StatusEffectsFramework.Entities
             Type dynamicIntType = typeof(DynamicInts<int>);
             Type dynamicBoolType = typeof(DynamicBools<int>);
             
-            commandBuffer.AddComponent(referencesEntity, new StatusReferences
+            commandBuffer.AddComponent(registryEntity, new UnmanagedStatusRegistryrrrr
             {
+                Version = m_Version,
                 ModuleOffsets = new ModuleOffsets
                 {
                     Struct = UnsafeUtility.GetFieldOffset(moduleType.GetField(nameof(ModuleOffsets.Struct)))
@@ -235,7 +240,7 @@ namespace StatusEffectsFramework.Entities
 
         protected override void OnDestroy()
         {
-            if (SystemAPI.TryGetSingleton<StatusReferences>(out var references))
+            if (SystemAPI.TryGetSingleton<UnmanagedStatusRegistryrrrr>(out var references))
             {
                 using var statusEffectDataBlobs = references.IdToStatusEffectDataMap.Value.GetValueArray(Allocator.Temp);
 

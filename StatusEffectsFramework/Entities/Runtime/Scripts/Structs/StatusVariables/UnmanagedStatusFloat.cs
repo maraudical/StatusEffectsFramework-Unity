@@ -1,5 +1,7 @@
 #if ENTITIES
+using Unity.Assertions;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Entities;
 #if NETCODE
 using Unity.NetCode;
@@ -13,7 +15,15 @@ namespace StatusEffectsFramework.Entities
 #if NETCODE
         [GhostField]
 #endif
-        public ushort StatusName;
+        public Hash128 UniqueKey;
+#if NETCODE
+        [GhostField(SendData = false)]
+#endif
+        private ushort m_Id;
+#if NETCODE
+        [GhostField(SendData = false)]
+#endif
+        private ushort m_Version;
 #if NETCODE
         [GhostField(SendData = false)]
 #endif
@@ -24,9 +34,9 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetValue(in TypeIndex typeIndex, in DynamicBuffer<StatusFloats> buffer, out float value)
+        public bool TryGetValue(in TypeIndex typeIndex, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusFloats> buffer, out float value)
         {
-            if (TryGetIndex(typeIndex, buffer, out int index))
+            if (TryGetIndex(typeIndex, registry, buffer, out int index))
             {
                 value = buffer[index].Value;
                 return true;
@@ -41,9 +51,9 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetElement(in TypeIndex typeIndex, in DynamicBuffer<StatusFloats> buffer, out StatusFloats value)
+        public bool TryGetElement(in TypeIndex typeIndex, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusFloats> buffer, out StatusFloats value)
         {
-            if (TryGetIndex(typeIndex, buffer, out int index))
+            if (TryGetIndex(typeIndex, registry, buffer, out int index))
             {
                 value = buffer[index];
                 return true;
@@ -57,15 +67,27 @@ namespace StatusEffectsFramework.Entities
         /// Attempt to retrieve the <see cref="StatusFloats"/> index value for this <see cref="UnmanagedStatusFloat"/>.
         /// </summary>
         [BurstCompile]
-        public bool TryGetIndex(in TypeIndex typeIndex, in DynamicBuffer<StatusFloats> buffer, out int index)
+        public bool TryGetIndex(in TypeIndex typeIndex, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusFloats> buffer, out int index)
         {
+            if (m_Version != registry.Version)
+            {
+                if (Hint.Unlikely(!registry.TryGetId(UniqueKey, out m_Id)))
+                {
+                    index = -1;
+                    UnityEngine.Debug.LogWarning($"{nameof(UnmanagedStatusFloat)} with unique key \"{UniqueKey}\" does not exist in the registry.");
+                    return false;
+                }
+
+                m_Version = registry.Version;
+            }
+
             StatusFloats statusFloat;
             int length = buffer.Length;
             index = m_CachedIndex;
             if (index >= 0 && index < buffer.Length)
             {
                 statusFloat = buffer[index];
-                if (statusFloat.TypeIndex == typeIndex && statusFloat.StatusName == StatusName)
+                if (statusFloat.TypeIndex == typeIndex && statusFloat.Id == m_Id)
                     return true;
             }
 
@@ -74,7 +96,7 @@ namespace StatusEffectsFramework.Entities
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusFloat = buffer[i];
-                if (statusFloat.TypeIndex == typeIndex && statusFloat.StatusName == StatusName)
+                if (statusFloat.TypeIndex == typeIndex && statusFloat.Id == m_Id)
                 {
                     index = i;
                     break;
@@ -85,13 +107,21 @@ namespace StatusEffectsFramework.Entities
             return index >= 0;
         }
 
-        public UnmanagedStatusFloat(ushort statusName)
+        public UnmanagedStatusFloat(Hash128 uniqueKey)
         {
-            StatusName = statusName;
+            UniqueKey = uniqueKey;
+            m_Id = default;
+            m_Version = default;
             m_CachedIndex = -1;
         }
-        
-        public static implicit operator UnmanagedStatusFloat(StatusFloat value) => new UnmanagedStatusFloat(value != null && value.StatusName ? value.StatusName.Id : default);
+
+        public static implicit operator UnmanagedStatusFloat(StatusFloat statusFloat)
+        {
+            Assert.IsNotNull(statusFloat, $"{nameof(StatusFloat)} cannot be null when casting to an {nameof(UnmanagedStatusFloat)}.");
+            Assert.IsNotNull(statusFloat.StatusName, $"{nameof(StatusFloat.StatusName)} cannot be null when casting to an {nameof(UnmanagedStatusFloat)}.");
+
+            return new UnmanagedStatusFloat(statusFloat.StatusName.GetUniqueKeyHash());
+        }
     }
 }
 #endif

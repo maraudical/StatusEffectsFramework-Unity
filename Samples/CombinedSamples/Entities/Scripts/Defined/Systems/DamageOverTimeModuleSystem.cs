@@ -36,13 +36,13 @@ namespace StatusEffectsFramework.Entities.Samples
             m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, ExamplePlayerComponent, Modules<DamageOverTimeModuleStruct>>().WithAll<Simulate>().Build();
             
             state.RequireForUpdate(m_EntityQuery);
-            state.RequireForUpdate<StatusReferences>();
+            state.RequireForUpdate<UnmanagedStatusRegistryrrrr>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var statusReferences = SystemAPI.GetSingleton<StatusReferences>();
+            var statusReferences = SystemAPI.GetSingleton<UnmanagedStatusRegistryrrrr>();
             var commandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             var lookup = SystemAPI.GetBufferLookup<Modules<DamageOverTimeModuleStruct>>();
             var playerLookup = SystemAPI.GetComponentLookup<ExamplePlayerComponent>();
@@ -83,7 +83,7 @@ namespace StatusEffectsFramework.Entities.Samples
         {
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
-            public StatusReferences References;
+            public UnmanagedStatusRegistryrrrr References;
 
             public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<StatusEffects> statusEffects, ref DynamicBuffer<Modules<DamageOverTimeModuleStruct>> damageOverTimeModules)
             {
@@ -104,7 +104,7 @@ namespace StatusEffectsFramework.Entities.Samples
         [BurstCompile]
         partial struct DamageOverTimeJob : IJobEntity
         {
-            public StatusReferences References;
+            public UnmanagedStatusRegistryrrrr References;
 #if NETCODE
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
@@ -125,7 +125,7 @@ namespace StatusEffectsFramework.Entities.Samples
                     if (!StatusEffects.TryGetStatusEffect(statusEffects, module.Id, out statusEffect))
                         continue;
 
-                    if (!References.TryGetReference(statusEffect.StatusEffectDataId, out var reference))
+                    if (!References.TryGetReference(statusEffect.Id, out var reference))
                         continue;
 
                     ref var data = ref reference.Value;

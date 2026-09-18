@@ -156,7 +156,7 @@ namespace StatusEffectsFramework.Editor
         }
     }
 
-    [CustomEditor(typeof(StatusEffectSettings))]
+    [CustomEditor(typeof(StatusSettings))]
     [CanEditMultipleObjects]
     internal class StatusEffectSettingsEditor : UnityEditor.Editor
     {
@@ -167,12 +167,12 @@ namespace StatusEffectsFramework.Editor
 
         public override VisualElement CreateInspectorGUI()
         {
-            var groupsProperty = serializedObject.FindProperty(nameof(StatusEffectSettings.Groups));
-            var defaultStatusDataPathProperty = serializedObject.FindProperty(nameof(StatusEffectSettings.DefaultStatusDataPath));
-            var defaultStatusNamesPathProperty = serializedObject.FindProperty(nameof(StatusEffectSettings.DefaultStatusNamesPath));
-            var defaultComparableNamesPathProperty = serializedObject.FindProperty(nameof(StatusEffectSettings.DefaultComparableNamesPath));
-            var defaultModulesPathProperty = serializedObject.FindProperty(nameof(StatusEffectSettings.DefaultModulesPath));
-            var defaultDynamicEffectsPathProperty = serializedObject.FindProperty(nameof(StatusEffectSettings.DefaultDynamicEffectsPath));
+            var groupsProperty = serializedObject.FindProperty(nameof(StatusSettings.Groups));
+            var defaultStatusDataPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultStatusDataPath));
+            var defaultStatusNamesPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultStatusNamesPath));
+            var defaultComparableNamesPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultComparableNamesPath));
+            var defaultModulesPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultModulesPath));
+            var defaultDynamicEffectsPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultDynamicEffectsPath));
 
             var root = new VisualElement();
             root.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
@@ -978,7 +978,7 @@ namespace StatusEffectsFramework.Editor
                     space.style.minHeight = 8;
                     space.style.flexGrow = 0;
                     root.Add(space);
-                    var settings = CreateEditor(StatusEffectSettings.GetOrCreateSettings()).CreateInspectorGUI();
+                    var settings = CreateEditor(StatusSettings.GetOrCreateSettings()).CreateInspectorGUI();
 #if UNITY_2023_1_OR_NEWER
                     var tabView = settings.Q<TabView>();
                     tabView.style.overflow = Overflow.Hidden;
