@@ -19,6 +19,7 @@ namespace StatusEffectsFramework.Entities.Samples
         private TypeIndex m_TypeIndex;
         private EntityManager m_Manager;
         private EntityQuery m_PlayerQuery;
+        private EntityQuery m_RegistryQuery;
         private DynamicBuffer<StatusFloats> m_StatusFloatBuffer;
         private DynamicBuffer<StatusInts> m_StatusIntBuffer;
         private DynamicBuffer<StatusBools> m_StatusBoolBuffer;
@@ -30,6 +31,7 @@ namespace StatusEffectsFramework.Entities.Samples
             m_Manager = World.DefaultGameObjectInjectionWorld.EntityManager;
 
             m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
+            m_RegistryQuery = m_Manager.CreateEntityQuery(typeof(UnmanagedStatusRegistry));
         }
 
         private void Update()
@@ -42,32 +44,33 @@ namespace StatusEffectsFramework.Entities.Samples
             var entity = array[0];
             
             var player = m_Manager.GetComponentData<ExamplePlayerComponent>(entity);
+            var registry = m_RegistryQuery.GetSingleton<UnmanagedStatusRegistry>();
 
             m_StatusFloatBuffer = m_Manager.GetBuffer<StatusFloats>(entity);
             m_StatusIntBuffer = m_Manager.GetBuffer<StatusInts>(entity);
             m_StatusBoolBuffer = m_Manager.GetBuffer<StatusBools>(entity);
 
             // May want to check for structural changes to the Status Buffers but in this example it is assumed there aren't any.
-            if (!player.MaxHealth.TryGetElement(m_TypeIndex, m_StatusFloatBuffer, out var maxHealth)
-                || !player.Speed.TryGetElement(m_TypeIndex, m_StatusFloatBuffer, out var speed)
-                || !player.CoinMultiplier.TryGetElement(m_TypeIndex, m_StatusIntBuffer, out var coinMultiplier)
-                || !player.Stunned.TryGetElement(m_TypeIndex, m_StatusBoolBuffer, out var stunned))
+            if (!player.MaxHealth.TryGetElement(m_TypeIndex, registry, m_StatusFloatBuffer, out var maxHealth)
+                || !player.Speed.TryGetElement(m_TypeIndex, registry, m_StatusFloatBuffer, out var speed)
+                || !player.CoinMultiplier.TryGetElement(m_TypeIndex, registry, m_StatusIntBuffer, out var coinMultiplier)
+                || !player.Stunned.TryGetElement(m_TypeIndex, registry, m_StatusBoolBuffer, out var stunned))
                 return;
 
             m_Health.text = player.Health.ToString("0.0");
-            m_Health.color = GetColor(maxHealth.Value, player.Health);
+            m_Health.color = GetColor(maxHealth, player.Health);
 
             m_MaxHealth.text = maxHealth.Value.ToString("0.0");
-            m_MaxHealth.color = GetColor(maxHealth.BaseValue, maxHealth.Value);
+            m_MaxHealth.color = GetColor(maxHealth, maxHealth.Value);
 
             m_Speed.text = speed.Value.ToString("0.0");
-            m_Speed.color = GetColor(speed.BaseValue, speed.Value);
+            m_Speed.color = GetColor(speed, speed.Value);
 
             m_CoinMultiplier.text = coinMultiplier.Value.ToString();
-            m_CoinMultiplier.color = GetColor(coinMultiplier.BaseValue, coinMultiplier.Value);
+            m_CoinMultiplier.color = GetColor(coinMultiplier, coinMultiplier.Value);
 
             m_Stunned.text = stunned.Value.ToString();
-            m_Stunned.color = GetColor(stunned.BaseValue, stunned.Value);
+            m_Stunned.color = GetColor(stunned, stunned.Value);
         }
 
         private Color GetColor(float original, float current)

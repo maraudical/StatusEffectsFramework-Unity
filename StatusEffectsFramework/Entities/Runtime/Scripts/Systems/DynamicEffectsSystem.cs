@@ -84,10 +84,7 @@ namespace StatusEffectsFramework.Entities
 
                     foreach (var statusEffectEvent in statusEffectEvents)
                     {
-                        if (Hint.Unlikely(!Registry.TryGetStatusEffectData(statusEffectEvent.Id, out var reference)))
-                            continue;
-
-                        ref var data = ref reference.Value;
+                        ref var data = ref Registry.GetStatusEffectData(statusEffectEvent.Id);
 
                         for (int v = 0; v < data.Effects.Length; v++)
                         {
@@ -296,10 +293,7 @@ namespace StatusEffectsFramework.Entities
                         else
                             continue;
 
-                        if (Hint.Unlikely(!Registry.TryGetStatusEffectData(interpolatedStatusEffect.Id, out var reference)))
-                            continue;
-
-                        ref var data = ref reference.Value;
+                        ref var data = ref Registry.GetStatusEffectData(interpolatedStatusEffect.Id);
 
                         for (int e = 0; e < data.Effects.Length; e++)
                             if (data.Effects[e].ValueSource == ValueSource.DynamicValue)
@@ -318,10 +312,7 @@ namespace StatusEffectsFramework.Entities
                         if (index >= 0 && statusEffectEvents[index].Event is StatusEffectEvent.Added)
                             continue;
 
-                        if (Hint.Unlikely(!Registry.TryGetStatusEffectData(statusEffect.Id, out var reference)))
-                            continue;
-
-                        ref var data = ref reference.Value;
+                        ref var data = ref Registry.GetStatusEffectData(statusEffect.Id);
 
                         for (int v = 0; v < data.Effects.Length; v++)
                         {

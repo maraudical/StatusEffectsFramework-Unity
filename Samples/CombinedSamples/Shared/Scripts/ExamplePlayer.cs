@@ -40,12 +40,12 @@ namespace StatusEffectsFramework.Samples
         public LayerMask LayerMask;
         [SerializeField] private StatusEffectGroup Group;
         [SerializeField] private int Stacks = 1;
+        // See the DebugAddStatusEffectTimedEvent method for how events can
+        // be used to update the duration of an effect.
+        [SerializeField] private StatusEvent Event;
         // See the DebugAddStatusEffectPredicate method for how a predicate
         // can be used to stop an effect.
         [SerializeField] private bool PredicateBool;
-        // See the DebugAddStatusEffectTimedEvent method for how events can
-        // be used to update the duration of an effect.
-        private UnityEvent Event = new();
 
         private void Awake()
         {
@@ -61,15 +61,15 @@ namespace StatusEffectsFramework.Samples
         // I subscribe to the onStatusEffect event just to debug
         private void OnEnable()
         {
-            StatusManager.OnStatusEffect += OnStatusEffect;
+            StatusManager.StatusEffectAction += OnStatusEffectAction;
         }
 
         private void OnDisable()
         {
-            StatusManager.OnStatusEffect -= OnStatusEffect;
+            StatusManager.StatusEffectAction -= OnStatusEffectAction;
         }
 
-        private void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
+        private void OnStatusEffectAction(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
         {
             Debug.Log($"{(action is StatusEffectAction.AddedStatusEffect or StatusEffectAction.AddedStacks ? "Added" : "Removed")} {Mathf.Abs(currentStacks - previousStacks)} stacks of the effect \"{statusEffect.Data.name}\"!");
         }
@@ -86,7 +86,7 @@ namespace StatusEffectsFramework.Samples
         // Additionally you can have the duration update of System.Action
         // events where each invoke reduces duration by 1. This could be used
         // for games that are more round based or don't work in realtime.
-        public void DebugAddStatusEffectTimedEvent() { StatusManager?.AddStatusEffect(StatusEffectData, Duration, Event, 1, Stacks); }
+        public void DebugAddStatusEffectTimedEvent() { StatusManager?.AddStatusEffect(StatusEffectData, Duration, Event, Stacks); }
         // Just calls the example action.
         public void InvokeEvent() { Event?.Invoke(); }
         // Set a predicate that when true disables the effect. In this example

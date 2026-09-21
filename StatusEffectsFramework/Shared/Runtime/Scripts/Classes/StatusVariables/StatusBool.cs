@@ -56,9 +56,9 @@ namespace StatusEffectsFramework
                         if (dynamicBool.StatusName == m_StatusName)
                         {
                             if (dynamicBool.PostEvaluate)
-                                dynamicBool.OnValueChanged -= UpdatePostEvaluationValue;
+                                dynamicBool.ValueChanged -= UpdatePostEvaluationValue;
                             else
-                                dynamicBool.OnValueChanged -= UpdatePreEvaluationValue;
+                                dynamicBool.ValueChanged -= UpdatePreEvaluationValue;
                         }
 
             base.SetManager(instance);
@@ -68,9 +68,9 @@ namespace StatusEffectsFramework
                     if (dynamicBool.StatusName == m_StatusName)
                     {
                         if (dynamicBool.PostEvaluate)
-                            dynamicBool.OnValueChanged += UpdatePostEvaluationValue;
+                            dynamicBool.ValueChanged += UpdatePostEvaluationValue;
                         else
-                            dynamicBool.OnValueChanged += UpdatePreEvaluationValue;
+                            dynamicBool.ValueChanged += UpdatePreEvaluationValue;
                     }
 
             UpdatePreEvaluationValue(true);
@@ -82,9 +82,9 @@ namespace StatusEffectsFramework
                 foreach (var dynamicBool in statusEffect.DynamicBools)
                     if (dynamicBool.StatusName == m_StatusName)
                         if (dynamicBool.PostEvaluate)
-                            dynamicBool.OnValueChanged += UpdatePostEvaluationValue;
+                            dynamicBool.ValueChanged += UpdatePostEvaluationValue;
                         else
-                            dynamicBool.OnValueChanged += UpdatePreEvaluationValue;
+                            dynamicBool.ValueChanged += UpdatePreEvaluationValue;
             // Only update if the status effect actually has any effects that have the same StatusName
             if (statusEffect.Data.Effects.Any(effect => effect.StatusName == m_StatusName))
                 UpdatePreEvaluationValue(true);

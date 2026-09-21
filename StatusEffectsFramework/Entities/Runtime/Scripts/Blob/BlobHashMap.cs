@@ -39,6 +39,12 @@ namespace StatusEffectsFramework.Entities
         }
 
         /// <summary>
+        /// Gets the value associated with the specified key as a reference.
+        /// </summary>
+        /// <param name="key">The key of the value to get.</param>
+        public ref TValue GetValueRef(TKey key) => ref data.GetFirstValueRef(key);
+
+        /// <summary>
         /// Gets the value associated with the specified key.
         /// </summary>
         /// <param name="key">The key of the value to get.</param>
@@ -87,6 +93,7 @@ namespace StatusEffectsFramework.Entities
             this.data = new BlobBuilderHashMapData<TKey, TValue>(capacity, bucketCapacityRatio, ref blobBuilder, ref data);
         }
 
+        public ref TValue AddByRef(TKey key) => ref data.AddByRef(key, false);
         public void Add(TKey key, TValue item)
         {
 
@@ -97,7 +104,6 @@ namespace StatusEffectsFramework.Entities
             TryAdd(key, item);
 #endif
         }
-
         public bool TryAdd(TKey key, TValue value) => data.TryAdd(key, value, false);
         public bool ContainsKey(TKey key) => data.ContainsKey(key);
         public int Capacity => data.keyCapacity;

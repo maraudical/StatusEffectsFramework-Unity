@@ -22,12 +22,12 @@ namespace StatusEffectsFramework
     [AddComponentMenu("Status Effect/Status Manager")]
     public class StatusManager : MonoBehaviour, IStatusManager
     {
-        event Action<StatusEffect, StatusEffectAction, int, int> IStatusManager.OnStatusEffect
+        event Action<StatusEffect, StatusEffectAction, int, int> IStatusManager.StatusEffectAction
         {
-            add => OnStatusEffect += value;
-            remove => OnStatusEffect -= value;
+            add => StatusEffectAction += value;
+            remove => StatusEffectAction -= value;
         }
-        public event Action<StatusEffect, StatusEffectAction, int, int> OnStatusEffect;
+        public event Action<StatusEffect, StatusEffectAction, int, int> StatusEffectAction;
 
         IEnumerable<StatusEffect> IStatusManager.StatusEffects => StatusEffects;
         public IEnumerable<StatusEffect> StatusEffects => m_StatusEffects?.Values ?? Enumerable.Empty<StatusEffect>();
@@ -152,7 +152,7 @@ namespace StatusEffectsFramework
             // If a module exists it will be stopped.
             statusEffect.Stop(this);
             
-            OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStatusEffect, statusEffect.Stacks, 0);
+            StatusEffectAction?.Invoke(statusEffect, StatusEffectsFramework.StatusEffectAction.RemovedStatusEffect, statusEffect.Stacks, 0);
         }
         
 #nullable enable
@@ -219,7 +219,7 @@ namespace StatusEffectsFramework
 
                         currentStacks = previousStacks - stacks.Value + removedCount;
                         statusEffect.SetStacks(currentStacks);
-                        OnStatusEffect?.Invoke(statusEffect, StatusEffectAction.RemovedStacks, previousStacks, currentStacks);
+                        StatusEffectAction?.Invoke(statusEffect, StatusEffectsFramework.StatusEffectAction.RemovedStacks, previousStacks, currentStacks);
                         statusEffect.InvokeStackUpdate(previousStacks, currentStacks);
                         break;
                     }
@@ -365,7 +365,7 @@ namespace StatusEffectsFramework
             // First determine correct duration.
             float durationValue = duration.HasValue ? duration.Value : -1;
 
-            StatusEffectAction action = StatusEffectAction.AddedStatusEffect;
+            StatusEffectAction action = StatusEffectsFramework.StatusEffectAction.AddedStatusEffect;
             // Declare here to use later.
             StatusEffect flagForRemoval = null;
             StatusEffect statusEffect = null;
@@ -590,8 +590,8 @@ namespace StatusEffectsFramework
                 previousStacks = statusEffect.Stacks;
                 currentStacks += statusEffect.Stacks;
                 statusEffect.SetStacks(currentStacks);
-                action = currentStacks > previousStacks ? StatusEffectAction.AddedStacks : StatusEffectAction.RemovedStacks;
-                OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
+                action = currentStacks > previousStacks ? StatusEffectsFramework.StatusEffectAction.AddedStacks : StatusEffectsFramework.StatusEffectAction.RemovedStacks;
+                StatusEffectAction?.Invoke(statusEffect, action, previousStacks, currentStacks);
                 statusEffect.InvokeStackUpdate(previousStacks, currentStacks);
             }
             else
@@ -605,7 +605,7 @@ namespace StatusEffectsFramework
 #if UNITY_EDITOR
                 m_EditorOnlyEffects.Add(statusEffect);
 #endif
-                OnStatusEffect?.Invoke(statusEffect, action, previousStacks, currentStacks);
+                StatusEffectAction?.Invoke(statusEffect, action, previousStacks, currentStacks);
                 // If a module exists it will be started.
                 statusEffect.Start(this);
             }

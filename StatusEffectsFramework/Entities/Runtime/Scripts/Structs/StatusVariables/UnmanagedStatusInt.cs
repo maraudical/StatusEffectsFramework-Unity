@@ -34,9 +34,9 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetValue(in TypeIndex typeIndex, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusInts> buffer, out int value)
+        public bool TryGetValue(ulong stableTypeHash, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusInts> buffer, out int value)
         {
-            if (TryGetIndex(typeIndex, registry, buffer, out int index))
+            if (TryGetIndex(stableTypeHash, registry, buffer, out int index))
             {
                 value = buffer[index].Value;
                 return true;
@@ -51,9 +51,9 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
         [BurstCompile]
-        public bool TryGetElement(in TypeIndex typeIndex, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusInts> buffer, out StatusInts value)
+        public bool TryGetElement(ulong stableTypeHash, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusInts> buffer, out StatusInts value)
         {
-            if (TryGetIndex(typeIndex, registry, buffer, out int index))
+            if (TryGetIndex(stableTypeHash, registry, buffer, out int index))
             {
                 value = buffer[index];
                 return true;
@@ -67,7 +67,7 @@ namespace StatusEffectsFramework.Entities
         /// Attempt to retrieve the <see cref="StatusInts"/> index value for this <see cref="UnmanagedStatusInt"/>.
         /// </summary>
         [BurstCompile]
-        public bool TryGetIndex(in TypeIndex typeIndex, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusInts> buffer, out int index)
+        public bool TryGetIndex(ulong stableTypeHash, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusInts> buffer, out int index)
         {
             if (m_Version != registry.Version)
             {
@@ -87,7 +87,7 @@ namespace StatusEffectsFramework.Entities
             if (index >= 0 && index < buffer.Length)
             {
                 statusInts = buffer[index];
-                if (statusInts.TypeIndex == typeIndex && statusInts.Id == m_Id)
+                if (statusInts.StableTypeHash == stableTypeHash && statusInts.Id == m_Id)
                     return true;
             }
 
@@ -96,7 +96,7 @@ namespace StatusEffectsFramework.Entities
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusInts = buffer[i];
-                if (statusInts.TypeIndex == typeIndex && statusInts.Id == m_Id)
+                if (statusInts.StableTypeHash == stableTypeHash && statusInts.Id == m_Id)
                 {
                     index = i;
                     break;

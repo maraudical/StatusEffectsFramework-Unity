@@ -11,12 +11,12 @@ namespace StatusEffectsFramework.Samples
         {
             baker.DependsOn(this);
 
-            var typeIndex = TypeManager.GetTypeIndex<ExamplePlayerComponent>();
+            var stableTypeHash = TypeManager.GetTypeInfo<ExamplePlayerComponent>().StableTypeHash;
 
-            baker.AppendToBuffer(entity, new StatusFloats(typeIndex, StatusMaxHealth));
-            baker.AppendToBuffer(entity, new StatusFloats(typeIndex, StatusSpeed));
-            baker.AppendToBuffer(entity, new StatusInts(typeIndex, StatusCoinMultiplier));
-            baker.AppendToBuffer(entity, new StatusBools(typeIndex, StatusStunned));
+            baker.AppendToBuffer(entity, new StatusFloats(stableTypeHash, StatusMaxHealth));
+            baker.AppendToBuffer(entity, new StatusFloats(stableTypeHash, StatusSpeed));
+            baker.AppendToBuffer(entity, new StatusInts(stableTypeHash, StatusCoinMultiplier));
+            baker.AppendToBuffer(entity, new StatusBools(stableTypeHash, StatusStunned));
         }
 
     }

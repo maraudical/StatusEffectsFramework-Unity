@@ -19,30 +19,27 @@ namespace StatusEffectsFramework.Entities.Samples
     public partial struct HealModuleSystem : ISystem
     {
         private EntityQuery m_EntityQuery;
+        private ulong m_StableTypeHash;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusEffectEvents, Modules<HealModuleStruct>, ExamplePlayerComponent, StatusFloats>().WithAll<Simulate>().Build();
             m_EntityQuery.AddChangedVersionFilter(ComponentType.ReadWrite<Modules<HealModuleStruct>>());
+            m_StableTypeHash = TypeManager.GetTypeInfo<ExamplePlayerComponent>().StableTypeHash;
 
             state.RequireForUpdate(m_EntityQuery);
-            state.RequireForUpdate<UnmanagedStatusRegistryrrrr>();
+            state.RequireForUpdate<UnmanagedStatusRegistry>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var statusReferences = SystemAPI.GetSingleton<UnmanagedStatusRegistryrrrr>();
-            var commandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            var lookup = SystemAPI.GetBufferLookup<Modules<HealModuleStruct>>();
-            var playerLookup = SystemAPI.GetComponentLookup<ExamplePlayerComponent>();
-            var statusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>();
-
             var job = new HealModuleJob
             {
-                References = statusReferences,
-                CommandBuffer = commandBuffer,
+                StableTypeHash = m_StableTypeHash,
+                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
+                CommandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
             };
             state.Dependency = job.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
         }
@@ -50,8 +47,8 @@ namespace StatusEffectsFramework.Entities.Samples
         [BurstCompile]
         partial struct HealModuleJob : IJobEntity
         {
-            public TypeIndex TypeIndex;
-            public UnmanagedStatusRegistryrrrr References;
+            public ulong StableTypeHash;
+            public UnmanagedStatusRegistry Registry;
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
 
             public void Execute([ChunkIndexInQuery] int sortKey,
@@ -66,7 +63,7 @@ namespace StatusEffectsFramework.Entities.Samples
                 var healModulesArray = healModules.AsNativeArray();
                 healModulesArray.Sort();
 
-                if (!player.MaxHealth.TryGetValue(player.ComponentId, statusFloats, out var maxHealth))
+                if (!player.MaxHealth.TryGetValue(StableTypeHash, Registry, statusFloats, out var maxHealth))
                     return;
 
                 StatusEffects statusEffect;
@@ -74,10 +71,7 @@ namespace StatusEffectsFramework.Entities.Samples
 
                 foreach (var statusEffectEvent in statusEffectEvents)
                 {
-                    if (!References.TryGetReference(statusEffectEvent.Id, out var reference))
-                        continue;
-
-                    ref var data = ref reference.Value;
+                    ref var data = ref Registry.GetStatusEffectData(statusEffectEvent.Id);
 
                     switch (statusEffectEvent.Event)
                     {

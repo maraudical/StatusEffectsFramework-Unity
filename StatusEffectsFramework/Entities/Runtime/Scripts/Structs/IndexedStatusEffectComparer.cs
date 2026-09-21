@@ -10,13 +10,11 @@ namespace StatusEffectsFramework.Entities
 
         public int Compare(IndexedStatusEffects x, IndexedStatusEffects y)
         {
-            if (m_UseIndex 
-                || !m_Registry.TryGetStatusEffectData(x.Id, out var xData) 
-                || !m_Registry.TryGetStatusEffectData(y.Id, out var yData))
+            if (m_UseIndex)
                 return x.Index.CompareTo(y.Index);
             
             // Compare base value.
-            int comparison = xData.Value.BaseValue.CompareTo(yData.Value.BaseValue);
+            int comparison = m_Registry.GetStatusEffectData(x.Id).BaseValue.CompareTo(m_Registry.GetStatusEffectData(y.Id).BaseValue);
             if (comparison != 0)
                 return comparison;
             // Then compare duration.

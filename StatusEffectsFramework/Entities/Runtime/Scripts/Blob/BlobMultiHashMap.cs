@@ -20,6 +20,27 @@ namespace StatusEffectsFramework.Entities
         internal BlobHashMapData<TKey, TValue> data;
 
         /// <summary>
+        /// Gets the iterator for all values at a given key.
+        /// </summary>
+        /// <param name="key">The key of the values to get.</param>
+        public BlobMultiHashMapIterator<TKey> GetValuesForKey(TKey key) => data.GetValuesForKey(key);
+
+        /// <summary>
+        /// Checks to see if the given key and index are valid.
+        /// </summary>
+        /// <param name="it">The iterator to check <see cref="BlobMultiHashMapIterator{TKey}.nextIndex"/> for.</param>
+        /// /// <returns>Returns true if the index is valid, otherwise returns false.</returns>
+        public bool IsValidIndex(in BlobMultiHashMapIterator<TKey> it) => data.IsValidIndex(it);
+
+        /// <summary>
+        /// Checks to see if the given key and index are valid.
+        /// </summary>
+        /// <param name="key">The key of the value to get.</param>
+        /// <param name="index">The index within the values for the key.</param>
+        /// /// <returns>Returns true if the index is valid, otherwise returns false.</returns>
+        public bool IsValidIndex(TKey key, int index) => data.IsValidIndex(key, index);
+
+        /// <summary>
         /// Retrieve iterator for the first value for the key.
         /// </summary>
         /// <param name="key">The key.</param>
@@ -30,6 +51,16 @@ namespace StatusEffectsFramework.Entities
             data.TryGetFirstValue(key, out item, out it);
 
         /// <summary>
+        /// Retrieve iterator for the first value for the key.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <param name="item">Output value.</param>
+        /// <param name="it">Iterator.</param>
+        /// <returns>Returns true if the container contains the key.</returns>
+        public ref TValue GetFirstValueRef(TKey key, out BlobMultiHashMapIterator<TKey> it) =>
+            ref data.GetFirstValueRef(key, out it);
+
+        /// <summary>
         /// Retrieve iterator to the next value for the key.
         /// </summary>
         /// <param name="item">Output value.</param>
@@ -37,6 +68,15 @@ namespace StatusEffectsFramework.Entities
         /// <returns>Returns true if next value for the key is found.</returns>
         public bool TryGetNextValue(out TValue item, ref BlobMultiHashMapIterator<TKey> it) =>
             data.TryGetNextValue(out item, ref it);
+
+        /// <summary>
+        /// Retrieve iterator to the next value for the key.
+        /// </summary>
+        /// <param name="item">Output value.</param>
+        /// <param name="it">Iterator.</param>
+        /// <returns>Returns true if next value for the key is found.</returns>
+        public ref TValue GetNextValueRef(ref BlobMultiHashMapIterator<TKey> it) =>
+            ref data.GetNextValueRef(ref it);
 
         /// <summary>
         /// The current number of items in the container
@@ -88,7 +128,19 @@ namespace StatusEffectsFramework.Entities
             this.data = new BlobBuilderHashMapData<TKey, TValue>(capacity, bucketCapacityRatio, ref blobBuilder, ref data);
         }
 
-        public void Add(TKey key, TValue item) => data.TryAdd(key, item, true);
+        public ref TValue AddByRef(TKey key) => ref data.AddByRef(key, true);
+        public void Add(TKey key, TValue item)
+        {
+
+#if BLOBHASHMAP_SAFE
+            if (!data.TryAdd(key, item, false))
+                throw new ArgumentException($"An item with key {key} already exists", nameof(key));
+#else
+            TryAdd(key, item);
+#endif
+        }
+        public bool TryAdd(TKey key, TValue value) => data.TryAdd(key, value, true);
+        public bool ContainsKey(TKey key) => data.ContainsKey(key);
         public int Capacity => data.keyCapacity;
         public int Count => data.Count;
     }

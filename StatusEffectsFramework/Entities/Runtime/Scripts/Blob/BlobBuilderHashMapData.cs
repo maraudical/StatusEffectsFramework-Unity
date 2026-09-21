@@ -25,6 +25,28 @@ namespace StatusEffectsFramework.Entities
         private int bucketCapacityMask;
         internal int keyCapacity;
 
+        internal ref TValue AddByRef(TKey key, bool multi)
+        {
+            ref int c = ref count[0];
+
+#if BLOBHASHMAP_SAFE
+            if (c >= keyCapacity)
+                throw new InvalidOperationException("HashMap is full");
+#endif
+
+            int bucket = key.GetHashCode() & bucketCapacityMask;
+
+            if (!multi && ContainsKey(bucket, key))
+                throw new ArgumentException($"HashMap already contains key \"{key}\"");
+
+
+            int index = c++;
+            keys[index] = key;
+            next[index] = buckets[bucket];
+            buckets[bucket] = index;
+            return ref values[index];
+        }
+
         internal bool TryAdd(TKey key, TValue item, bool multi)
         {
             ref int c = ref count[0];

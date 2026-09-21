@@ -36,13 +36,12 @@ namespace StatusEffectsFramework.Entities.Samples
             m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, ExamplePlayerComponent, Modules<DamageOverTimeModuleStruct>>().WithAll<Simulate>().Build();
             
             state.RequireForUpdate(m_EntityQuery);
-            state.RequireForUpdate<UnmanagedStatusRegistryrrrr>();
+            state.RequireForUpdate<UnmanagedStatusRegistry>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var statusReferences = SystemAPI.GetSingleton<UnmanagedStatusRegistryrrrr>();
             var commandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
             var lookup = SystemAPI.GetBufferLookup<Modules<DamageOverTimeModuleStruct>>();
             var playerLookup = SystemAPI.GetComponentLookup<ExamplePlayerComponent>();
@@ -58,7 +57,6 @@ namespace StatusEffectsFramework.Entities.Samples
                 {
                     NetworkTime = networkTime,
                     TickRate = tickRate,
-                    References = statusReferences,
                 };
                 state.Dependency = firstPredictionTickJob.ScheduleParallelByRef(m_FirstPredictionTickQuery, state.Dependency);
             }
@@ -72,7 +70,7 @@ namespace StatusEffectsFramework.Entities.Samples
 #else
                 ElapsedTime = SystemAPI.Time.ElapsedTime,
 #endif
-                References = statusReferences,
+                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
             };
             state.Dependency = damageOverTimeJob.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
         }
@@ -83,7 +81,6 @@ namespace StatusEffectsFramework.Entities.Samples
         {
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
-            public UnmanagedStatusRegistryrrrr References;
 
             public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<StatusEffects> statusEffects, ref DynamicBuffer<Modules<DamageOverTimeModuleStruct>> damageOverTimeModules)
             {
@@ -104,7 +101,7 @@ namespace StatusEffectsFramework.Entities.Samples
         [BurstCompile]
         partial struct DamageOverTimeJob : IJobEntity
         {
-            public UnmanagedStatusRegistryrrrr References;
+            public UnmanagedStatusRegistry Registry;
 #if NETCODE
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
@@ -124,11 +121,8 @@ namespace StatusEffectsFramework.Entities.Samples
 
                     if (!StatusEffects.TryGetStatusEffect(statusEffects, module.Id, out statusEffect))
                         continue;
-
-                    if (!References.TryGetReference(statusEffect.Id, out var reference))
-                        continue;
-
-                    ref var data = ref reference.Value;
+                    
+                    ref var data = ref Registry.GetStatusEffectData(statusEffect.Id);
 
 #if NETCODE
                     float timeSinceAdded = NetworkTime.ServerTick.TimeSince(statusEffect.TickAdded, NetworkTime.ServerTickFraction, TickRate);

@@ -16,7 +16,7 @@ namespace StatusEffectsFramework.Samples
             player.Health += statusEffect.Data.BaseValue * statusEffect.Stacks;
             player.Health = Mathf.Min(player.Health, player.MaxHealth);
 
-            statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(player, statusEffect, previous, stack);
+            statusEffect.StackUpdate += (previous, stack) => OnStackUpdate(player, statusEffect, previous, stack);
 
             await UniTask.WaitUntilCanceled(token);
             // Note that you need to check if the entity is null in case the

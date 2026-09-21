@@ -10,10 +10,7 @@ namespace StatusEffectsFramework.Entities
     public struct StatusFloats : IBufferElementData
     {
         internal Hash128 UniqueKey;
-#if NETCODE
-        [GhostField(Composite = true)]
-#endif
-        public TypeIndex TypeIndex;
+        internal ulong StableTypeHash;
 #if NETCODE
         [GhostField]
 #endif
@@ -36,10 +33,10 @@ namespace StatusEffectsFramework.Entities
         public float PostEvaluationValue;
         public float Value => PostEvaluationValue;
 
-        public StatusFloats(TypeIndex typeIndex, Hash128 uniqueKey, float baseValue, bool signProtected = true)
+        public StatusFloats(ulong stableTypeHash, Hash128 uniqueKey, float baseValue, bool signProtected = true)
         {
             UniqueKey = uniqueKey;
-            TypeIndex = typeIndex;
+            StableTypeHash = stableTypeHash;
             Id = default;
             SignProtected = signProtected;
             BaseValue = baseValue;
@@ -47,19 +44,21 @@ namespace StatusEffectsFramework.Entities
             PostEvaluationValue = baseValue;
         }
 
-        public StatusFloats(TypeIndex typeIndex, StatusFloat statusFloat)
+        public StatusFloats(ulong stableTypeHash, StatusFloat statusFloat)
         {
             Assert.IsNotNull(statusFloat, $"{nameof(StatusFloat)} cannot be null when creating a {nameof(StatusFloats)} buffer element.");
             Assert.IsNotNull(statusFloat.StatusName, $"{nameof(StatusFloat.StatusName)} cannot be null when creating a {nameof(StatusFloats)} buffer element.");
 
             UniqueKey = statusFloat.StatusName.GetUniqueKeyHash();
-            TypeIndex = typeIndex;
+            StableTypeHash = stableTypeHash;
             Id = default;
             SignProtected = statusFloat.SignProtected;
             BaseValue = statusFloat.BaseValue;
             PreEvaluationValue = statusFloat.BaseValue;
             PostEvaluationValue = statusFloat.BaseValue;
         }
+
+        public static implicit operator float(StatusFloats statusFloat) => statusFloat.Value;
     }
 }
 #endif

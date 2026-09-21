@@ -91,10 +91,8 @@ namespace StatusEffectsFramework.Entities
                     // Map ids to status effects to quickly find all status effects affecting a specific status variable.
                     foreach (var statusEffect in statusEffects)
                     {
-                        if (!Registry.TryGetStatusEffectData(statusEffect.Id, out var reference))
-                            continue;
+                        ref var data = ref Registry.GetStatusEffectData(statusEffect.Id);
 
-                        ref UnmanagedStatusEffectData data = ref reference.Value;
                         for (int v = 0; v < data.Effects.Length; v++)
                         {
                             ref var effect = ref data.Effects[v];

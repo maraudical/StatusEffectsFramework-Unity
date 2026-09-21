@@ -22,7 +22,7 @@ namespace StatusEffectsFramework.Samples
 				particleSystem?.Stop();
 			}
             else
-                statusEffect.OnStackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
+                statusEffect.StackUpdate += (previous, stack) => OnStackUpdate(vfxInstance.Prefab, manager, statusEffect, previous, stack);
         }
     }
 }

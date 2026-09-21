@@ -4,11 +4,11 @@ namespace StatusEffectsFramework
 {
     public class DynamicBool
     {
-        internal event Action OnValueChanged;
+        internal event Action ValueChanged;
         public StatusName StatusName { get; private set; }
         public bool PostEvaluate { get; private set; }
         public int Priority { get; private set; }
-        public bool Value { get => m_Value; set { if (value == Value) return; Value = value; OnValueChanged?.Invoke(); } }
+        public bool Value { get => m_Value; set { if (value == Value) return; Value = value; ValueChanged?.Invoke(); } }
         private bool m_Value;
 
         public DynamicBool(DynamicEffectBool dynamicBoolEffect, Effect effect, bool value = false)

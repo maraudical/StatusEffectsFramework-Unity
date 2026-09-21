@@ -1,4 +1,5 @@
 #if ENTITIES
+using NUnit.Framework.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,79 +15,90 @@ namespace StatusEffectsFramework.Entities
         public EntityQuery m_RegistryQuery;
         public EntityQuery m_RequestQuery;
         private ushort m_Version;
-
+        
         protected override void OnCreate()
         {
-            EntityManager.CreateEntity(typeof(UnmanagedStatusRegistrySetupRequest));
-
             m_RegistryQuery = SystemAPI.QueryBuilder().WithAll<UnmanagedStatusRegistry>().Build();
             m_RequestQuery = SystemAPI.QueryBuilder().WithAll<UnmanagedStatusRegistrySetupRequest>().Build();
 
             m_Version = 1;
+
+            StatusRegistry.Get().RegistryRebuilt += OnRegistryRebuilt;
+            OnRegistryRebuilt();
 
             RequireForUpdate(m_RequestQuery);
         }
 
         protected override void OnUpdate() 
         {
-            var statusEffectDatas = StatusRegistry.Get().ReadOnlyDictionary.Values;
-
-            if (statusEffectDatas.Count <= 0)
-                return;
-
             var commandBuffer = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
 
             commandBuffer.DestroyEntity(m_RequestQuery, EntityQueryCaptureMode.AtPlayback);
 
+            var registry = StatusRegistry.Get();
+            var idToStatusEffectDatas = registry.IdToStatusEffectData;
+            var keyToIds = registry.KeyToId;
+
             var registryEntity = commandBuffer.CreateEntity();
-            
             commandBuffer.SetName(registryEntity, "Status Registry");
 
-            var idToStatusEffectDataMapBuilder = new BlobBuilder(Allocator.Temp);
-            ref var idToStatusEffectDataMapRoot = ref idToStatusEffectDataMapBuilder.ConstructRoot<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>>();
-            var idToStatusEffectDataMap = idToStatusEffectDataMapBuilder.AllocateHashMap(ref idToStatusEffectDataMapRoot, statusEffectDatas.Count);
+            var keyToIdBuilder = new BlobBuilder(Allocator.Temp);
+            ref var keyToIdRoot = ref keyToIdBuilder.ConstructRoot<BlobHashMap<Hash128, ushort>>();
+            var keyToIdMap = keyToIdBuilder.AllocateHashMap(ref keyToIdRoot, keyToIds.Count);
+
+            foreach (var kvp in keyToIds)
+                keyToIdMap.Add(kvp.Key, kvp.Value);
+
+            var keyToIdReference = keyToIdBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, ushort>>(Allocator.Persistent);
+
+            var idToStatusEffectDataBuilder = new BlobBuilder(Allocator.Temp);
+            ref var idToStatusEffectDataRoot = ref idToStatusEffectDataBuilder.ConstructRoot<BlobHashMap<ushort, UnmanagedStatusEffectData>>();
+            var idToStatusEffectDataMap = idToStatusEffectDataBuilder.AllocateHashMap(ref idToStatusEffectDataRoot, idToStatusEffectDatas.Count);
 
             // Dispose of old blobs after copying
             if (SystemAPI.TryGetSingletonEntity<UnmanagedStatusRegistry>(out var oldRegistryEntity))
             {
-                OnDestroy();
+                Cleanup();
                 m_Version++;
                 commandBuffer.DestroyEntity(oldRegistryEntity);
             }
 
             // Setup status effect datas
-            foreach (var statusEffectData in statusEffectDatas)
+            foreach (var kvp in idToStatusEffectDatas)
             {
-                // Rare case where data is null. This should never happen.
-                if (!statusEffectData || idToStatusEffectDataMap.ContainsKey(statusEffectData.Id))
+                var statusEffectData = kvp.Value;
+
+                // Case where data is null. This should never happen.
+                if (!statusEffectData)
                     continue;
-
-                var subBuilder = new BlobBuilder(Allocator.Temp);
-
-                ref UnmanagedStatusEffectData statusEffectDataRoot = ref subBuilder.ConstructRoot<UnmanagedStatusEffectData>();
-                statusEffectDataRoot.Id = statusEffectData.Id;
-                statusEffectDataRoot.Group = statusEffectData.Group;
-                statusEffectDataRoot.ComparableName = statusEffectData.ComparableName ? statusEffectData.ComparableName.Id : default;
-                statusEffectDataRoot.BaseValue = statusEffectData.BaseValue;
-                statusEffectDataRoot.Icon = statusEffectData.Icon;
+                
+                ref UnmanagedStatusEffectData unmanagedStatusEffectData = ref idToStatusEffectDataMap.AddByRef(kvp.Key);
+                unmanagedStatusEffectData.InternalId = kvp.Key;
+                unmanagedStatusEffectData.InternalGroup = statusEffectData.Group;
+                ushort comparableName = default;
+                if (statusEffectData.ComparableName && !keyToIds.TryGetValue(statusEffectData.ComparableName.GetUniqueKeyHash(), out comparableName))
+                    DebugError(statusEffectData.ComparableName.UniqueKey);
+                unmanagedStatusEffectData.InternalComparableName = comparableName;
+                unmanagedStatusEffectData.InternalBaseValue = statusEffectData.BaseValue;
+                unmanagedStatusEffectData.InternalIcon = statusEffectData.Icon;
                 UnityEngine.Color color = statusEffectData.Color;
-                statusEffectDataRoot.Color = new(color.r, color.g, color.b, color.a);
+                unmanagedStatusEffectData.InternalColor = new(color.r, color.g, color.b, color.a);
 #if LOCALIZED
-                subBuilder.AllocateString(ref statusEffectDataRoot.StatusEffectNameTable, statusEffectData.StatusEffectName.TableReference.ToString());
-                subBuilder.AllocateString(ref statusEffectDataRoot.StatusEffectNameEntry, statusEffectData.StatusEffectName.TableEntryReference.ToString());
-                subBuilder.AllocateString(ref statusEffectDataRoot.AcronymTable, statusEffectData.Acronym.TableReference.ToString());
-                subBuilder.AllocateString(ref statusEffectDataRoot.AcronymEntry, statusEffectData.Acronym.TableReference.ToString());
-                subBuilder.AllocateString(ref statusEffectDataRoot.DescriptionTable, statusEffectData.Description.TableReference.ToString());
-                subBuilder.AllocateString(ref statusEffectDataRoot.DescriptionEntry, statusEffectData.Description.TableReference.ToString());
+                idToStatusEffectDataBuilder.AllocateString(ref statusEffectDataRoot.InternalStatusEffectNameTable, statusEffectData.StatusEffectName.TableReference.ToString());
+                idToStatusEffectDataBuilder.AllocateString(ref statusEffectDataRoot.InternalStatusEffectNameEntry, statusEffectData.StatusEffectName.TableEntryReference.ToString());
+                idToStatusEffectDataBuilder.AllocateString(ref statusEffectDataRoot.InternalAcronymTable, statusEffectData.Acronym.TableReference.ToString());
+                idToStatusEffectDataBuilder.AllocateString(ref statusEffectDataRoot.InternalAcronymEntry, statusEffectData.Acronym.TableReference.ToString());
+                idToStatusEffectDataBuilder.AllocateString(ref statusEffectDataRoot.InternalDescriptionTable, statusEffectData.Description.TableReference.ToString());
+                idToStatusEffectDataBuilder.AllocateString(ref statusEffectDataRoot.InternalDescriptionEntry, statusEffectData.Description.TableReference.ToString());
 #else
-                subBuilder.AllocateString(ref statusEffectDataRoot.StatusEffectName, statusEffectData.StatusEffectName);
-                subBuilder.AllocateString(ref statusEffectDataRoot.Acronym, statusEffectData.Acronym);
-                subBuilder.AllocateString(ref statusEffectDataRoot.Description, statusEffectData.Description);
+                idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.InternalStatusEffectName, statusEffectData.StatusEffectName);
+                idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.InternalAcronym, statusEffectData.Acronym);
+                idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.InternalDescription, statusEffectData.Description);
 #endif
-                statusEffectDataRoot.AllowEffectStacking = statusEffectData.AllowEffectStacking;
-                statusEffectDataRoot.NonStackingBehaviour = statusEffectData.NonStackingBehaviour;
-                statusEffectDataRoot.MaxStacks = statusEffectData.MaxStacks;
-                var effects = subBuilder.Allocate(ref statusEffectDataRoot.Effects, statusEffectData.Effects.Count);
+                unmanagedStatusEffectData.InternalAllowEffectStacking = statusEffectData.AllowEffectStacking;
+                unmanagedStatusEffectData.InternalNonStackingBehaviour = statusEffectData.NonStackingBehaviour;
+                unmanagedStatusEffectData.InternalMaxStacks = statusEffectData.MaxStacks;
+                var effects = idToStatusEffectDataBuilder.Allocate(ref unmanagedStatusEffectData.InternalEffects, statusEffectData.Effects.Count);
                 for (int i = 0; i < effects.Length; i++)
                 {
                     var effect = statusEffectData.Effects[i];
@@ -135,9 +147,12 @@ namespace StatusEffectsFramework.Entities
                     }
 
                     ref var unmanagedEffect = ref effects[i];
+                    ushort statusName = default;
+                    if (effect.StatusName && !keyToIds.TryGetValue(effect.StatusName.GetUniqueKeyHash(), out statusName))
+                        DebugError(effect.StatusName.UniqueKey);
                     unmanagedEffect = new UnmanagedEffect
                     {
-                        StatusName = effect.StatusName ? effect.StatusName.Id : default,
+                        Id = statusName,
                         ValueType = valueType,
                         ValueModifier = effect.ValueModifier,
                         ValueSource = effect.ValueSource,
@@ -149,15 +164,29 @@ namespace StatusEffectsFramework.Entities
                         DynamicEffectInfo = info
                     };
                 }
-                var conditions = subBuilder.Allocate(ref statusEffectDataRoot.Conditions, statusEffectData.Conditions.Count);
+                var conditions = idToStatusEffectDataBuilder.Allocate(ref unmanagedStatusEffectData.InternalConditions, statusEffectData.Conditions.Count);
                 for (int i = 0; i < conditions.Length; i++)
                 {
                     var condition = statusEffectData.Conditions[i];
+
+                    ushort searchableData = default;
+                    if (condition.SearchableData && !keyToIds.TryGetValue(condition.SearchableData.GetUniqueKeyHash(), out searchableData))
+                        DebugError(condition.SearchableData.UniqueKey);
+                    ushort searchableComparableName = default;
+                    if (condition.SearchableComparableName && !keyToIds.TryGetValue(condition.SearchableComparableName.GetUniqueKeyHash(), out searchableComparableName))
+                        DebugError(condition.SearchableComparableName.UniqueKey);
+                    ushort actionData = default;
+                    if (condition.ActionData && !keyToIds.TryGetValue(condition.ActionData.GetUniqueKeyHash(), out actionData))
+                        DebugError(condition.ActionData.UniqueKey);
+                    ushort actionComparableName = default;
+                    if (condition.ActionComparableName && !keyToIds.TryGetValue(condition.ActionComparableName.GetUniqueKeyHash(), out actionComparableName))
+                        DebugError(condition.ActionComparableName.UniqueKey);
+
                     conditions[i] = new UnmanagedCondition()
                     {
                         SearchableConfigurable = condition.SearchableConfigurable,
-                        SearchableData = condition.SearchableData ? condition.SearchableData.Id : default,
-                        SearchableComparableName = condition.SearchableComparableName ? condition.SearchableComparableName.Id : default,
+                        SearchableData = searchableData,
+                        SearchableComparableName = searchableComparableName,
                         SearchableGroup = condition.SearchableGroup,
                         Exists = condition.Exists,
                         Add = condition.Add,
@@ -165,8 +194,8 @@ namespace StatusEffectsFramework.Entities
                         UseStacks = condition.UseStacks,
                         Stacks = condition.Stacks,
                         ActionConfigurable = condition.ActionConfigurable,
-                        ActionData = condition.ActionData ? condition.ActionData.Id : default,
-                        ActionComparableName = condition.ActionComparableName ? condition.ActionComparableName.Id : default,
+                        ActionData = actionData,
+                        ActionComparableName = actionComparableName,
                         ActionGroup = condition.ActionGroup,
                         Timing = condition.Timing,
                         Duration = condition.Duration
@@ -176,7 +205,7 @@ namespace StatusEffectsFramework.Entities
                 // Modules just stores the buffer index for the module. This is
                 // because we cannot store Entity references directly on a blob asset.
                 List<ModuleContainer> entityModuleContainers = statusEffectData.Modules.Where((m) => m.Module is IEntityModule).OrderBy(m => m.Module.GetType().AssemblyQualifiedName).ToList();
-                var modules = subBuilder.Allocate(ref statusEffectDataRoot.Modules, entityModuleContainers.Count);
+                var modules = idToStatusEffectDataBuilder.Allocate(ref unmanagedStatusEffectData.InternalModules, entityModuleContainers.Count);
 
                 if (entityModuleContainers.Count > 0)
                 {
@@ -189,28 +218,28 @@ namespace StatusEffectsFramework.Entities
                     }
                 }
 
-                idToStatusEffectDataMap.Add(statusEffectData.Id, subBuilder.CreateBlobAssetReference<UnmanagedStatusEffectData>(Allocator.Persistent));
-                subBuilder.Dispose();
+                void DebugError(string uniqueKey) => UnityEngine.Debug.LogError($"Trying to setup an {nameof(UnmanagedStatusEffectData)} with the {nameof(Registrant)} that contains the unique key \"{uniqueKey}\" but the registry doesn't contain the ID associated with it.");
             }
 
-            var statusEffectDataMapBlob = idToStatusEffectDataMapBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, BlobAssetReference<UnmanagedStatusEffectData>>>(Allocator.Persistent);
-            idToStatusEffectDataMapBuilder.Dispose();
+            var idToStatusEffectDataReference = idToStatusEffectDataBuilder.CreateBlobAssetReference<BlobHashMap<ushort, UnmanagedStatusEffectData>>(Allocator.Persistent);
 
             Type moduleType = typeof(Modules<int>);
             Type dynamicFloatType = typeof(DynamicFloats<int>);
             Type dynamicIntType = typeof(DynamicInts<int>);
             Type dynamicBoolType = typeof(DynamicBools<int>);
             
-            commandBuffer.AddComponent(registryEntity, new UnmanagedStatusRegistryrrrr
+            commandBuffer.AddComponent(registryEntity, new UnmanagedStatusRegistry
             {
                 Version = m_Version,
+                IdToStatusEffectData = idToStatusEffectDataReference,
+                KeyToId = keyToIdReference,
                 ModuleOffsets = new ModuleOffsets
                 {
                     Struct = UnsafeUtility.GetFieldOffset(moduleType.GetField(nameof(ModuleOffsets.Struct)))
                 },
                 DynamicFloatOffsets = new DynamicFloatOffsets
                 {
-                    StatusName = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.StatusName))),
+                    Id = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.Id))),
                     ValueModifier = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.ValueModifier))),
                     PostEvaluate = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.PostEvaluate))),
                     Priority = UnsafeUtility.GetFieldOffset(dynamicFloatType.GetField(nameof(DynamicFloatOffsets.Priority))),
@@ -219,7 +248,7 @@ namespace StatusEffectsFramework.Entities
                 },
                 DynamicIntOffsets = new DynamicIntOffsets
                 {
-                    StatusName = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.StatusName))),
+                    Id = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.Id))),
                     ValueModifier = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.ValueModifier))),
                     PostEvaluate = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.PostEvaluate))),
                     Priority = UnsafeUtility.GetFieldOffset(dynamicIntType.GetField(nameof(DynamicIntOffsets.Priority))),
@@ -228,42 +257,54 @@ namespace StatusEffectsFramework.Entities
                 },
                 DynamicBoolOffsets = new DynamicBoolOffsets
                 {
-                    StatusName = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.StatusName))),
+                    Id = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.Id))),
                     PostEvaluate = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.PostEvaluate))),
                     Priority = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.Priority))),
                     Value = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.Value))),
                     Struct = UnsafeUtility.GetFieldOffset(dynamicBoolType.GetField(nameof(DynamicBoolOffsets.Struct)))
                 },
-                IdToStatusEffectDataMap = statusEffectDataMapBlob,
             });
+
+            keyToIdBuilder.Dispose();
+            idToStatusEffectDataBuilder.Dispose();
         }
 
         protected override void OnDestroy()
         {
-            if (SystemAPI.TryGetSingleton<UnmanagedStatusRegistryrrrr>(out var references))
-            {
-                using var statusEffectDataBlobs = references.IdToStatusEffectDataMap.Value.GetValueArray(Allocator.Temp);
+            StatusRegistry.Get().RegistryRebuilt += OnRegistryRebuilt;
+            Cleanup();
+        }
 
-                foreach (var blob in statusEffectDataBlobs)
+        private void OnRegistryRebuilt()
+        {
+            EntityManager.CreateEntity(typeof(UnmanagedStatusRegistrySetupRequest));
+        }
+
+        private void Cleanup()
+        {
+            if (SystemAPI.TryGetSingleton<UnmanagedStatusRegistry>(out var references))
+            {
+                using var datas = references.IdToStatusEffectData.Value.GetValueArray(Allocator.Temp);
+
+                foreach (var data in datas)
                 {
-                    ref var statusEffectData = ref blob.Value;
-                    for (int i = 0; i < statusEffectData.Modules.Length; i++)
-                    unsafe {
-                        var modulePtr = statusEffectData.Modules[i];
-                        UnsafeUtility.Free(modulePtr.Ptr.ToPointer(), Allocator.Persistent);
-                    }
-                    for (int i = 0; i < statusEffectData.Effects.Length; i++)
+                    for (int i = 0; i < data.Modules.Length; i++)
                         unsafe
                         {
-                            ref var dynamicEffectInfo = ref statusEffectData.Effects[i].DynamicEffectInfo;
+                            var modulePtr = data.Modules[i];
+                            UnsafeUtility.Free(modulePtr.Ptr.ToPointer(), Allocator.Persistent);
+                        }
+                    for (int i = 0; i < data.Effects.Length; i++)
+                        unsafe
+                        {
+                            ref var dynamicEffectInfo = ref data.Effects[i].DynamicEffectInfo;
                             if (dynamicEffectInfo.Ptr != IntPtr.Zero)
                                 UnsafeUtility.Free(dynamicEffectInfo.Ptr.ToPointer(), Allocator.Persistent);
                         }
-                    blob.Dispose();
                 }
 
-                if (references.IdToStatusEffectDataMap.IsCreated)
-                    references.IdToStatusEffectDataMap.Dispose();
+                if (references.IdToStatusEffectData.IsCreated)
+                    references.IdToStatusEffectData.Dispose();
             }
         }
     }

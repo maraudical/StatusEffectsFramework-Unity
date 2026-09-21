@@ -35,7 +35,7 @@ namespace StatusEffectsFramework.Samples
 
         private void OnEnable()
         {
-            m_ShownStatusManager.OnStatusEffect += OnStatusEffect;
+            m_ShownStatusManager.StatusEffectAction += OnStatusEffect;
 
             m_EffectDropdown.onValueChanged.AddListener(DropdownValueChanged);
             m_EffectAddButton.onClick.AddListener(AddButtonClicked);
@@ -44,7 +44,7 @@ namespace StatusEffectsFramework.Samples
 
         private void OnDisable()
         {
-            m_ShownStatusManager.OnStatusEffect -= OnStatusEffect;
+            m_ShownStatusManager.StatusEffectAction -= OnStatusEffect;
 
             m_EffectDropdown.onValueChanged.RemoveListener(DropdownValueChanged);
             m_EffectAddButton.onClick.RemoveListener(AddButtonClicked);

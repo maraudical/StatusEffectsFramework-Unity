@@ -13,11 +13,11 @@ namespace StatusEffectsFramework
         public virtual void SetManager(IStatusManager instance)
         {
             if (Manager != null)
-                Manager.OnStatusEffect -= OnStatusEffect;
+                Manager.StatusEffectAction -= OnStatusEffect;
 
             Manager = instance;
 
-            Manager.OnStatusEffect += OnStatusEffect;
+            Manager.StatusEffectAction += OnStatusEffect;
         }
 
         protected abstract void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks);

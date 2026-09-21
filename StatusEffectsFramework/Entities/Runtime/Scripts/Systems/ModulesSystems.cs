@@ -43,10 +43,7 @@ namespace StatusEffectsFramework.Entities
 
                 foreach (var statusEffectEvent in statusEffectEvents)
                 {
-                    if (Hint.Unlikely(!Registry.TryGetStatusEffectData(statusEffectEvent.Id, out var reference)))
-                        continue;
-
-                    ref var data = ref reference.Value;
+                    ref var data = ref Registry.GetStatusEffectData(statusEffectEvent.Id);
 
                     for (int v = 0; v < data.Modules.Length; v++)
                     {
@@ -365,11 +362,8 @@ namespace StatusEffectsFramework.Entities
                             noChange = false;
                         else
                             continue;
-                        
-                        if (Hint.Unlikely(!Registry.TryGetStatusEffectData(interpolatedStatusEffect.Id, out var reference)))
-                            continue;
 
-                        ref var data = ref reference.Value;
+                        ref var data = ref Registry.GetStatusEffectData(interpolatedStatusEffect.Id);
 
                         for (int m = 0; m < data.Modules.Length; m++)
                             interpolatedTypes.Add(data.Modules[m].TypeIndex);
@@ -387,10 +381,7 @@ namespace StatusEffectsFramework.Entities
                         if (index >= 0 && statusEffectEvents[index].Event is StatusEffectEvent.Added)
                             continue;
 
-                        if (Hint.Unlikely(!Registry.TryGetStatusEffectData(statusEffect.Id, out var reference)))
-                            continue;
-
-                        ref var data = ref reference.Value;
+                        ref var data = ref Registry.GetStatusEffectData(statusEffect.Id);
 
                         for (int v = 0; v < data.Modules.Length; v++)
                         {

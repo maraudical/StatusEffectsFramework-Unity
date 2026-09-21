@@ -22,28 +22,74 @@ namespace StatusEffectsFramework.Entities
 
         internal int bucketCapacityMask; // == buckets.Length - 1
 
+        internal BlobMultiHashMapIterator<TKey> GetValuesForKey(TKey key)
+        {
+            int bucket = key.GetHashCode() & bucketCapacityMask;
+            var it = new BlobMultiHashMapIterator<TKey> { key = key, nextIndex = buckets[bucket] };
+            return it;
+        }
+
         internal bool TryGetFirstValue(TKey key, out TValue item, out BlobMultiHashMapIterator<TKey> it)
         {
-            it.key = key;
-
-            // ReSharper disable once Unity.BurstAccessingManagedMethod
-            int bucket = key.GetHashCode() & bucketCapacityMask;
-            it.nextIndex = buckets[bucket];
+            it = GetValuesForKey(key);
             return TryGetNextValue(out item, ref it);
+        }
+
+        internal ref TValue GetFirstValueRef(TKey key, out BlobMultiHashMapIterator<TKey> it)
+        {
+            it = GetValuesForKey(key);
+            return ref GetNextValueRef(ref it);
+        }
+
+        internal ref TValue GetFirstValueRef(TKey key)
+        {
+            var index = key.GetHashCode() & bucketCapacityMask;
+            return ref values[index];
         }
 
         internal bool TryGetNextValue(out TValue item, ref BlobMultiHashMapIterator<TKey> it)
         {
             int index = it.nextIndex;
-            it.nextIndex = -1;
-            item = default;
 
+            if (!IsValidIndex(it))
+            {
+                it.nextIndex = -1;
+                item = default;
+                return false;
+            }
+
+            it.nextIndex = next[index];
+            item = values[index];
+            return true;
+        }
+
+        internal ref TValue GetNextValueRef(ref BlobMultiHashMapIterator<TKey> it)
+        {
+            int index = it.nextIndex;
+
+            if (!IsValidIndex(it))
+            {
+                it.nextIndex = -1;
+                throw new IndexOutOfRangeException($"The next index of \"{index}\" for key \"{it.key}\" is invalid.");
+            }
+
+            it.nextIndex = next[index];
+            return ref values[index];
+        }
+
+        internal bool IsValidIndex(in BlobMultiHashMapIterator<TKey> it)
+        {
+            return IsValidIndex(it.key, it.nextIndex);
+        }
+
+        internal bool IsValidIndex(TKey key, int index)
+        {
             if (index < 0 /*|| index >= keyCapacity*/)
             {
                 return false;
             }
 
-            while (!keys[index].Equals(it.key))
+            while (!keys[index].Equals(key))
             {
                 index = next[index];
                 if (index < 0 /*|| index >= keyCapacity*/)
@@ -52,8 +98,6 @@ namespace StatusEffectsFramework.Entities
                 }
             }
 
-            it.nextIndex = next[index];
-            item = values[index];
             return true;
         }
 

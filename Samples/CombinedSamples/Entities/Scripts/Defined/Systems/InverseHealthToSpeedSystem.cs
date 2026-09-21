@@ -16,11 +16,13 @@ namespace StatusEffectsFramework.Entities.Samples
     public partial struct InverseHealthToSpeedSystem : ISystem
     {
         private EntityQuery m_EntityQuery;
+        private ulong m_StableTypeHash;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusFloats, ExamplePlayerComponent, DynamicFloats<InverseHealthToSpeedStruct>>().WithAll<Simulate>().WithPresentRW<StatusVariablePreEvaluateUpdate>().Build();
+            m_StableTypeHash = TypeManager.GetTypeInfo<ExamplePlayerComponent>().StableTypeHash;
 
             state.RequireForUpdate(m_EntityQuery);
         }
@@ -28,12 +30,20 @@ namespace StatusEffectsFramework.Entities.Samples
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            state.Dependency = new InverseHealthToSpeedJob().ScheduleParallel(m_EntityQuery, state.Dependency);
+            var job = new InverseHealthToSpeedJob
+            {
+                StableTypeHash = m_StableTypeHash,
+                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
+            };
+            state.Dependency = job.ScheduleParallel(m_EntityQuery, state.Dependency);
         }
 
         [BurstCompile]
         partial struct InverseHealthToSpeedJob : IJobEntity
         {
+            public ulong StableTypeHash;
+            public UnmanagedStatusRegistry Registry;
+
             public void Execute(EnabledRefRW<StatusVariablePreEvaluateUpdate> preEvaluateUpdate, 
                 in DynamicBuffer<StatusFloats> statusFloats, 
                 ref ExamplePlayerComponent player, 
@@ -41,7 +51,7 @@ namespace StatusEffectsFramework.Entities.Samples
             {
                 bool update = false;
 
-                if (player.MaxHealth.TryGetValue(player.ComponentId, statusFloats, out var maxHealth))
+                if (player.MaxHealth.TryGetValue(StableTypeHash, Registry, statusFloats, out var maxHealth))
                 {
                     float value = math.max(0, 1f - player.Health / maxHealth) * maxHealth;
                     for (int i = 0; i < dynamicFloats.Length; i++)

@@ -29,16 +29,10 @@ namespace StatusEffectsFramework
             Preprocess();
         }
 
-        [InitializeOnLoadMethod]
-        private static void EditorInitialize()
+        [InitializeOnEnterPlayMode]
+        private static void OnPlayModeStateChanged()
         {
-            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-        }
-
-        private static void OnPlayModeStateChanged(PlayModeStateChange state)
-        {
-            if (state is PlayModeStateChange.EnteredPlayMode)
-                Get().Preprocess();
+            Get().Preprocess();
         }
 
         private void Preprocess()
@@ -91,11 +85,6 @@ namespace StatusEffectsFramework
         private Dictionary<ushort, ComparableName> m_IdToComparableName;
         private Dictionary<ushort, StatusEvent> m_IdToStatusEvent;
         private Dictionary<Hash128, ushort> m_KeyToId;
-
-        public IReadOnlyList<StatusEffectData> StatusEffectDatas => m_StatusEffectDatas;
-        public IReadOnlyList<StatusName> StatusNames => m_StatusNames;
-        public IReadOnlyList<ComparableName> ComparableNames => m_ComparableNames;
-        public IReadOnlyList<StatusEvent> StatusEvents => m_StatusEvents;
 
         [SerializeField, HideInInspector]
         private List<StatusEffectData> m_StatusEffectDatas;

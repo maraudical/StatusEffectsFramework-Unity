@@ -6,10 +6,18 @@ namespace StatusEffectsFramework.Samples
 {
     public partial class DamageOverTimeModule : Module
     {
-        public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
+        public override void EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
         {
             DamageOverTimeInstance damageOverTimeInstance = moduleInstance as DamageOverTimeInstance;
 
+            var source = CancellationTokenSource.CreateLinkedTokenSource(manager.GetCancellationTokenOnDestroy());
+            Task(manager, statusEffect, damageOverTimeInstance, source.Token).Forget();
+
+            statusEffect.Stopped += source.Cancel;
+        }
+
+        async UniTaskVoid Task(StatusManager manager, StatusEffect statusEffect, DamageOverTimeInstance damageOverTimeInstance, CancellationToken token)
+        {
             if (manager.TryGetComponent(out IExamplePlayer player))
                 while (!token.IsCancellationRequested)
                 {

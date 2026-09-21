@@ -1,6 +1,5 @@
 using Unity.Collections;
 using Unity.Entities;
-using Unity.NetCode;
 using Unity.Transforms;
 using UnityEngine;
 
@@ -42,12 +41,11 @@ namespace StatusEffectsFramework.Entities.Samples
             };
 
             RequireAnyForUpdate(m_Queries);
-            RequireForUpdate<UnmanagedStatusRegistryrrrr>();
+            RequireForUpdate<UnmanagedStatusRegistry>();
         }
 
         protected override void OnUpdate()
         {
-            var statusReferences = SystemAPI.GetSingleton<UnmanagedStatusRegistryrrrr>();
             var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
             var statusEffectsLookup = SystemAPI.GetBufferLookup<StatusEffects>(true);
             var localToWorldLookup = SystemAPI.GetComponentLookup<LocalToWorld>(true);

@@ -9,9 +9,9 @@ namespace StatusEffectsFramework
         /// <summary>
         /// This <see cref="Action"/> is invoked when <see cref="StatusEffect"/>s are added or removed.
         /// </summary>
-        /// <remarks>Returns the <see cref="StatusEffect"/> reference, the <see cref="StatusEffectAction"/>, 
+        /// <remarks>Returns the <see cref="StatusEffect"/> reference, the <see cref="StatusEffectsFramework.StatusEffectAction"/>, 
         /// and then the previous and then current <see cref="int"/> values for stack count.</remarks>
-        public event System.Action<StatusEffect, StatusEffectAction, int, int> OnStatusEffect;
+        public event System.Action<StatusEffect, StatusEffectAction, int, int> StatusEffectAction;
         /// <summary>
         /// Cannot directly edit this <see cref="IReadOnlyList{T}"/>! Please call 
         /// <see cref="StatusManager.AddStatusEffect"/> or  <see cref="StatusManager.RemoveStatusEffect"/>.

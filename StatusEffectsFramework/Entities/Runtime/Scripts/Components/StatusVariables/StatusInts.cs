@@ -10,10 +10,7 @@ namespace StatusEffectsFramework.Entities
     public struct StatusInts : IBufferElementData
     {
         internal Hash128 UniqueKey;
-#if NETCODE
-        [GhostField(Composite = true)]
-#endif
-        public TypeIndex TypeIndex;
+        internal ulong StableTypeHash;
 #if NETCODE
         [GhostField]
 #endif
@@ -36,10 +33,10 @@ namespace StatusEffectsFramework.Entities
         public int PostEvaluationValue;
         public int Value => PostEvaluationValue;
 
-        public StatusInts(TypeIndex typeIndex, Hash128 uniqueKey, int baseValue, bool signProtected = true)
+        public StatusInts(ulong stableTypeHash, Hash128 uniqueKey, int baseValue, bool signProtected = true)
         {
             UniqueKey = uniqueKey;
-            TypeIndex = typeIndex;
+            StableTypeHash = stableTypeHash;
             Id = default;
             SignProtected = signProtected;
             BaseValue = baseValue;
@@ -47,19 +44,21 @@ namespace StatusEffectsFramework.Entities
             PostEvaluationValue = baseValue;
         }
 
-        public StatusInts(TypeIndex typeIndex, StatusInt statusInt)
+        public StatusInts(ulong stableTypeHash, StatusInt statusInt)
         {
             Assert.IsNotNull(statusInt, $"{nameof(StatusInt)} cannot be null when creating a {nameof(StatusInts)} buffer element.");
             Assert.IsNotNull(statusInt.StatusName, $"{nameof(StatusInt.StatusName)} cannot be null when creating a {nameof(StatusInts)} buffer element.");
 
-            UniqueKey = statusInt.StatusName.GetUniqueKeyHash(); 
-            TypeIndex = typeIndex;
+            UniqueKey = statusInt.StatusName.GetUniqueKeyHash();
+            StableTypeHash = stableTypeHash;
             Id = default;
             SignProtected = statusInt.SignProtected;
             BaseValue = statusInt.BaseValue;
             PreEvaluationValue = statusInt.BaseValue;
             PostEvaluationValue = statusInt.BaseValue;
         }
+
+        public static implicit operator int(StatusInts statusInt) => statusInt.Value;
     }
 }
 #endif

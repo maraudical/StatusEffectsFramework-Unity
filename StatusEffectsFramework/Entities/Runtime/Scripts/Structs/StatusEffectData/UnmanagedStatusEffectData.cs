@@ -8,30 +8,57 @@ namespace StatusEffectsFramework.Entities
     public struct UnmanagedStatusEffectData
     {
         #region Public Properties
-        public ushort Id { get; internal set; }
-        public StatusEffectGroup Group { get; internal set; }
-        public ushort ComparableName { get; internal set; }
-        public float BaseValue { get; internal set; }
-        public UnityObjectRef<Sprite> Icon { get; internal set; }
-        public float4 Color { get; internal set; }
+        public ushort Id => InternalId;
+        public StatusEffectGroup Group => InternalGroup;
+        public ushort ComparableName => InternalComparableName;
+        public float BaseValue => InternalBaseValue;
+        public UnityObjectRef<Sprite> Icon => InternalIcon;
+        public float4 Color => InternalColor;
 #if LOCALIZED
-        public BlobString StatusEffectNameTable { get; internal set; }
-        public BlobString StatusEffectNameEntry { get; internal set; }
-        public BlobString AcronymTable { get; internal set; }
-        public BlobString AcronymEntry { get; internal set; }
-        public BlobString DescriptionTable { get; internal set; }
-        public BlobString DescriptionEntry { get; internal set; }
+        public BlobString StatusEffectNameTable => InternalStatusEffectNameTable;
+        public BlobString StatusEffectNameEntry => InternalStatusEffectNameEntry;
+        public BlobString AcronymTable => InternalAcronymTable;
+        public BlobString AcronymEntry => InternalAcronymEntry;
+        public BlobString DescriptionTable => InternalDescriptionTable;
+        public BlobString DescriptionEntry => InternalDescriptionEntry;
 #else
-        public BlobString StatusEffectName  { get; internal set; }
-        public BlobString Acronym  { get; internal set; }
-        public BlobString Description  { get; internal set; }
+        public BlobString StatusEffectName => InternalStatusEffectName;
+        public BlobString Acronym => InternalAcronym;
+        public BlobString Description => InternalDescription;
 #endif
-        public bool AllowEffectStacking { get; internal set; }
-        public NonStackingBehaviour NonStackingBehaviour { get; internal set; }
-        public int MaxStacks { get; internal set; }
-        public BlobArray<UnmanagedEffect> Effects { get; internal set; }
-        public BlobArray<UnmanagedCondition> Conditions { get; internal set; }
-        public BlobArray<ModuleInfo> Modules { get; internal set; }
+        public bool AllowEffectStacking => InternalAllowEffectStacking;
+        public NonStackingBehaviour NonStackingBehaviour => InternalNonStackingBehaviour;
+        public int MaxStacks => InternalMaxStacks;
+        public BlobArray<UnmanagedEffect> Effects => InternalEffects;
+        public BlobArray<UnmanagedCondition> Conditions => InternalConditions;
+        public BlobArray<ModuleInfo> Modules => InternalModules;
+        #endregion
+
+        #region Internal Fields
+        internal ushort InternalId;
+        internal StatusEffectGroup InternalGroup;
+        internal ushort InternalComparableName;
+        internal float InternalBaseValue;
+        internal UnityObjectRef<Sprite> InternalIcon;
+        internal float4 InternalColor;
+#if LOCALIZED
+        internal BlobString InternalStatusEffectNameTable;
+        internal BlobString InternalStatusEffectNameEntry;
+        internal BlobString InternalAcronymTable;
+        internal BlobString InternalAcronymEntry;
+        internal BlobString InternalDescriptionTable;
+        internal BlobString InternalDescriptionEntry;
+#else
+        internal BlobString InternalStatusEffectName;
+        internal BlobString InternalAcronym;
+        internal BlobString InternalDescription;
+#endif
+        internal bool InternalAllowEffectStacking;
+        internal NonStackingBehaviour InternalNonStackingBehaviour;
+        internal int InternalMaxStacks;
+        internal BlobArray<UnmanagedEffect> InternalEffects;
+        internal BlobArray<UnmanagedCondition> InternalConditions;
+        internal BlobArray<ModuleInfo> InternalModules;
         #endregion
     }
 }
