@@ -11,7 +11,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 860269c7aa108254f96e7f65fbe4b187, type: 3}
   m_Name: Coin Multiplier
-  m_EditorClassIdentifier: 
-  m_Id:
-    serializedVersion: 2
-    Hash: 557a07216b2f5f29be40e13e1040d408
+  m_EditorClassIdentifier: StatusEffectsFramework::StatusEffectsFramework.StatusNameInt
+  m_UniqueKey: base:coin-multiplier

@@ -12,10 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Fire
   m_EditorClassIdentifier: 
-  m_Id:
-    serializedVersion: 2
-    Hash: 93c7f7f5b9b598e100121e7f3da325df
-  m_AutomaticallyAddToDatabase: 1
+  m_UniqueKey: base:fire
   m_Group:
     Value: 2
   m_ComparableName: {fileID: 0}

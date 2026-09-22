@@ -25,10 +25,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Advanced Health Boost
   m_EditorClassIdentifier: 
-  m_Id:
-    serializedVersion: 2
-    Hash: fdc72c7430acafb11a845813f04a3413
-  m_AutomaticallyAddToDatabase: 1
+  m_UniqueKey: base:advanced-health-boost
   m_Group:
     Value: 4
   m_ComparableName: {fileID: 0}
