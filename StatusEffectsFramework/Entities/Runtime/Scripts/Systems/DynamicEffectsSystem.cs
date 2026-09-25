@@ -5,7 +5,9 @@ using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 namespace StatusEffectsFramework.Entities
 {
@@ -62,13 +64,12 @@ namespace StatusEffectsFramework.Entities
             {
                 NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
                 BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
-                UnmanagedEffect effect;
                 TypeIndex typeIndex;
 
                 var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 var typeToLength = new UnsafeHashMap<TypeIndex, int>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 var sizeOfUint = UnsafeUtility.SizeOf<uint>();
-                var sizeOfHash128 = UnsafeUtility.SizeOf<Hash128>();
+                var sizeOfUshort = UnsafeUtility.SizeOf<ushort>();
                 var sizeOfValueModifier = UnsafeUtility.SizeOf<ValueModifier>();
                 var sizeOfBool = UnsafeUtility.SizeOf<bool>();
                 var sizeOfInt = UnsafeUtility.SizeOf<int>();
@@ -88,12 +89,14 @@ namespace StatusEffectsFramework.Entities
 
                         for (int v = 0; v < data.Effects.Length; v++)
                         {
-                            effect = data.Effects[v];
+                            ref var effect = ref data.Effects[v];
 
                             if (effect.ValueSource != ValueSource.DynamicValue)
                                 continue;
 
                             typeIndex = effect.DynamicEffectInfo.TypeIndex;
+
+                            var effectStructPtr = effect.DynamicEffectInfo.Bytes.GetUnsafePtr();
 
                             if (!typeToIndexAndTypeInfo.TryGetValue(typeIndex, out var info))
                             {
@@ -120,36 +123,30 @@ namespace StatusEffectsFramework.Entities
                                             CommandBuffer.AddComponent(unfilteredChunkIndex, entity, componentType);
                                     }
 
-                                    var value = (byte*)UnsafeUtility.Malloc(sizeOfDynamicEffect, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                    UnsafeUtility.MemCpy(value, &statusEffectEvent.InstanceId, sizeOfUint);
+                                    var ptr = (byte*)UnsafeUtility.Malloc(sizeOfDynamicEffect, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
+                                    UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.InstanceIdOffset, &statusEffectEvent.InstanceId, sizeOfUint);
                                     switch (effect.ValueType)
                                     {
                                         case ValueType.Float:
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicFloatOffsets.Id, &effect.Id, sizeOfHash128);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicFloatOffsets.ValueModifier, &effect.ValueModifier, sizeOfValueModifier);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicFloatOffsets.PostEvaluate, &effect.PostEvaluate, sizeOfBool);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicFloatOffsets.Priority, &effect.Priority, sizeOfInt);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicFloatOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
-                                            break;
                                         case ValueType.Int:
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicIntOffsets.Id, &effect.Id, sizeOfHash128);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicIntOffsets.ValueModifier, &effect.ValueModifier, sizeOfValueModifier);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicIntOffsets.PostEvaluate, &effect.PostEvaluate, sizeOfBool);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicIntOffsets.Priority, &effect.Priority, sizeOfInt);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicIntOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
+                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
+                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.ValueModifierOffset, UnsafeUtility.AddressOf(ref effect.ValueModifier), sizeOfValueModifier);
+                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
+                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
+                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
                                             break;
                                         case ValueType.Bool:
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicBoolOffsets.Id, &effect.Id, sizeOfHash128);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicBoolOffsets.PostEvaluate, &effect.PostEvaluate, sizeOfBool);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicBoolOffsets.Priority, &effect.Priority, sizeOfInt);
-                                            UnsafeUtility.MemCpy(value + Registry.DynamicBoolOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
+                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
+                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
+                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
+                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
                                             break;
                                         default:
                                             UnityEngine.Debug.LogError($"The value type <b>{effect.ValueType}</b> is not supported for dynamic effects in Entities.");
                                             break;
                                     }
-                                    StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfDynamicEffect, value);
-                                    UnsafeUtility.Free(value, Allocator.Temp);
+                                    StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfDynamicEffect, ptr);
+                                    UnsafeUtility.Free(ptr, Allocator.Temp);
                                     break;
                                 case StatusEffectEvent.Removed:
                                     if (info.IndexInTypeArray < 0)
@@ -164,7 +161,7 @@ namespace StatusEffectsFramework.Entities
 
                                     for (int n = length - 1; n >= 0; n--)
                                     {
-                                        int id = *(int*)(buffer + sizeOfDynamicEffect * n);
+                                        uint id = *(uint*)(buffer + sizeOfDynamicEffect * n + effect.DynamicEffectInfo.InstanceIdOffset);
                                         if (id != statusEffectEvent.InstanceId)
                                             continue;
 
@@ -260,14 +257,13 @@ namespace StatusEffectsFramework.Entities
                 BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
                 BufferAccessor<StatusEffects> statusEffectsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectsHandle);
                 BufferAccessor<InterpolatedStatusEffects> interpolatedStatusEffectsAccessor = chunk.GetBufferAccessorRO(ref InterpolatedStatusEffectsHandle);
-                UnmanagedEffect effect;
                 TypeIndex typeIndex;
 
                 var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 var interpolatedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 var sizeOfUint = UnsafeUtility.SizeOf<uint>();
-                var sizeOfHash128 = UnsafeUtility.SizeOf<Hash128>();
+                var sizeOfUshort = UnsafeUtility.SizeOf<ushort>();
                 var sizeOfValueModifier = UnsafeUtility.SizeOf<ValueModifier>();
                 var sizeOfBool = UnsafeUtility.SizeOf<bool>();
                 var sizeOfInt = UnsafeUtility.SizeOf<int>();
@@ -316,12 +312,14 @@ namespace StatusEffectsFramework.Entities
 
                         for (int v = 0; v < data.Effects.Length; v++)
                         {
-                            effect = data.Effects[v];
+                            ref var effect = ref data.Effects[v];
 
                             if (effect.ValueSource != ValueSource.DynamicValue)
                                 continue;
 
                             typeIndex = effect.DynamicEffectInfo.TypeIndex;
+
+                            var effectStructPtr = effect.DynamicEffectInfo.Bytes.GetUnsafePtr();
                             var componentType = ComponentType.FromTypeIndex(typeIndex);
 
                             interpolatedTypes.Remove(typeIndex);
@@ -333,7 +331,7 @@ namespace StatusEffectsFramework.Entities
                                 typeToIndexAndTypeInfo.TryAdd(typeIndex, info);
                             }
 
-                            int sizeOfDynamicBuffer = info.TypeInfo.ElementSize;
+                            int sizeOfDynamicEffect = info.TypeInfo.ElementSize;
 
                             if (info.IndexInTypeArray < 0)
                             {
@@ -342,36 +340,30 @@ namespace StatusEffectsFramework.Entities
                                     CommandBuffer.AddComponent(unfilteredChunkIndex, entity, componentType);
                                     typeAlreadyProcessed.Add(typeIndex);
                                 }
-                                var value = (byte*)UnsafeUtility.Malloc(sizeOfDynamicBuffer, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                UnsafeUtility.MemCpy(value, &statusEffect.InstanceId, sizeOfUint);
+                                var ptr = (byte*)UnsafeUtility.Malloc(sizeOfDynamicEffect, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
+                                UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.InstanceIdOffset, &statusEffect.InstanceId, sizeOfUint);
                                 switch (effect.ValueType)
                                 {
                                     case ValueType.Float:
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicFloatOffsets.Id, &effect.Id, sizeOfHash128);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicFloatOffsets.ValueModifier, &effect.ValueModifier, sizeOfValueModifier);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicFloatOffsets.PostEvaluate, &effect.BoolValue, sizeOfBool);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicFloatOffsets.Priority, &effect.Priority, sizeOfInt);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicFloatOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
-                                        break;
                                     case ValueType.Int:
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicIntOffsets.Id, &effect.Id, sizeOfHash128);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicIntOffsets.ValueModifier, &effect.ValueModifier, sizeOfValueModifier);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicIntOffsets.PostEvaluate, &effect.BoolValue, sizeOfBool);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicIntOffsets.Priority, &effect.Priority, sizeOfInt);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicIntOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
+                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
+                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.ValueModifierOffset, UnsafeUtility.AddressOf(ref effect.ValueModifier), sizeOfValueModifier);
+                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
+                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
+                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
                                         break;
                                     case ValueType.Bool:
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicBoolOffsets.Id, &effect.Id, sizeOfHash128);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicBoolOffsets.PostEvaluate, &effect.BoolValue, sizeOfBool);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicBoolOffsets.Priority, &effect.Priority, sizeOfInt);
-                                        UnsafeUtility.MemCpy(value + Registry.DynamicBoolOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
+                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
+                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
+                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
+                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
                                         break;
                                     default:
                                         UnityEngine.Debug.LogError($"The value type <b>{effect.ValueType}</b> is not supported for dynamic effects in Entities.");
                                         break;
                                 }
-                                StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfDynamicBuffer, value);
-                                UnsafeUtility.Free(value, Allocator.Temp);
+                                StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfDynamicEffect, ptr);
+                                UnsafeUtility.Free(ptr, Allocator.Temp);
                             }
                             else
                             {
@@ -388,31 +380,25 @@ namespace StatusEffectsFramework.Entities
                                     typeAlreadyProcessed.Add(typeIndex);
                                 }
 
-                                StatusEffectsECSInternals.EnsureCapacity(header, lengthAsRef + 1, sizeOfDynamicBuffer, info.TypeInfo.AlignmentInBytes);
+                                StatusEffectsECSInternals.EnsureCapacity(header, lengthAsRef + 1, sizeOfDynamicEffect, info.TypeInfo.AlignmentInBytes);
 
-                                var newElement = buffer + lengthAsRef * sizeOfDynamicBuffer;
-                                UnsafeUtility.MemCpy(newElement, &statusEffect.InstanceId, sizeOfUint);
+                                var newElement = buffer + lengthAsRef * sizeOfDynamicEffect;
+                                UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.InstanceIdOffset, &statusEffect.InstanceId, sizeOfUint);
                                 switch (effect.ValueType)
                                 {
                                     case ValueType.Float:
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicFloatOffsets.Id, &effect.Id, sizeOfHash128);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicFloatOffsets.ValueModifier, &effect.ValueModifier, sizeOfValueModifier);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicFloatOffsets.PostEvaluate, &effect.BoolValue, sizeOfBool);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicFloatOffsets.Priority, &effect.Priority, sizeOfInt);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicFloatOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
-                                        break;
                                     case ValueType.Int:
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicIntOffsets.Id, &effect.Id, sizeOfHash128);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicIntOffsets.ValueModifier, &effect.ValueModifier, sizeOfValueModifier);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicIntOffsets.PostEvaluate, &effect.BoolValue, sizeOfBool);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicIntOffsets.Priority, &effect.Priority, sizeOfInt);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicIntOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
+                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
+                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.ValueModifierOffset, UnsafeUtility.AddressOf(ref effect.ValueModifier), sizeOfValueModifier);
+                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
+                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
+                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
                                         break;
                                     case ValueType.Bool:
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicBoolOffsets.Id, &effect.Id, sizeOfHash128);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicBoolOffsets.PostEvaluate, &effect.BoolValue, sizeOfBool);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicBoolOffsets.Priority, &effect.Priority, sizeOfInt);
-                                        UnsafeUtility.MemCpy(newElement + Registry.DynamicBoolOffsets.Struct, effect.DynamicEffectInfo.Ptr.ToPointer(), effect.DynamicEffectInfo.Size);
+                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
+                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
+                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
+                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
                                         break;
                                     default:
                                         UnityEngine.Debug.LogError($"The value type <b>{effect.ValueType}</b> is not supported for dynamic effects in Entities.");

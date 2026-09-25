@@ -1,3 +1,4 @@
+#if ENTITIES
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
@@ -8,27 +9,26 @@ namespace StatusEffectsFramework.Entities
     public interface IEntityDynamicEffect
     {
         /// <summary>
-        /// This optional method  should create the default values for the burstable dynamic effect struct. Make 
-        /// sure to return after passing it as a parameter to the <see cref="AllocateDynamicEffect{T}(T)"/> method.
-        /// Just return <see cref="default"/> if there is no struct to allocate.
+        /// This method should be used to create the default values for the burstable dynamic effect struct.
         /// </summary>
         /// /// <remarks>
-        /// Make sure to always use the <see cref="AllocateDynamicEffect{T}(T)"/> method to create the 
+        /// Make sure to always use the <see cref="DynamicEffectInfo.AllocateDynamicEffect{T}(T, ValueType, ref DynamicEffectInfo, ref BlobBuilder)"/> method to create the 
         /// <see cref="DynamicEffectInfo"/> struct that will be used to store the dynamic effect data. This is required 
-        /// to properly allocate unmanaged memory for the dynamic effect struct.
+        /// to properly allocate the dynamic effect struct.
         ///
         /// <code>
-        ///public DynamicEffectInfo CreateDynamicEffectInfo()
+        ///public void CreateDynamicEffectInfo(ValueType valueType, ref DynamicEffectInfo info, ref BlobBuilder builder)
         ///{
         ///    var myDynamicEffectStruct = new MyDynamicEffectStruct
         ///    {
         ///        // Copy values from the dynamic effect to the struct here
         ///        MyValue = this.MyValue,
         ///    };
-        ///    return DynamicEffectInfo.AllocateDynamicEffect(myDynamicEffectStruct);
+        ///    DynamicEffectInfo.AllocateDynamicEffect(myDynamicEffectStruct);
         ///}
         /// </code>
         /// </remarks>
-        public DynamicEffectInfo CreateDynamicEffectInfo();
+        public void CreateDynamicEffectInfo(ValueType valueType, ref DynamicEffectInfo info, ref BlobBuilder builder);
     }
 }
+#endif

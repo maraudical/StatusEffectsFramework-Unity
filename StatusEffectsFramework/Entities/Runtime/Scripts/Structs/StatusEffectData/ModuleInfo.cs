@@ -1,6 +1,4 @@
 #if ENTITIES
-using System;
-using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
@@ -9,25 +7,34 @@ namespace StatusEffectsFramework.Entities
     public struct ModuleInfo
     {
         public TypeIndex TypeIndex { get; internal set; }
-        internal IntPtr Ptr;
+        internal BlobArray<byte> Bytes;
         internal int Size;
 
+        // Field offsets within the Modules<T> buffer element. These are stored per module since
+        // the offset of Struct depends on the alignment of T.
+        internal int IdOffset;
+        internal int StructOffset;
+
         /// <summary>
-        /// Creates a new <see cref="ModuleInfo"/> for the specified module struct, allocating a copy of it 
+        /// Creates a new <see cref="ModuleInfo"/> for the specified module struct, allocating a copy of it
         /// to unmanaged memory and associating it with the module's type.
         /// </summary>
-        public static unsafe ModuleInfo AllocateModule<T>(T moduleStruct) where T : unmanaged
+        public static void AllocateModule<T>(T moduleStruct, ref ModuleInfo info, ref BlobBuilder builder) where T : unmanaged
         {
-            int size = UnsafeUtility.SizeOf<T>();
-            void* ptr = UnsafeUtility.Malloc(size, UnsafeUtility.AlignOf<T>(), Allocator.Persistent);
-            UnsafeUtility.CopyStructureToPtr(ref moduleStruct, ptr);
-            var moduleInfo = new ModuleInfo
-            {
-                TypeIndex = TypeManager.GetTypeIndex(typeof(Modules<T>)),
-                Ptr = (IntPtr)ptr,
-                Size = size,
-            };
-            return moduleInfo;
+            info.TypeIndex = TypeManager.GetTypeIndex<Modules<T>>();
+            info.Size = UnsafeUtility.SizeOf<T>();
+
+            var type = typeof(Modules<T>);
+            info.IdOffset = UnsafeUtility.GetFieldOffset(type.GetField(nameof(Modules<T>.Id)));
+            info.StructOffset = UnsafeUtility.GetFieldOffset(type.GetField(nameof(Modules<T>.Struct)));
+
+            BlobBuilderArray<byte> bytes = builder.Allocate(ref info.Bytes, info.Size);
+
+            if (info.Size <= 0)
+                return;
+
+            ref byte firstByte = ref bytes[0];
+            UnsafeUtility.As<byte, T>(ref firstByte) = moduleStruct;
         }
     }
 }

@@ -1,12 +1,13 @@
 using StatusEffectsFramework.Entities;
 using StatusEffectsFramework.Entities.Samples;
+using Unity.Entities;
 using UnityEngine;
 
 namespace StatusEffectsFramework.Samples
 {
     public partial class VfxModule : Module, IEntityModule
     {
-        public ModuleInfo CreateModuleInfo(ModuleInstance moduleInstance)
+        public void CreateModuleInfo(ModuleInstance moduleInstance, ref ModuleInfo info, ref BlobBuilder builder)
         {
             var instance = moduleInstance as VfxInstance;
 
@@ -19,7 +20,7 @@ namespace StatusEffectsFramework.Samples
                 Prefab = instance.Prefab,
                 IsLooping = isLooping,
             };
-            return ModuleInfo.AllocateModule(moduleStruct);
+            ModuleInfo.AllocateModule(moduleStruct, ref info, ref builder);
         }
     }
 }

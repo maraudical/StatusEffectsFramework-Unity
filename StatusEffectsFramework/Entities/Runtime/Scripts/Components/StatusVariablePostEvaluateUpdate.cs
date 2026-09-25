@@ -1,5 +1,8 @@
+#if ENTITIES
 using Unity.Entities;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 namespace StatusEffectsFramework.Entities
 {
@@ -9,3 +12,4 @@ namespace StatusEffectsFramework.Entities
 #endif
     public struct StatusVariablePostEvaluateUpdate : IComponentData, IEnableableComponent { }
 }
+#endif

@@ -19,7 +19,7 @@ MonoBehaviour:
   m_BaseValue: 10
   m_Icon: {fileID: 21300000, guid: 2cb9fd87a40eb2b4fb7384c36ccc128e, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
-  m_StatusEffectName: 
+  m_StatusEffectName: Basic Health Boost
   m_Acronym: 
   m_Description: 
   m_AllowEffectStacking: 1
@@ -44,7 +44,7 @@ MonoBehaviour:
     m_ModuleInstance: {fileID: 0}
   m_EnableIcon: 1
   m_EnableColor: 0
-  m_EnableName: 0
+  m_EnableName: 1
   m_EnableDescription: 0
   m_EnableAcronym: 0
 --- !u!114 &4634194536572253471

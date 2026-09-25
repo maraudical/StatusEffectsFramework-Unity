@@ -19,6 +19,7 @@ namespace StatusEffectsFramework.Entities
             AddBuffer<StatusFloats>(entity);
             AddBuffer<StatusInts>(entity);
             AddBuffer<StatusBools>(entity);
+            AddComponent<StatusResolver>(entity);
             AddComponent<StatusVariablePreEvaluateUpdate>(entity);
             SetComponentEnabled<StatusVariablePreEvaluateUpdate>(entity, false);
             AddComponent<StatusVariablePostEvaluateUpdate>(entity);

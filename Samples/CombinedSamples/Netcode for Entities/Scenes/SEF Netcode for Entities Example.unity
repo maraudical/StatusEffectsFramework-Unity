@@ -2749,6 +2749,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53a413541f3a93e478cc1e2c6fb33ba2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  onlyOne: 0
   m_EffectParent: {fileID: 1404795237}
   m_EffectPrefab: {fileID: 723449315551824524, guid: fa6d04fc069e4be49a5e002999f2fd02, type: 3}
   m_EffectDropdown: {fileID: 169864110}

@@ -1,6 +1,4 @@
 using Cysharp.Threading.Tasks;
-using StatusEffectsFramework.Entities;
-using System.Reflection;
 using System.Threading;
 using UnityEngine;
 
@@ -8,10 +6,19 @@ namespace StatusEffectsFramework.Samples
 {
     public partial class HealModule : Module
     {
-        public override async UniTaskVoid EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
+        public override void EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
         {
             if (!manager.TryGetComponent(out IExamplePlayer player))
                 return;
+            
+            var source = CancellationTokenSource.CreateLinkedTokenSource(manager.GetCancellationTokenOnDestroy());
+            Task(player, statusEffect, source.Token).Forget();
+
+            statusEffect.Stopped += source.Cancel;
+        }
+
+        async UniTaskVoid Task(IExamplePlayer player, StatusEffect statusEffect, CancellationToken token)
+        {
             // Add health according to status effect
             player.Health += statusEffect.Data.BaseValue * statusEffect.Stacks;
             player.Health = Mathf.Min(player.Health, player.MaxHealth);

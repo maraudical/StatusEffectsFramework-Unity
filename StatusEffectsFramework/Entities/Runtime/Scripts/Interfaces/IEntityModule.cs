@@ -1,4 +1,6 @@
 #if ENTITIES
+using Unity.Entities;
+
 namespace StatusEffectsFramework.Entities
 {
     /// <summary>
@@ -9,17 +11,15 @@ namespace StatusEffectsFramework.Entities
     {
         /// <summary>
         /// Using the values in the <see cref="Module"/> and <see cref="ModuleInstance"/> this method 
-        /// should create the default values for the burstable module struct. Make sure to return after 
-        /// passing it as a parameter to the <see cref="AllocateModule{T}(T)"/> method.
+        /// should be used to create the default values for the burstable module struct.
         /// </summary>
         /// /// <remarks>
-        /// Make sure to always use the <see cref="AllocateModule{T}(T)"/> method to create the 
+        /// Make sure to always use the <see cref="ModuleInfo.AllocateModule{T}(T, ref ModuleInfo, ref BlobBuilder)"/> method to create the 
         /// <see cref="ModuleInfo"/> struct that will be used to store the module data. This is required 
-        /// to properly allocate unmanaged memory for the module struct and associate it with the correct 
-        /// type information.
+        /// to properly allocate the module struct.
         ///
         /// <code>
-        ///public ModuleInfo CreateModuleInfo(ModuleInstance moduleInstance)
+        ///public void CreateModuleInfo(ModuleInstance moduleInstance, ref ModuleInfo info, ref BlobBuilder builder)
         ///{
         ///    var myModuleInstance = moduleInstance as MyModuleInstance;
         ///    var myModuleStruct = new MyModuleStruct
@@ -27,14 +27,14 @@ namespace StatusEffectsFramework.Entities
         ///        // Copy values from the module instance to the module struct here
         ///        MyValue = myModuleInstance.MyValue,
         ///    };
-        ///    return ModuleInfo.AllocateModule(myModuleStruct);
+        ///    ModuleInfo.AllocateModule(myModuleStruct);
         ///}
         /// </code>
         /// </remarks>
         /// <param name="moduleInstance">The <paramref name="moduleInstance"/> can be safely cast into 
         /// the attached <see cref="ModuleInstance"/> defined from the 
         /// <see cref="AttachModuleInstanceAttribute"/></param>
-        public ModuleInfo CreateModuleInfo(ModuleInstance moduleInstance);
+        public void CreateModuleInfo(ModuleInstance moduleInstance, ref ModuleInfo info, ref BlobBuilder builder);
     }
 }
 #endif

@@ -8,57 +8,30 @@ namespace StatusEffectsFramework.Entities
     public struct UnmanagedStatusEffectData
     {
         #region Public Properties
-        public ushort Id => InternalId;
-        public StatusEffectGroup Group => InternalGroup;
-        public ushort ComparableName => InternalComparableName;
-        public float BaseValue => InternalBaseValue;
-        public UnityObjectRef<Sprite> Icon => InternalIcon;
-        public float4 Color => InternalColor;
+        public ushort Id;
+        public StatusEffectGroup Group;
+        public ushort ComparableName;
+        public float BaseValue;
+        public UnityObjectRef<Sprite> Icon;
+        public float4 Color;
 #if LOCALIZED
-        public BlobString StatusEffectNameTable => InternalStatusEffectNameTable;
-        public BlobString StatusEffectNameEntry => InternalStatusEffectNameEntry;
-        public BlobString AcronymTable => InternalAcronymTable;
-        public BlobString AcronymEntry => InternalAcronymEntry;
-        public BlobString DescriptionTable => InternalDescriptionTable;
-        public BlobString DescriptionEntry => InternalDescriptionEntry;
+        public BlobString StatusEffectNameTable;
+        public BlobString StatusEffectNameEntry;
+        public BlobString AcronymTable;
+        public BlobString AcronymEntry;
+        public BlobString DescriptionTable;
+        public BlobString DescriptionEntry;
 #else
-        public BlobString StatusEffectName => InternalStatusEffectName;
-        public BlobString Acronym => InternalAcronym;
-        public BlobString Description => InternalDescription;
+        public BlobString StatusEffectName;
+        public BlobString Acronym;
+        public BlobString Description;
 #endif
-        public bool AllowEffectStacking => InternalAllowEffectStacking;
-        public NonStackingBehaviour NonStackingBehaviour => InternalNonStackingBehaviour;
-        public int MaxStacks => InternalMaxStacks;
-        public BlobArray<UnmanagedEffect> Effects => InternalEffects;
-        public BlobArray<UnmanagedCondition> Conditions => InternalConditions;
-        public BlobArray<ModuleInfo> Modules => InternalModules;
-        #endregion
-
-        #region Internal Fields
-        internal ushort InternalId;
-        internal StatusEffectGroup InternalGroup;
-        internal ushort InternalComparableName;
-        internal float InternalBaseValue;
-        internal UnityObjectRef<Sprite> InternalIcon;
-        internal float4 InternalColor;
-#if LOCALIZED
-        internal BlobString InternalStatusEffectNameTable;
-        internal BlobString InternalStatusEffectNameEntry;
-        internal BlobString InternalAcronymTable;
-        internal BlobString InternalAcronymEntry;
-        internal BlobString InternalDescriptionTable;
-        internal BlobString InternalDescriptionEntry;
-#else
-        internal BlobString InternalStatusEffectName;
-        internal BlobString InternalAcronym;
-        internal BlobString InternalDescription;
-#endif
-        internal bool InternalAllowEffectStacking;
-        internal NonStackingBehaviour InternalNonStackingBehaviour;
-        internal int InternalMaxStacks;
-        internal BlobArray<UnmanagedEffect> InternalEffects;
-        internal BlobArray<UnmanagedCondition> InternalConditions;
-        internal BlobArray<ModuleInfo> InternalModules;
+        public bool AllowEffectStacking;
+        public NonStackingBehaviour NonStackingBehaviour;
+        public int MaxStacks;
+        public BlobArray<UnmanagedEffect> Effects;
+        public BlobArray<UnmanagedCondition> Conditions;
+        public BlobArray<ModuleInfo> Modules;
         #endregion
     }
 }

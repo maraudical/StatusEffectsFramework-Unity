@@ -5,7 +5,9 @@ using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 namespace StatusEffectsFramework.Entities
 {
@@ -26,7 +28,6 @@ namespace StatusEffectsFramework.Entities
             NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
             BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
             BufferAccessor<ZeroLengthModules> zeroLengthModulesAccessor = chunk.GetBufferAccessorRW(ref ZeroLengthModulesHandle);
-            ModuleInfo moduleInfo;
             
             var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
             var typeToLength = new UnsafeHashMap<TypeIndex, int>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
@@ -44,11 +45,11 @@ namespace StatusEffectsFramework.Entities
                 foreach (var statusEffectEvent in statusEffectEvents)
                 {
                     ref var data = ref Registry.GetStatusEffectData(statusEffectEvent.Id);
-
+                    
                     for (int v = 0; v < data.Modules.Length; v++)
                     {
-                        moduleInfo = data.Modules[v];
-
+                        ref var moduleInfo = ref data.Modules[v];
+                        
                         if (!typeToIndexAndTypeInfo.TryGetValue(moduleInfo.TypeIndex, out var info))
                         {
                             info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, moduleInfo.TypeIndex), TypeManager.GetTypeInfo(moduleInfo.TypeIndex));
@@ -74,11 +75,11 @@ namespace StatusEffectsFramework.Entities
                                         CommandBuffer.AddComponent(unfilteredChunkIndex, entity, componentType);
                                 }
 
-                                var value = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                UnsafeUtility.MemCpy(value, &statusEffectEvent.InstanceId, sizeOfUint);
-                                UnsafeUtility.MemCpy(value + Registry.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
-                                StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, value);
-                                UnsafeUtility.Free(value, Allocator.Temp);
+                                var ptr = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
+                                UnsafeUtility.MemCpy(ptr + moduleInfo.IdOffset, &statusEffectEvent.InstanceId, sizeOfUint);
+                                UnsafeUtility.MemCpy(ptr + moduleInfo.StructOffset, moduleInfo.Bytes.GetUnsafePtr(), moduleInfo.Size);
+                                StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, ptr);
+                                UnsafeUtility.Free(ptr, Allocator.Temp);
                                 break;
                             case StatusEffectEvent.Removed:
                                 if (info.IndexInTypeArray < 0)
@@ -93,7 +94,7 @@ namespace StatusEffectsFramework.Entities
 
                                 for (int n = length - 1; n >= 0; n--)
                                 {
-                                    int id = *(int*)(buffer + sizeOfModule * n);
+                                    uint id = *(uint*)(buffer + sizeOfModule * n + moduleInfo.IdOffset);
                                     if (id != statusEffectEvent.InstanceId)
                                         continue;
                                     
@@ -336,7 +337,6 @@ namespace StatusEffectsFramework.Entities
                 BufferAccessor<StatusEffects> statusEffectsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectsHandle);
                 BufferAccessor<InterpolatedStatusEffects> interpolatedStatusEffectsAccessor = chunk.GetBufferAccessorRO(ref InterpolatedStatusEffectsHandle);
 
-                ModuleInfo moduleInfo;
 
                 var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 var interpolatedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
@@ -385,7 +385,7 @@ namespace StatusEffectsFramework.Entities
 
                         for (int v = 0; v < data.Modules.Length; v++)
                         {
-                            moduleInfo = data.Modules[v];
+                            ref var moduleInfo = ref data.Modules[v];
                             var componentType = ComponentType.FromTypeIndex(moduleInfo.TypeIndex);
 
                             interpolatedTypes.Remove(moduleInfo.TypeIndex);
@@ -406,11 +406,12 @@ namespace StatusEffectsFramework.Entities
                                     CommandBuffer.AddComponent(unfilteredChunkIndex, entity, componentType);
                                     typeAlreadyProcessed.Add(moduleInfo.TypeIndex);
                                 }
-                                var value = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                UnsafeUtility.MemCpy(value, &statusEffect.InstanceId, sizeOfUint);
-                                UnsafeUtility.MemCpy(value + Registry.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
-                                StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, value);
-                                UnsafeUtility.Free(value, Allocator.Temp);
+
+                                var ptr = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
+                                UnsafeUtility.MemCpy(ptr + moduleInfo.IdOffset, &statusEffect.InstanceId, sizeOfUint);
+                                UnsafeUtility.MemCpy(ptr + moduleInfo.StructOffset, moduleInfo.Bytes.GetUnsafePtr(), moduleInfo.Size);
+                                StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, ptr);
+                                UnsafeUtility.Free(ptr, Allocator.Temp);
                             }
                             else
                             {
@@ -430,8 +431,8 @@ namespace StatusEffectsFramework.Entities
                                 StatusEffectsECSInternals.EnsureCapacity(header, lengthAsRef + 1, sizeOfModule, info.TypeInfo.AlignmentInBytes);
                                 
                                 var newElement = buffer + lengthAsRef * sizeOfModule;
-                                UnsafeUtility.MemCpy(newElement, &statusEffect.InstanceId, sizeOfUint);
-                                UnsafeUtility.MemCpy(newElement + Registry.ModuleOffsets.Struct, moduleInfo.Ptr.ToPointer(), moduleInfo.Size);
+                                UnsafeUtility.MemCpy(newElement + moduleInfo.IdOffset, &statusEffect.InstanceId, sizeOfUint);
+                                UnsafeUtility.MemCpy(newElement + moduleInfo.StructOffset, moduleInfo.Bytes.GetUnsafePtr(), moduleInfo.Size);
                                 lengthAsRef++;
                             }
                         }

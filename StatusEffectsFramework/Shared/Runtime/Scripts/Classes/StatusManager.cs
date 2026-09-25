@@ -135,14 +135,6 @@ namespace StatusEffectsFramework
         {
             if (statusEffect == null)
                 return;
-            // Stop the timer
-#if UNITASK || UNITY_2023_1_OR_NEWER
-            statusEffect.TimedTokenSource?.Cancel();
-#else
-            if (statusEffect.TimedCoroutine != null)
-                StopCoroutine(statusEffect.TimedCoroutine);
-#endif
-
             // Remove the effects for a given monobehaviour.
             m_StatusEffects.Remove(statusEffect.Id);
 #if UNITY_EDITOR
@@ -235,13 +227,16 @@ namespace StatusEffectsFramework
         private void CreateTimer(StatusEffect statusEffect)
         {
 #if UNITASK
-            statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
-            TimedEffect(statusEffect.TimedTokenSource.Token).Forget();
+            var source = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+            TimedEffect(source.Token).Forget();
+            statusEffect.Stopped += source.Cancel;
 #elif UNITY_2023_1_OR_NEWER
-            statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
-            _ = TimedEffect(statusEffect.TimedTokenSource.Token);
+            var source = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+            _ = TimedEffect(source.Token);
+            statusEffect.Stopped += source.Cancel;
 #else
-            statusEffect.TimedCoroutine = StartCoroutine(TimedEffect());
+            var coroutine = StartCoroutine(TimedEffect());
+            statusEffect.Stopped += () => StopCoroutine(coroutine);
 #endif
 
             // Timer method
@@ -311,13 +306,16 @@ namespace StatusEffectsFramework
         private void CreatePredicate(StatusEffect statusEffect, System.Func<bool> predicate, bool remove = true)
         {
 #if UNITASK
-            statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
-            TimedEffect(statusEffect.TimedTokenSource.Token).Forget();
+            var source = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+            TimedEffect(source.Token).Forget();
+            statusEffect.Stopped += source.Cancel;
 #elif UNITY_2023_1_OR_NEWER
-            statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
-            _ = TimedEffect(statusEffect.TimedTokenSource.Token);
+            var source = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
+            _ = TimedEffect(source.Token);
+            statusEffect.Stopped += source.Cancel;
 #else
-            statusEffect.TimedCoroutine = StartCoroutine(TimedEffect());
+            var coroutine = StartCoroutine(TimedEffect());
+            statusEffect.Stopped += () => StopCoroutine(coroutine);
 #endif
             // Timer method
 #if UNITASK
@@ -436,7 +434,7 @@ namespace StatusEffectsFramework
                             goto case NonStackingBehaviour.TakeHighestDuration;
 
                         float baseValue = Mathf.Abs(statusEffectData.BaseValue);
-                        float oldBaseValue = Mathf.Abs(statusEffectData.BaseValue);
+                        float oldBaseValue = Mathf.Abs(oldStatusEffect.Data.BaseValue);
                         // WARNING: There is an extremely special case here where
                         // a player may either have or try to apply an effect which
                         // has an infinite duration (-1). In this situation, attempt
@@ -444,9 +442,9 @@ namespace StatusEffectsFramework
                         // the infinite duration effect.
                         if (timing is StatusEffectTiming.Infinite || oldStatusEffect.Timing is StatusEffectTiming.Infinite)
                         {
-                            if (baseValue < oldStatusEffect.Data.BaseValue) 
+                            if (baseValue < oldBaseValue) 
                                 return null;
-                            else if (baseValue > oldStatusEffect.Data.BaseValue || oldStatusEffect.Timing is not StatusEffectTiming.Infinite)
+                            else if (baseValue > oldBaseValue || oldStatusEffect.Timing is not StatusEffectTiming.Infinite)
                             {
                                 flagForRemoval = oldStatusEffect;
                                 break;

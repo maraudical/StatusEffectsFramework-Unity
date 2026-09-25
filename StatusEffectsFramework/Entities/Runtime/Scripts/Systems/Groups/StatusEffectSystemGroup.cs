@@ -2,7 +2,9 @@
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 namespace StatusEffectsFramework.Entities
 {

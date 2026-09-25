@@ -16,6 +16,8 @@ namespace StatusEffectsFramework
         public string[] Groups = new string[32];
 
         [SerializeField]
+        public string DefaultUniqueKeyNamespace = "base";
+        [SerializeField]
         public string DefaultStatusDataPath = "ScriptableObjects/StatusEffectData";
         [SerializeField]
         public string DefaultStatusNamesPath = "ScriptableObjects/StatusNames";

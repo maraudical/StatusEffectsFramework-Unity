@@ -18,22 +18,16 @@ namespace StatusEffectsFramework.Editor
             Dictionary<int, string> choices = StatusSettings.GetOrCreateSettings().Groups.Select((g, index) => new KeyValuePair<int, string>(index, g))
                                                                                                .Where(kvp => !string.IsNullOrEmpty(kvp.Value))
                                                                                                .ToDictionary(kvp => 1 << kvp.Key, kvp => kvp.Value);
+            
 
-            var root = new VisualElement();
-            root.name = $"unity-input-{property.name}";
-            root.style.flexDirection = FlexDirection.Row;
-            root.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
-            root.AddToClassList(StatusEffectsStyleSheet.MaskFieldSizeClassName);
-
-            var maskField = new MaskField();
-            maskField.style.flexGrow = 1;
-            maskField.style.flexShrink = 1;
+            var maskField = new MaskField() { name = $"unity-input-{property.name}" };
             maskField.label = property.displayName;
             maskField.choices = choices.Values.ToList();
             maskField.choicesMasks = choices.Keys.ToList();
             maskField.AddToClassList(BaseField<Enum>.alignedFieldUssClassName);
             maskField.BindProperty(valueProperty);
-            root.Add(maskField);
+            maskField.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
+            maskField.AddToClassList(StatusEffectsStyleSheet.MaskFieldSizeClassName);
 
             var settingsButton = new Button();
             settingsButton.style.marginTop = 0;
@@ -63,6 +57,8 @@ namespace StatusEffectsFramework.Editor
 
             var maskLabel = maskField.Q<Label>();
 
+            maskField.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+
             settingsButton.schedule.Execute(() =>
             {
                 var color = maskLabel.style.color;
@@ -73,11 +69,22 @@ namespace StatusEffectsFramework.Editor
                 }
             }).StartingIn(50);
 
-            return root;
+            return maskField;
 
             void Clicked()
             {
                 Selection.activeObject = StatusSettings.GetOrCreateSettings();
+            }
+
+            void OnGeometryChanged(GeometryChangedEvent evt)
+            {
+                maskField.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
+
+                if (maskField.parent is PropertyField propertyField)
+                    if (propertyField.label == string.Empty)
+                        maskLabel.RemoveFromHierarchy();
+                    else if (propertyField.label != null)
+                        maskField.label = propertyField.label;
             }
         }
 

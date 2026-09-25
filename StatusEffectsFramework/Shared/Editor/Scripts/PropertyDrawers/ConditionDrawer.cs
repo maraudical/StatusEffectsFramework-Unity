@@ -44,21 +44,29 @@ namespace StatusEffectsFramework.Editor
             var searchableConfigurable = new PropertyField(searchableConfigurableProperty, string.Empty);
             searchableConfigurable.style.flexGrow = 0;
             searchableConfigurable.style.flexShrink = 0;
+            searchableConfigurable.style.marginLeft = -2;
+            searchableConfigurable.style.marginRight = 3;
             root.Add(searchableConfigurable);
 
             var searchableData = new PropertyField(searchableDataProperty, string.Empty);
             searchableData.style.minWidth = 92;
             searchableData.style.flexGrow = 1;
+            searchableData.style.marginLeft = -2;
+            searchableData.style.marginRight = 3;
             root.Add(searchableData);
             
             var searchableComparableName = new PropertyField(searchableComparableNameProperty, string.Empty);
             searchableComparableName.style.minWidth = 92;
             searchableComparableName.style.flexGrow = 1;
+            searchableComparableName.style.marginLeft = -2;
+            searchableComparableName.style.marginRight = 3;
             root.Add(searchableComparableName);
             
             var searchableGroup = new PropertyField(searchableGroupProperty, string.Empty);
             searchableGroup.style.minWidth = 92;
             searchableGroup.style.flexGrow = 1;
+            searchableGroup.style.marginLeft = -2;
+            searchableGroup.style.marginRight = 3;
             root.Add(searchableGroup);
             
             var isLabel = new Label("is");
@@ -69,6 +77,8 @@ namespace StatusEffectsFramework.Editor
 
             var existence = new EnumField();
             existence.Init(new Existence());
+            existence.style.marginLeft = 1;
+            existence.style.marginRight = 1;
             root.Add(existence);
 
             var thenLabel = new Label("then");
@@ -79,20 +89,26 @@ namespace StatusEffectsFramework.Editor
 
             var configurability = new EnumField();
             configurability.Init(new Configurability());
+            configurability.style.marginLeft = 1;
+            configurability.style.marginRight = 1;
             root.Add(configurability);
             
             var stacks = new PropertyField(stacksProperty, string.Empty);
             stacks.style.flexShrink = 0;
-            stacks.style.marginRight = 0;
-            stacks.style.marginLeft = 0;
+            stacks.style.marginLeft = -2;
+            stacks.style.marginRight = 3;
             root.Add(stacks);
 
             var scaleOption = new EnumField();
             scaleOption.Init(new ScaleOption());
+            scaleOption.style.marginLeft = 1;
+            scaleOption.style.marginRight = 1;
             root.Add(scaleOption);
 
             var removeOption = new EnumField();
             removeOption.Init(new RemoveOption());
+            removeOption.style.marginLeft = 1;
+            removeOption.style.marginRight = 1;
             root.Add(removeOption);
 
             var stacksLabel = new Label("stacks");
@@ -110,29 +126,41 @@ namespace StatusEffectsFramework.Editor
             var actionConfigurable = new PropertyField(actionConfigurableProperty, string.Empty);
             actionConfigurable.style.flexGrow = 0;
             actionConfigurable.style.flexShrink = 0;
+            actionConfigurable.style.marginLeft = -2;
+            actionConfigurable.style.marginRight = 3;
             root.Add(actionConfigurable);
 
             var actionData = new PropertyField(actionDataProperty, string.Empty);
             actionData.style.minWidth = 92;
             actionData.style.flexGrow = 1;
+            actionData.style.marginLeft = -2;
+            actionData.style.marginRight = 3;
             root.Add(actionData);
 
             var actionComparableName = new PropertyField(actionComparableNameProperty, string.Empty);
             actionComparableName.style.minWidth = 92;
             actionComparableName.style.flexGrow = 1;
+            actionComparableName.style.marginLeft = -2;
+            actionComparableName.style.marginRight = 3;
             root.Add(actionComparableName);
 
             var actionGroup = new PropertyField(actionGroupProperty, string.Empty);
             actionGroup.style.minWidth = 92;
             actionGroup.style.flexGrow = 1;
+            actionGroup.style.marginLeft = -2;
+            actionGroup.style.marginRight = 3;
             root.Add(actionGroup);
             
             var duration = new PropertyField(durationProperty, string.Empty);
             duration.style.flexShrink = 0;
+            duration.style.marginLeft = -2;
+            duration.style.marginRight = 3;
             root.Add(duration);
 
             var timing = new PropertyField(timingProperty, string.Empty);
             timing.style.flexShrink = 0;
+            timing.style.marginLeft = -2;
+            timing.style.marginRight = 3;
             root.Add(timing);
 
             var dashLabel = new Label("—");
@@ -144,8 +172,6 @@ namespace StatusEffectsFramework.Editor
 
             searchableConfigurable.RegisterValueChangeCallback(SearchableConfigurableValueChanged);
 
-            searchableGroup.RegisterCallback<GeometryChangedEvent>(SearchableGroupGeometryChanged);
-
             existence.SetValueWithoutNotify((Existence)Convert.ToInt32(existsProperty.boolValue));
             existence.showMixedValue = existsProperty.hasMultipleDifferentValues;
             existence.RegisterValueChangedCallback(ExistenceValueChanged);
@@ -153,8 +179,6 @@ namespace StatusEffectsFramework.Editor
             configurability.SetValueWithoutNotify((Configurability)Convert.ToInt32(addProperty.boolValue));
             configurability.showMixedValue = addProperty.hasMultipleDifferentValues;
             configurability.RegisterValueChangedCallback(ConfigurabilityValueChanged);
-
-            stacks.RegisterCallback<GeometryChangedEvent>(StacksGeometryChanged);
 
             scaleOption.SetValueWithoutNotify((ScaleOption)Convert.ToInt32(scaledProperty.boolValue));
             scaleOption.showMixedValue = scaledProperty.hasMultipleDifferentValues;
@@ -166,28 +190,15 @@ namespace StatusEffectsFramework.Editor
 
             actionConfigurable.RegisterValueChangeCallback(ActionConfigurableValueChanged);
 
-            actionGroup.RegisterCallback<GeometryChangedEvent>(ActionGroupGeometryChanged);
-
-            duration.RegisterCallback<GeometryChangedEvent>(DurationGeometryChanged);
-
             timing.RegisterValueChangeCallback(TimingValueChanged);
 
             EvaluateProperties();
-
-            // Fix for unity inspector margins
-            root.RegisterCallback<GeometryChangedEvent>(RootGeometryChanged);
 
             return root;
 
             void SearchableConfigurableValueChanged(SerializedPropertyChangeEvent changeEvent)
             {
                 EvaluateProperties();
-            }
-
-            void SearchableGroupGeometryChanged(GeometryChangedEvent changeEvent)
-            {
-                searchableGroup.UnregisterCallback<GeometryChangedEvent>(SearchableGroupGeometryChanged);
-                searchableGroup.Q<MaskField>().label = string.Empty;
             }
 
             void ExistenceValueChanged(ChangeEvent<Enum> changeEvent)
@@ -201,12 +212,6 @@ namespace StatusEffectsFramework.Editor
                 addProperty.boolValue = Convert.ToBoolean((int)(Configurability)changeEvent.newValue);
                 addProperty.serializedObject.ApplyModifiedProperties();
                 EvaluateProperties();
-            }
-
-            void StacksGeometryChanged(GeometryChangedEvent changeEvent)
-            {
-                stacks.UnregisterCallback<GeometryChangedEvent>(StacksGeometryChanged);
-                stacks.Q<IntegerField>().label = string.Empty;
             }
 
             void ScaleOptionValueChanged(ChangeEvent<Enum> changeEvent)
@@ -227,48 +232,9 @@ namespace StatusEffectsFramework.Editor
                 EvaluateProperties();
             }
 
-            void ActionGroupGeometryChanged(GeometryChangedEvent changeEvent)
-            {
-                actionGroup.UnregisterCallback<GeometryChangedEvent>(ActionGroupGeometryChanged);
-                actionGroup.Q<MaskField>().label = string.Empty;
-            }
-
-            void DurationGeometryChanged(GeometryChangedEvent changeEvent)
-            {
-                duration.UnregisterCallback<GeometryChangedEvent>(DurationGeometryChanged);
-                duration.Q<FloatField>().label = string.Empty;
-            }
-
             void TimingValueChanged(SerializedPropertyChangeEvent changeEvent)
             {
                 EvaluateProperties();
-            }
-
-            void RootGeometryChanged(GeometryChangedEvent evt)
-            {
-                timing.UnregisterCallback<GeometryChangedEvent>(RootGeometryChanged);
-
-                SetMargin(searchableConfigurable.Q(className: PopupField<int>.ussClassName));
-                SetMargin(searchableData.Q<ObjectField>());
-                SetMargin(searchableComparableName.Q<ObjectField>());
-                SetMargin(searchableGroup.Q<MaskField>());
-                SetMargin(existence.Q<EnumField>());
-                SetMargin(configurability.Q<EnumField>());
-                SetMargin(stacks.Q<IntegerField>());
-                SetMargin(scaleOption.Q<EnumField>());
-                SetMargin(removeOption.Q<EnumField>());
-                SetMargin(actionConfigurable.Q(className: PopupField<int>.ussClassName));
-                SetMargin(actionData.Q<ObjectField>());
-                SetMargin(actionComparableName.Q<ObjectField>());
-                SetMargin(actionGroup.Q<MaskField>());
-                SetMargin(duration.Q<FloatField>());
-                SetMargin(timing.Q(className: PopupField<int>.ussClassName));
-
-                void SetMargin(VisualElement element)
-                {
-                    element.style.marginRight = 1;
-                    element.style.marginLeft = 1;
-                }
             }
 
             void EvaluateProperties()

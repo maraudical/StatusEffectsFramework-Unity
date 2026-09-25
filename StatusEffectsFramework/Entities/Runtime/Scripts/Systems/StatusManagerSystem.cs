@@ -1,23 +1,21 @@
 #if ENTITIES
 using System;
 using Unity.Burst;
-using Unity.Burst.CompilerServices;
+using Unity.Burst.Intrinsics;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 using Unity.Mathematics;
 #if NETCODE
 using Unity.NetCode;
-using static Unity.Entities.EntitiesJournaling;
 #endif
 
 namespace StatusEffectsFramework.Entities
 {
     /// <summary>
-    /// Custom systems that decrement <see cref="StatusEffectTiming.Event"/> 
-    /// and <see cref="StatusEffectTiming.Predicate"/> <see cref="StatusEffects"/> 
-    /// buffers should update in the <see cref="StatusEffectSystemGroup"/>. 
-    /// Any module related systems should most likely run in the 
+    /// Custom systems that decrement <see cref="StatusEffectTiming.Event"/>
+    /// and <see cref="StatusEffectTiming.Predicate"/> <see cref="StatusEffects"/>
+    /// buffers should update in the <see cref="StatusEffectSystemGroup"/>.
+    /// Any module related systems should most likely run in the
     /// <see cref="SimulationSystemGroup"/>.
     /// </summary>
 #if NETCODE
@@ -36,7 +34,7 @@ namespace StatusEffectsFramework.Entities
         {
             m_RequestsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusEffectEvents, StatusVariablePreEvaluateUpdate>().WithAll<Simulate>().WithAllRW<StatusManagerComponent, StatusEffectRequests>().Build();
             m_RequestsQuery.AddChangedVersionFilter(ComponentType.ReadWrite<StatusEffectRequests>());
-            m_StatusEffectsQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithPresentRW<StatusEffectEvents, StatusVariablePreEvaluateUpdate>().WithAll<Simulate>().Build();
+            m_StatusEffectsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusEffectEvents, StatusVariablePreEvaluateUpdate>().WithAll<Simulate>().Build();
 
             state.RequireForUpdate(m_StatusEffectsQuery);
             state.RequireForUpdate<UnmanagedStatusRegistry>();
@@ -48,19 +46,17 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var registry = SystemAPI.GetSingletonRW<UnmanagedStatusRegistry>().ValueRO;
+            var registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>();
 
 #if NETCODE
             var networkTime = SystemAPI.GetSingleton<NetworkTime>();
             SystemAPI.TryGetSingleton<ClientServerTickRate>(out var tickRate);
             tickRate.ResolveDefaults();
             var endPredictedSimulationEntityCommandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 #else
             var elapsedTime = SystemAPI.Time.ElapsedTime;
-            var endStatusEffectEntityCommandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 #endif
-            
+
             // Update and check durations.
             var statusEffectsJob = new StatusEffectsJob
             {
@@ -69,10 +65,13 @@ namespace StatusEffectsFramework.Entities
                 NetworkTime = networkTime,
                 TickRate = tickRate,
                 EndPredictedSimulationEntityCommandBuffer = endPredictedSimulationEntityCommandBuffer,
+                EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
 #else
                 ElapsedTime = elapsedTime,
 #endif
-                EndStatusEffectEntityCommandBuffer = endStatusEffectEntityCommandBuffer,
+                StatusEffectsHandle = SystemAPI.GetBufferTypeHandle<StatusEffects>(),
+                StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(),
+                PreEvaluateUpdateHandle = SystemAPI.GetComponentTypeHandle<StatusVariablePreEvaluateUpdate>(),
             };
             state.Dependency = statusEffectsJob.ScheduleParallelByRef(m_StatusEffectsQuery, state.Dependency);
 
@@ -85,85 +84,112 @@ namespace StatusEffectsFramework.Entities
                 ElapsedTime = elapsedTime,
 #endif
                 Registry = registry,
-                EndStatusEffectEntityCommandBuffer = endStatusEffectEntityCommandBuffer,
             };
             state.Dependency = statusEffectRequestsJob.ScheduleParallelByRef(m_RequestsQuery, state.Dependency);
         }
 
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
-        internal partial struct StatusEffectsJob : IJobEntity
+        internal partial struct StatusEffectsJob : IJobChunk
         {
 #if NETCODE
             public bool IsServer;
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
             public EntityCommandBuffer.ParallelWriter EndPredictedSimulationEntityCommandBuffer;
+            [ReadOnly]
+            public EntityTypeHandle EntityTypeHandle;
 #else
             public double ElapsedTime;
 #endif
-            public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
+            /// <summary>
+            /// Read-write so expired effects can be removed in place, but it is only accessed as
+            /// read-write for chunks where something expires so the change version isn't bumped
+            /// when nothing changed.
+            /// </summary>
+            public BufferTypeHandle<StatusEffects> StatusEffectsHandle;
+            public BufferTypeHandle<StatusEffectEvents> StatusEffectEventsHandle;
+            public ComponentTypeHandle<StatusVariablePreEvaluateUpdate> PreEvaluateUpdateHandle;
 
-            void Execute([ChunkIndexInQuery] int sortKey,
-                Entity entity,
-                EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW,
-                in DynamicBuffer<StatusEffects> statusEffects,
-                ref DynamicBuffer<StatusEffectEvents> statusEffectEvents,
-                EnabledRefRW<StatusVariablePreEvaluateUpdate> preEvaluateUpdateRW)
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
-                statusEffectEvents.Clear();
+#if NETCODE
+                var entities = chunk.GetNativeArray(EntityTypeHandle);
+                bool clearEventsAfterPrediction = !IsServer && NetworkTime.IsFinalPredictionTick;
+#endif
+                var statusEffectsAccessorRO = chunk.GetBufferAccessorRO(ref StatusEffectsHandle);
+                var statusEffectEventsAccessor = chunk.GetBufferAccessorRW(ref StatusEffectEventsHandle);
+                BufferAccessor<StatusEffects> statusEffectsAccessorRW = default;
+                bool hasWriteAccess = false;
+
+                var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (enumerator.NextEntityIndex(out var i))
+                {
+                    var statusEffectEvents = statusEffectEventsAccessor[i];
+                    statusEffectEvents.Clear();
 
 #if NETCODE
-                if (!IsServer && NetworkTime.IsFinalPredictionTick)
-                {
-                    EndPredictedSimulationEntityCommandBuffer.SetBuffer<StatusEffectEvents>(sortKey, entity).Clear();
-                    EndPredictedSimulationEntityCommandBuffer.SetComponentEnabled<StatusEffectEvents>(sortKey, entity, false);
-                }
-
-#endif
-                DynamicBuffer<StatusEffects> statusEffectsCopy = default;
-                bool statusEffectEventsEnabled = statusEffectEventsEnabledRW.ValueRO;
-
-                // Iterate in reverse to not skip any that get removed.
-                for (int i = statusEffects.Length - 1; i >= 0; i--)
-                {
-                    var statusEffect = statusEffects[i];
-
-                    switch (statusEffect.Timing)
+                    if (clearEventsAfterPrediction)
                     {
-                        case StatusEffectTiming.Infinite:
-                            continue;
-                        default:
-                            // Event and Predicate timings only check if duration has
-                            // run out because user created systems should handle
-                            // decrementing those StatusEffects.
-                            if (statusEffect.TimeRemaining(
-#if NETCODE
-                                NetworkTime.ServerTick, NetworkTime.ServerTickFraction, TickRate
-#else
-                                ElapsedTime
-#endif
-                                ) <= 0f)
-                            {
-                                if (statusEffectEvents.Length == 0)
-                                {
-                                    statusEffectsCopy = EndStatusEffectEntityCommandBuffer.SetBuffer<StatusEffects>(sortKey, entity);
-                                    statusEffectsCopy.CopyFrom(statusEffects);
-                                    if (!statusEffectEventsEnabled)
-                                    {
-                                        statusEffectEventsEnabledRW.ValueRW = true;
-                                        preEvaluateUpdateRW.ValueRW = true;
-                                    }
-                                }
-                                statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, statusEffect.Stacks, StatusEffectEvent.Removed));
-                                
-                                statusEffectsCopy.RemoveAtSwapBack(i);
-                            }
-                            break;
+                        EndPredictedSimulationEntityCommandBuffer.SetBuffer<StatusEffectEvents>(unfilteredChunkIndex, entities[i]).Clear();
+                        EndPredictedSimulationEntityCommandBuffer.SetComponentEnabled<StatusEffectEvents>(unfilteredChunkIndex, entities[i], false);
                     }
-                }
 
-                if (statusEffectEventsEnabled && statusEffectEvents.Length == 0)
-                    statusEffectEventsEnabledRW.ValueRW = false;
+#endif
+                    if (!HasExpiredStatusEffect(statusEffectsAccessorRO[i]))
+                    {
+                        if (chunk.IsComponentEnabled(ref StatusEffectEventsHandle, i))
+                            chunk.SetComponentEnabled(ref StatusEffectEventsHandle, i, false);
+                        continue;
+                    }
+
+                    // Only bump the change version of chunks that actually have expired effects.
+                    if (!hasWriteAccess)
+                    {
+                        statusEffectsAccessorRW = chunk.GetBufferAccessorRW(ref StatusEffectsHandle);
+                        hasWriteAccess = true;
+                    }
+
+                    var statusEffects = statusEffectsAccessorRW[i];
+
+                    // Iterate in reverse to not skip any that get removed. RemoveAt keeps the
+                    // order of the remaining effects, matching StatusEffectRequestsJob.
+                    for (int e = statusEffects.Length - 1; e >= 0; e--)
+                    {
+                        var statusEffect = statusEffects[e];
+                        if (!IsExpired(statusEffect))
+                            continue;
+
+                        statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, statusEffect.Stacks, StatusEffectEvent.Removed));
+                        statusEffects.RemoveAt(e);
+                    }
+
+                    chunk.SetComponentEnabled(ref StatusEffectEventsHandle, i, true);
+                    chunk.SetComponentEnabled(ref PreEvaluateUpdateHandle, i, true);
+                }
+            }
+
+            private bool HasExpiredStatusEffect(in DynamicBuffer<StatusEffects> statusEffects)
+            {
+                for (int e = 0; e < statusEffects.Length; e++)
+                    if (IsExpired(statusEffects[e]))
+                        return true;
+
+                return false;
+            }
+
+            private bool IsExpired(in StatusEffects statusEffect)
+            {
+                // Event and Predicate timings only check if duration has
+                // run out because user created systems should handle
+                // decrementing those StatusEffects.
+                return statusEffect.Timing is not StatusEffectTiming.Infinite
+                    && statusEffect.TimeRemaining(
+#if NETCODE
+                        NetworkTime.ServerTick, NetworkTime.ServerTickFraction, TickRate
+#else
+                        ElapsedTime
+#endif
+                        ) <= 0f;
             }
         }
 
@@ -176,611 +202,406 @@ namespace StatusEffectsFramework.Entities
             public double ElapsedTime;
 #endif
             public UnmanagedStatusRegistry Registry;
-            public EntityCommandBuffer.ParallelWriter EndStatusEffectEntityCommandBuffer;
-            public UnsafeParallelHashSet<TypeIndex>.ParallelWriter TypeIndices;
 
-            unsafe void Execute([ChunkIndexInQuery] int sortKey, 
+            void Execute([ChunkIndexInQuery] int sortKey,
                 Entity entity,
-                EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW, 
-                ref StatusManagerComponent statusManager, 
-                ref DynamicBuffer<StatusEffectRequests> statusEffectRequests, 
-                ref DynamicBuffer<StatusEffects> statusEffects, 
+                EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW,
+                ref StatusManagerComponent statusManager,
+                ref DynamicBuffer<StatusEffectRequests> statusEffectRequests,
+                ref DynamicBuffer<StatusEffects> statusEffects,
                 ref DynamicBuffer<StatusEffectEvents> statusEffectEvents,
                 EnabledRefRW<StatusVariablePreEvaluateUpdate> preEvaluateUpdateRW)
             {
                 // If nothing to change then continue.
                 if (statusEffectRequests.Length <= 0)
                     return;
-                
-                var unsortedStatusEffects = statusEffects.AsNativeArray().AsReadOnly();
-                using UnsafeList<IndexedStatusEffects> statusEffectStackUpdates = new UnsafeList<IndexedStatusEffects>(unsortedStatusEffects.Length, Allocator.Temp);
-                using NativeList<IndexedStatusEffects> sortedStatusEffects = new NativeList<IndexedStatusEffects>(unsortedStatusEffects.Length, Allocator.Temp);
 
-                for (int i = statusEffectRequests.Length - 1; i >= 0; i--)
-                {
-                    EvaluateRequest(ref statusEffects, statusEffectRequests.ElementAt(i), Registry);
+                // Local functions in a struct can't access instance fields, so copy them out.
+#if NETCODE
+                var currentTick = NetworkTime.ServerTick;
+#else
+                var elapsedTime = ElapsedTime;
+#endif
+                // Requests are applied directly to the buffer so every request sees the result of
+                // the ones before it. Removed effects are only marked with 0 stacks so buffer indices
+                // stay valid until everything is compacted at the end. Events are then built by
+                // comparing the buffer against this snapshot.
+                using var originalStatusEffects = new NativeArray<StatusEffects>(statusEffects.AsNativeArray(), Allocator.Temp);
+                using var removalCandidates = new NativeList<IndexedStatusEffects>(statusEffects.Length, Allocator.Temp);
 
-                    void EvaluateRequest(ref DynamicBuffer<StatusEffects> statusEffectBuffer,
-                                         StatusEffectRequests request, 
-                                         in UnmanagedStatusRegistry registry)
-                    {
-                        // Copied from regular private StatusManager.AddStatusEffect() with burstable types and math.
-                        if (request.Type is StatusEffectRequestType.Add)
-                        {
-                            if (request.Stacks <= 0)
-                                return;
-                            
-                            // If the duration given is less than zero it won't be applied.
-                            if (request.Timing is not StatusEffectTiming.Infinite && request.Duration < 0)
-                                return;
-                            // Declare here to use later.
-                            ref var data = ref registry.GetStatusEffectData(request.Id);
-                            IndexedStatusEffects flagForRemoval = new IndexedStatusEffects(-1, default);
-                            IndexedStatusEffects indexedStatusEffect = new IndexedStatusEffects()
-                            {
-                                Index = -1,
-                                Id = data.Id,
-                                Timing = request.Timing,
-                                Interval = request.Interval,
-                                EventId = request.EventId
-                            };
-                            // If stacking is allowed then check for the max stacks and possible stack merging.
-                            if (data.AllowEffectStacking)
-                            {
-                                if (request.Timing is not StatusEffectTiming.Infinite)
-                                    goto CheckConditionals;
-
-                                sortedStatusEffects.Clear();
-                                int stackCount = 0;
-
-                                for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                    if (unsortedStatusEffects[x].Id == request.Id)
-                                        sortedStatusEffects.AddNoResize(new IndexedStatusEffects(x, unsortedStatusEffects[x]));
-
-                                if (sortedStatusEffects.Length <= 0)
-                                {
-                                    if (!TryToLimitStacks(ref request.Stacks, data.MaxStacks))
-                                        return;
-                                    goto CheckConditionals;
-                                }
-
-                                int infiniteEffectIndex = -1;
-                                // Go through all similar effects and count the stacks and if there is an
-                                // infinite effect.
-                                foreach (var existentEffect in sortedStatusEffects)
-                                {
-                                    if (existentEffect.Timing is StatusEffectTiming.Infinite)
-                                        infiniteEffectIndex = existentEffect.Index;
-
-                                    stackCount += existentEffect.Stacks;
-                                }
-                                // Iterate again for currently updating ones.
-                                foreach (var updatingEffect in statusEffectStackUpdates)
-                                {
-                                    if (updatingEffect.Id != data.Id)
-                                        continue;
-
-                                    stackCount += updatingEffect.Stacks;
-                                }
-
-                                if (!TryToLimitStacks(ref request.Stacks, data.MaxStacks))
-                                    return;
-                                
-                                // We can only safely merge infinite stacks because merging things with
-                                // duration or predicates we either can't or its too difficult to determine
-                                // their similarity.
-                                if (request.Timing is StatusEffectTiming.Infinite && infiniteEffectIndex >= 0)
-                                {
-                                    // Setup dummy update so that we can add normally later.
-                                    indexedStatusEffect.Index = infiniteEffectIndex;
-                                    goto CheckConditionals;
-                                }
-                                // False when stack count is already max, otherwise true.
-                                bool TryToLimitStacks(ref int stacks, int maxStacks)
-                                {
-                                    // Check if the current stacked amount is already max.
-                                    if (maxStacks >= 0)
-                                        if (stackCount >= maxStacks)
-                                            return false;
-                                        // Otherwise cut the given stack if it would've been over the max.
-                                        else if (stackCount + stacks > maxStacks)
-                                            stacks = maxStacks - stackCount;
-
-                                    return true;
-                                }
-                            }
-                            // Non-stackable: Check to delete the effect if it already exists to prevent duplicates.
-                            else
-                            {
-                                request.Stacks = 1;
-                                int oldStatusEffectIndex = -1;
-
-                                if (data.ComparableName != default)
-                                {
-                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                    {
-                                        ref var unsortedData = ref registry.GetStatusEffectData(unsortedStatusEffects[x].Id);
-
-                                        if (unsortedData.ComparableName == data.ComparableName)
-                                        {
-                                            oldStatusEffectIndex = x;
-                                            break;
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    for (int y = 0; y < unsortedStatusEffects.Length; y++)
-                                    {
-                                        if (unsortedStatusEffects[y].Id == data.Id)
-                                        {
-                                            oldStatusEffectIndex = y;
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                if (oldStatusEffectIndex < 0)
-                                    goto CheckConditionals;
-
-                                IndexedStatusEffects oldStatusEffect = new IndexedStatusEffects(oldStatusEffectIndex, statusEffectBuffer.ElementAt(oldStatusEffectIndex));
-                                ref var oldData = ref registry.GetStatusEffectData(oldStatusEffect.Id);
-
-                                switch (data.NonStackingBehaviour)
-                                {
-                                    case NonStackingBehaviour.MatchHighestValue:
-                                        if (data.BaseValue == oldData.BaseValue)
-                                            goto case NonStackingBehaviour.TakeHighestDuration;
-
-                                        float baseValue = math.abs(data.BaseValue);
-                                        float oldBaseValue = math.abs(data.BaseValue);
-                                        // WARNING: There is an extremely special case here where
-                                        // a player may either have or try to apply an effect which
-                                        // has an infinite duration (-1). In this situation, attempt
-                                        // to take the higest value, and if they are the same take
-                                        // the infinite duration effect.
-                                        if (request.Timing is StatusEffectTiming.Infinite || oldStatusEffect.Timing is StatusEffectTiming.Infinite)
-                                        {
-                                            if (baseValue < oldData.BaseValue)
-                                                return;
-                                            else if (baseValue > oldData.BaseValue || oldStatusEffect.Timing is not StatusEffectTiming.Infinite)
-                                            {
-                                                flagForRemoval = oldStatusEffect;
-                                                break;
-                                            }
-                                            else
-                                                return;
-                                        }
-                                        // Find which effect is highest value.
-                                        ref var highestValueData = ref baseValue < oldBaseValue ? ref oldData : ref data;
-                                        float highestValueDuration = baseValue < oldBaseValue ? oldStatusEffect.Duration : request.Duration;
-                                        ref var lowestValueData = ref baseValue < oldBaseValue ? ref data : ref oldData;
-                                        float lowestValueDuration = baseValue < oldBaseValue ? request.Duration : oldStatusEffect.Duration;
-                                        // Calculate the new duration = d1 + d2 / (v1 / v2). Note this assumes neither base value will ever be 0.
-                                        if (highestValueData.BaseValue == 0 || lowestValueData.BaseValue == 0)
-                                            throw new ArgumentException("A StatusEffectData has a base value of 0! This will cause an error!");
-
-                                        request.Duration = highestValueDuration + lowestValueDuration / (math.abs(highestValueData.BaseValue) / math.abs(lowestValueData.BaseValue));
-                                        data = highestValueData;
-                                        flagForRemoval = oldStatusEffect;
-                                        break;
-                                    case NonStackingBehaviour.TakeHighestDuration:
-                                        if (oldStatusEffect.Timing is StatusEffectTiming.Infinite || (request.Duration < oldStatusEffect.Duration && request.Timing is not StatusEffectTiming.Infinite))
-                                            return;
-                                        else
-                                            flagForRemoval = oldStatusEffect;
-                                        break;
-                                    case NonStackingBehaviour.TakeHighestValue:
-                                        float oldValue = math.abs(oldData.BaseValue);
-                                        float newValue = math.abs(data.BaseValue);
-                                        if (newValue == oldValue)
-                                            goto case NonStackingBehaviour.TakeHighestDuration;
-                                        if (newValue < oldValue)
-                                            return;
-                                        else
-                                            flagForRemoval = oldStatusEffect;
-                                        break;
-                                    case NonStackingBehaviour.TakeNewest:
-                                        flagForRemoval = oldStatusEffect;
-                                        break;
-                                    case NonStackingBehaviour.TakeOldest:
-                                        return;
-                                }
-                            }
-
-                            CheckConditionals:
-                            // Check for conditions.
-                            bool preventStatusEffect = false;
-
-                            for (int c = 0; c < data.Conditions.Length; c++)
-                            {
-                                UnmanagedCondition condition = data.Conditions[c];
-                                bool exists = false;
-
-                                switch (condition.SearchableConfigurable)
-                                {
-                                    case ConditionalConfigurable.AllGroups:
-                                        for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                        {
-                                            ref var unsortedData = ref registry.GetStatusEffectData(unsortedStatusEffects[x].Id);
-
-                                            if ((unsortedData.Group & condition.SearchableGroup) != 0)
-                                            {
-                                                int alreadyUpdatingIndex = statusEffectStackUpdates.IndexOf(x);
-                                                if (alreadyUpdatingIndex >= 0)
-                                                {
-                                                    if (unsortedStatusEffects[x].Stacks + statusEffectStackUpdates[alreadyUpdatingIndex].Stacks > 0)
-                                                        exists = true;
-                                                }
-                                                else
-                                                    exists = true;
-                                                break;
-                                            }
-                                        }
-                                        if (!exists)
-                                            foreach (var indexedUpdate in statusEffectStackUpdates)
-                                            {
-                                                if (indexedUpdate.Stacks <= 0)
-                                                    continue;
-
-                                                ref var indexedData = ref registry.GetStatusEffectData(indexedUpdate.Id);
-                                                if ((indexedData.Group & condition.SearchableGroup) != 0)
-                                                    exists = true;
-                                            }
-                                        break;
-                                    case ConditionalConfigurable.Name:
-                                        for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                        {
-                                            ref var unsortedData = ref registry.GetStatusEffectData(unsortedStatusEffects[x].Id);
-
-                                            if (unsortedData.ComparableName == condition.SearchableComparableName)
-                                            {
-                                                int alreadyUpdatingIndex = statusEffectStackUpdates.IndexOf(x);
-                                                if (alreadyUpdatingIndex >= 0)
-                                                {
-                                                    if (unsortedStatusEffects[x].Stacks + statusEffectStackUpdates[alreadyUpdatingIndex].Stacks > 0)
-                                                        exists = true;
-                                                }
-                                                else
-                                                    exists = true;
-                                                break;
-                                            }
-                                        }
-                                        if (!exists)
-                                            foreach (var indexedUpdate in statusEffectStackUpdates)
-                                            {
-                                                if (indexedUpdate.Stacks <= 0)
-                                                    continue;
-
-                                                ref var indexedData = ref registry.GetStatusEffectData(indexedUpdate.Id);
-                                                if (indexedData.ComparableName == condition.SearchableComparableName)
-                                                    exists = true;
-                                            }
-                                        break;
-                                    case ConditionalConfigurable.Data:
-                                        for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                        {
-                                            if (unsortedStatusEffects[x].Id == condition.SearchableData)
-                                            {
-                                                int alreadyUpdatingIndex = statusEffectStackUpdates.IndexOf(x);
-                                                if (alreadyUpdatingIndex >= 0)
-                                                {
-                                                    if (unsortedStatusEffects[x].Stacks + statusEffectStackUpdates[alreadyUpdatingIndex].Stacks > 0)
-                                                        exists = true;
-                                                }
-                                                else
-                                                    exists = true;
-                                                break;
-                                            }
-                                        }
-                                        if (!exists)
-                                            foreach (var indexedUpdate in statusEffectStackUpdates)
-                                            {
-                                                if (indexedUpdate.Stacks <= 0)
-                                                    continue;
-
-                                                if (indexedUpdate.Id == condition.SearchableData)
-                                                    exists = true;
-                                            }
-                                        break;
-                                }
-                                // If the condition is checking for existence and it doesn't exist or if
-                                // its checking non-existence and does exist then skip this condition.
-                                if ((condition.Exists && !exists)
-                                || (!condition.Exists && exists))
-                                    continue;
-
-                                StatusEffectRequests conditionalRequest;
-                                int conditionalStacks = condition.Add || condition.UseStacks ? condition.Stacks * (condition.Scaled ? request.Stacks : 1) : -1;
-
-                                if (condition.Add)
-                                {
-                                    switch (condition.Timing)
-                                    {
-                                        case ConditionalTiming.Duration:
-                                            conditionalRequest = StatusEffectRequests.AddWithDuration(condition.ActionData, condition.Duration, condition.Stacks * (condition.Scaled ? request.Stacks : 1));
-                                            break;
-                                        case ConditionalTiming.Inherited:
-                                            conditionalRequest = new StatusEffectRequests
-                                            {
-                                                Type = StatusEffectRequestType.Add,
-                                                Id = condition.ActionData,
-                                                Timing = request.Timing,
-                                                Duration = request.Duration,
-                                                Interval = request.Interval,
-                                                Stacks = condition.Stacks * (condition.Scaled ? request.Stacks : 1),
-                                                EventId = request.EventId
-                                            };
-                                            break;
-                                        default:
-                                            conditionalRequest = StatusEffectRequests.Add(condition.ActionData, condition.Stacks * (condition.Scaled ? request.Stacks : 1));
-                                            break;
-                                    }
-                                    EvaluateRequest(ref statusEffectBuffer, conditionalRequest, registry);
-                                }
-                                // Special case where the configurable which is the
-                                // current data to be added is tagged for removal.
-                                else if (condition.ActionData == data.Id)
-                                {
-                                    if (!condition.UseStacks || conditionalStacks >= request.Stacks)
-                                    {
-                                        preventStatusEffect = true;
-                                        if (condition.UseStacks)
-                                            conditionalStacks -= request.Stacks;
-                                        request.Stacks = 0;
-                                        // In the case where other status effects of this Id exist we need to request to remove them.
-                                        conditionalRequest = condition.ActionConfigurable switch
-                                        {
-                                            ConditionalConfigurable.Data => StatusEffectRequests.RemoveWithId(condition.ActionData, conditionalStacks),
-                                            ConditionalConfigurable.Name => StatusEffectRequests.RemoveWithComparableName(condition.ActionComparableName, conditionalStacks),
-                                            ConditionalConfigurable.AllGroups => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks, true),
-                                            ConditionalConfigurable.AnyGroups => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks, false),
-                                            _  => throw new InvalidOperationException($"Invalid {nameof(ConditionalConfigurable)} enum value of {condition.ActionConfigurable}.")
-                                        };
-                                        EvaluateRequest(ref statusEffectBuffer, conditionalRequest, registry);
-                                    }
-                                    else
-                                        request.Stacks -= conditionalStacks;
-                                }
-                                // Otherwise we remove effects.
-                                else
-                                {
-                                    conditionalRequest = condition.ActionConfigurable switch
-                                    {
-                                        ConditionalConfigurable.Data => StatusEffectRequests.RemoveWithId(condition.ActionData, conditionalStacks),
-                                        ConditionalConfigurable.Name => StatusEffectRequests.RemoveWithComparableName(condition.ActionComparableName, conditionalStacks),
-                                        ConditionalConfigurable.AllGroups => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks, true),
-                                        ConditionalConfigurable.AnyGroups => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, conditionalStacks, false),
-                                        _ => throw new InvalidOperationException($"Invalid {nameof(ConditionalConfigurable)} enum value of {condition.ActionConfigurable}.")
-                                    };
-                                    EvaluateRequest(ref statusEffectBuffer, conditionalRequest, registry);
-                                }
-                            }
-
-                            if (preventStatusEffect)
-                                return;
-
-                            if (flagForRemoval.Index >= 0)
-                                RemoveStatusEffect(flagForRemoval, -1);
-
-                            // Add the status effect
-                            indexedStatusEffect.Duration = request.Duration;
-                            AddStatusEffect(indexedStatusEffect, request.Stacks);
-                        }
-                        // If we aren't adding we are removing.
-                        else
-                        {
-                            sortedStatusEffects.Clear();
-
-                            switch (request.RemovalType)
-                            {
-                                case StatusEffectRemovalType.InstanceId:
-                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                    {
-                                        StatusEffects statusEffect = unsortedStatusEffects[x];
-                                        if (statusEffect.InstanceId == request.InstanceId)
-                                            sortedStatusEffects.AddNoResize(new IndexedStatusEffects(x, statusEffect));
-                                    }
-                                    break;
-                                case StatusEffectRemovalType.Id:
-                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                    {
-                                        StatusEffects statusEffect = unsortedStatusEffects[x];
-                                        if (statusEffect.Id == request.Id)
-                                            sortedStatusEffects.AddNoResize(new IndexedStatusEffects(x, statusEffect));
-                                    }
-                                    break;
-                                case StatusEffectRemovalType.ComparableName:
-                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                    {
-                                        StatusEffects statusEffect = unsortedStatusEffects[x];
-                                        ref var data = ref registry.GetStatusEffectData(statusEffect.Id);
-                                        if (data.ComparableName == request.Id)
-                                            sortedStatusEffects.AddNoResize(new IndexedStatusEffects(x, statusEffect));
-                                    }
-                                    break;
-                                case StatusEffectRemovalType.AnyGroups:
-                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                    {
-                                        StatusEffects statusEffect = unsortedStatusEffects[x];
-                                        ref var data = ref registry.GetStatusEffectData(statusEffect.Id);
-                                        if ((data.Group & request.Group) != 0)
-                                            sortedStatusEffects.AddNoResize(new IndexedStatusEffects(x, statusEffect));
-                                    }
-                                    break;
-                                case StatusEffectRemovalType.AllGroups:
-                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                    {
-                                        StatusEffects statusEffect = unsortedStatusEffects[x];
-                                        ref var data = ref registry.GetStatusEffectData(statusEffect.Id);
-                                        if ((data.Group & request.Group) == request.Group)
-                                            sortedStatusEffects.AddNoResize(new IndexedStatusEffects(x, statusEffect));
-                                    }
-                                    break;
-                                case StatusEffectRemovalType.Any:
-                                    for (int x = 0; x < unsortedStatusEffects.Length; x++)
-                                        sortedStatusEffects.AddNoResize(new IndexedStatusEffects(x, unsortedStatusEffects[x]));
-                                    break;
-                            }
-                            // Sort by value and duration.
-                            sortedStatusEffects.Sort(new IndexedStatusEffectComparer(registry, false));
-                            // Remove until max stack limit reached.
-                            int removedCount = 0;
-                            for (int x = 0; x < sortedStatusEffects.Length; x++)
-                            {
-                                if (request.Stacks >= 0 && removedCount >= request.Stacks)
-                                    break;
-
-                                IndexedStatusEffects indexedStatusEffect = sortedStatusEffects.ElementAt(x);
-                                var count = RemoveStatusEffect(indexedStatusEffect, request.Stacks - removedCount);
-                                removedCount += count;
-                            }
-                        }
-                    }
-                    
-                    void AddStatusEffect(IndexedStatusEffects indexedStatusEffect, int stacks = 1)
-                    {
-                        // Check to see if we are updating the index already.
-                        int alreadyUpdatingIndex = statusEffectStackUpdates.IndexOf(indexedStatusEffect.Index);
-                        if (alreadyUpdatingIndex >= 0)
-                        {
-                            ref IndexedStatusEffects indexedUpdate = ref statusEffectStackUpdates.ElementAt(alreadyUpdatingIndex);
-                            indexedUpdate.Stacks += stacks;
-                            return;
-                        }
-                        // Check to see if we are adding an infinite effect already.
-                        if (indexedStatusEffect.Timing is StatusEffectTiming.Infinite)
-                        {
-                            for (int x = 0; x < statusEffectStackUpdates.Length; x++)
-                            {
-                                ref IndexedStatusEffects indexedUpdate = ref statusEffectStackUpdates.ElementAt(x);
-                                if (indexedUpdate.Timing is StatusEffectTiming.Infinite && indexedUpdate.Id == indexedStatusEffect.Id)
-                                {
-                                    indexedUpdate.Stacks += stacks;
-                                    return;
-                                }
-                            }
-                        }
-                        // Otherwise create a new stack.
-                        indexedStatusEffect.Stacks = stacks;
-                        statusEffectStackUpdates.Add(indexedStatusEffect);
-                    }
-
-                    // Returns the amount removed
-                    int RemoveStatusEffect(IndexedStatusEffects indexedStatusEffect, int stacks = 1)
-                    {
-                        int alreadyUpdatingIndex = statusEffectStackUpdates.IndexOf(indexedStatusEffect.Index);
-                        if (alreadyUpdatingIndex >= 0)
-                        {
-                            ref IndexedStatusEffects indexedUpdate = ref statusEffectStackUpdates.ElementAt(alreadyUpdatingIndex);
-                            if (stacks >= 0)
-                            {
-                                int currentStackCount = indexedStatusEffect.Stacks + indexedUpdate.Stacks;
-
-                                if (currentStackCount > stacks)
-                                {
-                                    indexedUpdate.Stacks -= stacks;
-                                    return stacks;
-                                }
-                            }
-                            // If it got to this point we can remove the effect. Either
-                            // we removed all its stacks or there was no stack count.
-                            var removedCount = indexedStatusEffect.Stacks + indexedUpdate.Stacks;
-                            indexedUpdate.Stacks = -indexedStatusEffect.Stacks;
-                            return removedCount;
-                        }
-                        else
-                        {
-                            if (stacks >= 0)
-                            {
-                                if (indexedStatusEffect.Stacks > stacks)
-                                {
-                                    indexedStatusEffect.Stacks = -stacks;
-                                    statusEffectStackUpdates.Add(indexedStatusEffect);
-                                    return stacks;
-                                }
-                            }
-                            // If it got to this point we can remove the effect. Either
-                            // we removed all its stacks or there was no stack count.
-                            var removedCount = indexedStatusEffect.Stacks;
-                            indexedStatusEffect.Stacks = -removedCount;
-                            statusEffectStackUpdates.Add(indexedStatusEffect);
-                            return removedCount;
-                        }
-                    }
-                }
+                for (int i = 0; i < statusEffectRequests.Length; i++)
+                    EvaluateRequest(ref statusEffects, ref statusManager, statusEffectRequests[i], Registry);
 
                 statusEffectRequests.Clear();
 
-                // Remove and add status effects from buffer.
-                statusEffectStackUpdates.Sort(new IndexedStatusEffectComparer(Registry, true));
-                bool statusEffectEventsEnabled = statusEffectEventsEnabledRW.ValueRO;
-                
-                // Iterate in reverse to not skip any that get removed.
-                for (int v = statusEffectStackUpdates.Length - 1; v >= 0; v--)
+                bool statusEffectsChanged = false;
+
+                // Effects that existed before keep their index until compaction, so compare in place.
+                for (int i = 0; i < originalStatusEffects.Length; i++)
                 {
-                    IndexedStatusEffects indexedUpdate = statusEffectStackUpdates[v];
+                    var originalStatusEffect = originalStatusEffects[i];
+                    ref var statusEffect = ref statusEffects.ElementAt(i);
 
-                    if (indexedUpdate.Stacks == 0)
-                        continue;
-
-                    // Check if we add a new status effect.
-                    if (indexedUpdate.Index < 0)
+                    if (statusEffect.Stacks <= 0)
+                        statusEffectEvents.Add(new StatusEffectEvents(originalStatusEffect.InstanceId, originalStatusEffect.Id, originalStatusEffect.Stacks, StatusEffectEvent.Removed));
+                    else if (statusEffect.Stacks != originalStatusEffect.Stacks)
                     {
-                        uint id = statusManager.AvailableId++;
-                        statusEffectEvents.Add(new StatusEffectEvents(id, indexedUpdate.Id));
-                        if (!statusEffectEventsEnabled)
-                        {
-                            statusEffectEventsEnabled = true;
-                            statusEffectEventsEnabledRW.ValueRW = true;
-                            preEvaluateUpdateRW.ValueRW = true;
-                        }
-                        statusEffects.Add(new StatusEffects()
-                        {
+                        statusEffectEvents.Add(new StatusEffectEvents(originalStatusEffect.InstanceId, originalStatusEffect.Id, originalStatusEffect.Stacks, StatusEffectEvent.Updated));
 #if NETCODE
-                            TickAdded = NetworkTime.ServerTick,
-                            TickUpdated = NetworkTime.ServerTick,
-#else
-                            TimeAdded = ElapsedTime,
+                        statusEffect.TickUpdated = currentTick;
 #endif
-                            InstanceId = id,
-                            Id = indexedUpdate.Id,
-                            Timing = indexedUpdate.Timing,
-                            Duration = indexedUpdate.Duration,
-                            Interval = indexedUpdate.Interval,
-                            Stacks = indexedUpdate.Stacks,
-                            EventId = indexedUpdate.EventId,
-                        });
-
+                    }
+                    else
                         continue;
-                    }
 
-                    ref var updatingStatusEffectRef = ref statusEffects.ElementAt(indexedUpdate.Index);
-                    // If all the stacks are removed we remove the effect.
-                    if (updatingStatusEffectRef.Stacks + indexedUpdate.Stacks <= 0)
+                    statusEffectsChanged = true;
+                }
+                // Anything past the original length was added this update.
+                for (int i = originalStatusEffects.Length; i < statusEffects.Length; i++)
+                {
+                    var statusEffect = statusEffects[i];
+                    // Added and removed within the same update.
+                    if (statusEffect.Stacks <= 0)
+                        continue;
+
+                    statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id));
+                    statusEffectsChanged = true;
+                }
+
+                // Compact out removed effects, keeping the order of the rest.
+                int length = 0;
+                for (int i = 0; i < statusEffects.Length; i++)
+                    if (statusEffects[i].Stacks > 0)
+                        statusEffects[length++] = statusEffects[i];
+                statusEffects.ResizeUninitialized(length);
+
+                if (statusEffectsChanged)
+                {
+                    statusEffectEventsEnabledRW.ValueRW = true;
+                    preEvaluateUpdateRW.ValueRW = true;
+                }
+
+                void EvaluateRequest(ref DynamicBuffer<StatusEffects> buffer,
+                                     ref StatusManagerComponent manager,
+                                     StatusEffectRequests request,
+                                     in UnmanagedStatusRegistry registry)
+                {
+                    if (request.Type is StatusEffectRequestType.Add)
+                        AddRequest(ref buffer, ref manager, request, registry);
+                    else
+                        RemoveRequest(ref buffer, request, registry);
+                }
+
+                // Copied from regular private StatusManager.AddStatusEffect() with burstable types and math.
+                void AddRequest(ref DynamicBuffer<StatusEffects> buffer,
+                                ref StatusManagerComponent manager,
+                                StatusEffectRequests request,
+                                in UnmanagedStatusRegistry registry)
+                {
+                    if (request.Stacks <= 0)
+                        return;
+
+                    // If the duration given is less than zero it won't be applied.
+                    if (request.Timing is not StatusEffectTiming.Infinite && request.Duration < 0)
+                        return;
+
+                    ref var data = ref registry.GetStatusEffectData(request.Id);
+                    // Buffer indices of an effect being replaced and an infinite effect to merge into.
+                    int flagForRemoval = -1;
+                    int mergeIndex = -1;
+
+                    // If stacking is allowed then check for the max stacks and possible stack merging.
+                    if (data.AllowEffectStacking)
                     {
-                        statusEffectEvents.Add(new StatusEffectEvents(updatingStatusEffectRef.InstanceId, updatingStatusEffectRef.Id, updatingStatusEffectRef.Stacks, StatusEffectEvent.Removed));
-                        if (!statusEffectEventsEnabled)
+                        int stackCount = 0;
+                        // Go through all similar effects and count the stacks and if there is an
+                        // infinite effect.
+                        for (int x = 0; x < buffer.Length; x++)
                         {
-                            statusEffectEventsEnabled = true;
-                            statusEffectEventsEnabledRW.ValueRW = true;
-                            preEvaluateUpdateRW.ValueRW = true;
+                            var existingEffect = buffer[x];
+                            if (existingEffect.Stacks <= 0 || existingEffect.Id != data.Id)
+                                continue;
+
+                            if (existingEffect.Timing is StatusEffectTiming.Infinite)
+                                mergeIndex = x;
+
+                            stackCount += existingEffect.Stacks;
                         }
-                        statusEffects.RemoveAtSwapBack(indexedUpdate.Index);
+                        // Check if the current stacked amount is already max.
+                        if (data.MaxStacks >= 0)
+                        {
+                            if (stackCount >= data.MaxStacks)
+                                return;
+                            // Otherwise cut the given stack if it would've been over the max.
+                            if (stackCount + request.Stacks > data.MaxStacks)
+                                request.Stacks = data.MaxStacks - stackCount;
+                        }
+                        // We can only safely merge infinite stacks because merging things with
+                        // duration or predicates we either can't or its too difficult to determine
+                        // their similarity.
+                        if (request.Timing is not StatusEffectTiming.Infinite)
+                            mergeIndex = -1;
                     }
-                    // Otherwise just update the stack count.
+                    // Non-stackable: Check to delete the effect if it already exists to prevent duplicates.
                     else
                     {
-                        statusEffectEvents.Add(new StatusEffectEvents(updatingStatusEffectRef.InstanceId, updatingStatusEffectRef.Id, updatingStatusEffectRef.Stacks, StatusEffectEvent.Updated));
-                        if (!statusEffectEventsEnabled)
+                        request.Stacks = 1;
+                        int oldStatusEffectIndex = -1;
+
+                        for (int x = 0; x < buffer.Length; x++)
                         {
-                            statusEffectEventsEnabled = true;
-                            statusEffectEventsEnabledRW.ValueRW = true;
-                            preEvaluateUpdateRW.ValueRW = true;
+                            var existingEffect = buffer[x];
+                            if (existingEffect.Stacks <= 0)
+                                continue;
+
+                            bool isSameEffect = data.ComparableName != default
+                                ? registry.GetStatusEffectData(existingEffect.Id).ComparableName == data.ComparableName
+                                : existingEffect.Id == data.Id;
+
+                            if (isSameEffect)
+                            {
+                                oldStatusEffectIndex = x;
+                                break;
+                            }
                         }
-                        updatingStatusEffectRef.Stacks += indexedUpdate.Stacks;
-                        updatingStatusEffectRef.TickUpdated = NetworkTime.ServerTick;
+
+                        if (oldStatusEffectIndex >= 0)
+                        {
+                            var oldStatusEffect = buffer[oldStatusEffectIndex];
+                            ref var oldData = ref registry.GetStatusEffectData(oldStatusEffect.Id);
+
+                            switch (data.NonStackingBehaviour)
+                            {
+                                case NonStackingBehaviour.MatchHighestValue:
+                                    if (data.BaseValue == oldData.BaseValue)
+                                        goto case NonStackingBehaviour.TakeHighestDuration;
+
+                                    float baseValue = math.abs(data.BaseValue);
+                                    float oldBaseValue = math.abs(oldData.BaseValue);
+                                    // WARNING: There is an extremely special case here where
+                                    // a player may either have or try to apply an effect which
+                                    // has an infinite duration (-1). In this situation, attempt
+                                    // to take the higest value, and if they are the same take
+                                    // the infinite duration effect.
+                                    if (request.Timing is StatusEffectTiming.Infinite || oldStatusEffect.Timing is StatusEffectTiming.Infinite)
+                                    {
+                                        if (baseValue < oldBaseValue)
+                                            return;
+                                        else if (baseValue > oldBaseValue || oldStatusEffect.Timing is not StatusEffectTiming.Infinite)
+                                        {
+                                            flagForRemoval = oldStatusEffectIndex;
+                                            break;
+                                        }
+                                        else
+                                            return;
+                                    }
+                                    // Find which effect is highest value.
+                                    ref var highestValueData = ref baseValue < oldBaseValue ? ref oldData : ref data;
+                                    float highestValueDuration = baseValue < oldBaseValue ? oldStatusEffect.Duration : request.Duration;
+                                    ref var lowestValueData = ref baseValue < oldBaseValue ? ref data : ref oldData;
+                                    float lowestValueDuration = baseValue < oldBaseValue ? request.Duration : oldStatusEffect.Duration;
+                                    // Calculate the new duration = d1 + d2 / (v1 / v2). Note this assumes neither base value will ever be 0.
+                                    if (highestValueData.BaseValue == 0 || lowestValueData.BaseValue == 0)
+                                        throw new ArgumentException("A StatusEffectData has a base value of 0! This will cause an error!");
+
+                                    request.Duration = highestValueDuration + lowestValueDuration / (math.abs(highestValueData.BaseValue) / math.abs(lowestValueData.BaseValue));
+                                    data = ref highestValueData;
+                                    flagForRemoval = oldStatusEffectIndex;
+                                    break;
+                                case NonStackingBehaviour.TakeHighestDuration:
+                                    if (oldStatusEffect.Timing is StatusEffectTiming.Infinite || (request.Duration < oldStatusEffect.Duration && request.Timing is not StatusEffectTiming.Infinite))
+                                        return;
+                                    else
+                                        flagForRemoval = oldStatusEffectIndex;
+                                    break;
+                                case NonStackingBehaviour.TakeHighestValue:
+                                    float oldValue = math.abs(oldData.BaseValue);
+                                    float newValue = math.abs(data.BaseValue);
+                                    if (newValue == oldValue)
+                                        goto case NonStackingBehaviour.TakeHighestDuration;
+                                    if (newValue < oldValue)
+                                        return;
+                                    else
+                                        flagForRemoval = oldStatusEffectIndex;
+                                    break;
+                                case NonStackingBehaviour.TakeNewest:
+                                    flagForRemoval = oldStatusEffectIndex;
+                                    break;
+                                case NonStackingBehaviour.TakeOldest:
+                                    return;
+                            }
+                        }
                     }
+
+                    // Check for conditions.
+                    bool preventStatusEffect = false;
+
+                    for (int c = 0; c < data.Conditions.Length; c++)
+                    {
+                        UnmanagedCondition condition = data.Conditions[c];
+                        // If the condition is checking for existence and it doesn't exist or if
+                        // its checking non-existence and does exist then skip this condition.
+                        if (condition.Exists != ConditionTargetExists(buffer, condition, registry))
+                            continue;
+
+                        int conditionalStacks = condition.Add || condition.UseStacks ? condition.Stacks * (condition.Scaled ? request.Stacks : 1) : -1;
+
+                        if (condition.Add)
+                        {
+                            StatusEffectRequests conditionalRequest = condition.Timing switch
+                            {
+                                ConditionalTiming.Duration => StatusEffectRequests.AddWithDuration(condition.ActionData, condition.Duration, conditionalStacks),
+                                ConditionalTiming.Inherited => new StatusEffectRequests
+                                {
+                                    Type = StatusEffectRequestType.Add,
+                                    Id = condition.ActionData,
+                                    Timing = request.Timing,
+                                    Duration = request.Duration,
+                                    Interval = request.Interval,
+                                    Stacks = conditionalStacks,
+                                    EventId = request.EventId
+                                },
+                                _ => StatusEffectRequests.Add(condition.ActionData, conditionalStacks),
+                            };
+                            AddRequest(ref buffer, ref manager, conditionalRequest, registry);
+                        }
+                        // Special case where the configurable which is the
+                        // current data to be added is tagged for removal.
+                        else if (condition.ActionData == data.Id)
+                        {
+                            if (!condition.UseStacks || conditionalStacks >= request.Stacks)
+                            {
+                                preventStatusEffect = true;
+                                if (condition.UseStacks)
+                                    conditionalStacks -= request.Stacks;
+                                request.Stacks = 0;
+                                // In the case where other status effects of this Id exist we need to request to remove them.
+                                RemoveRequest(ref buffer, ConditionalRemoval(condition, conditionalStacks), registry);
+                            }
+                            else
+                                request.Stacks -= conditionalStacks;
+                        }
+                        // Otherwise we remove effects.
+                        else
+                            RemoveRequest(ref buffer, ConditionalRemoval(condition, conditionalStacks), registry);
+                    }
+
+                    if (preventStatusEffect)
+                        return;
+
+                    if (flagForRemoval >= 0)
+                        buffer.ElementAt(flagForRemoval).Stacks = 0;
+
+                    // Merge into the existing infinite effect unless a condition removed it.
+                    if (mergeIndex >= 0 && buffer[mergeIndex].Stacks > 0)
+                    {
+                        buffer.ElementAt(mergeIndex).Stacks += request.Stacks;
+                        return;
+                    }
+
+                    // Add the status effect
+                    buffer.Add(new StatusEffects()
+                    {
+#if NETCODE
+                        TickAdded = currentTick,
+                        TickUpdated = currentTick,
+#else
+                        TimeAdded = elapsedTime,
+#endif
+                        InstanceId = manager.AvailableId++,
+                        Id = data.Id,
+                        Timing = request.Timing,
+                        Duration = request.Duration,
+                        Interval = request.Interval,
+                        Stacks = request.Stacks,
+                        EventId = request.EventId,
+                    });
+                }
+
+                void RemoveRequest(ref DynamicBuffer<StatusEffects> buffer,
+                                   StatusEffectRequests request,
+                                   in UnmanagedStatusRegistry registry)
+                {
+                    removalCandidates.Clear();
+
+                    for (int x = 0; x < buffer.Length; x++)
+                    {
+                        var statusEffect = buffer[x];
+                        if (statusEffect.Stacks > 0 && MatchesRemoval(statusEffect, request, registry))
+                            removalCandidates.Add(new IndexedStatusEffects(x, statusEffect));
+                    }
+                    // Sort by value and duration.
+                    removalCandidates.Sort(new IndexedStatusEffectComparer(registry, false));
+                    // Remove until the requested stack count is reached.
+                    int removedCount = 0;
+                    for (int x = 0; x < removalCandidates.Length; x++)
+                    {
+                        if (request.Stacks >= 0 && removedCount >= request.Stacks)
+                            break;
+
+                        ref var statusEffect = ref buffer.ElementAt(removalCandidates[x].Index);
+                        int removing = request.Stacks >= 0 ? math.min(statusEffect.Stacks, request.Stacks - removedCount) : statusEffect.Stacks;
+                        statusEffect.Stacks -= removing;
+                        removedCount += removing;
+                    }
+                }
+
+                static bool ConditionTargetExists(in DynamicBuffer<StatusEffects> buffer,
+                                                  in UnmanagedCondition condition,
+                                                  in UnmanagedStatusRegistry registry)
+                {
+                    for (int x = 0; x < buffer.Length; x++)
+                    {
+                        var statusEffect = buffer[x];
+                        if (statusEffect.Stacks <= 0)
+                            continue;
+
+                        switch (condition.SearchableConfigurable)
+                        {
+                            case ConditionalConfigurable.AllGroups:
+                                if ((registry.GetStatusEffectData(statusEffect.Id).Group & condition.SearchableGroup) != 0)
+                                    return true;
+                                break;
+                            case ConditionalConfigurable.Name:
+                                if (registry.GetStatusEffectData(statusEffect.Id).ComparableName == condition.SearchableComparableName)
+                                    return true;
+                                break;
+                            case ConditionalConfigurable.Data:
+                                if (statusEffect.Id == condition.SearchableData)
+                                    return true;
+                                break;
+                        }
+                    }
+
+                    return false;
+                }
+
+                static bool MatchesRemoval(in StatusEffects statusEffect,
+                                           in StatusEffectRequests request,
+                                           in UnmanagedStatusRegistry registry)
+                {
+                    return request.RemovalType switch
+                    {
+                        StatusEffectRemovalType.InstanceId => statusEffect.InstanceId == request.InstanceId,
+                        StatusEffectRemovalType.Id => statusEffect.Id == request.Id,
+                        StatusEffectRemovalType.ComparableName => registry.GetStatusEffectData(statusEffect.Id).ComparableName == request.Id,
+                        StatusEffectRemovalType.AnyGroups => (registry.GetStatusEffectData(statusEffect.Id).Group & request.Group) != 0,
+                        StatusEffectRemovalType.AllGroups => (registry.GetStatusEffectData(statusEffect.Id).Group & request.Group) == request.Group,
+                        StatusEffectRemovalType.Any => true,
+                        _ => false,
+                    };
+                }
+
+                static StatusEffectRequests ConditionalRemoval(in UnmanagedCondition condition, int stacks)
+                {
+                    return condition.ActionConfigurable switch
+                    {
+                        ConditionalConfigurable.Data => StatusEffectRequests.RemoveWithId(condition.ActionData, stacks),
+                        ConditionalConfigurable.Name => StatusEffectRequests.RemoveWithComparableName(condition.ActionComparableName, stacks),
+                        ConditionalConfigurable.AllGroups => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, stacks, true),
+                        ConditionalConfigurable.AnyGroups => StatusEffectRequests.RemoveWithGroup(condition.ActionGroup, stacks, false),
+                        _ => throw new InvalidOperationException($"Invalid {nameof(ConditionalConfigurable)} enum value of {condition.ActionConfigurable}.")
+                    };
                 }
             }
         }

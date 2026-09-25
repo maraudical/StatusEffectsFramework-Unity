@@ -40,11 +40,6 @@
 	"path": "Samples~/Default"
   },
   {
-	"displayName": "UniTask Sample",
-	"description": "If you aren't using the Entities package but are using UniTask you should download this sample.",
-	"path": "Samples~/UniTask"
-  },
-  {
 	"displayName": "Netcode for GameObjects Addon",
 	"description": "Add this with the Shared Resources and Default samples if you are using the Netcode for GameObjects package.",
 	"path": "Samples~/Netcode for GameObjects"

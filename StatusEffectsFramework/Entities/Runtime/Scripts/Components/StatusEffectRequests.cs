@@ -1,7 +1,9 @@
 #if ENTITIES
 using Unity.Burst;
 using Unity.Entities;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 namespace StatusEffectsFramework.Entities
 {
@@ -119,7 +121,7 @@ namespace StatusEffectsFramework.Entities
             {
                 Type = StatusEffectRequestType.Add,
                 Id = id,
-                Timing = StatusEffectTiming.Duration,
+                Timing = StatusEffectTiming.Predicate,
                 Duration = 1,
                 Stacks = stacks,
                 EventId = eventId,

@@ -1,13 +1,14 @@
 using StatusEffectsFramework.Entities;
 using StatusEffectsFramework.Entities.Samples;
+using Unity.Entities;
 
 namespace StatusEffectsFramework.Samples
 {
     public partial class HealModule : Module, IEntityModule
     {
-        public ModuleInfo CreateModuleInfo(ModuleInstance moduleInstance)
+        public void CreateModuleInfo(ModuleInstance moduleInstance, ref ModuleInfo info, ref BlobBuilder builder)
         {
-            return ModuleInfo.AllocateModule(new HealModuleStruct());
+            ModuleInfo.AllocateModule(new HealModuleStruct(), ref info, ref builder);
         }
     }
 }

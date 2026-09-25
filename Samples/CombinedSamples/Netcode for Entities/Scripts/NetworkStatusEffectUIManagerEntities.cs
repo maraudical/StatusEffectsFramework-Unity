@@ -43,7 +43,7 @@ namespace StatusEffectsFramework.Entities.Samples
 
             m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
             m_StatusEffectsQuery = m_Manager.CreateEntityQuery(typeof(StatusEffects));
-            m_StatusReferencesQuery = m_Manager.CreateEntityQuery(typeof(UnmanagedStatusRegistryrrrr));
+            m_RegistryQuery = m_Manager.CreateEntityQuery(typeof(UnmanagedStatusRegistry));
         }
 
         protected override void Update()
@@ -53,7 +53,7 @@ namespace StatusEffectsFramework.Entities.Samples
 
             if (kill)
                 Kill();
-
+            
             base.Update();
         }
 

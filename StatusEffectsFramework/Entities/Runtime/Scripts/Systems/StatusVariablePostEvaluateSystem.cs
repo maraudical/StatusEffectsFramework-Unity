@@ -1,3 +1,4 @@
+#if ENTITIES
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Burst.Intrinsics;
@@ -24,6 +25,7 @@ namespace StatusEffectsFramework.Entities
         {
             m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusFloats, StatusInts, StatusBools>().WithAll<StatusVariablePostEvaluateUpdate, Simulate>().Build();
             state.RequireForUpdate(m_EntityQuery);
+            state.RequireForUpdate<UnmanagedStatusRegistry>();
         }
 
         [BurstCompile]
@@ -65,9 +67,9 @@ namespace StatusEffectsFramework.Entities
                 BufferAccessor<StatusInts> statusIntsAccessor = chunk.GetBufferAccessorRW(ref StatusIntsHandle);
                 BufferAccessor<StatusBools> statusBoolsAccessor = chunk.GetBufferAccessorRW(ref StatusBoolsHandle);
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                // LastEntityIndex marks which entity last read the type's buffer so it is only read once per entity.
+                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo, int LastEntityIndex)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
 
-                using var valueTypeToDynamicEffectTypes = new UnsafeParallelMultiHashMap<int, TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 using var instanceIdToStatusEffect = new UnsafeHashMap<uint, StatusEffects>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 using var idToDynamicFloat = new UnsafeParallelMultiHashMap<ushort, (ValueModifier, float, int, int)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 using var idToDynamicInt = new UnsafeParallelMultiHashMap<ushort, (ValueModifier, int, int, int)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
@@ -76,7 +78,6 @@ namespace StatusEffectsFramework.Entities
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
                 {
-                    valueTypeToDynamicEffectTypes.Clear();
                     instanceIdToStatusEffect.Clear();
                     idToDynamicFloat.Clear();
                     idToDynamicInt.Clear();
@@ -88,7 +89,11 @@ namespace StatusEffectsFramework.Entities
                     var statusInts = statusIntsAccessor[i];
                     var statusBools = statusBoolsAccessor[i];
 
-                    // Map ids to status effects to quickly find all status effects affecting a specific status variable.
+                    // Must be filled before any dynamic effect buffer is read since a buffer can contain
+                    // elements belonging to any of the status effects on the entity.
+                    foreach (var statusEffect in statusEffects)
+                        instanceIdToStatusEffect.Add(statusEffect.InstanceId, statusEffect);
+
                     foreach (var statusEffect in statusEffects)
                     {
                         ref var data = ref Registry.GetStatusEffectData(statusEffect.Id);
@@ -96,91 +101,60 @@ namespace StatusEffectsFramework.Entities
                         for (int v = 0; v < data.Effects.Length; v++)
                         {
                             ref var effect = ref data.Effects[v];
-                            if (effect.ValueSource == ValueSource.DynamicValue)
-                                valueTypeToDynamicEffectTypes.Add((int)effect.ValueType, effect.DynamicEffectInfo.TypeIndex);
-                        }
 
-                        instanceIdToStatusEffect.Add(statusEffect.InstanceId, statusEffect);
-                    }
-
-                    foreach (var typeIndex in valueTypeToDynamicEffectTypes.GetValuesForKey((int)ValueType.Float))
-                    {
-                        if (!typeToIndexAndTypeInfo.TryGetValue(typeIndex, out var info))
-                        {
-                            info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
-                            typeToIndexAndTypeInfo.TryAdd(typeIndex, info);
-                        }
-
-                        if (Hint.Unlikely(info.IndexInTypeArray <= 0))
-                            continue;
-
-                        var header = StatusEffectsECSInternals.GetComponentDataWithTypeRO(chunk, i, info.IndexInTypeArray);
-
-                        if (Hint.Unlikely(!StatusEffectsECSInternals.TryGetElementPointerAndLength(header, out var buffer, out var length)))
-                            UnityEngine.Debug.LogError($"There was an issue with the provided dynamic effect type <b>{info.TypeInfo.DebugTypeName}</b>.");
-
-                        int sizeOfDynamicEffect = info.TypeInfo.ElementSize;
-
-                        for (int n = 0; n < length; n++)
-                        {
-                            var element = buffer + sizeOfDynamicEffect * n;
-                            if (!*(bool*)(element + Registry.DynamicFloatOffsets.PostEvaluate))
+                            if (effect.ValueSource != ValueSource.DynamicValue)
                                 continue;
-                            idToDynamicFloat.Add(*(ushort*)(element + Registry.DynamicFloatOffsets.Id), (*(ValueModifier*)(element + Registry.DynamicFloatOffsets.ValueModifier), *(float*)(element + Registry.DynamicFloatOffsets.Value), *(int*)(element + Registry.DynamicFloatOffsets.Priority), instanceIdToStatusEffect[*(uint*)element].Stacks));
-                        }
-                    }
 
-                    foreach (var typeIndex in valueTypeToDynamicEffectTypes.GetValuesForKey((int)ValueType.Int))
-                    {
-                        if (!typeToIndexAndTypeInfo.TryGetValue(typeIndex, out var info))
-                        {
-                            info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
-                            typeToIndexAndTypeInfo.TryAdd(typeIndex, info);
-                        }
+                            ref var dynamicEffectInfo = ref effect.DynamicEffectInfo;
+                            var typeIndex = dynamicEffectInfo.TypeIndex;
 
-                        if (Hint.Unlikely(info.IndexInTypeArray <= 0))
-                            continue;
+                            // A dynamic effect buffer holds the elements for every effect of its type so it must
+                            // only be read once per entity, even when multiple effects share the same type.
+                            ref var info = ref typeToIndexAndTypeInfo.TryGetValueByRef(typeIndex, out bool foundInfo);
 
-                        var header = StatusEffectsECSInternals.GetComponentDataWithTypeRO(chunk, i, info.IndexInTypeArray);
-
-                        if (Hint.Unlikely(!StatusEffectsECSInternals.TryGetElementPointerAndLength(header, out var buffer, out var length)))
-                            UnityEngine.Debug.LogError($"There was an issue with the provided dynamic effect type <b>{info.TypeInfo.DebugTypeName}</b>.");
-
-                        int sizeOfDynamicEffect = info.TypeInfo.ElementSize;
-
-                        for (int n = 0; n < length; n++)
-                        {
-                            var element = buffer + sizeOfDynamicEffect * n;
-                            if (!*(bool*)(element + Registry.DynamicIntOffsets.PostEvaluate))
+                            if (!foundInfo)
+                            {
+                                // The ref from TryGetValueByRef is not valid when the key was not found so rebind it to the new entry.
+                                info = ref typeToIndexAndTypeInfo.AddByRef(typeIndex);
+                                info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex), i);
+                            }
+                            else if (info.LastEntityIndex == i)
                                 continue;
-                            idToDynamicInt.Add(*(ushort*)(element + Registry.DynamicIntOffsets.Id), (*(ValueModifier*)(element + Registry.DynamicIntOffsets.ValueModifier), *(int*)(element + Registry.DynamicIntOffsets.Value), *(int*)(element + Registry.DynamicIntOffsets.Priority), instanceIdToStatusEffect[*(uint*)element].Stacks));
-                        }
-                    }
+                            else
+                                info.LastEntityIndex = i;
 
-                    foreach (var typeIndex in valueTypeToDynamicEffectTypes.GetValuesForKey((int)ValueType.Bool))
-                    {
-                        if (!typeToIndexAndTypeInfo.TryGetValue(typeIndex, out var info))
-                        {
-                            info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
-                            typeToIndexAndTypeInfo.TryAdd(typeIndex, info);
-                        }
-
-                        if (Hint.Unlikely(info.IndexInTypeArray <= 0))
-                            continue;
-
-                        var header = StatusEffectsECSInternals.GetComponentDataWithTypeRO(chunk, i, info.IndexInTypeArray);
-
-                        if (Hint.Unlikely(!StatusEffectsECSInternals.TryGetElementPointerAndLength(header, out var buffer, out var length)))
-                            UnityEngine.Debug.LogError($"There was an issue with the provided dynamic effect type <b>{info.TypeInfo.DebugTypeName}</b>.");
-
-                        int sizeOfDynamicEffect = info.TypeInfo.ElementSize;
-
-                        for (int n = 0; n < length; n++)
-                        {
-                            var element = buffer + sizeOfDynamicEffect * n;
-                            if (!*(bool*)(element + Registry.DynamicBoolOffsets.PostEvaluate))
+                            if (Hint.Unlikely(info.IndexInTypeArray <= 0))
                                 continue;
-                            idToDynamicBool.Add(*(ushort*)(element + Registry.DynamicBoolOffsets.Id), (*(bool*)(element + Registry.DynamicBoolOffsets.Value), *(int*)(element + Registry.DynamicBoolOffsets.Priority)));
+
+                            var header = StatusEffectsECSInternals.GetComponentDataWithTypeRO(chunk, i, info.IndexInTypeArray);
+
+                            if (Hint.Unlikely(!StatusEffectsECSInternals.TryGetElementPointerAndLength(header, out var buffer, out var length)))
+                                UnityEngine.Debug.LogError($"There was an issue with the provided dynamic effect type <b>{info.TypeInfo.DebugTypeName}</b>.");
+
+                            int sizeOfDynamicEffect = info.TypeInfo.ElementSize;
+
+                            for (int n = 0; n < length; n++)
+                            {
+                                var element = buffer + sizeOfDynamicEffect * n;
+                                if (!*(bool*)(element + dynamicEffectInfo.PostEvaluateOffset))
+                                    continue;
+
+                                var id = *(ushort*)(element + dynamicEffectInfo.IdOffset);
+                                var priority = *(int*)(element + dynamicEffectInfo.PriorityOffset);
+
+                                switch (effect.ValueType)
+                                {
+                                    case ValueType.Float:
+                                        idToDynamicFloat.Add(id, (*(ValueModifier*)(element + dynamicEffectInfo.ValueModifierOffset), *(float*)(element + dynamicEffectInfo.ValueOffset), priority, instanceIdToStatusEffect[*(uint*)(element + dynamicEffectInfo.InstanceIdOffset)].Stacks));
+                                        break;
+                                    case ValueType.Int:
+                                        idToDynamicInt.Add(id, (*(ValueModifier*)(element + dynamicEffectInfo.ValueModifierOffset), *(int*)(element + dynamicEffectInfo.ValueOffset), priority, instanceIdToStatusEffect[*(uint*)(element + dynamicEffectInfo.InstanceIdOffset)].Stacks));
+                                        break;
+                                    case ValueType.Bool:
+                                        idToDynamicBool.Add(id, (*(bool*)(element + dynamicEffectInfo.ValueOffset), priority));
+                                        break;
+                                }
+                            }
                         }
                     }
 
@@ -240,3 +214,4 @@ namespace StatusEffectsFramework.Entities
         }
     }
 }
+#endif

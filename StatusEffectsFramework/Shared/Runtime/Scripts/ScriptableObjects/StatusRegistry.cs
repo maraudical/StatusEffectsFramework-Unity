@@ -8,6 +8,7 @@ using Hash128 = Unity.Entities.Hash128;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.Build;
+using System.Linq;
 #endif
 
 namespace StatusEffectsFramework
@@ -53,7 +54,8 @@ namespace StatusEffectsFramework
 
         public void FindAssets<T>(List<T> assets) where T : Registrant
         {
-            var guids = AssetDatabase.FindAssets($"t:{nameof(T)}");
+            var guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
+            
             foreach (var guid in guids)
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
@@ -132,34 +134,28 @@ namespace StatusEffectsFramework
         /// </summary>
         public void Rebuild()
         {
-            ushort statusEffectId = 0;
+            m_KeyToId = new();
+
+            ushort id = 0;
+
             m_IdToStatusEffectData = new();
-
-            AddToDictionary(ref statusEffectId, m_StatusEffectDatas, m_IdToStatusEffectData, m_KeyToId);
-
-            ushort statusNameId = 0;
             m_IdToStatusName = new();
-
-            AddToDictionary(ref statusNameId, m_StatusNames, m_IdToStatusName, m_KeyToId);
-
-            ushort comparableNameId = 0;
             m_IdToComparableName = new();
-
-            AddToDictionary(ref comparableNameId, m_ComparableNames, m_IdToComparableName, m_KeyToId);
-
-            ushort statusEventId = 0;
             m_IdToStatusEvent = new();
 
-            AddToDictionary(ref statusEventId, m_StatusEvents, m_IdToStatusEvent, m_KeyToId);
+            AddToDictionary(ref id, m_StatusEffectDatas, m_IdToStatusEffectData, m_KeyToId);
+            AddToDictionary(ref id, m_StatusNames, m_IdToStatusName, m_KeyToId);
+            AddToDictionary(ref id, m_ComparableNames, m_IdToComparableName, m_KeyToId);
+            AddToDictionary(ref id, m_StatusEvents, m_IdToStatusEvent, m_KeyToId);
 
 #if ADDRESSABLES
             if (m_Dependencies != null)
                 foreach (var dependency in m_Dependencies)
                 {
-                    AddToDictionary(ref statusEffectId, dependency.StatusEffectDatas, m_IdToStatusEffectData, m_KeyToId);
-                    AddToDictionary(ref statusNameId, dependency.StatusNames, m_IdToStatusName, m_KeyToId);
-                    AddToDictionary(ref comparableNameId, dependency.ComparableNames, m_IdToComparableName, m_KeyToId);
-                    AddToDictionary(ref statusEventId, dependency.StatusEvents, m_IdToStatusEvent, m_KeyToId);
+                    AddToDictionary(ref id, dependency.StatusEffectDatas, m_IdToStatusEffectData, m_KeyToId);
+                    AddToDictionary(ref id, dependency.StatusNames, m_IdToStatusName, m_KeyToId);
+                    AddToDictionary(ref id, dependency.ComparableNames, m_IdToComparableName, m_KeyToId);
+                    AddToDictionary(ref id, dependency.StatusEvents, m_IdToStatusEvent, m_KeyToId);
                 }
 #endif
             RegistryRebuilt?.Invoke();
@@ -176,6 +172,7 @@ namespace StatusEffectsFramework
                         Debug.LogWarning($"Duplicate key found: {item.UniqueKey}. Skipping registration for this {nameof(T)}.");
                         continue;
                     }
+
                     idToItem[id] = item;
                     id++;
                 }

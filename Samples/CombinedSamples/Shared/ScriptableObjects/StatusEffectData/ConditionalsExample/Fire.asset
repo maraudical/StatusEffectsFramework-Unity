@@ -27,7 +27,7 @@ MonoBehaviour:
   m_MaxStacks: -1
   m_Effects: []
   m_Conditions:
-  - m_SearchableConfigurable: 3
+  - m_SearchableConfigurable: 0
     m_SearchableData: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
     m_SearchableComparableName: {fileID: 0}
     m_SearchableGroup:

@@ -97,7 +97,7 @@ namespace StatusEffectsFramework.Entities
             {
                 StatusEffectTiming.Infinite => -1f,
                 StatusEffectTiming.Event or StatusEffectTiming.Predicate => Duration,
-                _ => math.max(0f, Duration - (float)(elapsedTime + TimeAdded))
+                _ => math.max(0f, Duration - (float)(elapsedTime - TimeAdded))
             };
         } 
 #endif

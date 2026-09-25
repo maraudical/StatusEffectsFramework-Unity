@@ -71,7 +71,7 @@ namespace StatusEffectsFramework.Entities.Samples
                             index = modulesArray.BinarySearchFirst(statusEffectEvent.InstanceId);
 
                             if (index < 0 || !StatusEffects.TryGetStatusEffect(statusEffects, statusEffectEvent.InstanceId, out statusEffect))
-                                return;
+                                break;
 
                             for (int i = index; i < modulesArray.Length; i++)
                             {
@@ -124,13 +124,13 @@ namespace StatusEffectsFramework.Entities.Samples
 #if NETCODE
                             // Special case where we don't want old events to instantiate VFX.
                             if (statusEffectEvent.IsOld)
-                                continue;
+                                break;
 
 #endif
                             index = modulesArray.BinarySearchFirst(statusEffectEvent.InstanceId);
 
                             if (index < 0 || !StatusEffects.TryGetStatusEffect(statusEffects, statusEffectEvent.InstanceId, out statusEffect))
-                                return;
+                                break;
 
                             for (int i = index; i < modulesArray.Length; i++)
                             {

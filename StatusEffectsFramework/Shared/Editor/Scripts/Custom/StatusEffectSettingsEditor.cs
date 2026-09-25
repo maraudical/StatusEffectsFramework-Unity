@@ -168,6 +168,7 @@ namespace StatusEffectsFramework.Editor
         public override VisualElement CreateInspectorGUI()
         {
             var groupsProperty = serializedObject.FindProperty(nameof(StatusSettings.Groups));
+            var defaultUniqueKeyNamespaceProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultUniqueKeyNamespace));
             var defaultStatusDataPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultStatusDataPath));
             var defaultStatusNamesPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultStatusNamesPath));
             var defaultComparableNamesPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultComparableNamesPath));
@@ -837,6 +838,10 @@ namespace StatusEffectsFramework.Editor
             pathsBox.style.paddingBottom = 2;
             pathsBox.AddToClassList(StatusEffectsStyleSheet.BoxGroupClassName);
             pathsTab.Add(pathsBox);
+
+            var defaultUniqueKeyNamespace = new PropertyField();
+            defaultUniqueKeyNamespace.BindProperty(defaultUniqueKeyNamespaceProperty);
+            pathsBox.Add(defaultUniqueKeyNamespace);
 
             var defaultStatusDataPathGroup = new VisualElement();
             defaultStatusDataPathGroup.style.flexDirection = FlexDirection.Row;
