@@ -78,7 +78,7 @@ namespace StatusEffectsFramework.Entities
 #if NETCODE
             (NetworkTick currentTick, ClientServerTickRate tickRate)
         {
-            return TimeRemaining(currentTick, 0f, tickRate);
+            return TimeRemaining(currentTick, 1f, tickRate);
         }
 
         public float TimeRemaining (NetworkTick currentTick, float currentTickFraction, ClientServerTickRate tickRate)

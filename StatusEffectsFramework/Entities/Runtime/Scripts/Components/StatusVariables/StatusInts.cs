@@ -37,7 +37,7 @@ namespace StatusEffectsFramework.Entities
         {
             UniqueKey = uniqueKey;
             StableTypeHash = stableTypeHash;
-            Id = default;
+            Id = StatusRegistry.NullId;
             SignProtected = signProtected;
             BaseValue = baseValue;
             PreEvaluationValue = baseValue;
@@ -51,7 +51,7 @@ namespace StatusEffectsFramework.Entities
 
             UniqueKey = statusInt.StatusName.GetUniqueKeyHash();
             StableTypeHash = stableTypeHash;
-            Id = default;
+            Id = StatusRegistry.NullId;
             SignProtected = statusInt.SignProtected;
             BaseValue = statusInt.BaseValue;
             PreEvaluationValue = statusInt.BaseValue;

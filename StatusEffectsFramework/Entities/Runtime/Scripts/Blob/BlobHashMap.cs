@@ -42,7 +42,8 @@ namespace StatusEffectsFramework.Entities
         /// Gets the value associated with the specified key as a reference.
         /// </summary>
         /// <param name="key">The key of the value to get.</param>
-        public ref TValue GetValueRef(TKey key) => ref data.GetFirstValueRef(key);
+        /// <param name="exists">True if the key was found. If false the returned reference is null and must not be used.</param>
+        public ref TValue GetValueRefOrNullRef(TKey key, out bool exists) => ref data.GetFirstValueRefOrNullRef(key, out exists);
 
         /// <summary>
         /// Gets the value associated with the specified key.

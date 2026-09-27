@@ -73,6 +73,11 @@ namespace StatusEffectsFramework
 #endif
         public const string RegistryName = "StatusRegistry";
         public const string RegistryPath = "Assets/Settings/Resources/" + RegistryName + ".asset";
+        /// <summary>
+        /// Id that is never assigned to a <see cref="Registrant"/>, used to mean no reference.
+        /// Registered ids start after it.
+        /// </summary>
+        public const ushort NullId = 0;
 
         public event Action RegistryRebuilt;
 
@@ -136,7 +141,7 @@ namespace StatusEffectsFramework
         {
             m_KeyToId = new();
 
-            ushort id = 0;
+            ushort id = NullId + 1;
 
             m_IdToStatusEffectData = new();
             m_IdToStatusName = new();
@@ -167,9 +172,16 @@ namespace StatusEffectsFramework
                     if (item == null)
                         continue;
 
+                    // The id wrapped around past ushort.MaxValue so there are no ids left to assign.
+                    if (id == NullId)
+                    {
+                        Debug.LogError($"The {nameof(StatusRegistry)} ran out of ids. Skipping registration for this {typeof(T).Name} {item.name}.");
+                        continue;
+                    }
+
                     if (!keyToId.TryAdd(item.GetUniqueKeyHash(), id))
                     {
-                        Debug.LogWarning($"Duplicate key found: {item.UniqueKey}. Skipping registration for this {nameof(T)}.");
+                        Debug.LogWarning($"Duplicate key found: {item.UniqueKey}. Skipping registration for this {typeof(T).Name} {item.name}.");
                         continue;
                     }
 

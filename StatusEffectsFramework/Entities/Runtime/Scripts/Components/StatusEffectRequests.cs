@@ -18,26 +18,46 @@ namespace StatusEffectsFramework.Entities
     [BurstCompile]
     public struct StatusEffectRequests : IBufferElementData
     {
+#if NETCODE
         [GhostField]
+#endif
         public StatusEffectRequestType Type;
+#if NETCODE
         [GhostField]
+#endif
         public StatusEffectRemovalType RemovalType;
+#if NETCODE
         [GhostField]
+#endif
         public StatusEffectGroup Group;
+#if NETCODE
         [GhostField]
+#endif
         public uint InstanceId;
+#if NETCODE
         [GhostField]
+#endif
         public ushort Id;
+#if NETCODE
         [GhostField]
+#endif
         public StatusEffectTiming Timing;
+#if NETCODE
         [GhostField(Quantization = 1000)]
+#endif
         public float Duration;
+#if NETCODE
         [GhostField(Quantization = 1000)]
+#endif
         public float Interval;
+#if NETCODE
         [GhostField]
+#endif
         public int Stacks;
         /// <inheritdoc cref="StatusEffects.EventId"/>
+#if NETCODE
         [GhostField]
+#endif
         public ushort EventId;
 
         /// <summary>

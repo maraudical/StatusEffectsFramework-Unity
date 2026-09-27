@@ -9,8 +9,24 @@ using Unity.NetCode;
 namespace StatusEffectsFramework.Entities
 {
     /// <summary>
-    /// The <see cref="EntityCommandBufferSystem"/> at the end of the <see cref="StatusEffectSystemGroup"/>.
+    /// The <see cref="EntityCommandBufferSystem"/> near the end of the <see cref="StatusEffectSystemGroup"/>.
+    /// Plays back the structural changes recorded in this group, such as module and dynamic effect
+    /// buffers being added or removed by the <see cref="ModulesSystem"/> and <see cref="DynamicEffectsSystem"/>,
+    /// and <c>StatusResolver</c> removal by the <see cref="StatusVariableIdResolverSystem"/>.
     /// </summary>
+    /// <remarks>
+    /// This is not the last system in the group. Without Netcode, status variable evaluation runs
+    /// after it so it can see the buffers added here in the same frame:
+    /// <list type="number">
+    /// <item><see cref="DynamicEffectPreEvaluateSystemGroup"/></item>
+    /// <item><see cref="StatusVariablePreEvaluateSystem"/></item>
+    /// <item><see cref="DynamicEffectPostEvaluateSystemGroup"/></item>
+    /// <item><see cref="StatusVariablePostEvaluateSystem"/></item>
+    /// </list>
+    /// Commands recorded by any of those systems should use a later command buffer system. With
+    /// Netcode those systems run in the <c>PredictedStatusEffectSystemGroup</c> instead, after the
+    /// <c>EndPredictedStatusEffectEntityCommandBufferSystem</c>.
+    /// </remarks>
     [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.ThinClientSimulation)]
     [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderLast = true)]
     public partial class EndStatusEffectEntityCommandBufferSystem : EntityCommandBufferSystem

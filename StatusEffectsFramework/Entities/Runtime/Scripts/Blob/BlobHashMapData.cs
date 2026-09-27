@@ -1,6 +1,7 @@
 #if ENTITIES
 using System;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
@@ -35,23 +36,28 @@ namespace StatusEffectsFramework.Entities
             return TryGetNextValue(out item, ref it);
         }
 
-        internal ref TValue GetFirstValueRef(TKey key, out BlobMultiHashMapIterator<TKey> it)
+        internal ref TValue GetFirstValueRefOrNullRef(TKey key, out bool exists, out BlobMultiHashMapIterator<TKey> it)
         {
             it = GetValuesForKey(key);
-            return ref GetNextValueRef(ref it);
+            return ref GetNextValueRefOrNullRef(ref it, out exists);
         }
 
-        internal ref TValue GetFirstValueRef(TKey key)
+        internal ref TValue GetFirstValueRefOrNullRef(TKey key, out bool exists)
         {
-            var index = key.GetHashCode() & bucketCapacityMask;
+            int index = FindIndex(key);
+            exists = index >= 0;
+
+            if (!exists)
+                return ref NullRef();
+
             return ref values[index];
         }
 
         internal bool TryGetNextValue(out TValue item, ref BlobMultiHashMapIterator<TKey> it)
         {
-            int index = it.nextIndex;
+            int index = FindIndex(it.key, it.nextIndex);
 
-            if (!IsValidIndex(it))
+            if (index < 0)
             {
                 it.nextIndex = -1;
                 item = default;
@@ -63,14 +69,15 @@ namespace StatusEffectsFramework.Entities
             return true;
         }
 
-        internal ref TValue GetNextValueRef(ref BlobMultiHashMapIterator<TKey> it)
+        internal ref TValue GetNextValueRefOrNullRef(ref BlobMultiHashMapIterator<TKey> it, out bool exists)
         {
-            int index = it.nextIndex;
+            int index = FindIndex(it.key, it.nextIndex);
+            exists = index >= 0;
 
-            if (!IsValidIndex(it))
+            if (!exists)
             {
                 it.nextIndex = -1;
-                throw new IndexOutOfRangeException($"The next index of \"{index}\" for key \"{it.key}\" is invalid.");
+                return ref NullRef();
             }
 
             it.nextIndex = next[index];
@@ -84,22 +91,29 @@ namespace StatusEffectsFramework.Entities
 
         internal bool IsValidIndex(TKey key, int index)
         {
-            if (index < 0 /*|| index >= keyCapacity*/)
-            {
-                return false;
-            }
-
-            while (!keys[index].Equals(key))
-            {
-                index = next[index];
-                if (index < 0 /*|| index >= keyCapacity*/)
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return FindIndex(key, index) >= 0;
         }
+
+        private int FindIndex(TKey key)
+        {
+            return FindIndex(key, buckets[key.GetHashCode() & bucketCapacityMask]);
+        }
+
+        // Walks the bucket chain starting at index until an entry matching key is found
+        private int FindIndex(TKey key, int index)
+        {
+            while (index >= 0)
+            {
+                if (keys[index].Equals(key))
+                    return index;
+                index = next[index];
+            }
+
+            return -1;
+        }
+
+        // Returned when a key isn't found. Callers must check the exists flag before using the ref.
+        private static unsafe ref TValue NullRef() => ref UnsafeUtility.AsRef<TValue>(null);
 
         /*
          * Note that the following methods only work correctly because there is no Remove functionality on the builders

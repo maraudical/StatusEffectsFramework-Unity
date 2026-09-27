@@ -22,6 +22,7 @@ namespace StatusEffectsFramework.Entities
     public partial struct DynamicEffectsSystem : ISystem
     {
         EntityQuery m_EntityQuery;
+        private StatusTypeDependencies m_Dependencies;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -35,9 +36,12 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>();
+            m_Dependencies.Register(ref state, registry.Version, ref registry.DynamicEffectTypes.Value, isReadOnly: false);
+
             var job = new DynamicEffectsJob()
             {
-                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
+                Registry = registry,
 #if NETCODE
                 CommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
 #else
@@ -85,7 +89,9 @@ namespace StatusEffectsFramework.Entities
 
                     foreach (var statusEffectEvent in statusEffectEvents)
                     {
-                        ref var data = ref Registry.GetStatusEffectData(statusEffectEvent.Id);
+                        ref var data = ref Registry.GetStatusEffectDataOrNullRefDebug(statusEffectEvent.Id, out bool exists);
+                        if (!exists)
+                            continue;
 
                         for (int v = 0; v < data.Effects.Length; v++)
                         {
@@ -206,6 +212,7 @@ namespace StatusEffectsFramework.Entities
     public unsafe partial struct FirstPredictionTickDynamicEffectsSystem : ISystem
     {
         EntityQuery m_EntityQuery;
+        private StatusTypeDependencies m_Dependencies;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -224,10 +231,13 @@ namespace StatusEffectsFramework.Entities
             if (!networkTime.IsFirstPredictionTick)
                 return;
 
+            var registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>();
+            m_Dependencies.Register(ref state, registry.Version, ref registry.DynamicEffectTypes.Value, isReadOnly: false);
+
             var firstPredictionTickJob = new DynamicEffectsFirstPredictionTickJob()
             {
                 NetworkTime = networkTime,
-                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
+                Registry = registry,
                 CommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
                 StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(true),
@@ -289,7 +299,9 @@ namespace StatusEffectsFramework.Entities
                         else
                             continue;
 
-                        ref var data = ref Registry.GetStatusEffectData(interpolatedStatusEffect.Id);
+                        ref var data = ref Registry.GetStatusEffectDataOrNullRefDebug(interpolatedStatusEffect.Id, out bool exists);
+                        if (!exists)
+                            continue;
 
                         for (int e = 0; e < data.Effects.Length; e++)
                             if (data.Effects[e].ValueSource == ValueSource.DynamicValue)
@@ -308,7 +320,9 @@ namespace StatusEffectsFramework.Entities
                         if (index >= 0 && statusEffectEvents[index].Event is StatusEffectEvent.Added)
                             continue;
 
-                        ref var data = ref Registry.GetStatusEffectData(statusEffect.Id);
+                        ref var data = ref Registry.GetStatusEffectDataOrNullRefDebug(statusEffect.Id, out bool exists);
+                        if (!exists)
+                            continue;
 
                         for (int v = 0; v < data.Effects.Length; v++)
                         {

@@ -90,9 +90,9 @@ namespace StatusEffectsFramework.Entities.Samples
             
             foreach (var id in m_CombinedStatusEffects)
             {
-                ref var data = ref registry.GetStatusEffectData(id);
+                ref var data = ref registry.GetStatusEffectDataOrNullRef(id, out bool exists);
 
-                if (!data.Icon.IsValid())
+                if (!exists || !data.Icon.IsValid())
                     continue;
 
                 bool currentExists = m_CurrentStackCounts.TryGetValue(id, out int currentStacks);

@@ -33,7 +33,7 @@ namespace StatusEffectsFramework.Entities
         {
             UniqueKey = uniqueKey;
             StableTypeHash = stableTypeHash;
-            Id = default;
+            Id = StatusRegistry.NullId;
             BaseValue = baseValue;
             PreEvaluationValue = baseValue;
             PostEvaluationValue = baseValue;
@@ -46,7 +46,7 @@ namespace StatusEffectsFramework.Entities
 
             UniqueKey = statusBool.StatusName.GetUniqueKeyHash();
             StableTypeHash = stableTypeHash;
-            Id = default;
+            Id = StatusRegistry.NullId;
             BaseValue = statusBool.BaseValue;
             PreEvaluationValue = statusBool.BaseValue;
             PostEvaluationValue = statusBool.BaseValue;

@@ -35,7 +35,7 @@ namespace StatusEffectsFramework.Entities
         protected override void OnUpdate()
         {
             var commandBuffer = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
-
+            
             commandBuffer.DestroyEntity(m_RequestQuery, EntityQueryCaptureMode.AtPlayback);
 
             var registry = StatusRegistry.Get();
@@ -49,11 +49,14 @@ namespace StatusEffectsFramework.Entities
             foreach (var kvp in keyToIds)
                 keyToIdMap.Add(kvp.Key, kvp.Value);
 
-            var keyToIdReference = keyToIdBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, ushort>>(Allocator.Persistent);
-
             var idToStatusEffectDataBuilder = new BlobBuilder(Allocator.Temp);
             ref var idToStatusEffectDataRoot = ref idToStatusEffectDataBuilder.ConstructRoot<BlobHashMap<ushort, UnmanagedStatusEffectData>>();
             var idToStatusEffectDataMap = idToStatusEffectDataBuilder.AllocateHashMap(ref idToStatusEffectDataRoot, idToStatusEffectDatas.Count);
+
+            // Every dynamic effect and module buffer type used by the registry. Systems that access
+            // these buffers through raw pointers register them so job dependencies are tracked.
+            var dynamicEffectTypes = new HashSet<TypeIndex>();
+            var moduleTypes = new HashSet<TypeIndex>();
 
             try
             {
@@ -69,7 +72,7 @@ namespace StatusEffectsFramework.Entities
                     ref UnmanagedStatusEffectData unmanagedStatusEffectData = ref idToStatusEffectDataMap.AddByRef(kvp.Key);
                     unmanagedStatusEffectData.Id = kvp.Key;
                     unmanagedStatusEffectData.Group = statusEffectData.Group;
-                    ushort comparableName = default;
+                    ushort comparableName = StatusRegistry.NullId;
                     if (statusEffectData.ComparableName && !keyToIds.TryGetValue(statusEffectData.ComparableName.GetUniqueKeyHash(), out comparableName))
                         DebugError(statusEffectData.ComparableName.UniqueKey);
                     unmanagedStatusEffectData.ComparableName = comparableName;
@@ -160,6 +163,9 @@ namespace StatusEffectsFramework.Entities
                                 unmanagedEffect.ValueType = ValueType.Bool;
                                 break;
                         }
+
+                        if (unmanagedEffect.ValueSource is ValueSource.DynamicValue && unmanagedEffect.DynamicEffectInfo.TypeIndex != TypeIndex.Null)
+                            dynamicEffectTypes.Add(unmanagedEffect.DynamicEffectInfo.TypeIndex);
                     }
 
                     var conditions = idToStatusEffectDataBuilder.Allocate(ref unmanagedStatusEffectData.Conditions, statusEffectData.Conditions.Count);
@@ -168,16 +174,16 @@ namespace StatusEffectsFramework.Entities
                     {
                         var condition = statusEffectData.Conditions[i];
 
-                        ushort searchableData = default;
+                        ushort searchableData = StatusRegistry.NullId;
                         if (condition.SearchableData && !keyToIds.TryGetValue(condition.SearchableData.GetUniqueKeyHash(), out searchableData))
                             DebugError(condition.SearchableData.UniqueKey);
-                        ushort searchableComparableName = default;
+                        ushort searchableComparableName = StatusRegistry.NullId;
                         if (condition.SearchableComparableName && !keyToIds.TryGetValue(condition.SearchableComparableName.GetUniqueKeyHash(), out searchableComparableName))
                             DebugError(condition.SearchableComparableName.UniqueKey);
-                        ushort actionData = default;
+                        ushort actionData = StatusRegistry.NullId;
                         if (condition.ActionData && !keyToIds.TryGetValue(condition.ActionData.GetUniqueKeyHash(), out actionData))
                             DebugError(condition.ActionData.UniqueKey);
-                        ushort actionComparableName = default;
+                        ushort actionComparableName = StatusRegistry.NullId;
                         if (condition.ActionComparableName && !keyToIds.TryGetValue(condition.ActionComparableName.GetUniqueKeyHash(), out actionComparableName))
                             DebugError(condition.ActionComparableName.UniqueKey);
 
@@ -214,33 +220,52 @@ namespace StatusEffectsFramework.Entities
                             var entityModule = (IEntityModule)moduleContainer.Module;
 
                             entityModule.CreateModuleInfo(moduleContainer.ModuleInstance, ref modules[i], ref idToStatusEffectDataBuilder);
+
+                            if (modules[i].TypeIndex != TypeIndex.Null)
+                                moduleTypes.Add(modules[i].TypeIndex);
                         }
                     }
 
                     void DebugError(string uniqueKey) => UnityEngine.Debug.LogError($"Trying to setup an {nameof(UnmanagedStatusEffectData)} with the {nameof(Registrant)} that contains the unique key \"{uniqueKey}\" but the registry doesn't contain the ID associated with it.");
                 }
 
-                // Dispose of old blobs
-                if (SystemAPI.TryGetSingletonEntity<UnmanagedStatusRegistry>(out var oldRegistryEntity))
+                // Create all blobs together so a failure partway through doesn't leak the ones already created.
+                var unmanagedRegistry = new UnmanagedStatusRegistry();
+                try
                 {
-                    Cleanup();
-                    m_Version++;
-                    commandBuffer.DestroyEntity(oldRegistryEntity);
+                    unmanagedRegistry.KeyToId = keyToIdBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, ushort>>(Allocator.Persistent);
+                    unmanagedRegistry.IdToStatusEffectData = idToStatusEffectDataBuilder.CreateBlobAssetReference<BlobHashMap<ushort, UnmanagedStatusEffectData>>(Allocator.Persistent);
+                    unmanagedRegistry.DynamicEffectTypes = CreateTypeArray(dynamicEffectTypes);
+                    unmanagedRegistry.ModuleTypes = CreateTypeArray(moduleTypes);
+                }
+                catch
+                {
+                    Dispose(unmanagedRegistry);
+                    throw;
                 }
 
-                var idToStatusEffectDataReference = idToStatusEffectDataBuilder.CreateBlobAssetReference<BlobHashMap<ushort, UnmanagedStatusEffectData>>(Allocator.Persistent);
+                bool hasOldRegistry = !m_RegistryQuery.IsEmptyIgnoreFilter;
+                if (hasOldRegistry)
+                    m_Version++;
 
-                var unmanagedRegistry = new UnmanagedStatusRegistry
+                unmanagedRegistry.Version = m_Version;
+
+                if (hasOldRegistry)
                 {
-                    Version = m_Version,
-                    IdToStatusEffectData = idToStatusEffectDataReference,
-                    KeyToId = keyToIdReference,
-                };
+                    // Swap the singleton in place so nothing can read the old blobs after this point,
+                    // then dispose them once every job that could still be reading them has completed.
+                    m_RegistryQuery.CompleteDependency();
+                    var oldRegistry = m_RegistryQuery.GetSingleton<UnmanagedStatusRegistry>();
+                    m_RegistryQuery.SetSingleton(unmanagedRegistry);
+                    Dispose(oldRegistry);
+                }
+                else
+                {
+                    var registryEntity = EntityManager.CreateEntity();
+                    EntityManager.SetName(registryEntity, RegistryName);
+                    EntityManager.AddComponentData(registryEntity, unmanagedRegistry);
+                }
 
-                var registryEntity = commandBuffer.CreateEntity();
-                commandBuffer.SetName(registryEntity, RegistryName);
-                commandBuffer.AddComponent(registryEntity, unmanagedRegistry);
-                
                 // Resolve all status variables.
                 var job = new StatusVariableIdResolverJob
                 {
@@ -258,7 +283,12 @@ namespace StatusEffectsFramework.Entities
         protected override void OnDestroy()
         {
             StatusRegistry.Get().RegistryRebuilt -= OnRegistryRebuilt;
-            Cleanup();
+
+            if (m_RegistryQuery.TryGetSingleton<UnmanagedStatusRegistry>(out var registry))
+            {
+                m_RegistryQuery.CompleteDependency();
+                Dispose(registry);
+            }
         }
 
         private void OnRegistryRebuilt()
@@ -266,15 +296,38 @@ namespace StatusEffectsFramework.Entities
             EntityManager.CreateEntity(typeof(UnmanagedStatusRegistrySetupRequest));
         }
 
-        private void Cleanup()
+        private static void Dispose(in UnmanagedStatusRegistry registry)
         {
-            if (SystemAPI.TryGetSingleton<UnmanagedStatusRegistry>(out var references))
-            {
-                if (references.IdToStatusEffectData.IsCreated)
-                    references.IdToStatusEffectData.Dispose();
+            if (registry.IdToStatusEffectData.IsCreated)
+                registry.IdToStatusEffectData.Dispose();
 
-                if (references.KeyToId.IsCreated)
-                    references.KeyToId.Dispose();
+            if (registry.KeyToId.IsCreated)
+                registry.KeyToId.Dispose();
+
+            if (registry.DynamicEffectTypes.IsCreated)
+                registry.DynamicEffectTypes.Dispose();
+
+            if (registry.ModuleTypes.IsCreated)
+                registry.ModuleTypes.Dispose();
+        }
+
+        private static BlobAssetReference<BlobArray<TypeIndex>> CreateTypeArray(HashSet<TypeIndex> types)
+        {
+            var builder = new BlobBuilder(Allocator.Temp);
+            try
+            {
+                ref var root = ref builder.ConstructRoot<BlobArray<TypeIndex>>();
+                var array = builder.Allocate(ref root, types.Count);
+
+                int i = 0;
+                foreach (var type in types)
+                    array[i++] = type;
+
+                return builder.CreateBlobAssetReference<BlobArray<TypeIndex>>(Allocator.Persistent);
+            }
+            finally
+            {
+                builder.Dispose();
             }
         }
     }

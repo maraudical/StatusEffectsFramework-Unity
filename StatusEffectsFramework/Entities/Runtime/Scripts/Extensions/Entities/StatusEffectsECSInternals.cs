@@ -113,5 +113,14 @@ namespace StatusEffectsFramework.Entities
 
             return true;
         }
+
+        public static void AddDependencies(ref SystemState state, ref BlobArray<TypeIndex> types, bool isReadOnly)
+        {
+            for (int i = 0; i < types.Length; i++)
+                if (isReadOnly)
+                    CalculateReaderWriterDependency.AddReaderTypeIndex(types[i], ref state.m_JobDependencyForReadingSystems, ref state.m_JobDependencyForWritingSystems);
+                else
+                    CalculateReaderWriterDependency.AddWriterTypeIndex(types[i], ref state.m_JobDependencyForReadingSystems, ref state.m_JobDependencyForWritingSystems);
+        }
     }
 }

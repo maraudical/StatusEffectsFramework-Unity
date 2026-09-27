@@ -39,7 +39,6 @@ namespace StatusEffectsFramework.Entities.Samples
             {
                 StableTypeHash = m_StableTypeHash,
                 Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
-                CommandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
             };
             state.Dependency = job.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
         }
@@ -49,11 +48,8 @@ namespace StatusEffectsFramework.Entities.Samples
         {
             public ulong StableTypeHash;
             public UnmanagedStatusRegistry Registry;
-            public EntityCommandBuffer.ParallelWriter CommandBuffer;
 
-            public void Execute([ChunkIndexInQuery] int sortKey,
-                Entity entity,
-                in DynamicBuffer<StatusEffects> statusEffects,
+            public void Execute(in DynamicBuffer<StatusEffects> statusEffects,
                 in DynamicBuffer<StatusEffectEvents> statusEffectEvents,
                 ref DynamicBuffer<Modules<HealModuleStruct>> healModules,
                 ref ExamplePlayerComponent player,
@@ -71,7 +67,9 @@ namespace StatusEffectsFramework.Entities.Samples
 
                 foreach (var statusEffectEvent in statusEffectEvents)
                 {
-                    ref var data = ref Registry.GetStatusEffectData(statusEffectEvent.Id);
+                    ref var data = ref Registry.GetStatusEffectDataOrNullRef(statusEffectEvent.Id, out bool exists);
+                    if (!exists)
+                        continue;
 
                     switch (statusEffectEvent.Event)
                     {

@@ -42,10 +42,6 @@ namespace StatusEffectsFramework.Entities.Samples
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var commandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-            var lookup = SystemAPI.GetBufferLookup<Modules<DamageOverTimeModuleStruct>>();
-            var playerLookup = SystemAPI.GetComponentLookup<ExamplePlayerComponent>();
-            var statusFloatsLookup = SystemAPI.GetBufferLookup<StatusFloats>();
 #if NETCODE
             var networkTime = SystemAPI.GetSingleton<NetworkTime>();
             SystemAPI.TryGetSingleton<ClientServerTickRate>(out var tickRate);
@@ -82,7 +78,7 @@ namespace StatusEffectsFramework.Entities.Samples
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
 
-            public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<StatusEffects> statusEffects, ref DynamicBuffer<Modules<DamageOverTimeModuleStruct>> damageOverTimeModules)
+            public void Execute(in DynamicBuffer<StatusEffects> statusEffects, ref DynamicBuffer<Modules<DamageOverTimeModuleStruct>> damageOverTimeModules)
             {
                 for (int i = 0; i < damageOverTimeModules.Length; i++)
                 {
@@ -122,7 +118,9 @@ namespace StatusEffectsFramework.Entities.Samples
                     if (!StatusEffects.TryGetStatusEffect(statusEffects, module.Id, out statusEffect))
                         continue;
                     
-                    ref var data = ref Registry.GetStatusEffectData(statusEffect.Id);
+                    ref var data = ref Registry.GetStatusEffectDataOrNullRef(statusEffect.Id, out bool exists);
+                    if (!exists)
+                        continue;
 
 #if NETCODE
                     float timeSinceAdded = NetworkTime.ServerTick.TimeSince(statusEffect.TickAdded, NetworkTime.ServerTickFraction, TickRate);

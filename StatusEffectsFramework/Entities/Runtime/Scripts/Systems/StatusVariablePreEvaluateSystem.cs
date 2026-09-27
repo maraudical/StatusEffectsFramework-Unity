@@ -9,6 +9,11 @@ using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
 {
+    /// <summary>
+    /// Calculates each status variable's pre evaluation value from its base value and the active
+    /// effects that aren't post evaluated. Runs after the end status effect command buffer system and
+    /// the <see cref="DynamicEffectPreEvaluateSystemGroup"/>.
+    /// </summary>
 #if NETCODE
     [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
     [UpdateAfter(typeof(EndPredictedStatusEffectEntityCommandBufferSystem))]
@@ -20,6 +25,7 @@ namespace StatusEffectsFramework.Entities
     public partial struct StatusVariablePreEvaluateSystem : ISystem
     {
         private EntityQuery m_EntityQuery;
+        private StatusTypeDependencies m_Dependencies;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -32,9 +38,12 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>();
+            m_Dependencies.Register(ref state, registry.Version, ref registry.DynamicEffectTypes.Value, isReadOnly: true);
+
             var statusVariablePreEvaluateJob = new StatusVariablePreEvaluateJob
             {
-                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
+                Registry = registry,
                 EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
                 StatusEffectsHandle = SystemAPI.GetBufferTypeHandle<StatusEffects>(true),
                 StatusFloatsHandle = SystemAPI.GetBufferTypeHandle<StatusFloats>(),
@@ -104,7 +113,9 @@ namespace StatusEffectsFramework.Entities
                     // Map ids to effects to quickly find all effects affecting a specific status variable.
                     foreach (var statusEffect in statusEffects)
                     {
-                        ref var data = ref Registry.GetStatusEffectData(statusEffect.Id);
+                        ref var data = ref Registry.GetStatusEffectDataOrNullRefDebug(statusEffect.Id, out bool exists);
+                        if (!exists)
+                            continue;
 
                         for (int v = 0; v < data.Effects.Length; v++)
                         {

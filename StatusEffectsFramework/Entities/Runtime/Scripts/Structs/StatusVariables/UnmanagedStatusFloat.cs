@@ -110,7 +110,7 @@ namespace StatusEffectsFramework.Entities
         public UnmanagedStatusFloat(Hash128 uniqueKey)
         {
             UniqueKey = uniqueKey;
-            m_Id = default;
+            m_Id = StatusRegistry.NullId;
             m_Version = default;
             m_CachedIndex = -1;
         }

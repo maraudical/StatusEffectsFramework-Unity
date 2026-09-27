@@ -65,7 +65,7 @@ namespace StatusEffectsFramework.Entities
         {
             var commandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
 
-            // Capture the entities now so anything created before playback still gets resolved next update.
+            // Prefabs are resolved alongside everything else, so instantiated entities already carry resolved ids.
             commandBuffer.RemoveComponent<StatusResolver>(m_ResolverQuery, EntityQueryCaptureMode.AtPlayback);
 
             // The registry is being rebuilt so the current one may already be disposed. The

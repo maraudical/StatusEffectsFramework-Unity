@@ -8,6 +8,10 @@ using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
 {
+    /// <summary>
+    /// Applies post evaluated effects on top of each status variable's pre evaluation value to get
+    /// its final value. Runs last, after the <see cref="DynamicEffectPostEvaluateSystemGroup"/>.
+    /// </summary>
 #if NETCODE
     [UpdateInGroup(typeof(PredictedStatusEffectSystemGroup), OrderLast = true)]
     [UpdateAfter(typeof(StatusVariablePreEvaluateSystem))]
@@ -19,6 +23,7 @@ namespace StatusEffectsFramework.Entities
     public partial struct StatusVariablePostEvaluateSystem : ISystem
     {
         private EntityQuery m_EntityQuery;
+        private StatusTypeDependencies m_Dependencies;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -31,9 +36,12 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            var registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>();
+            m_Dependencies.Register(ref state, registry.Version, ref registry.DynamicEffectTypes.Value, isReadOnly: true);
+
             var statusVariablePostEvaluateJob = new StatusVariablePostEvaluateJob
             {
-                Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
+                Registry = registry,
                 EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
                 StatusEffectsHandle = SystemAPI.GetBufferTypeHandle<StatusEffects>(true),
                 StatusFloatsHandle = SystemAPI.GetBufferTypeHandle<StatusFloats>(),
@@ -96,7 +104,9 @@ namespace StatusEffectsFramework.Entities
 
                     foreach (var statusEffect in statusEffects)
                     {
-                        ref var data = ref Registry.GetStatusEffectData(statusEffect.Id);
+                        ref var data = ref Registry.GetStatusEffectDataOrNullRefDebug(statusEffect.Id, out bool exists);
+                        if (!exists)
+                            continue;
 
                         for (int v = 0; v < data.Effects.Length; v++)
                         {

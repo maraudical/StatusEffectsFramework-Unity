@@ -51,14 +51,14 @@ namespace StatusEffectsFramework.Entities
             data.TryGetFirstValue(key, out item, out it);
 
         /// <summary>
-        /// Retrieve iterator for the first value for the key.
+        /// Retrieve iterator for the first value for the key as a reference.
         /// </summary>
         /// <param name="key">The key.</param>
-        /// <param name="item">Output value.</param>
+        /// <param name="exists">True if the key was found. If false the returned reference is null and must not be used.</param>
         /// <param name="it">Iterator.</param>
-        /// <returns>Returns true if the container contains the key.</returns>
-        public ref TValue GetFirstValueRef(TKey key, out BlobMultiHashMapIterator<TKey> it) =>
-            ref data.GetFirstValueRef(key, out it);
+        /// <returns>Returns a reference to the first value for the key, or a null reference if it isn't found.</returns>
+        public ref TValue GetFirstValueRefOrNullRef(TKey key, out bool exists, out BlobMultiHashMapIterator<TKey> it) =>
+            ref data.GetFirstValueRefOrNullRef(key, out exists, out it);
 
         /// <summary>
         /// Retrieve iterator to the next value for the key.
@@ -70,13 +70,13 @@ namespace StatusEffectsFramework.Entities
             data.TryGetNextValue(out item, ref it);
 
         /// <summary>
-        /// Retrieve iterator to the next value for the key.
+        /// Retrieve iterator to the next value for the key as a reference.
         /// </summary>
-        /// <param name="item">Output value.</param>
         /// <param name="it">Iterator.</param>
-        /// <returns>Returns true if next value for the key is found.</returns>
-        public ref TValue GetNextValueRef(ref BlobMultiHashMapIterator<TKey> it) =>
-            ref data.GetNextValueRef(ref it);
+        /// <param name="exists">True if a next value was found. If false the returned reference is null and must not be used.</param>
+        /// <returns>Returns a reference to the next value for the key, or a null reference if there isn't one.</returns>
+        public ref TValue GetNextValueRefOrNullRef(ref BlobMultiHashMapIterator<TKey> it, out bool exists) =>
+            ref data.GetNextValueRefOrNullRef(ref it, out exists);
 
         /// <summary>
         /// The current number of items in the container

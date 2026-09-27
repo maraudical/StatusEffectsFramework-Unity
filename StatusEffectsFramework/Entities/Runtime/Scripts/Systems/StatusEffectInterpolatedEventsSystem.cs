@@ -58,9 +58,7 @@ namespace StatusEffectsFramework.Entities
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
 
-            public void Execute([ChunkIndexInQuery] int sortKey, 
-                Entity entity, 
-                EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW,
+            public void Execute(EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW,
                 in DynamicBuffer<StatusEffects> statusEffects,
                 ref DynamicBuffer<StatusEffectEvents> statusEffectEvents, 
                 ref DynamicBuffer<InterpolatedStatusEffects> interpolatedStatusEffects)
