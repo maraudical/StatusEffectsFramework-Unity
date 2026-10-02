@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
-using UnityEditor;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 #if ENTITIES
 using Hash128 = Unity.Entities.Hash128;
 #endif

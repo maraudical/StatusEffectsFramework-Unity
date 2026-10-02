@@ -1,4 +1,3 @@
-#if ENTITIES
 namespace StatusEffectsFramework.Entities
 {
     public enum StatusEffectRequestType
@@ -6,5 +5,4 @@ namespace StatusEffectsFramework.Entities
         Add,
         Remove
     }
-}
-#endif
+}

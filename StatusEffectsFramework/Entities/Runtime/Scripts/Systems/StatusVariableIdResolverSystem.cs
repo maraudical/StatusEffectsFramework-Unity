@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Burst;
 using Unity.Entities;
 
@@ -42,7 +41,7 @@ namespace StatusEffectsFramework.Entities
     /// Resolves the status variable ids of every entity with a <see cref="StatusResolver"/> component,
     /// then removes the component so the entity is only resolved once.
     /// </summary>
-    [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
+    [UpdateInGroup(typeof(StatusEffectInitializationSystemGroup))]
     [UpdateAfter(typeof(UnmanagedStatusRegistrySetupSystem))]
     [BurstCompile]
     public partial struct StatusVariableIdResolverSystem : ISystem
@@ -63,7 +62,7 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var commandBuffer = SystemAPI.GetSingleton<EndStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
+            var commandBuffer = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged);
 
             // Prefabs are resolved alongside everything else, so instantiated entities already carry resolved ids.
             commandBuffer.RemoveComponent<StatusResolver>(m_ResolverQuery, EntityQueryCaptureMode.AtPlayback);
@@ -81,4 +80,3 @@ namespace StatusEffectsFramework.Entities
         }
     }
 }
-#endif

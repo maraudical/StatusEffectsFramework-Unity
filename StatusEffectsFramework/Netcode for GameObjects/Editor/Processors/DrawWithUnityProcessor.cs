@@ -1,4 +1,4 @@
-#if NETCODE && ODIN_INSPECTOR
+#if ODIN_INSPECTOR
 using Sirenix.OdinInspector.Editor;
 using Sirenix.OdinInspector;
 using System.Collections.Generic;
@@ -13,5 +13,5 @@ namespace StatusEffectsFramework.NetCode.Editor
             attributes.Add(new DrawWithUnityAttribute() { PreferImGUI = true });
         }
     }
-}
+}
 #endif

@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Assertions;
 using Unity.Entities;
 #if NETCODE
@@ -54,5 +53,4 @@ namespace StatusEffectsFramework.Entities
 
         public static implicit operator bool(StatusBools statusBool) => statusBool.Value;
     }
-}
-#endif
+}

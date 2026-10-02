@@ -11,43 +11,42 @@ namespace StatusEffectsFramework.NetCode
     public class NetworkStatusBool : NetworkStatusVariable
     {
         public event Action<bool, bool> OnValueChanged;
+        public event Action<bool, bool> OnPreEvaluationValueChanged;
         public event Action<bool, bool> OnBaseValueChanged;
 
         public StatusNameBool StatusName => m_StatusName;
         public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; BaseValueChanged(); } }
-        public bool Value => Instance != null ? m_Value : m_BaseValue;
+        public bool Value => Instance != null ? PostEvaluationValue : m_BaseValue;
+        public bool PreEvaluationValue { get; protected set; }
+#if UNITY_EDITOR
+        [field: SerializeField]
+#endif
+        public bool PostEvaluationValue { get; protected set; }
 
         [SerializeField] protected StatusNameBool m_StatusName;
         [SerializeField] protected bool m_BaseValue;
+
         protected bool m_PreviousBaseValue;
-        [SerializeField] protected bool m_Value;
-        protected bool m_PreviousValue;
+        protected bool m_PreviousPreEvaluationValue;
+        protected bool m_PreviousPostEvaluationValue;
 
         protected NetworkStatusManager NetworkStatusManager;
-        protected bool m_IsDisposed;
 
         public NetworkStatusBool(bool baseValue) : base(NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server)
         {
             m_BaseValue = baseValue;
-
-            if (Instance != null)
-            {
-                UpdateBaseValue();
-                m_PreviousBaseValue = baseValue;
-            }
+            m_PreviousBaseValue = baseValue;
+            PreEvaluationValue = baseValue;
+            PostEvaluationValue = baseValue;
         }
 
         public NetworkStatusBool(bool baseValue, StatusNameBool statusName) : base(NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server)
         {
             m_StatusName = statusName;
             m_BaseValue = baseValue;
-
-            if (Instance != null)
-            {
-                UpdateBaseValue();
-                m_PreviousBaseValue = baseValue;
-            }
-            UpdateValue();
+            m_PreviousBaseValue = baseValue;
+            PreEvaluationValue = baseValue;
+            PostEvaluationValue = baseValue;
         }
 
         public static implicit operator bool(NetworkStatusBool statusBool) => statusBool.Value;
@@ -59,10 +58,31 @@ namespace StatusEffectsFramework.NetCode
             else
                 Debug.LogError("Make sure that the Status Manager is set to a Network Status Manager when calling SetManager() on a Network Status Variable!");
 
+            if (Instance != null)
+                foreach (StatusEffect statusEffect in Instance.StatusEffects)
+                    foreach (var dynamicBool in statusEffect.DynamicBools)
+                        if (dynamicBool.StatusName == m_StatusName)
+                        {
+                            if (dynamicBool.PostEvaluate)
+                                dynamicBool.ValueChanged -= UpdatePostEvaluationValue;
+                            else
+                                dynamicBool.ValueChanged -= UpdatePreEvaluationValue;
+                        }
+
             base.SetManager(instance);
+
+            foreach (StatusEffect statusEffect in Instance.StatusEffects)
+                foreach (var dynamicBool in statusEffect.DynamicBools)
+                    if (dynamicBool.StatusName == m_StatusName)
+                    {
+                        if (dynamicBool.PostEvaluate)
+                            dynamicBool.ValueChanged += UpdatePostEvaluationValue;
+                        else
+                            dynamicBool.ValueChanged += UpdatePreEvaluationValue;
+                    }
+
             m_PreviousBaseValue = m_BaseValue;
-            m_Value = m_BaseValue;
-            UpdateValue();
+            UpdatePreEvaluationValue(true);
         }
 
         protected virtual void BaseValueChanged()
@@ -79,64 +99,111 @@ namespace StatusEffectsFramework.NetCode
                 if (m_BaseValue == m_PreviousBaseValue)
                     return;
 
-                if (NetworkStatusManager)
-                    SetDirty(true);
+                SetDirty(true);
             }
 
             UpdateBaseValue();
-            m_PreviousBaseValue = m_BaseValue;
-            UpdateValue();
         }
 
-        protected override void InstanceUpdate(StatusEffect statusEffect)
+        protected override void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
         {
+            if (action is StatusEffectAction.AddedStatusEffect)
+                foreach (var dynamicBool in statusEffect.DynamicBools)
+                    if (dynamicBool.StatusName == m_StatusName)
+                        if (dynamicBool.PostEvaluate)
+                            dynamicBool.ValueChanged += UpdatePostEvaluationValue;
+                        else
+                            dynamicBool.ValueChanged += UpdatePreEvaluationValue;
             // Only update if the status effect actually has any effects that have the same StatusName
-            if (statusEffect.Data.Effects.Select(e => e.StatusName).Contains(m_StatusName))
-                UpdateValue();
+            if (statusEffect.Data.Effects.Any(effect => effect.StatusName == m_StatusName))
+                UpdatePreEvaluationValue(true);
         }
 
-        protected bool GetValue()
+        protected bool GetPreEvaluationValue()
         {
             if (Instance == null)
                 return m_BaseValue;
 
-            bool value = m_BaseValue;
-            int priority = -1;
+            var statusBoolValue = new StatusBoolValue(m_BaseValue);
 
-            bool effectValue;
+            bool effectValue = default;
 
-            foreach (StatusEffect statusEffect in Instance.Effects)
+            foreach (StatusEffect statusEffect in Instance.StatusEffects)
             {
                 foreach (Effect effect in statusEffect.Data.Effects)
                 {
                     if (effect.StatusName != m_StatusName)
                         continue;
 
-                    effectValue = effect.UseBaseValue ? Convert.ToBoolean(statusEffect.Data.BaseValue) : effect.BoolValue;
-
-                    if (priority < effect.Priority)
+                    switch (effect.ValueSource)
                     {
-                        priority = effect.Priority;
-                        value = effectValue;
+                        case ValueSource.ExplicitValue:
+                            effectValue = effect.BoolValue;
+                            break;
+                        case ValueSource.BaseValue:
+                            effectValue = statusEffect.Data.BaseValue != 0;
+                            break;
+                        case ValueSource.DynamicValue:
+                            continue;
                     }
+
+                    statusBoolValue.ApplyEffect(effectValue, effect.Priority);
                 }
+
+                foreach (var dynamicBool in statusEffect.DynamicBools)
+                    if (!dynamicBool.PostEvaluate && dynamicBool.StatusName == m_StatusName)
+                        statusBoolValue.ApplyEffect(dynamicBool.Value, dynamicBool.Priority);
             }
 
-            return value;
+            return statusBoolValue.GetValue();
         }
 
-        protected void UpdateValue()
+        protected bool GetPostEvaluationValue()
         {
-            m_PreviousValue = m_Value;
-            m_Value = GetValue();
-            if (m_Value != m_PreviousValue)
-                OnValueChanged?.Invoke(m_PreviousValue, m_Value);
+            if (Instance == null)
+                return PreEvaluationValue;
+
+            var statusBoolValue = new StatusBoolValue(PreEvaluationValue);
+
+            foreach (StatusEffect statusEffect in Instance.StatusEffects)
+                foreach (var dynamicBool in statusEffect.DynamicBools)
+                    if (dynamicBool.PostEvaluate && dynamicBool.StatusName == m_StatusName)
+                        statusBoolValue.ApplyEffect(dynamicBool.Value, dynamicBool.Priority);
+
+            return statusBoolValue.GetValue();
+        }
+
+        protected void UpdatePreEvaluationValue() => UpdatePreEvaluationValue(false);
+        protected void UpdatePreEvaluationValue(bool updatePostEvaluation)
+        {
+            m_PreviousPreEvaluationValue = PreEvaluationValue;
+            PreEvaluationValue = GetPreEvaluationValue();
+            if (PreEvaluationValue != m_PreviousPreEvaluationValue)
+            {
+                OnPreEvaluationValueChanged?.Invoke(m_PreviousPreEvaluationValue, PreEvaluationValue);
+                UpdatePostEvaluationValue();
+                return;
+            }
+            if (updatePostEvaluation)
+                UpdatePostEvaluationValue();
+        }
+
+        protected void UpdatePostEvaluationValue()
+        {
+            m_PreviousPostEvaluationValue = PostEvaluationValue;
+            PostEvaluationValue = GetPostEvaluationValue();
+            if (PostEvaluationValue != m_PreviousPostEvaluationValue)
+                OnValueChanged?.Invoke(m_PreviousPostEvaluationValue, PostEvaluationValue);
         }
 
         protected void UpdateBaseValue()
         {
-            if (m_BaseValue != m_PreviousBaseValue)
-                OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
+            if (m_BaseValue == m_PreviousBaseValue)
+                return;
+
+            OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
+            m_PreviousBaseValue = m_BaseValue;
+            UpdatePreEvaluationValue();
         }
 
         public override void OnInitialize()
@@ -153,61 +220,19 @@ namespace StatusEffectsFramework.NetCode
 
         public override void ReadField(FastBufferReader reader)
         {
-            m_PreviousBaseValue = m_BaseValue;
             reader.ReadValueSafe(out m_BaseValue);
 
-            if (m_BaseValue != m_PreviousBaseValue)
-            {
-                OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
-                UpdateValue();
-            }
+            UpdateBaseValue();
         }
 
         public override void WriteDelta(FastBufferWriter writer)
         {
-            writer.WriteValueSafe(m_BaseValue);
+            WriteField(writer);
         }
 
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
-            m_PreviousBaseValue = m_BaseValue;
-            reader.ReadValueSafe(out m_BaseValue);
-
-            if (m_BaseValue != m_PreviousBaseValue)
-            {
-                OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
-                UpdateValue();
-            }
-        }
-
-        public override void ResetDirty()
-        {
-            if (IsDirty())
-            {
-                m_PreviousBaseValue = m_BaseValue;
-                m_PreviousValue = m_Value;
-            }
-            base.ResetDirty();
-        }
-
-        public override void Dispose()
-        {
-            if (m_IsDisposed)
-                return;
-
-            m_IsDisposed = true;
-
-            m_BaseValue = default;
-            m_PreviousBaseValue = default;
-            m_Value = default;
-            m_PreviousValue = default;
-
-            base.Dispose();
-        }
-
-        ~NetworkStatusBool()
-        {
-            Dispose();
+            ReadField(reader);
         }
 #if UNITY_EDITOR
 
@@ -215,24 +240,7 @@ namespace StatusEffectsFramework.NetCode
         {
             await Task.Yield();
 
-            if (NetworkStatusManager)
-            {
-                if (!CanClientWrite(NetworkStatusManager.NetworkManager.LocalClientId))
-                {
-                    m_BaseValue = m_PreviousBaseValue;
-                    return;
-                }
-
-                if (m_BaseValue == m_PreviousBaseValue)
-                    return;
-
-                if (NetworkStatusManager)
-                    SetDirty(true);
-            }
-
-            UpdateBaseValue();
-            m_PreviousBaseValue = m_BaseValue;
-            UpdateValue();
+            BaseValueChanged();
         }
 #endif
     }

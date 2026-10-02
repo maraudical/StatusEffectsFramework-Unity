@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
@@ -30,5 +29,4 @@ namespace StatusEffectsFramework.Entities
         /// </remarks>
         public void CreateDynamicEffectInfo(ValueType valueType, ref DynamicEffectInfo info, ref BlobBuilder builder);
     }
-}
-#endif
+}

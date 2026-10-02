@@ -1,4 +1,3 @@
-#if ENTITIES
 using System;
 using Unity.Entities;
 
@@ -37,5 +36,4 @@ namespace StatusEffectsFramework.Entities
 
         public bool Equals(ushort other) => Id.Equals(other);
     }
-}
-#endif
+}

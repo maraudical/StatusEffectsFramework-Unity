@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
@@ -16,5 +15,4 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         public void OnBake(Entity entity, StatusManagerBaker baker);
     }
-}
-#endif
+}

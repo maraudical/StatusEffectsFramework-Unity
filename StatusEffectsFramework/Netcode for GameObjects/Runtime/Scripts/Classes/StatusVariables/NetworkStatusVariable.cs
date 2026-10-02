@@ -15,14 +15,14 @@ namespace StatusEffectsFramework.NetCode
         public virtual void SetManager(IStatusManager instance)
         {
             if (Instance != null)
-                Instance.ValueUpdate -= InstanceUpdate;
+                Instance.StatusEffectAction -= OnStatusEffect;
 
             Instance = instance;
 
-            Instance.ValueUpdate += InstanceUpdate;
+            Instance.StatusEffectAction += OnStatusEffect;
         }
 
-        protected abstract void InstanceUpdate(StatusEffect statusEffect);
+        protected abstract void OnStatusEffect(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks);
 
         protected void LogWritePermissionError(NetworkStatusManager manager)
         {

@@ -9,7 +9,8 @@
         "GUID:e0cd26848372d4e5c891c569017e11f1",
         "GUID:2665a8d13d1b3f18800f46e256720795",
         "GUID:953adc2a6b8b4e3c8df5b728bcd546e9",
-        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5"
+        "GUID:eec0964c48f6f4e40bc3ec2257ccf8c5",
+        "GUID:5f3cf485eb0554709a8abbeace890c86"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -17,7 +18,9 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
+    "defineConstraints": [
+        "ENTITIES"
+    ],
     "versionDefines": [
         {
             "name": "com.unity.entities",

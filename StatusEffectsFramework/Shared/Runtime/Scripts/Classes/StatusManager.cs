@@ -133,7 +133,8 @@ namespace StatusEffectsFramework
         
         public void RemoveStatusEffect(StatusEffect statusEffect)
         {
-            if (statusEffect == null)
+            // Already removed effects are ignored so removal is only reported once.
+            if (statusEffect == null || !m_StatusEffects.TryGetValue(statusEffect.Id, out var existingEffect) || existingEffect != statusEffect)
                 return;
             // Remove the effects for a given monobehaviour.
             m_StatusEffects.Remove(statusEffect.Id);
@@ -162,6 +163,9 @@ namespace StatusEffectsFramework
         
         public void RemoveStatusEffect(ComparableName name, int? stacks = null)
         {
+            if (name == null)
+                return;
+
             if (stacks.HasValue && stacks.Value <= 0)
                 return;
             
@@ -184,12 +188,113 @@ namespace StatusEffectsFramework
         }
         #endregion
 
-        #region Private Methods
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private IEnumerable<StatusEffect> OrderStatusEffects(IEnumerable<StatusEffect> statusEffects)
+        #region Internal Methods
+        /// <summary>
+        /// Adds a <see cref="StatusEffect"/> with a given instance id without checking stacking rules or conditions
+        /// and without starting a timer. Used to mirror the effects of an authoritative manager, such as a server.
+        /// Returns the existing effect if one with that id is already present.
+        /// </summary>
+        internal StatusEffect ForceAddStatusEffect(uint instanceId, StatusEffectData statusEffectData, StatusEffectTiming timing, double timeAdded, float duration, int stacks)
         {
-            return statusEffects.OrderBy(se => se.Data.BaseValue)
-                                .ThenBy(se => se.Timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate ? float.PositiveInfinity : se.Duration);
+            if (!statusEffectData || stacks <= 0)
+                return null;
+
+            if (m_StatusEffects.TryGetValue(instanceId, out var existingEffect))
+                return existingEffect;
+
+            var statusEffect = new StatusEffect(this, instanceId, statusEffectData, timing, timeAdded, duration, stacks);
+            m_StatusEffects.Add(instanceId, statusEffect);
+#if UNITY_EDITOR
+            m_EditorOnlyEffects.Add(statusEffect);
+#endif
+            StatusEffectAction?.Invoke(statusEffect, StatusEffectsFramework.StatusEffectAction.AddedStatusEffect, 0, stacks);
+            statusEffect.Start(this);
+
+            return statusEffect;
+        }
+
+        /// <summary>
+        /// Changes the stack count of a <see cref="StatusEffect"/> and raises the same notifications as a normal stack change.
+        /// </summary>
+        internal void SetStatusEffectStacks(StatusEffect statusEffect, int stacks)
+        {
+            int previousStacks = statusEffect.Stacks;
+
+            if (previousStacks == stacks)
+                return;
+
+            statusEffect.SetStacks(stacks);
+            StatusEffectAction?.Invoke(statusEffect, stacks > previousStacks ? StatusEffectsFramework.StatusEffectAction.AddedStacks : StatusEffectsFramework.StatusEffectAction.RemovedStacks, previousStacks, stacks);
+            statusEffect.InvokeStackUpdate(previousStacks, stacks);
+        }
+        #endregion
+
+        #region Private Methods
+        // Copied from IndexedStatusEffectComparer. Orders weakest first so removals take them first.
+        private List<StatusEffect> OrderStatusEffects(IEnumerable<StatusEffect> statusEffects)
+        {
+            double elapsedTime = Time.timeAsDouble;
+            var ordered = statusEffects.ToList();
+            ordered.Sort((x, y) =>
+            {
+                // Compare timing rank.
+                int comparison = TimingRank(x.Timing).CompareTo(TimingRank(y.Timing));
+                if (comparison != 0)
+                    return comparison;
+                // Then compare base value.
+                comparison = Mathf.Abs(x.Data.BaseValue).CompareTo(Mathf.Abs(y.Data.BaseValue));
+                if (comparison != 0)
+                    return comparison;
+                // Then compare remaining time. Events counting down on different events can't be
+                // compared and infinite and predicate effects have no meaningful time left.
+                if (x.Timing is StatusEffectTiming.Duration || (x.Timing is StatusEffectTiming.Event && ReferenceEquals(x.StatusEvent, y.StatusEvent)))
+                {
+                    comparison = x.TimeRemaining(elapsedTime).CompareTo(y.TimeRemaining(elapsedTime));
+                    if (comparison != 0)
+                        return comparison;
+                }
+                // Order oldest first so the newest is kept.
+                return x.Id.CompareTo(y.Id);
+            });
+            return ordered;
+        }
+
+        /// <summary>
+        /// Ranks how long an effect lasts regardless of its duration:
+        /// Infinite > Predicate > Event > Duration.
+        /// </summary>
+        private static int TimingRank(StatusEffectTiming timing) => timing switch
+        {
+            StatusEffectTiming.Infinite => 3,
+            StatusEffectTiming.Predicate => 2,
+            StatusEffectTiming.Event => 1,
+            _ => 0,
+        };
+
+        // Copied from StatusEffectRequestProcessor.ShouldReplace(). Whether an incoming non-stacking effect should
+        // replace the existing one. The timing rank decides first, then base value, then time left.
+        private static bool ShouldReplace(StatusEffectTiming timing,
+                                          float duration,
+                                          StatusEvent statusEvent,
+                                          StatusEffect oldStatusEffect,
+                                          float baseValue,
+                                          float oldBaseValue,
+                                          float oldTimeRemaining)
+        {
+            int rank = TimingRank(timing);
+            int oldRank = TimingRank(oldStatusEffect.Timing);
+            if (rank != oldRank)
+                return rank > oldRank;
+            // Events counting down on different events can't be compared, so the newest wins.
+            if (timing is StatusEffectTiming.Event && !ReferenceEquals(statusEvent, oldStatusEffect.StatusEvent))
+                return true;
+            if (baseValue != oldBaseValue)
+                return baseValue > oldBaseValue;
+            // Infinite and predicate effects have no meaningful time left, so the newest wins.
+            if (timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate)
+                return true;
+            // The newest wins ties.
+            return duration >= oldTimeRemaining;
         }
 
         private void IterateRemoval(IEnumerable<StatusEffect> statusEffectsToRemove, int? stacks)
@@ -427,52 +532,47 @@ namespace StatusEffectsFramework
                 if (oldStatusEffect == null)
                     goto CheckConditionals;
 
+                StatusEffectData oldData = oldStatusEffect.Data;
+                // Existing effects are compared by the time they have left, not the duration they were added with.
+                float oldTimeRemaining = oldStatusEffect.TimeRemaining(Time.timeAsDouble);
+
                 switch (statusEffectData.NonStackingBehaviour)
                 {
                     case NonStackingBehaviour.MatchHighestValue:
-                        if (statusEffectData.BaseValue == oldStatusEffect.Data.BaseValue)
+                        // Durations can only be combined when both effects count down the same
+                        // way. Otherwise the timing rank decides which effect is kept.
+                        if (statusEffectData.BaseValue == oldData.BaseValue
+                            || timing != oldStatusEffect.Timing
+                            || timing is StatusEffectTiming.Infinite or StatusEffectTiming.Predicate
+                            || (timing is StatusEffectTiming.Event && !ReferenceEquals(statusEvent, oldStatusEffect.StatusEvent)))
                             goto case NonStackingBehaviour.TakeHighestDuration;
 
-                        float baseValue = Mathf.Abs(statusEffectData.BaseValue);
-                        float oldBaseValue = Mathf.Abs(oldStatusEffect.Data.BaseValue);
-                        // WARNING: There is an extremely special case here where
-                        // a player may either have or try to apply an effect which
-                        // has an infinite duration (-1). In this situation, attempt
-                        // to take the higest value, and if they are the same take
-                        // the infinite duration effect.
-                        if (timing is StatusEffectTiming.Infinite || oldStatusEffect.Timing is StatusEffectTiming.Infinite)
+                        // The new duration divides by base value, so neither can be 0.
+                        if (statusEffectData.BaseValue == 0 || oldData.BaseValue == 0)
                         {
-                            if (baseValue < oldBaseValue) 
-                                return null;
-                            else if (baseValue > oldBaseValue || oldStatusEffect.Timing is not StatusEffectTiming.Infinite)
-                            {
-                                flagForRemoval = oldStatusEffect;
-                                break;
-                            }
-                            else
-                                return null;
+                            Debug.LogError($"Dropped adding {statusEffectData} because {nameof(NonStackingBehaviour.MatchHighestValue)} can't combine with a {nameof(StatusEffectData)} that has a base value of 0.");
+                            return null;
                         }
-                        // Find which effect is highest value.
-                        StatusEffectData higestValueData = baseValue < oldBaseValue ? oldStatusEffect.Data : statusEffectData;
-                        float highestValueDuration = baseValue < oldBaseValue ? oldStatusEffect.Duration : durationValue;
-                        StatusEffectData lowestValueData = baseValue < oldBaseValue ? statusEffectData : oldStatusEffect.Data;
-                        float lowestValueDuration = baseValue < oldBaseValue ? durationValue : oldStatusEffect.Duration;
-                        // Calculate the new duration = d1 + d2 / (v1 / v2). Note this assumes neither base value will ever be 0.
-                        if (higestValueData.BaseValue == 0 || lowestValueData.BaseValue == 0)
-                            Debug.LogError($"{(higestValueData.BaseValue == 0 ? higestValueData : lowestValueData)} has a base value of 0! This will cause an error!");
 
-                        durationValue = highestValueDuration + lowestValueDuration / (Mathf.Abs(higestValueData.BaseValue) / Mathf.Abs(lowestValueData.BaseValue));
-                        statusEffectData = higestValueData;
+                        float baseValue = Mathf.Abs(statusEffectData.BaseValue);
+                        float oldBaseValue = Mathf.Abs(oldData.BaseValue);
+                        // Find which effect is highest value.
+                        StatusEffectData highestValueData = baseValue < oldBaseValue ? oldData : statusEffectData;
+                        float highestValueDuration = baseValue < oldBaseValue ? oldTimeRemaining : durationValue;
+                        StatusEffectData lowestValueData = baseValue < oldBaseValue ? statusEffectData : oldData;
+                        float lowestValueDuration = baseValue < oldBaseValue ? durationValue : oldTimeRemaining;
+                        // Calculate the new duration = d1 + d2 / (v1 / v2).
+                        durationValue = highestValueDuration + lowestValueDuration / (Mathf.Abs(highestValueData.BaseValue) / Mathf.Abs(lowestValueData.BaseValue));
+                        statusEffectData = highestValueData;
                         flagForRemoval = oldStatusEffect;
                         break;
                     case NonStackingBehaviour.TakeHighestDuration:
-                        if (oldStatusEffect.Timing is StatusEffectTiming.Infinite || (durationValue < oldStatusEffect.Duration && timing is not StatusEffectTiming.Infinite))
+                        if (!ShouldReplace(timing, durationValue, statusEvent, oldStatusEffect, Mathf.Abs(statusEffectData.BaseValue), Mathf.Abs(oldData.BaseValue), oldTimeRemaining))
                             return null;
-                        else
-                            flagForRemoval = oldStatusEffect;
+                        flagForRemoval = oldStatusEffect;
                         break;
                     case NonStackingBehaviour.TakeHighestValue:
-                        float oldValue = Mathf.Abs(oldStatusEffect.Data.BaseValue);
+                        float oldValue = Mathf.Abs(oldData.BaseValue);
                         float newValue = Mathf.Abs(statusEffectData.BaseValue);
                         if (newValue == oldValue)
                             goto case NonStackingBehaviour.TakeHighestDuration;
@@ -495,9 +595,15 @@ namespace StatusEffectsFramework
 
             foreach (Condition condition in statusEffectData.Conditions)
             {
-                bool exists = condition.SearchableConfigurable is ConditionalConfigurable.AllGroups ? GetFirstStatusEffect(group: condition.SearchableGroup) != null
-                            : condition.SearchableConfigurable is ConditionalConfigurable.Name  ? GetFirstStatusEffect(name: condition.SearchableComparableName) != null
-                                                                                                : GetFirstStatusEffect(data: condition.SearchableData) != null;
+                bool exists = condition.SearchableConfigurable switch
+                {
+                    ConditionalConfigurable.AllGroups => GetFirstStatusEffect(group: condition.SearchableGroup, matchAllGroups: true) != null,
+                    ConditionalConfigurable.AnyGroups => GetFirstStatusEffect(group: condition.SearchableGroup, matchAllGroups: false) != null,
+                    ConditionalConfigurable.Name => condition.SearchableComparableName != null
+                                                    && GetFirstStatusEffect(name: condition.SearchableComparableName) != null,
+                    _ => condition.SearchableData != null
+                         && GetFirstStatusEffect(data: condition.SearchableData) != null,
+                };
                 // If the condition is checking for existence and it doesn't exist or if
                 // its checking non-existence and does exist then skip this condition.
                 if ((condition.Exists && !exists)
@@ -505,6 +611,11 @@ namespace StatusEffectsFramework
                     continue;
 
                 if (condition.Add)
+                {
+                    // No data to add was assigned.
+                    if (condition.ActionData == null)
+                        continue;
+
                     switch (condition.Timing)
                     {
                         case ConditionalTiming.Duration:
@@ -531,6 +642,7 @@ namespace StatusEffectsFramework
                             AddStatusEffect(condition.ActionData, condition.Stacks * (condition.Scaled ? stacks : 1));
                             break;
                     }
+                }
                 // Special case where the configurable which is the
                 // current data to be added is tagged for removal.
                 else if (condition.ActionConfigurable is ConditionalConfigurable.Data && condition.ActionData == statusEffectData)
@@ -572,6 +684,13 @@ namespace StatusEffectsFramework
                 }
             }
             
+            // Merge into the existing infinite effect unless a condition removed it.
+            if (addedToStack && !m_StatusEffects.ContainsKey(statusEffect.Id))
+            {
+                addedToStack = false;
+                statusEffect = null;
+            }
+
             if (preventStatusEffect)
                 return statusEffect;
 
@@ -596,6 +715,7 @@ namespace StatusEffectsFramework
             {
                 // Create a new status effect instance.
                 statusEffect = new StatusEffect(this, AvailableId, statusEffectData, timing, Time.timeAsDouble, durationValue, stacks);
+                statusEffect.StatusEvent = statusEvent;
                 AvailableId++;
                 // Add the effect for a given monobehaviour. This also is the first time
                 // initializing so we need to initialize all of the Status Variables

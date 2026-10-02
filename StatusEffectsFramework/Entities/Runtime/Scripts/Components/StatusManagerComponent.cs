@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Entities;
 #if NETCODE
 using Unity.NetCode;
@@ -16,5 +15,4 @@ namespace StatusEffectsFramework.Entities
 #endif
         public uint AvailableId;
     }
-}
-#endif
+}

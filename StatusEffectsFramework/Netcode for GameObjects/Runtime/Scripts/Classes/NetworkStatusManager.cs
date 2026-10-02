@@ -1,62 +1,52 @@
 #if NETCODE
-#if UNITASK
-using Cysharp.Threading.Tasks;
-using System.Threading;
-#elif UNITY_2023_1_OR_NEWER
-using System.Threading;
-#else
-using System.Collections;
-#endif
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.Events;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 using EventType = Unity.Netcode.NetworkListEvent<StatusEffectsFramework.NetCode.NetworkStatusEffect>.EventType;
 
 namespace StatusEffectsFramework.NetCode
 {
     /// <summary>
-    /// A component for a network synced StatusManager.
+    /// A component for a network synced StatusManager. The server runs all of the status effect
+    /// logic and clients mirror the resulting status effects.
     /// </summary>
+    /// <remarks>
+    /// Status effects are synced by the ids assigned in the <see cref="StatusRegistry"/>, so the server and
+    /// clients must have the same registered assets. A client logs an error when its registry differs.
+    /// </remarks>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(StatusManager))]
     [AddComponentMenu("Netcode/Network Status Manager")]
     public class NetworkStatusManager : NetworkBehaviour, IStatusManager
     {
-        [HideInInspector] public event System.Action<StatusEffect, StatusEffectAction, int, int> OnStatusEffect
+        public event Action<StatusEffect, StatusEffectAction, int, int> StatusEffectAction
         {
-            add => m_StatusManager.OnStatusEffect += value;
-            remove => m_StatusManager.OnStatusEffect -= value;
-        }
-        event System.Action<StatusEffect> IStatusManager.ValueUpdate
-        {
-            add => m_StatusManager.ValueUpdate += value;
-            remove => m_StatusManager.ValueUpdate -= value;
+            add => m_StatusManager.StatusEffectAction += value;
+            remove => m_StatusManager.StatusEffectAction -= value;
         }
 
-        public IEnumerable<StatusEffect> Effects => m_StatusManager.Effects;
+        public IEnumerable<StatusEffect> StatusEffects => m_StatusManager.StatusEffects;
 
-        private StatusEffectDatabase m_Database;
+        private StatusRegistry m_Registry;
         private NetworkList<NetworkStatusEffect> m_NetworkEffects;
-        private NetworkStatusEffect m_NetworkEffect;
-        private StatusEffect m_StatusEffect;
-        private StatusEffectData m_StatusEffectData;
+        private readonly NetworkVariable<FixedString64Bytes> m_RegistryHash = new();
 
         [SerializeField, HideInInspector] private StatusManager m_StatusManager;
-        int m_Index;
 
         private const HideFlags k_HideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
-        private const string k_SyncError = "Status Effect Database is not synced with the server! Status Effect has failed to get added.";
+        private const string k_SyncError = "The Status Registry is not synced with the server! The Status Effect with id {0} could not be found, so it has failed to get added.";
 
         private void OnValidate()
         {
             if (!m_StatusManager)
                 if (!TryGetComponent(out m_StatusManager))
                     m_StatusManager = gameObject.AddComponent<StatusManager>();
-            
+
             if (m_StatusManager.hideFlags != k_HideFlags)
                 _ = NextFrameHideFlags();
         }
@@ -64,29 +54,37 @@ namespace StatusEffectsFramework.NetCode
         private async Task NextFrameHideFlags()
         {
             await Task.Yield();
-            m_StatusManager.hideFlags = k_HideFlags;
+
+            if (m_StatusManager)
+                m_StatusManager.hideFlags = k_HideFlags;
         }
 
         private void Awake()
         {
-            m_Database = StatusEffectDatabase.Get();
             m_NetworkEffects = new();
-            
+
             if (m_StatusManager.hideFlags != k_HideFlags)
                 m_StatusManager.hideFlags = k_HideFlags;
         }
 
         public override void OnNetworkSpawn()
         {
-            m_StatusManager.TimerOverride = CreateTimer;
-            
+            m_Registry = StatusRegistry.Get();
+
             if (IsServer)
-                m_StatusManager.OnStatusEffect += OnStatusEffectForServer;
+            {
+                m_RegistryHash.Value = m_Registry ? m_Registry.RegistryHashString : string.Empty;
+                // Effects that were added before spawning still need to be synced.
+                foreach (var statusEffect in m_StatusManager.StatusEffects)
+                    AddNetworkEffect(statusEffect);
+
+                m_StatusManager.StatusEffectAction += OnStatusEffectForServer;
+            }
             else
             {
-                var listEvent = new NetworkListEvent<NetworkStatusEffect>();
-                listEvent.Type = EventType.Full;
-                OnListChangedForClient(listEvent);
+                CheckRegistryHash();
+                m_RegistryHash.OnValueChanged += OnRegistryHashChanged;
+                SyncAllForClient();
                 m_NetworkEffects.OnListChanged += OnListChangedForClient;
             }
 
@@ -97,24 +95,25 @@ namespace StatusEffectsFramework.NetCode
         {
             base.OnNetworkDespawn();
 
-            m_StatusManager.OnStatusEffect -= OnStatusEffectForServer;
+            m_StatusManager.StatusEffectAction -= OnStatusEffectForServer;
             m_NetworkEffects.OnListChanged -= OnListChangedForClient;
+            m_RegistryHash.OnValueChanged -= OnRegistryHashChanged;
         }
 
         #region Status Manager Methods
-        public bool GetStatusEffect(Hash128 instanceId, out StatusEffect statusEffect) => m_StatusManager.GetStatusEffect(instanceId, out statusEffect);
+        public bool GetStatusEffect(uint instanceId, out StatusEffect statusEffect) => m_StatusManager.GetStatusEffect(instanceId, out statusEffect);
 
 #nullable enable
-        public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null) => m_StatusManager.GetStatusEffects(group, name, data);
-        
-        public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null) => m_StatusManager.GetFirstStatusEffect(group, name, data);
+        public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true) => m_StatusManager.GetStatusEffects(group, name, data, matchAllGroups);
+
+        public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true) => m_StatusManager.GetFirstStatusEffect(group, name, data, matchAllGroups);
 #nullable restore
 
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, int stacks = 1)
         {
             if (!CheckForServer())
                 return null;
-            
+
             return m_StatusManager.AddStatusEffect(statusEffectData, stacks);
         }
 
@@ -122,41 +121,26 @@ namespace StatusEffectsFramework.NetCode
         {
             if (!CheckForServer())
                 return null;
-            
+
             return m_StatusManager.AddStatusEffect(statusEffectData, duration, stacks);
         }
 
-        public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, UnityEvent unityEvent, float interval = 1, int stacks = 1)
+        public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, StatusEvent statusEvent, int stacks = 1)
         {
             if (!CheckForServer())
                 return null;
 
-            StatusEffect statusEffect = m_StatusManager.AddStatusEffect(statusEffectData, duration, unityEvent, interval, stacks);
-
-            if (statusEffect == null)
-                return null;
-
-            statusEffect.OnDurationUpdate += (duration) => OnDurationUpdate(statusEffect.GetInstanceID(), duration);
-
-            return statusEffect;
+            return m_StatusManager.AddStatusEffect(statusEffectData, duration, statusEvent, stacks);
         }
 
-        public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, System.Func<bool> predicate, int stacks = 1)
+        public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, Func<bool> predicate, int stacks = 1)
         {
             if (!CheckForServer())
                 return null;
 
             return m_StatusManager.AddStatusEffect(statusEffectData, predicate, stacks);
         }
-        
-        public void RemoveStatusEffect(StatusEffectData statusEffectData)
-        {
-            if (!CheckForServer())
-                return;
 
-            m_StatusManager.RemoveStatusEffect(statusEffectData);
-        }
-        
         public void RemoveStatusEffect(StatusEffect statusEffect)
         {
             if (!CheckForServer())
@@ -164,7 +148,7 @@ namespace StatusEffectsFramework.NetCode
 
             m_StatusManager.RemoveStatusEffect(statusEffect);
         }
-        
+
 #nullable enable
         public void RemoveStatusEffect(StatusEffectData statusEffectData, int? stacks = null)
 #nullable disable
@@ -174,7 +158,7 @@ namespace StatusEffectsFramework.NetCode
 
             m_StatusManager.RemoveStatusEffect(statusEffectData, stacks);
         }
-        
+
         public void RemoveStatusEffect(ComparableName name, int? stacks = null)
         {
             if (!CheckForServer())
@@ -183,14 +167,14 @@ namespace StatusEffectsFramework.NetCode
             m_StatusManager.RemoveStatusEffect(name, stacks);
         }
 
-        public void RemoveStatusEffect(StatusEffectGroup group, int? stacks = null)
+        public void RemoveStatusEffect(StatusEffectGroup group, int? stacks = null, bool matchAllGroups = true)
         {
             if (!CheckForServer())
                 return;
 
-            m_StatusManager.RemoveStatusEffect(group, stacks);
+            m_StatusManager.RemoveStatusEffect(group, stacks, matchAllGroups);
         }
-        
+
         public void RemoveAllStatusEffects()
         {
             if (!CheckForServer())
@@ -203,7 +187,7 @@ namespace StatusEffectsFramework.NetCode
         #region Private Methods
         private bool CheckForServer()
         {
-            if (!NetworkManager.IsListening)
+            if (!NetworkManager || !NetworkManager.IsListening)
                 return true;
             if (!IsServer)
             {
@@ -213,101 +197,112 @@ namespace StatusEffectsFramework.NetCode
             return true;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void CreateTimer(StatusEffect statusEffect, bool remove = true)
+        private int IndexOfInstance(uint instanceId)
         {
-#if UNITASK
-            statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
-            TimedEffect(statusEffect.TimedTokenSource.Token).Forget();
-#elif UNITY_2023_1_OR_NEWER
-            statusEffect.TimedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken);
-            _ = TimedEffect(statusEffect.TimedTokenSource.Token);
-#else
-            statusEffect.TimedCoroutine = StartCoroutine(TimedEffect());
-#endif
-            // Timer method
-#if UNITASK
-            async UniTask TimedEffect(CancellationToken token)
-#elif UNITY_2023_1_OR_NEWER
-            async Awaitable TimedEffect(CancellationToken token)
-#else
-            IEnumerator TimedEffect()
-#endif
-            {
-                float startTime = NetworkManager.ServerTime.TimeAsFloat;
-                float startDuration = statusEffect.Duration;
-                // Basic decreasing timer.
-                while (statusEffect.Duration > 0
-#if UNITASK || UNITY_2023_1_OR_NEWER
-                   && !token.IsCancellationRequested
-#endif
-                   )
-                {
-#if UNITASK
-                    await UniTask.NextFrame(token);
-#elif UNITY_2023_1_OR_NEWER
-                    await Awaitable.NextFrameAsync(token);
-#else
-                    yield return null;
-#endif
-                    statusEffect.Duration = startDuration - NetworkManager.ServerTime.TimeAsFloat + startTime;
-                }
+            for (int i = 0; i < m_NetworkEffects.Count; i++)
+                if (m_NetworkEffects[i].InstanceId == instanceId)
+                    return i;
 
-                if (!IsServer)
-                    return;
+            return -1;
+        }
 
-                // Once it has ended remove the given effect.
-#if UNITASK || UNITY_2023_1_OR_NEWER
-                if (!token.IsCancellationRequested)
-#endif
-                if (remove)
-                    RemoveStatusEffect(statusEffect);
-            }
+        private void CheckRegistryHash()
+        {
+            if (!m_Registry || m_RegistryHash.Value.IsEmpty)
+                return;
+
+            if (m_RegistryHash.Value != m_Registry.RegistryHashString)
+                Debug.LogError($"|Client-{NetworkManager.LocalClientId}|{name}| The Status Registry doesn't match the server's, so status effects will refer to the wrong data. Make sure the server and clients have the same Status Effect Datas, Status Names, Comparable Names and Status Events registered.");
         }
         #endregion
 
-        #region Subscriptions
+        #region Server
+        private void OnStatusEffectForServer(StatusEffect statusEffect, StatusEffectsFramework.StatusEffectAction action, int previousStacks, int currentStacks)
+        {
+            switch (action)
+            {
+                case StatusEffectsFramework.StatusEffectAction.AddedStatusEffect:
+                    AddNetworkEffect(statusEffect);
+                    break;
+                case StatusEffectsFramework.StatusEffectAction.RemovedStatusEffect:
+                    int removeIndex = IndexOfInstance(statusEffect.Id);
+                    if (removeIndex >= 0)
+                        m_NetworkEffects.RemoveAt(removeIndex);
+                    break;
+                default:
+                    int index = IndexOfInstance(statusEffect.Id);
+                    if (index < 0)
+                        break;
+                    var networkEffect = m_NetworkEffects[index];
+                    networkEffect.Stacks = statusEffect.Stacks;
+                    m_NetworkEffects[index] = networkEffect;
+                    break;
+            }
+        }
+
+        private void AddNetworkEffect(StatusEffect statusEffect)
+        {
+            if (IndexOfInstance(statusEffect.Id) >= 0)
+                return;
+
+            // The elapsed time is measured on this machine, but clients need the time on the network clock.
+            double serverTimeAdded = NetworkManager.ServerTime.Time - (Time.timeAsDouble - statusEffect.TimeAdded);
+
+            if (!m_Registry.TryGetId(statusEffect.Data, out var dataId))
+            {
+                Debug.LogError($"The Status Effect Data \"{statusEffect.Data.name}\" is not in the Status Registry, so it can't be synced to clients.");
+                return;
+            }
+
+            m_NetworkEffects.Add(new NetworkStatusEffect(dataId, statusEffect.Timing, statusEffect.Duration, statusEffect.Stacks, statusEffect.Id, serverTimeAdded));
+            // Event timed status effects count down when their event is invoked.
+            statusEffect.DurationUpdate += (duration) => OnDurationUpdate(statusEffect.Id, duration);
+        }
+
+        private void OnDurationUpdate(uint instanceId, float duration)
+        {
+            if (!IsSpawned || !IsServer)
+                return;
+
+            int index = IndexOfInstance(instanceId);
+            if (index < 0)
+                return;
+
+            var networkEffect = m_NetworkEffects[index];
+            networkEffect.Duration = duration;
+            m_NetworkEffects[index] = networkEffect;
+        }
+        #endregion
+
+        #region Client
+        private void OnRegistryHashChanged(FixedString64Bytes previous, FixedString64Bytes current)
+        {
+            CheckRegistryHash();
+        }
+
         private void OnListChangedForClient(NetworkListEvent<NetworkStatusEffect> changeEvent)
         {
             switch (changeEvent.Type)
             {
                 case EventType.Add:
-                    m_NetworkEffect = changeEvent.Value;
-                    if (!m_Database.Values.TryGetValue(Hash128.Parse(m_NetworkEffect.Id.ToString()), out m_StatusEffectData))
-                        Debug.LogError(k_SyncError);
-                    m_StatusManager.ForceAddStatusEffect(Hash128.Parse(m_NetworkEffect.InstanceId.ToString()), m_StatusEffectData, m_NetworkEffect.Timing, m_NetworkEffect.Duration, m_NetworkEffect.Stacks);
+                case EventType.Insert:
+                    AddForClient(changeEvent.Value);
                     break;
                 case EventType.Remove:
-                    if (m_StatusManager.GetStatusEffect(Hash128.Parse(changeEvent.Value.InstanceId.ToString()), out m_StatusEffect))
-                        m_StatusManager.RemoveStatusEffect(m_StatusEffect);
+                case EventType.RemoveAt:
+                    if (m_StatusManager.GetStatusEffect(changeEvent.Value.InstanceId, out var statusEffect))
+                        m_StatusManager.RemoveStatusEffect(statusEffect);
+                    else
+                        SyncAllForClient();
                     break;
                 case EventType.Clear:
                     m_StatusManager.RemoveAllStatusEffects();
                     break;
                 case EventType.Full:
-                    m_StatusManager.RemoveAllStatusEffects();
-                    // Re-add all status effects
-                    foreach (var effect in m_NetworkEffects)
-                    {
-                        if (!m_Database.Values.TryGetValue(Hash128.Parse(effect.Id.ToString()), out m_StatusEffectData))
-                            Debug.LogError(k_SyncError);
-                        m_StatusManager.ForceAddStatusEffect(Hash128.Parse(effect.InstanceId.ToString()), m_StatusEffectData, effect.Timing, effect.Duration, effect.Stacks);
-                    }
+                    SyncAllForClient();
                     break;
                 case EventType.Value:
-                    m_NetworkEffect = changeEvent.Value;
-                    if (m_StatusManager.GetStatusEffect(Hash128.Parse(m_NetworkEffect.InstanceId.ToString()), out m_StatusEffect))
-                    {
-                        int stacks = m_NetworkEffect.Stacks - m_StatusEffect.Stacks;
-                        m_StatusEffect.Duration = m_NetworkEffect.Duration;
-                        if (stacks != 0)
-                        {
-                            m_StatusEffect.Stacks = m_NetworkEffect.Stacks;
-                            m_StatusManager.InvokeValueUpdate(m_StatusEffect);
-                            m_StatusEffect.InvokeStackUpdate();
-                            m_StatusManager.InvokeOnStatusEffect(m_StatusEffect, stacks >= 0 ? StatusEffectAction.AddedStacks : StatusEffectAction.RemovedStacks, m_StatusEffect.Stacks - stacks, m_StatusEffect.Stacks);
-                        }
-                    }
+                    UpdateForClient(changeEvent.Value);
                     break;
                 default:
                     Debug.LogError($"NetworkList change event {changeEvent.Type} not implemented!");
@@ -315,34 +310,47 @@ namespace StatusEffectsFramework.NetCode
             }
         }
 
-        private void OnStatusEffectForServer(StatusEffect statusEffect, StatusEffectAction action, int previousStacks, int currentStacks)
+        /// <summary>
+        /// Makes the local status effects match the network list, keeping the ones that already exist.
+        /// </summary>
+        private void SyncAllForClient()
         {
-            switch (action)
-            {
-                case StatusEffectAction.AddedStatusEffect:
-                    m_NetworkEffects.Add(new NetworkStatusEffect(statusEffect.Data.Id, statusEffect.Timing, statusEffect.Duration, statusEffect.Stacks, statusEffect.GetInstanceID()));
-                    break;
-                case StatusEffectAction.RemovedStatusEffect:
-                    m_NetworkEffect.InstanceId = statusEffect.GetInstanceID().ToString();
-                    m_NetworkEffects.Remove(m_NetworkEffect);
-                    break;
-                default:
-                    m_NetworkEffect.InstanceId = statusEffect.GetInstanceID().ToString();
-                    m_Index = m_NetworkEffects.IndexOf(m_NetworkEffect);
-                    m_NetworkEffect = m_NetworkEffects[m_Index];
-                    m_NetworkEffect.Stacks = statusEffect.Stacks;
-                    m_NetworkEffects[m_Index] = m_NetworkEffect;
-                    break;
-            }
+            var networkIds = new HashSet<uint>();
+            foreach (var networkEffect in m_NetworkEffects)
+                networkIds.Add(networkEffect.InstanceId);
+
+            foreach (var statusEffect in m_StatusManager.StatusEffects.Where(effect => !networkIds.Contains(effect.Id)).ToList())
+                m_StatusManager.RemoveStatusEffect(statusEffect);
+
+            foreach (var networkEffect in m_NetworkEffects)
+                UpdateForClient(networkEffect);
         }
 
-        private void OnDurationUpdate(Hash128 instanceId, float duration)
+        private void AddForClient(NetworkStatusEffect networkEffect)
         {
-            m_NetworkEffect.InstanceId = instanceId.ToString();
-            m_Index = m_NetworkEffects.IndexOf(m_NetworkEffect);
-            m_NetworkEffect = m_NetworkEffects[m_Index];
-            m_NetworkEffect.Duration = duration;
-            m_NetworkEffects[m_Index] = m_NetworkEffect;
+            if (!m_Registry || !m_Registry.IdToStatusEffectData.TryGetValue(networkEffect.Id, out var statusEffectData))
+            {
+                Debug.LogError(string.Format(k_SyncError, networkEffect.Id));
+                return;
+            }
+
+            // Work out when the status effect was added in local time.
+            double elapsedTime = Math.Max(0d, NetworkManager.ServerTime.Time - networkEffect.ServerTimeAdded);
+            m_StatusManager.ForceAddStatusEffect(networkEffect.InstanceId, statusEffectData, networkEffect.Timing, Time.timeAsDouble - elapsedTime, networkEffect.Duration, networkEffect.Stacks);
+        }
+
+        private void UpdateForClient(NetworkStatusEffect networkEffect)
+        {
+            if (!m_StatusManager.GetStatusEffect(networkEffect.InstanceId, out var statusEffect))
+            {
+                AddForClient(networkEffect);
+                return;
+            }
+
+            if (statusEffect.Duration != networkEffect.Duration)
+                statusEffect.Duration = networkEffect.Duration;
+
+            m_StatusManager.SetStatusEffectStacks(statusEffect, networkEffect.Stacks);
         }
         #endregion
     }

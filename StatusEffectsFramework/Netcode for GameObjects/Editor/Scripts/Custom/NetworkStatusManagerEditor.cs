@@ -1,4 +1,3 @@
-#if NETCODE
 using StatusEffectsFramework.Editor;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -21,5 +20,4 @@ namespace StatusEffectsFramework.NetCode.Editor
             return root;
         }
     }
-}
-#endif
+}

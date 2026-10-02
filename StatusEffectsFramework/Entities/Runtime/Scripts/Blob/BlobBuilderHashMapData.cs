@@ -1,4 +1,3 @@
-#if ENTITIES
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
 #define BLOBHASHMAP_SAFE
 #endif
@@ -105,7 +104,8 @@ namespace StatusEffectsFramework.Entities
 
         internal BlobBuilderHashMapData(int capacity, int bucketCapacityRatio, ref BlobBuilder blobBuilder, ref BlobHashMapData<TKey, TValue> data)
         {
-            int bucketCapacity = math.ceilpow2(capacity * bucketCapacityRatio);
+            // Always allocate at least one bucket so lookups on an empty map hit an empty bucket instead of indexing out of range
+            int bucketCapacity = math.ceilpow2(math.max(1, capacity * bucketCapacityRatio));
 
             // bucketCapacityMask is neccessary for retrieval so set it on the data too
             this.bucketCapacityMask = data.bucketCapacityMask = bucketCapacity - 1;
@@ -126,4 +126,3 @@ namespace StatusEffectsFramework.Entities
         }
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -268,7 +267,8 @@ namespace StatusEffectsFramework.Entities
                 return;
             }
 
-            // Add the status effect
+            // Add the status effect. Always append with the next AvailableId, the buffer must
+            // stay sorted by InstanceId for InterpolatedStatusEffectEventsSystem.
             Buffer.Add(new StatusEffects()
             {
 #if NETCODE
@@ -447,4 +447,3 @@ namespace StatusEffectsFramework.Entities
         }
     }
 }
-#endif

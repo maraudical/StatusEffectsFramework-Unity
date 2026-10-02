@@ -1,7 +1,9 @@
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
+#if NETCODE
 using Unity.NetCode;
+#endif
 
 [assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.Modules<StatusEffectsFramework.Entities.Samples.DamageOverTimeModuleStruct>))]
 

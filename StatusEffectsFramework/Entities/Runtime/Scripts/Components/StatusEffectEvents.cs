@@ -1,4 +1,3 @@
-#if ENTITIES
 using System;
 using Unity.Burst;
 using Unity.Entities;
@@ -60,5 +59,4 @@ namespace StatusEffectsFramework.Entities
 
         public bool Equals(uint other) => InstanceId.Equals(other);
     }
-}
-#endif
+}

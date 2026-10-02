@@ -5,7 +5,7 @@
   "description": "A framework for implementing custom status effects.",
   "license": "MIT",
   "dependencies" : {
-	  "com.unity.burst": "1.8.25"
+	  "com.unity.burst": "1.8.25",
 	  "com.unity.collections": "6.5.0"
   },
   "repository": {

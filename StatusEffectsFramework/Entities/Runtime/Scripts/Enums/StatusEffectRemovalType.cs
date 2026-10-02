@@ -1,4 +1,3 @@
-#if ENTITIES
 namespace StatusEffectsFramework.Entities
 {
     public enum StatusEffectRemovalType
@@ -10,5 +9,4 @@ namespace StatusEffectsFramework.Entities
         AnyGroups = 3,
         AllGroups = 4
     }
-}
-#endif
+}

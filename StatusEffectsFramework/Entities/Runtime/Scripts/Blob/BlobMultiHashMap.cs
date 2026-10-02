@@ -1,4 +1,3 @@
-#if ENTITIES
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
 #define BLOBHASHMAP_SAFE
 #endif
@@ -119,8 +118,8 @@ namespace StatusEffectsFramework.Entities
         internal BlobBuilderMultiHashMap(int capacity, int bucketCapacityRatio, ref BlobBuilder blobBuilder, ref BlobHashMapData<TKey, TValue> data)
         {
 #if BLOBHASHMAP_SAFE
-            if (capacity <= 0)
-                throw new ArgumentException("Must be greater than zero", nameof(capacity));
+            if (capacity < 0)
+                throw new ArgumentException("Must not be negative", nameof(capacity));
             if (bucketCapacityRatio <= 0)
                 throw new ArgumentException("Must be greater than zero", nameof(bucketCapacityRatio));
 #endif
@@ -129,16 +128,7 @@ namespace StatusEffectsFramework.Entities
         }
 
         public ref TValue AddByRef(TKey key) => ref data.AddByRef(key, true);
-        public void Add(TKey key, TValue item)
-        {
-
-#if BLOBHASHMAP_SAFE
-            if (!data.TryAdd(key, item, false))
-                throw new ArgumentException($"An item with key {key} already exists", nameof(key));
-#else
-            TryAdd(key, item);
-#endif
-        }
+        public void Add(TKey key, TValue item) => data.TryAdd(key, item, true);
         public bool TryAdd(TKey key, TValue value) => data.TryAdd(key, value, true);
         public bool ContainsKey(TKey key) => data.ContainsKey(key);
         public int Capacity => data.keyCapacity;
@@ -152,4 +142,3 @@ namespace StatusEffectsFramework.Entities
         internal int nextIndex;
     }
 }
-#endif

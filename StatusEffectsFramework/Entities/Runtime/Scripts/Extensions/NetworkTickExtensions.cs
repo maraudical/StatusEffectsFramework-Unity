@@ -1,4 +1,4 @@
-#if ENTITIES && NETCODE
+#if NETCODE
 using Unity.Burst;
 using Unity.Mathematics;
 using Unity.NetCode;

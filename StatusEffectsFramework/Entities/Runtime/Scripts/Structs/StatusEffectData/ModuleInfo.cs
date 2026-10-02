@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
@@ -38,4 +37,3 @@ namespace StatusEffectsFramework.Entities
         }
     }
 }
-#endif

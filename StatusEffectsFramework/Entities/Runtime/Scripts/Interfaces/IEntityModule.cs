@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
@@ -36,5 +35,4 @@ namespace StatusEffectsFramework.Entities
         /// <see cref="AttachModuleInstanceAttribute"/></param>
         public void CreateModuleInfo(ModuleInstance moduleInstance, ref ModuleInfo info, ref BlobBuilder builder);
     }
-}
-#endif
+}

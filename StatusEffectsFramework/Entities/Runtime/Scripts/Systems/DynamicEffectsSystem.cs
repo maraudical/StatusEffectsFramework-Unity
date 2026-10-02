@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Burst.Intrinsics;
@@ -37,7 +36,7 @@ namespace StatusEffectsFramework.Entities
         public void OnUpdate(ref SystemState state)
         {
             var registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>();
-            m_Dependencies.Register(ref state, registry.Version, ref registry.DynamicEffectTypes.Value, isReadOnly: false);
+            m_Dependencies.Register(ref state, registry.Version, ref registry.DynamicEffectTypes, isReadOnly: false);
 
             var job = new DynamicEffectsJob()
             {
@@ -52,6 +51,30 @@ namespace StatusEffectsFramework.Entities
                 GlobalSystemVersion = state.GlobalSystemVersion,
             };
             state.Dependency = job.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
+        }
+
+        /// <summary>
+        /// Writes a new dynamic effect element for <paramref name="effect"/> to <paramref name="element"/>.
+        /// </summary>
+        internal static unsafe void WriteDynamicElement(byte* element, uint instanceId, ref UnmanagedEffect effect)
+        {
+            ref var info = ref effect.DynamicEffectInfo;
+
+            *(uint*)(element + info.InstanceIdOffset) = instanceId;
+            *(ushort*)(element + info.IdOffset) = effect.Id;
+            *(bool*)(element + info.PostEvaluateOffset) = effect.PostEvaluate;
+            *(int*)(element + info.PriorityOffset) = effect.Priority;
+
+            // Value is written by user systems, so new elements start from the default.
+            if (effect.ValueType == ValueType.Bool)
+                *(bool*)(element + info.ValueOffset) = false;
+            else
+            {
+                *(ValueModifier*)(element + info.ValueModifierOffset) = effect.ValueModifier;
+                *(int*)(element + info.ValueOffset) = 0; // 0 and 0f share the same bits.
+            }
+
+            UnsafeUtility.MemCpy(element + info.StructOffset, info.Bytes.GetUnsafePtr(), info.Size);
         }
 
         [BurstCompile]
@@ -70,14 +93,8 @@ namespace StatusEffectsFramework.Entities
                 BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
                 TypeIndex typeIndex;
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
-                var typeToLength = new UnsafeHashMap<TypeIndex, int>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
-                var sizeOfUint = UnsafeUtility.SizeOf<uint>();
-                var sizeOfUshort = UnsafeUtility.SizeOf<ushort>();
-                var sizeOfValueModifier = UnsafeUtility.SizeOf<ValueModifier>();
-                var sizeOfBool = UnsafeUtility.SizeOf<bool>();
-                var sizeOfInt = UnsafeUtility.SizeOf<int>();
-                var sizeOfFloat = UnsafeUtility.SizeOf<float>();
+                using var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var typeToLength = new UnsafeHashMap<TypeIndex, int>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
 
@@ -102,11 +119,10 @@ namespace StatusEffectsFramework.Entities
 
                             typeIndex = effect.DynamicEffectInfo.TypeIndex;
 
-                            var effectStructPtr = effect.DynamicEffectInfo.Bytes.GetUnsafePtr();
 
                             if (!typeToIndexAndTypeInfo.TryGetValue(typeIndex, out var info))
                             {
-                                info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
+                                info = (StatusEffectsUtility.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
                                 typeToIndexAndTypeInfo.TryAdd(typeIndex, info);
                             }
 
@@ -117,53 +133,43 @@ namespace StatusEffectsFramework.Entities
                                 // The actual adding to the buffer will be done in another system since there is a
                                 // chance we will have to wait for structural changes before making any changes.
                                 case StatusEffectEvent.Added:
-                                    ref var addLength = ref typeToLength.TryGetValueByRef(typeIndex, out bool aFoundLength);
+                                    ref var addLength = ref typeToLength.GetValueRefOrNullRef(typeIndex, out bool aFoundLength);
                                     var componentType = ComponentType.FromTypeIndex(typeIndex);
 
                                     if (aFoundLength)
                                         addLength++;
                                     else
                                     {
-                                        typeToLength.TryAdd(typeIndex, 1);
+                                        // Seed from the real length so later removals this update count correctly.
+                                        int currentLength = 0;
                                         if (info.IndexInTypeArray < 0)
                                             CommandBuffer.AddComponent(unfilteredChunkIndex, entity, componentType);
+                                        else
+                                        {
+                                            var addHeader = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRO(chunk, i, info.IndexInTypeArray);
+                                            if (Hint.Likely(addHeader != null))
+                                                currentLength = addHeader->Length;
+                                        }
+                                        typeToLength.TryAdd(typeIndex, currentLength + 1);
                                     }
 
                                     var ptr = (byte*)UnsafeUtility.Malloc(sizeOfDynamicEffect, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                    UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.InstanceIdOffset, &statusEffectEvent.InstanceId, sizeOfUint);
-                                    switch (effect.ValueType)
-                                    {
-                                        case ValueType.Float:
-                                        case ValueType.Int:
-                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
-                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.ValueModifierOffset, UnsafeUtility.AddressOf(ref effect.ValueModifier), sizeOfValueModifier);
-                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
-                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
-                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
-                                            break;
-                                        case ValueType.Bool:
-                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
-                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
-                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
-                                            UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
-                                            break;
-                                        default:
-                                            UnityEngine.Debug.LogError($"The value type <b>{effect.ValueType}</b> is not supported for dynamic effects in Entities.");
-                                            break;
-                                    }
-                                    StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfDynamicEffect, ptr);
+                                    WriteDynamicElement(ptr, statusEffectEvent.InstanceId, ref effect);
+                                    StatusEffectsUtility.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfDynamicEffect, ptr);
                                     UnsafeUtility.Free(ptr, Allocator.Temp);
                                     break;
                                 case StatusEffectEvent.Removed:
                                     if (info.IndexInTypeArray < 0)
                                         break;
 
-                                    var header = StatusEffectsECSInternals.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
+                                    var header = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
 
-                                    if (Hint.Unlikely(!StatusEffectsECSInternals.TryGetElementPointerAndLength(header, out var buffer, out var length)))
-                                        UnityEngine.Debug.LogError($"There was an issue with the provided dynamic effect type <b>{info.TypeInfo.DebugTypeName}</b>.");
+                                    if (Hint.Unlikely(header == null))
+                                        continue;
 
-                                    ref var removeLength = ref typeToLength.TryGetValueByRef(typeIndex, out bool rFoundLength);
+                                    var buffer = BufferHeader.GetElementPointer(header);
+                                    var length = header->Length;
+                                    ref var removeLength = ref typeToLength.GetValueRefOrNullRef(typeIndex, out bool rFoundLength);
 
                                     for (int n = length - 1; n >= 0; n--)
                                     {
@@ -171,7 +177,7 @@ namespace StatusEffectsFramework.Entities
                                         if (id != statusEffectEvent.InstanceId)
                                             continue;
 
-                                        StatusEffectsECSInternals.RemoveAtSwapBack(header, sizeOfDynamicEffect, n);
+                                        StatusEffectsUtility.RemoveAtSwapBack(header, sizeOfDynamicEffect, n);
 
                                         if (rFoundLength)
                                             removeLength--;
@@ -185,7 +191,7 @@ namespace StatusEffectsFramework.Entities
                                     if (info.IndexInTypeArray < 0)
                                         break;
 
-                                    StatusEffectsECSInternals.SetChangeVersion(chunk, info.IndexInTypeArray, GlobalSystemVersion);
+                                    StatusEffectsUtility.SetChangeVersion(chunk, info.IndexInTypeArray, GlobalSystemVersion);
                                     break;
                             }
                         }
@@ -197,9 +203,6 @@ namespace StatusEffectsFramework.Entities
                             CommandBuffer.RemoveComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(kvp.Key));
                     }
                 }
-
-                typeToIndexAndTypeInfo.Dispose();
-                typeToLength.Dispose();
             }
         }
     }
@@ -232,11 +235,10 @@ namespace StatusEffectsFramework.Entities
                 return;
 
             var registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>();
-            m_Dependencies.Register(ref state, registry.Version, ref registry.DynamicEffectTypes.Value, isReadOnly: false);
+            m_Dependencies.Register(ref state, registry.Version, ref registry.DynamicEffectTypes, isReadOnly: false);
 
             var firstPredictionTickJob = new DynamicEffectsFirstPredictionTickJob()
             {
-                NetworkTime = networkTime,
                 Registry = registry,
                 CommandBuffer = SystemAPI.GetSingleton<EndPredictedStatusEffectEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 EntityTypeHandle = SystemAPI.GetEntityTypeHandle(),
@@ -251,7 +253,6 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         internal struct DynamicEffectsFirstPredictionTickJob : IJobChunk
         {
-            public NetworkTime NetworkTime;
             public UnmanagedStatusRegistry Registry;
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
             public EntityTypeHandle EntityTypeHandle;
@@ -269,15 +270,10 @@ namespace StatusEffectsFramework.Entities
                 BufferAccessor<InterpolatedStatusEffects> interpolatedStatusEffectsAccessor = chunk.GetBufferAccessorRO(ref InterpolatedStatusEffectsHandle);
                 TypeIndex typeIndex;
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
-                var interpolatedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
-                var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
-                var sizeOfUint = UnsafeUtility.SizeOf<uint>();
-                var sizeOfUshort = UnsafeUtility.SizeOf<ushort>();
-                var sizeOfValueModifier = UnsafeUtility.SizeOf<ValueModifier>();
-                var sizeOfBool = UnsafeUtility.SizeOf<bool>();
-                var sizeOfInt = UnsafeUtility.SizeOf<int>();
-                var sizeOfFloat = UnsafeUtility.SizeOf<float>();
+                using var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var interpolatedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var addedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
@@ -287,6 +283,7 @@ namespace StatusEffectsFramework.Entities
 
                     interpolatedTypes.Clear();
                     typeAlreadyProcessed.Clear();
+                    addedTypes.Clear();
 
                     bool noChange = true;
 
@@ -317,8 +314,7 @@ namespace StatusEffectsFramework.Entities
                     foreach (var statusEffect in statusEffects)
                     {
                         int index = statusEffectEvents.IndexOf(statusEffect.InstanceId);
-                        if (index >= 0 && statusEffectEvents[index].Event is StatusEffectEvent.Added)
-                            continue;
+                        bool addedThisTick = index >= 0 && statusEffectEvents[index].Event is StatusEffectEvent.Added;
 
                         ref var data = ref Registry.GetStatusEffectDataOrNullRefDebug(statusEffect.Id, out bool exists);
                         if (!exists)
@@ -333,14 +329,20 @@ namespace StatusEffectsFramework.Entities
 
                             typeIndex = effect.DynamicEffectInfo.TypeIndex;
 
-                            var effectStructPtr = effect.DynamicEffectInfo.Bytes.GetUnsafePtr();
-                            var componentType = ComponentType.FromTypeIndex(typeIndex);
-
                             interpolatedTypes.Remove(typeIndex);
+
+                            // DynamicEffectsSystem appends effects added this tick, so only keep their type.
+                            if (addedThisTick)
+                            {
+                                addedTypes.Add(typeIndex);
+                                continue;
+                            }
+
+                            var componentType = ComponentType.FromTypeIndex(typeIndex);
 
                             if (!typeToIndexAndTypeInfo.TryGetValue(typeIndex, out var info))
                             {
-                                info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
+                                info = (StatusEffectsUtility.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
 
                                 typeToIndexAndTypeInfo.TryAdd(typeIndex, info);
                             }
@@ -355,84 +357,65 @@ namespace StatusEffectsFramework.Entities
                                     typeAlreadyProcessed.Add(typeIndex);
                                 }
                                 var ptr = (byte*)UnsafeUtility.Malloc(sizeOfDynamicEffect, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.InstanceIdOffset, &statusEffect.InstanceId, sizeOfUint);
-                                switch (effect.ValueType)
-                                {
-                                    case ValueType.Float:
-                                    case ValueType.Int:
-                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
-                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.ValueModifierOffset, UnsafeUtility.AddressOf(ref effect.ValueModifier), sizeOfValueModifier);
-                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
-                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
-                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
-                                        break;
-                                    case ValueType.Bool:
-                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
-                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
-                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
-                                        UnsafeUtility.MemCpy(ptr + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
-                                        break;
-                                    default:
-                                        UnityEngine.Debug.LogError($"The value type <b>{effect.ValueType}</b> is not supported for dynamic effects in Entities.");
-                                        break;
-                                }
-                                StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfDynamicEffect, ptr);
+                                DynamicEffectsSystem.WriteDynamicElement(ptr, statusEffect.InstanceId, ref effect);
+                                StatusEffectsUtility.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfDynamicEffect, ptr);
                                 UnsafeUtility.Free(ptr, Allocator.Temp);
                             }
                             else
                             {
-                                var header = StatusEffectsECSInternals.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
+                                var header = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
 
-                                if (Hint.Unlikely(!StatusEffectsECSInternals.TryGetElementPointerAndLength(header, out var buffer, out var length)))
-                                    UnityEngine.Debug.LogError($"There was an issue with the provided module type <b>{info.TypeInfo.DebugTypeName}</b>.");
+                                if (Hint.Unlikely(header == null))
+                                    continue;
 
-                                ref var lengthAsRef = ref StatusEffectsECSInternals.LengthAsRef(header);
+                                ref var length = ref header->Length;
 
                                 if (!typeAlreadyProcessed.Contains(typeIndex))
                                 {
-                                    lengthAsRef = 0;
+                                    length = 0;
                                     typeAlreadyProcessed.Add(typeIndex);
                                 }
 
-                                StatusEffectsECSInternals.EnsureCapacity(header, lengthAsRef + 1, sizeOfDynamicEffect, info.TypeInfo.AlignmentInBytes);
+                                BufferHeader.EnsureCapacity(header, length + 1, sizeOfDynamicEffect, info.TypeInfo.AlignmentInBytes, BufferHeader.TrashMode.RetainOldData, false, 0);
+                                
+                                var buffer = BufferHeader.GetElementPointer(header);
 
-                                var newElement = buffer + lengthAsRef * sizeOfDynamicEffect;
-                                UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.InstanceIdOffset, &statusEffect.InstanceId, sizeOfUint);
-                                switch (effect.ValueType)
-                                {
-                                    case ValueType.Float:
-                                    case ValueType.Int:
-                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
-                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.ValueModifierOffset, UnsafeUtility.AddressOf(ref effect.ValueModifier), sizeOfValueModifier);
-                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
-                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
-                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
-                                        break;
-                                    case ValueType.Bool:
-                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.IdOffset, UnsafeUtility.AddressOf(ref effect.Id), sizeOfUshort);
-                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.PostEvaluateOffset, UnsafeUtility.AddressOf(ref effect.PostEvaluate), sizeOfBool);
-                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.PriorityOffset, UnsafeUtility.AddressOf(ref effect.Priority), sizeOfInt);
-                                        UnsafeUtility.MemCpy(newElement + effect.DynamicEffectInfo.StructOffset, effectStructPtr, effect.DynamicEffectInfo.Size);
-                                        break;
-                                    default:
-                                        UnityEngine.Debug.LogError($"The value type <b>{effect.ValueType}</b> is not supported for dynamic effects in Entities.");
-                                        break;
-                                }
-                                lengthAsRef++;
+                                var newElement = buffer + length * sizeOfDynamicEffect;
+                                DynamicEffectsSystem.WriteDynamicElement(newElement, statusEffect.InstanceId, ref effect);
+                                length++;
                             }
                         }
                     }
-                    // These are old module buffers leftover from before rollback.
+                    // Types only needed by effects added this tick weren't rebuilt above, so any elements
+                    // in them are leftover from before rollback.
+                    foreach (var t in addedTypes)
+                    {
+                        if (typeAlreadyProcessed.Contains(t))
+                            continue;
+
+                        if (!typeToIndexAndTypeInfo.TryGetValue(t, out var info))
+                        {
+                            info = (StatusEffectsUtility.GetIndexInTypeArray(chunk, t), TypeManager.GetTypeInfo(t));
+                            typeToIndexAndTypeInfo.TryAdd(t, info);
+                        }
+
+                        if (info.IndexInTypeArray < 0)
+                            continue;
+
+                        var header = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
+
+                        if (Hint.Unlikely(header == null))
+                            continue;
+
+                        header->Length = 0;
+                    }
+
+                    // These are old dynamic effect buffers leftover from before rollback.
                     foreach (var t in interpolatedTypes)
                         CommandBuffer.RemoveComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(t));
                 }
-
-                typeToIndexAndTypeInfo.Dispose();
-                interpolatedTypes.Dispose();
-                typeAlreadyProcessed.Dispose();
             }
         }
     }
 #endif
 }
-#endif

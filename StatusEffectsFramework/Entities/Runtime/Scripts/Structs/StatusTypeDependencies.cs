@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
@@ -8,6 +7,10 @@ namespace StatusEffectsFramework.Entities
     /// dependencies for buffers that are accessed through raw pointers. Re-registers when the
     /// <see cref="UnmanagedStatusRegistry"/> version changes.
     /// </summary>
+    /// <remarks>
+    /// Types are only ever added to a system's dependency list, never removed. A type that drops out of the
+    /// registry after a rebuild stays registered, which is harmless: it only adds an unnecessary dependency.
+    /// </remarks>
     internal struct StatusTypeDependencies
     {
         private ushort m_Version;
@@ -19,8 +22,7 @@ namespace StatusEffectsFramework.Entities
 
             m_Version = version;
 
-            StatusEffectsECSInternals.AddDependencies(ref state, ref types, isReadOnly);
+            StatusEffectsUtility.AddDependencies(ref state, ref types, isReadOnly);
         }
     }
-}
-#endif
+}

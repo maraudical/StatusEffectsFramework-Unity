@@ -1,4 +1,3 @@
-#if ENTITIES
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
 #define BLOBHASHMAP_SAFE
 #endif
@@ -85,8 +84,8 @@ namespace StatusEffectsFramework.Entities
         internal BlobBuilderHashMap(int capacity, int bucketCapacityRatio, ref BlobBuilder blobBuilder, ref BlobHashMapData<TKey, TValue> data)
         {
 #if BLOBHASHMAP_SAFE
-            if (capacity <= 0)
-                throw new ArgumentException("Must be greater than zero", nameof(capacity));
+            if (capacity < 0)
+                throw new ArgumentException("Must not be negative", nameof(capacity));
             if (bucketCapacityRatio <= 0)
                 throw new ArgumentException("Must be greater than zero", nameof(bucketCapacityRatio));
 #endif
@@ -111,4 +110,3 @@ namespace StatusEffectsFramework.Entities
         public int Count => data.Count;
     }
 }
-#endif

@@ -1,4 +1,3 @@
-#if ENTITIES
 using System.Collections.Generic;
 
 namespace StatusEffectsFramework.Entities
@@ -50,4 +49,3 @@ namespace StatusEffectsFramework.Entities
         }
     }
 }
-#endif

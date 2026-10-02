@@ -194,19 +194,26 @@ namespace StatusEffectsFramework
 
         public int Priority;
 
+        // Order of the status effect the value came from. The lowest (oldest) wins ties.
+        public int Order;
+
         public StatusBoolValue(bool baseValue)
         {
             Value = baseValue;
             Priority = int.MinValue;
+            Order = int.MinValue;
         }
 
+        /// <param name="order">Order of the status effect the value came from, oldest first. When omitted,
+        /// the first effect applied wins ties.</param>
         [BurstCompile]
-        public void ApplyEffect(bool value, int priority)
+        public void ApplyEffect(bool value, int priority, int order = int.MaxValue)
         {
-            if (Priority < priority)
+            if (Priority < priority || (Priority == priority && order < Order))
             {
                 Priority = priority;
                 Value = value;
+                Order = order;
             }
         }
 

@@ -1,22 +1,19 @@
-#if ENTITIES
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
 {
-    [UpdateInGroup(typeof(StatusEffectSystemGroup), OrderFirst = true)]
+    [UpdateInGroup(typeof(StatusEffectInitializationSystemGroup), OrderFirst = true)]
     public partial class UnmanagedStatusRegistrySetupSystem : SystemBase
     {
         public const string RegistryName = "StatusRegistry";
-        public EntityQuery m_RegistryQuery;
-        public EntityQuery m_RequestQuery;
-        public EntityQuery m_ResolverQuery;
+        private EntityQuery m_RegistryQuery;
+        private EntityQuery m_RequestQuery;
+        private EntityQuery m_ResolverQuery;
         private ushort m_Version;
+        private StatusRegistry m_StatusRegistry;
 
         protected override void OnCreate()
         {
@@ -26,7 +23,17 @@ namespace StatusEffectsFramework.Entities
 
             m_Version = 1;
 
-            StatusRegistry.Get().RegistryRebuilt += OnRegistryRebuilt;
+            // In builds the registry is only loaded from Resources, so it can be missing. Without it there is
+            // nothing to build, so disable the system. Systems that require the unmanaged registry won't run either.
+            m_StatusRegistry = StatusRegistry.Get();
+            if (!m_StatusRegistry)
+            {
+                UnityEngine.Debug.LogError($"{nameof(UnmanagedStatusRegistrySetupSystem)} could not load the {nameof(StatusRegistry)}. The {nameof(UnmanagedStatusRegistry)} will not be created and status effects will not run on entities.");
+                Enabled = false;
+                return;
+            }
+
+            m_StatusRegistry.RegistryRebuilt += OnRegistryRebuilt;
             OnRegistryRebuilt();
 
             RequireForUpdate(m_RequestQuery);
@@ -34,24 +41,23 @@ namespace StatusEffectsFramework.Entities
 
         protected override void OnUpdate()
         {
-            var commandBuffer = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
+            var commandBuffer = SystemAPI.GetSingleton<EndInitializationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(World.Unmanaged);
             
             commandBuffer.DestroyEntity(m_RequestQuery, EntityQueryCaptureMode.AtPlayback);
 
-            var registry = StatusRegistry.Get();
-            var idToStatusEffectDatas = registry.IdToStatusEffectData;
-            var keyToIds = registry.KeyToId;
+            var idToStatusEffectDatas = m_StatusRegistry.IdToStatusEffectData;
+            var keyToIds = m_StatusRegistry.KeyToId;
 
-            var keyToIdBuilder = new BlobBuilder(Allocator.Temp);
-            ref var keyToIdRoot = ref keyToIdBuilder.ConstructRoot<BlobHashMap<Hash128, ushort>>();
-            var keyToIdMap = keyToIdBuilder.AllocateHashMap(ref keyToIdRoot, keyToIds.Count);
+            // All registry data is built into a single blob so it is created and disposed as one unit.
+            var builder = new BlobBuilder(Allocator.Temp);
+            ref var root = ref builder.ConstructRoot<UnmanagedStatusRegistryData>();
+
+            var keyToIdMap = builder.AllocateHashMap(ref root.KeyToId, keyToIds.Count);
 
             foreach (var kvp in keyToIds)
                 keyToIdMap.Add(kvp.Key, kvp.Value);
 
-            var idToStatusEffectDataBuilder = new BlobBuilder(Allocator.Temp);
-            ref var idToStatusEffectDataRoot = ref idToStatusEffectDataBuilder.ConstructRoot<BlobHashMap<ushort, UnmanagedStatusEffectData>>();
-            var idToStatusEffectDataMap = idToStatusEffectDataBuilder.AllocateHashMap(ref idToStatusEffectDataRoot, idToStatusEffectDatas.Count);
+            var idToStatusEffectDataMap = builder.AllocateHashMap(ref root.IdToStatusEffectData, idToStatusEffectDatas.Count);
 
             // Every dynamic effect and module buffer type used by the registry. Systems that access
             // these buffers through raw pointers register them so job dependencies are tracked.
@@ -81,44 +87,39 @@ namespace StatusEffectsFramework.Entities
                     UnityEngine.Color color = statusEffectData.Color;
                     unmanagedStatusEffectData.Color = new(color.r, color.g, color.b, color.a);
 #if LOCALIZED
-                    idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.StatusEffectNameTable, statusEffectData.StatusEffectName.TableReference.ToString());
-                    idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.StatusEffectNameEntry, statusEffectData.StatusEffectName.TableEntryReference.ToString());
-                    idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.AcronymTable, statusEffectData.Acronym.TableReference.ToString());
-                    idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.AcronymEntry, statusEffectData.Acronym.TableReference.ToString());
-                    idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.DescriptionTable, statusEffectData.Description.TableReference.ToString());
-                    idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.DescriptionEntry, statusEffectData.Description.TableReference.ToString());
+                    builder.AllocateString(ref unmanagedStatusEffectData.StatusEffectNameTable, statusEffectData.StatusEffectName.TableReference.ToString());
+                    builder.AllocateString(ref unmanagedStatusEffectData.StatusEffectNameEntry, statusEffectData.StatusEffectName.TableEntryReference.ToString());
+                    builder.AllocateString(ref unmanagedStatusEffectData.AcronymTable, statusEffectData.Acronym.TableReference.ToString());
+                    builder.AllocateString(ref unmanagedStatusEffectData.AcronymEntry, statusEffectData.Acronym.TableEntryReference.ToString());
+                    builder.AllocateString(ref unmanagedStatusEffectData.DescriptionTable, statusEffectData.Description.TableReference.ToString());
+                    builder.AllocateString(ref unmanagedStatusEffectData.DescriptionEntry, statusEffectData.Description.TableEntryReference.ToString());
 #else
-                    idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.StatusEffectName, statusEffectData.StatusEffectName);
-                    idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.Acronym, statusEffectData.Acronym);
-                    idToStatusEffectDataBuilder.AllocateString(ref unmanagedStatusEffectData.Description, statusEffectData.Description);
+                    builder.AllocateString(ref unmanagedStatusEffectData.StatusEffectName, statusEffectData.StatusEffectName);
+                    builder.AllocateString(ref unmanagedStatusEffectData.Acronym, statusEffectData.Acronym);
+                    builder.AllocateString(ref unmanagedStatusEffectData.Description, statusEffectData.Description);
 #endif
                     unmanagedStatusEffectData.AllowEffectStacking = statusEffectData.AllowEffectStacking;
                     unmanagedStatusEffectData.NonStackingBehaviour = statusEffectData.NonStackingBehaviour;
                     unmanagedStatusEffectData.MaxStacks = statusEffectData.MaxStacks;
 
-                    List<Effect> entityEffects = statusEffectData.Effects.Where((e) => e.ValueSource is not ValueSource.DynamicValue || e.StatusName switch 
-                    { 
-                        StatusNameInt => e.DynamicIntEffect is IEntityDynamicEffect,
-                        StatusNameBool => e.DynamicBoolEffect is IEntityDynamicEffect,
-                        _ => e.DynamicFloatEffect is IEntityDynamicEffect,
-                    }).ToList();
-                    var effects = idToStatusEffectDataBuilder.Allocate(ref unmanagedStatusEffectData.Effects, entityEffects.Count);
+                    // Validate every effect up front so the blob array only contains fully populated entries.
+                    var entityEffects = new List<(Effect Effect, ushort Id, ValueType ValueType, DynamicEffect DynamicEffect)>(statusEffectData.Effects.Count);
+                    foreach (var effect in statusEffectData.Effects)
+                        if (TryResolveEffect(effect, keyToIds, out var resolvedEffect))
+                            entityEffects.Add(resolvedEffect);
+
+                    var effects = builder.Allocate(ref unmanagedStatusEffectData.Effects, entityEffects.Count);
 
                     for (int i = 0; i < effects.Length; i++)
                     {
-                        var effect = entityEffects[i];
-
-                        if (effect.StatusName == null)
-                            continue;
-
-                        if (!keyToIds.TryGetValue(effect.StatusName.GetUniqueKeyHash(), out var statusName))
-                            DebugError(effect.StatusName.UniqueKey);
+                        var (effect, statusName, valueType, dynamicEffect) = entityEffects[i];
 
                         ref var unmanagedEffect = ref effects[i];
 
                         unmanagedEffect = new UnmanagedEffect
                         {
                             Id = statusName,
+                            ValueType = valueType,
                             ValueModifier = effect.ValueModifier,
                             ValueSource = effect.ValueSource,
                             Priority = effect.Priority,
@@ -127,48 +128,17 @@ namespace StatusEffectsFramework.Entities
                             BoolValue = effect.BoolValue,
                         };
 
-                        switch (effect.StatusName)
+                        if (dynamicEffect)
                         {
-                            case StatusNameFloat:
-                                if (effect.ValueSource is ValueSource.DynamicValue)
-                                    if (effect.DynamicFloatEffect && effect.DynamicFloatEffect is IEntityDynamicEffect entityDynamicEffect)
-                                    {
-                                        entityDynamicEffect.CreateDynamicEffectInfo(ValueType.Float, ref unmanagedEffect.DynamicEffectInfo, ref idToStatusEffectDataBuilder);
-                                        unmanagedEffect.PostEvaluate = effect.DynamicFloatEffect.PostEvaluate;
-                                    }
-                                    else
-                                        continue;
-                                unmanagedEffect.ValueType = ValueType.Float;
-                                break;
-                            case StatusNameInt:
-                                if (effect.ValueSource is ValueSource.DynamicValue)
-                                    if (effect.DynamicIntEffect && effect.DynamicIntEffect is IEntityDynamicEffect entityDynamicEffect)
-                                    {
-                                        entityDynamicEffect.CreateDynamicEffectInfo(ValueType.Int, ref unmanagedEffect.DynamicEffectInfo, ref idToStatusEffectDataBuilder);
-                                        unmanagedEffect.PostEvaluate = effect.DynamicIntEffect.PostEvaluate;
-                                    }
-                                    else
-                                        continue;
-                                unmanagedEffect.ValueType = ValueType.Int;
-                                break;
-                            case StatusNameBool:
-                                if (effect.ValueSource is ValueSource.DynamicValue)
-                                    if (effect.DynamicBoolEffect && effect.DynamicBoolEffect is IEntityDynamicEffect entityDynamicEffect)
-                                    {
-                                        entityDynamicEffect.CreateDynamicEffectInfo(ValueType.Bool, ref unmanagedEffect.DynamicEffectInfo, ref idToStatusEffectDataBuilder);
-                                        unmanagedEffect.PostEvaluate = effect.DynamicBoolEffect.PostEvaluate;
-                                    }
-                                    else
-                                        continue;
-                                unmanagedEffect.ValueType = ValueType.Bool;
-                                break;
-                        }
+                            ((IEntityDynamicEffect)dynamicEffect).CreateDynamicEffectInfo(valueType, ref unmanagedEffect.DynamicEffectInfo, ref builder);
+                            unmanagedEffect.PostEvaluate = dynamicEffect.PostEvaluate;
 
-                        if (unmanagedEffect.ValueSource is ValueSource.DynamicValue && unmanagedEffect.DynamicEffectInfo.TypeIndex != TypeIndex.Null)
-                            dynamicEffectTypes.Add(unmanagedEffect.DynamicEffectInfo.TypeIndex);
+                            if (unmanagedEffect.DynamicEffectInfo.TypeIndex != TypeIndex.Null)
+                                dynamicEffectTypes.Add(unmanagedEffect.DynamicEffectInfo.TypeIndex);
+                        }
                     }
 
-                    var conditions = idToStatusEffectDataBuilder.Allocate(ref unmanagedStatusEffectData.Conditions, statusEffectData.Conditions.Count);
+                    var conditions = builder.Allocate(ref unmanagedStatusEffectData.Conditions, statusEffectData.Conditions.Count);
 
                     for (int i = 0; i < conditions.Length; i++)
                     {
@@ -207,42 +177,29 @@ namespace StatusEffectsFramework.Entities
                         };
                     }
 
-                    // Modules just stores the buffer index for the module. This is
-                    // because we cannot store Entity references directly on a blob asset.
                     List<ModuleContainer> entityModuleContainers = statusEffectData.Modules.Where((m) => m.Module is IEntityModule).ToList();
-                    var modules = idToStatusEffectDataBuilder.Allocate(ref unmanagedStatusEffectData.Modules, entityModuleContainers.Count);
-                    
-                    if (entityModuleContainers.Count > 0)
+                    var modules = builder.Allocate(ref unmanagedStatusEffectData.Modules, entityModuleContainers.Count);
+
+                    for (int i = 0; i < modules.Length; i++)
                     {
-                        for (int i = 0; i < modules.Length; i++)
-                        {
-                            var moduleContainer = entityModuleContainers[i];
-                            var entityModule = (IEntityModule)moduleContainer.Module;
+                        var moduleContainer = entityModuleContainers[i];
+                        var entityModule = (IEntityModule)moduleContainer.Module;
 
-                            entityModule.CreateModuleInfo(moduleContainer.ModuleInstance, ref modules[i], ref idToStatusEffectDataBuilder);
+                        entityModule.CreateModuleInfo(moduleContainer.ModuleInstance, ref modules[i], ref builder);
 
-                            if (modules[i].TypeIndex != TypeIndex.Null)
-                                moduleTypes.Add(modules[i].TypeIndex);
-                        }
+                        if (modules[i].TypeIndex != TypeIndex.Null)
+                            moduleTypes.Add(modules[i].TypeIndex);
                     }
-
-                    void DebugError(string uniqueKey) => UnityEngine.Debug.LogError($"Trying to setup an {nameof(UnmanagedStatusEffectData)} with the {nameof(Registrant)} that contains the unique key \"{uniqueKey}\" but the registry doesn't contain the ID associated with it.");
                 }
 
-                // Create all blobs together so a failure partway through doesn't leak the ones already created.
-                var unmanagedRegistry = new UnmanagedStatusRegistry();
-                try
+                // The type sets are only complete once every status effect data has been built.
+                AllocateSortedTypeArray(ref builder, ref root.DynamicEffectTypes, dynamicEffectTypes);
+                AllocateSortedTypeArray(ref builder, ref root.ModuleTypes, moduleTypes);
+
+                var unmanagedRegistry = new UnmanagedStatusRegistry
                 {
-                    unmanagedRegistry.KeyToId = keyToIdBuilder.CreateBlobAssetReference<BlobHashMap<Hash128, ushort>>(Allocator.Persistent);
-                    unmanagedRegistry.IdToStatusEffectData = idToStatusEffectDataBuilder.CreateBlobAssetReference<BlobHashMap<ushort, UnmanagedStatusEffectData>>(Allocator.Persistent);
-                    unmanagedRegistry.DynamicEffectTypes = CreateTypeArray(dynamicEffectTypes);
-                    unmanagedRegistry.ModuleTypes = CreateTypeArray(moduleTypes);
-                }
-                catch
-                {
-                    Dispose(unmanagedRegistry);
-                    throw;
-                }
+                    Data = builder.CreateBlobAssetReference<UnmanagedStatusRegistryData>(Allocator.Persistent)
+                };
 
                 bool hasOldRegistry = !m_RegistryQuery.IsEmptyIgnoreFilter;
                 if (hasOldRegistry)
@@ -252,8 +209,8 @@ namespace StatusEffectsFramework.Entities
 
                 if (hasOldRegistry)
                 {
-                    // Swap the singleton in place so nothing can read the old blobs after this point,
-                    // then dispose them once every job that could still be reading them has completed.
+                    // Swap the singleton in place so nothing can read the old blob after this point,
+                    // then dispose it once every job that could still be reading them has completed.
                     m_RegistryQuery.CompleteDependency();
                     var oldRegistry = m_RegistryQuery.GetSingleton<UnmanagedStatusRegistry>();
                     m_RegistryQuery.SetSingleton(unmanagedRegistry);
@@ -275,14 +232,14 @@ namespace StatusEffectsFramework.Entities
             }
             finally
             {
-                keyToIdBuilder.Dispose();
-                idToStatusEffectDataBuilder.Dispose();
+                builder.Dispose();
             }
         }
 
         protected override void OnDestroy()
         {
-            StatusRegistry.Get().RegistryRebuilt -= OnRegistryRebuilt;
+            if (m_StatusRegistry)
+                m_StatusRegistry.RegistryRebuilt -= OnRegistryRebuilt;
 
             if (m_RegistryQuery.TryGetSingleton<UnmanagedStatusRegistry>(out var registry))
             {
@@ -298,38 +255,73 @@ namespace StatusEffectsFramework.Entities
 
         private static void Dispose(in UnmanagedStatusRegistry registry)
         {
-            if (registry.IdToStatusEffectData.IsCreated)
-                registry.IdToStatusEffectData.Dispose();
-
-            if (registry.KeyToId.IsCreated)
-                registry.KeyToId.Dispose();
-
-            if (registry.DynamicEffectTypes.IsCreated)
-                registry.DynamicEffectTypes.Dispose();
-
-            if (registry.ModuleTypes.IsCreated)
-                registry.ModuleTypes.Dispose();
+            if (registry.Data.IsCreated)
+                registry.Data.Dispose();
         }
 
-        private static BlobAssetReference<BlobArray<TypeIndex>> CreateTypeArray(HashSet<TypeIndex> types)
+        /// <summary>
+        /// Resolves an effect's status name ID, value type and dynamic effect. Returns false if the effect
+        /// cannot be represented on an entity, in which case it is excluded rather than left as a default entry.
+        /// </summary>
+        private static bool TryResolveEffect(Effect effect, IReadOnlyDictionary<Hash128, ushort> keyToIds, out (Effect Effect, ushort Id, ValueType ValueType, DynamicEffect DynamicEffect) resolvedEffect)
         {
-            var builder = new BlobBuilder(Allocator.Temp);
-            try
-            {
-                ref var root = ref builder.ConstructRoot<BlobArray<TypeIndex>>();
-                var array = builder.Allocate(ref root, types.Count);
+            resolvedEffect = default;
 
-                int i = 0;
-                foreach (var type in types)
-                    array[i++] = type;
+            if (!effect.StatusName)
+                return false;
 
-                return builder.CreateBlobAssetReference<BlobArray<TypeIndex>>(Allocator.Persistent);
-            }
-            finally
+            ValueType valueType;
+            DynamicEffect dynamicEffect;
+            switch (effect.StatusName)
             {
-                builder.Dispose();
+                case StatusNameFloat:
+                    valueType = ValueType.Float;
+                    dynamicEffect = effect.DynamicFloatEffect;
+                    break;
+                case StatusNameInt:
+                    valueType = ValueType.Int;
+                    dynamicEffect = effect.DynamicIntEffect;
+                    break;
+                case StatusNameBool:
+                    valueType = ValueType.Bool;
+                    dynamicEffect = effect.DynamicBoolEffect;
+                    break;
+                default:
+                    return false;
             }
+
+            if (effect.ValueSource is ValueSource.DynamicValue)
+            {
+                // Missing or non-entity dynamic effects are skipped. The Unity null check also catches destroyed assets.
+                if (!dynamicEffect || dynamicEffect is not IEntityDynamicEffect)
+                    return false;
+            }
+            else
+                dynamicEffect = null;
+
+            if (!keyToIds.TryGetValue(effect.StatusName.GetUniqueKeyHash(), out var id))
+            {
+                DebugError(effect.StatusName.UniqueKey);
+                return false;
+            }
+
+            resolvedEffect = (effect, id, valueType, dynamicEffect);
+            return true;
+        }
+
+        private static void DebugError(string uniqueKey) => UnityEngine.Debug.LogError($"Trying to setup an {nameof(UnmanagedStatusEffectData)} with the {nameof(Registrant)} that contains the unique key \"{uniqueKey}\" but the registry doesn't contain the ID associated with it.");
+
+        /// <summary>
+        /// Writes the types sorted so the blob contents don't depend on <see cref="HashSet{T}"/> iteration order.
+        /// </summary>
+        private static void AllocateSortedTypeArray(ref BlobBuilder builder, ref BlobArray<TypeIndex> blobArray, HashSet<TypeIndex> types)
+        {
+            var sortedTypes = new List<TypeIndex>(types);
+            sortedTypes.Sort();
+
+            var array = builder.Allocate(ref blobArray, sortedTypes.Count);
+            for (int i = 0; i < sortedTypes.Count; i++)
+                array[i] = sortedTypes[i];
         }
     }
 }
-#endif

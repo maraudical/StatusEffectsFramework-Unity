@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
@@ -16,5 +15,4 @@ namespace StatusEffectsFramework.Entities
         public bool BoolValue;
         public DynamicEffectInfo DynamicEffectInfo;
     }
-}
-#endif
+}

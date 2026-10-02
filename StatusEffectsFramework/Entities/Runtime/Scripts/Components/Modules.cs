@@ -1,4 +1,3 @@
-#if ENTITIES
 using System;
 using System.Runtime.InteropServices;
 using Unity.Entities;
@@ -15,5 +14,4 @@ namespace StatusEffectsFramework.Entities
         public int CompareTo(uint other) => Id.CompareTo(other);
         public int CompareTo(Modules<T> other) => Id.CompareTo(other.Id);
     }
-}
-#endif
+}

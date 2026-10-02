@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Entities;
@@ -17,14 +16,14 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         public ref UnmanagedStatusEffectData GetStatusEffectDataOrNullRef(ushort id, out bool exists)
         {
-            return ref IdToStatusEffectData.Value.GetValueRefOrNullRef(id, out exists);
+            return ref Data.Value.IdToStatusEffectData.GetValueRefOrNullRef(id, out exists);
         }
 
         [BurstCompile]
-        public bool HasStatusEffectData(ushort id) => IdToStatusEffectData.Value.ContainsKey(id);
+        public bool HasStatusEffectData(ushort id) => Data.Value.IdToStatusEffectData.ContainsKey(id);
 
         [BurstCompile]
-        public bool TryGetId(Hash128 key, out ushort id) => KeyToId.Value.TryGetValue(key, out id);
+        public bool TryGetId(Hash128 key, out ushort id) => Data.Value.KeyToId.TryGetValue(key, out id);
 
         /// <inheritdoc cref="GetStatusEffectDataOrNullRef"/>
         /// <remarks>Logs an error if the data doesn't exist.</remarks>
@@ -41,10 +40,26 @@ namespace StatusEffectsFramework.Entities
 
         internal const int CollectionsInitialCapacity = 16;
 
-        internal BlobAssetReference<BlobHashMap<ushort, UnmanagedStatusEffectData>> IdToStatusEffectData;
-        internal BlobAssetReference<BlobHashMap<Hash128, ushort>> KeyToId;
-        internal BlobAssetReference<BlobArray<TypeIndex>> DynamicEffectTypes;
-        internal BlobAssetReference<BlobArray<TypeIndex>> ModuleTypes;
+        /// <summary>
+        /// Every dynamic effect buffer type used by the registry, sorted. Systems that access these buffers
+        /// through raw pointers register them so job dependencies are tracked.
+        /// </summary>
+        internal ref BlobArray<TypeIndex> DynamicEffectTypes => ref Data.Value.DynamicEffectTypes;
+
+        /// <inheritdoc cref="DynamicEffectTypes"/>
+        internal ref BlobArray<TypeIndex> ModuleTypes => ref Data.Value.ModuleTypes;
+
+        /// <summary>
+        /// All registry data lives in a single blob so it is created, swapped and disposed as one unit.
+        /// </summary>
+        internal BlobAssetReference<UnmanagedStatusRegistryData> Data;
     }
-}
-#endif
+
+    internal struct UnmanagedStatusRegistryData
+    {
+        public BlobHashMap<ushort, UnmanagedStatusEffectData> IdToStatusEffectData;
+        public BlobHashMap<Hash128, ushort> KeyToId;
+        public BlobArray<TypeIndex> DynamicEffectTypes;
+        public BlobArray<TypeIndex> ModuleTypes;
+    }
+}

@@ -227,6 +227,8 @@ namespace StatusEffectsFramework
         public float MaximumValue;
         public int OverwritePriority;
         public float OverwriteValue;
+        // Order of the status effect the overwrite came from. The lowest (oldest) wins ties.
+        public int OverwriteOrder;
 
         public StatusFloatValue(float baseValue, bool signProtected)
         {
@@ -240,6 +242,7 @@ namespace StatusEffectsFramework
             MaximumValue = float.PositiveInfinity;
             OverwritePriority = -1;
             OverwriteValue = 0;
+            OverwriteOrder = int.MinValue;
             if (signProtected)
             {
                 if (math.sign(baseValue) >= 0)
@@ -250,7 +253,9 @@ namespace StatusEffectsFramework
         }
 
         [BurstCompile]
-        public void ApplyEffect(ValueModifier valueModifier, float value, int priority)
+        /// <param name="order">Order of the status effect the value came from, oldest first. When omitted,
+        /// the first effect applied wins ties.</param>
+        public void ApplyEffect(ValueModifier valueModifier, float value, int priority, int order = int.MaxValue)
         {
             switch (valueModifier)
             {
@@ -282,10 +287,11 @@ namespace StatusEffectsFramework
                         MaximumValue = math.min(MaximumValue, value);
                     break;
                 case ValueModifier.Overwrite:
-                    if (OverwritePriority <= priority)
+                    if (OverwritePriority < priority || (OverwritePriority == priority && order < OverwriteOrder))
                     {
                         OverwritePriority = priority;
                         OverwriteValue = value;
+                        OverwriteOrder = order;
                     }
                     break;
             }

@@ -1,4 +1,4 @@
-#if ENTITIES && NETCODE
+#if NETCODE
 using System;
 using Unity.Entities;
 using Unity.NetCode;

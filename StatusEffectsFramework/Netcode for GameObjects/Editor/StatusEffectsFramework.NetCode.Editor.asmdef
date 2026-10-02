@@ -13,7 +13,9 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
+    "defineConstraints": [
+        "NETCODE"
+    ],
     "versionDefines": [
         {
             "name": "com.unity.netcode.gameobjects",

@@ -1,4 +1,3 @@
-#if ENTITIES
 using UnityEngine;
 
 namespace StatusEffectsFramework.Entities
@@ -21,5 +20,4 @@ namespace StatusEffectsFramework.Entities
         public ConditionalTiming Timing;
         [Min(0)] public float Duration;
     }
-}
-#endif
+}

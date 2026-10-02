@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Burst;
 using Unity.Entities;
 #if NETCODE
@@ -234,5 +233,4 @@ namespace StatusEffectsFramework.Entities
             };
         }
     }
-}
-#endif
+}

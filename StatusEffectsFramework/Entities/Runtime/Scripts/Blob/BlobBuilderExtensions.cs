@@ -1,4 +1,3 @@
-#if ENTITIES
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
@@ -108,5 +107,4 @@ namespace StatusEffectsFramework.Entities
             return hashmapBuilder;
         }
     }
-}
-#endif
+}

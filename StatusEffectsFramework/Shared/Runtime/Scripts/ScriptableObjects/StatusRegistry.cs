@@ -86,6 +86,23 @@ namespace StatusEffectsFramework
         public IReadOnlyDictionary<ushort, ComparableName> IdToComparableName => m_IdToComparableName;
         public IReadOnlyDictionary<ushort, StatusEvent> IdToStatusEvent => m_IdToStatusEvent;
         public IReadOnlyDictionary<Hash128, ushort> KeyToId => m_KeyToId;
+        /// <summary>
+        /// Hash of every registered <see cref="Registrant.UniqueKey"/> in id order. Two registries
+        /// with the same hash assign the same ids. Updated on every <see cref="Rebuild"/>.
+        /// </summary>
+        public Hash128 RegistryHash { get; private set; }
+        /// <summary>
+        /// <see cref="RegistryHash"/> as text, so assemblies that don't reference Entities can compare registries.
+        /// </summary>
+        public string RegistryHashString => RegistryHash.ToString();
+        /// <summary>
+        /// Gets the id assigned to a <see cref="Registrant"/>. Returns false if it isn't registered.
+        /// </summary>
+        public bool TryGetId(Registrant registrant, out ushort id)
+        {
+            id = NullId;
+            return registrant && m_KeyToId != null && m_KeyToId.TryGetValue(registrant.GetUniqueKeyHash(), out id);
+        }
 
         private Dictionary<ushort, StatusEffectData> m_IdToStatusEffectData;
         private Dictionary<ushort, StatusName> m_IdToStatusName;
@@ -103,7 +120,7 @@ namespace StatusEffectsFramework
         private List<StatusEvent> m_StatusEvents;
 
 #if ADDRESSABLES
-        private HashSet<StatusRegistryDependency> m_Dependencies;
+        private List<StatusRegistryDependency> m_Dependencies;
 
 #endif
         public static StatusRegistry Get()
@@ -137,57 +154,134 @@ namespace StatusEffectsFramework
         /// <summary>
         /// Rebuilds the registry by clearing existing keys/ids and repopulating them with the currently registred data.
         /// </summary>
+        /// <remarks>
+        /// Every <see cref="Registrant"/> is collected into one list and sorted by its
+        /// <see cref="Registrant.UniqueKey"/>, so ids don't depend on the order assets
+        /// were found or dependencies were registered.
+        /// </remarks>
         public void Rebuild()
         {
-            m_KeyToId = new();
+            var entries = new List<RegistryEntry>();
 
-            ushort id = NullId + 1;
-
-            m_IdToStatusEffectData = new();
-            m_IdToStatusName = new();
-            m_IdToComparableName = new();
-            m_IdToStatusEvent = new();
-
-            AddToDictionary(ref id, m_StatusEffectDatas, m_IdToStatusEffectData, m_KeyToId);
-            AddToDictionary(ref id, m_StatusNames, m_IdToStatusName, m_KeyToId);
-            AddToDictionary(ref id, m_ComparableNames, m_IdToComparableName, m_KeyToId);
-            AddToDictionary(ref id, m_StatusEvents, m_IdToStatusEvent, m_KeyToId);
+            CollectEntries(entries, m_StatusEffectDatas, RegistrantType.StatusEffectData);
+            CollectEntries(entries, m_StatusNames, RegistrantType.StatusName);
+            CollectEntries(entries, m_ComparableNames, RegistrantType.ComparableName);
+            CollectEntries(entries, m_StatusEvents, RegistrantType.StatusEvent);
 
 #if ADDRESSABLES
             if (m_Dependencies != null)
                 foreach (var dependency in m_Dependencies)
                 {
-                    AddToDictionary(ref id, dependency.StatusEffectDatas, m_IdToStatusEffectData, m_KeyToId);
-                    AddToDictionary(ref id, dependency.StatusNames, m_IdToStatusName, m_KeyToId);
-                    AddToDictionary(ref id, dependency.ComparableNames, m_IdToComparableName, m_KeyToId);
-                    AddToDictionary(ref id, dependency.StatusEvents, m_IdToStatusEvent, m_KeyToId);
+                    if (dependency == null)
+                        continue;
+
+                    CollectEntries(entries, dependency.StatusEffectDatas, RegistrantType.StatusEffectData);
+                    CollectEntries(entries, dependency.StatusNames, RegistrantType.StatusName);
+                    CollectEntries(entries, dependency.ComparableNames, RegistrantType.ComparableName);
+                    CollectEntries(entries, dependency.StatusEvents, RegistrantType.StatusEvent);
                 }
 #endif
+            // Duplicate keys are tie broken by type, then asset name, then collection order
+            // so which duplicate wins is the same everywhere the same assets are registered.
+            entries.Sort((x, y) =>
+            {
+                int comparison = string.CompareOrdinal(x.Item.UniqueKey, y.Item.UniqueKey);
+                if (comparison != 0)
+                    return comparison;
+                comparison = x.Type.CompareTo(y.Type);
+                if (comparison != 0)
+                    return comparison;
+                comparison = string.CompareOrdinal(x.Item.name, y.Item.name);
+                if (comparison != 0)
+                    return comparison;
+                return x.Order.CompareTo(y.Order);
+            });
+
+            m_KeyToId = new();
+            m_IdToStatusEffectData = new();
+            m_IdToStatusName = new();
+            m_IdToComparableName = new();
+            m_IdToStatusEvent = new();
+
+            var registryHash = new UnityEngine.Hash128();
+            ushort id = NullId + 1;
+
+            foreach (var entry in entries)
+            {
+                var item = entry.Item;
+
+                // The id wrapped around past ushort.MaxValue so there are no ids left to assign.
+                if (id == NullId)
+                {
+                    Debug.LogError($"The {nameof(StatusRegistry)} ran out of ids. Skipping registration for this {entry.Type} {item.name}.");
+                    continue;
+                }
+
+                if (!m_KeyToId.TryAdd(item.GetUniqueKeyHash(), id))
+                {
+                    Debug.LogWarning($"Duplicate key found: {item.UniqueKey}. Skipping registration for this {entry.Type} {item.name}.");
+                    continue;
+                }
+
+                switch (entry.Type)
+                {
+                    case RegistrantType.StatusEffectData:
+                        m_IdToStatusEffectData[id] = (StatusEffectData)item;
+                        break;
+                    case RegistrantType.StatusName:
+                        m_IdToStatusName[id] = (StatusName)item;
+                        break;
+                    case RegistrantType.ComparableName:
+                        m_IdToComparableName[id] = (ComparableName)item;
+                        break;
+                    case RegistrantType.StatusEvent:
+                        m_IdToStatusEvent[id] = (StatusEvent)item;
+                        break;
+                }
+
+                // Ids are assigned in order, so hashing the keys in order covers which key every id maps to.
+                registryHash.Append(item.UniqueKey ?? string.Empty);
+
+                id++;
+            }
+
+            RegistryHash = registryHash;
+
             RegistryRebuilt?.Invoke();
 
-            void AddToDictionary<T>(ref ushort id, IEnumerable<T> list, Dictionary<ushort, T> idToItem, Dictionary<Hash128, ushort> keyToId) where T : Registrant
+            static void CollectEntries<T>(List<RegistryEntry> entries, IEnumerable<T> items, RegistrantType type) where T : Registrant
             {
-                foreach (var item in list)
-                {
-                    if (item == null)
-                        continue;
+                if (items == null)
+                    return;
 
-                    // The id wrapped around past ushort.MaxValue so there are no ids left to assign.
-                    if (id == NullId)
-                    {
-                        Debug.LogError($"The {nameof(StatusRegistry)} ran out of ids. Skipping registration for this {typeof(T).Name} {item.name}.");
-                        continue;
-                    }
+                foreach (var item in items)
+                    if (item != null)
+                        entries.Add(new RegistryEntry(item, type, entries.Count));
+            }
+        }
 
-                    if (!keyToId.TryAdd(item.GetUniqueKeyHash(), id))
-                    {
-                        Debug.LogWarning($"Duplicate key found: {item.UniqueKey}. Skipping registration for this {typeof(T).Name} {item.name}.");
-                        continue;
-                    }
+        private enum RegistrantType
+        {
+            StatusEffectData,
+            StatusName,
+            ComparableName,
+            StatusEvent,
+        }
 
-                    idToItem[id] = item;
-                    id++;
-                }
+        private readonly struct RegistryEntry
+        {
+            public readonly Registrant Item;
+            public readonly RegistrantType Type;
+            /// <summary>
+            /// The order the entry was collected in, only used as a last tie break.
+            /// </summary>
+            public readonly int Order;
+
+            public RegistryEntry(Registrant item, RegistrantType type, int order)
+            {
+                Item = item;
+                Type = type;
+                Order = order;
             }
         }
 #if ADDRESSABLES

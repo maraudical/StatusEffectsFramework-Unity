@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Entities;
 #if NETCODE
 using Unity.NetCode;
@@ -11,5 +10,4 @@ namespace StatusEffectsFramework.Entities
     [GhostEnabledBit]
 #endif
     public struct StatusVariablePreEvaluateUpdate : IComponentData, IEnableableComponent { }
-}
-#endif
+}

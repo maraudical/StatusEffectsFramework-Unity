@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Assertions;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -71,14 +70,22 @@ namespace StatusEffectsFramework.Entities
         {
             if (m_Version != registry.Version)
             {
-                if (Hint.Unlikely(!registry.TryGetId(UniqueKey, out m_Id)))
-                {
-                    index = -1;
-                    UnityEngine.Debug.LogWarning($"{nameof(UnmanagedStatusInt)} with unique key \"{UniqueKey}\" does not exist in the registry.");
-                    return false;
-                }
-
                 m_Version = registry.Version;
+                m_CachedIndex = -1;
+
+                if (Hint.Unlikely(!registry.TryGetId(UniqueKey, out ushort id)))
+                {
+                    m_Id = StatusRegistry.NullId;
+                    UnityEngine.Debug.LogWarning($"{nameof(UnmanagedStatusInt)} with unique key \"{UniqueKey}\" does not exist in the registry.");
+                }
+                else
+                    m_Id = id;
+            }
+
+            if (Hint.Unlikely(m_Id == StatusRegistry.NullId))
+            {
+                index = -1;
+                return false;
             }
 
             StatusInts statusInts;
@@ -123,5 +130,4 @@ namespace StatusEffectsFramework.Entities
             return new UnmanagedStatusInt(statusInt.StatusName.GetUniqueKeyHash());
         }
 }
-}
-#endif
+}

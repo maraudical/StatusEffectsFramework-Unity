@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -11,8 +10,7 @@ namespace StatusEffectsFramework.Entities
     /// <summary>
     /// The <see cref="EntityCommandBufferSystem"/> near the end of the <see cref="StatusEffectSystemGroup"/>.
     /// Plays back the structural changes recorded in this group, such as module and dynamic effect
-    /// buffers being added or removed by the <see cref="ModulesSystem"/> and <see cref="DynamicEffectsSystem"/>,
-    /// and <c>StatusResolver</c> removal by the <see cref="StatusVariableIdResolverSystem"/>.
+    /// buffers being added or removed by the <see cref="ModulesSystem"/> and <see cref="DynamicEffectsSystem"/>.
     /// </summary>
     /// <remarks>
     /// This is not the last system in the group. Without Netcode, status variable evaluation runs
@@ -103,5 +101,4 @@ namespace StatusEffectsFramework.Entities
 #endif
     [UpdateBefore(typeof(FixedStepSimulationSystemGroup))]
     public partial class StatusEffectSystemGroup : ComponentSystemGroup { }
-}
-#endif
+}

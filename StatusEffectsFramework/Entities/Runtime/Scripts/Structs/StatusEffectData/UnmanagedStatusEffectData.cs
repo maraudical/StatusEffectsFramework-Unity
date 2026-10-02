@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -34,5 +33,4 @@ namespace StatusEffectsFramework.Entities
         public BlobArray<ModuleInfo> Modules;
         #endregion
     }
-}
-#endif
+}

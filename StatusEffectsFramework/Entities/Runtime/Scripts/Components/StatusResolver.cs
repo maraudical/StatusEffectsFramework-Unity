@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
@@ -10,4 +9,3 @@ namespace StatusEffectsFramework.Entities
     /// </summary>
     public struct StatusResolver : IComponentData { }
 }
-#endif

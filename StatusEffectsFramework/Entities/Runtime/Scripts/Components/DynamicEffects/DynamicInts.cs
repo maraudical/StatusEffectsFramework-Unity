@@ -1,4 +1,3 @@
-#if ENTITIES
 using System;
 using Unity.Entities;
 
@@ -19,5 +18,4 @@ namespace StatusEffectsFramework.Entities
         public int CompareTo(uint other) => InstanceId.CompareTo(other);
         public int CompareTo(DynamicInts<T> other) => InstanceId.CompareTo(other.InstanceId);
     }
-}
-#endif
+}

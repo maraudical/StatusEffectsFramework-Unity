@@ -7,7 +7,7 @@ using Unity.Entities;
 namespace StatusEffectsFramework.Entities
 {
     [BurstCompile]
-    internal static unsafe class StatusEffectsECSInternals
+    internal static unsafe class StatusEffectsUtility
     {
         public static int GetIndexInTypeArray(in ArchetypeChunk chunk, TypeIndex typeIndex) => ChunkDataUtility.GetIndexInTypeArray(chunk.Archetype.Archetype, typeIndex);
 
@@ -17,58 +17,21 @@ namespace StatusEffectsFramework.Entities
 
         public static byte* GetComponentDataWithTypeRW(in ArchetypeChunk chunk, int baseEntityIndex, int indexInTypeArray, uint globalSystemVersion) => ChunkDataUtility.GetComponentDataRW(chunk.m_Chunk, chunk.Archetype.Archetype, baseEntityIndex, indexInTypeArray, globalSystemVersion);
 
-        public static bool TryGetElementPointerAndLength(byte* header, out byte* buffer, out int length)
-        {
-            var bufferHeader = (BufferHeader*)header;
-
-            if (Hint.Unlikely(bufferHeader == null))
-            {
-                buffer = null;
-                length = 0;
-                return false;
-            }
-            
-            buffer = BufferHeader.GetElementPointer(bufferHeader);
-            length = bufferHeader->Length;
-            return true;
-        }
-
         public static bool IsEmpty(in ArchetypeChunk chunk, int baseEntityIndex, int indexInTypeArray)
         {
-            var bufferHeader = (BufferHeader*)ChunkDataUtility.GetComponentDataRO(chunk.m_Chunk, chunk.Archetype.Archetype, baseEntityIndex, indexInTypeArray);
+            var header = (BufferHeader*)ChunkDataUtility.GetComponentDataRO(chunk.m_Chunk, chunk.Archetype.Archetype, baseEntityIndex, indexInTypeArray);
 
-            if (Hint.Unlikely(bufferHeader == null))
-                throw new InvalidOperationException("Invalid pointer to buffer header.");
+            if (Hint.Unlikely(header == null))
+                return true;
 
-            return bufferHeader->Length <= 0;
+            return header->Length <= 0;
         }
 
-        public static ref int LengthAsRef(byte* header)
+        public static void AppendToBuffer(ref EntityCommandBuffer.ParallelWriter ecb, int sortKey, Entity e, ComponentType componentType, int typeSize, void* value)
         {
-            var bufferHeader = (BufferHeader*)header;
-
-            if (Hint.Unlikely(bufferHeader == null))
-                throw new InvalidOperationException("Invalid pointer to buffer header.");
-
-            return ref bufferHeader->Length;
-        }
-
-        public static void EnsureCapacity(byte* header, int count, int typeSize, int alignment)
-        {
-            var bufferHeader = (BufferHeader*)header;
-
-            if (Hint.Unlikely(bufferHeader == null))
-                throw new InvalidOperationException("Invalid pointer to buffer header.");
-
-            BufferHeader.EnsureCapacity(bufferHeader, count, typeSize, alignment, BufferHeader.TrashMode.RetainOldData, false, 0);
-        }
-
-        public static unsafe void AppendToBuffer(ref EntityCommandBuffer.ParallelWriter ecb, int sortKey, Entity e, ComponentType componentType, int typeSize, void* value)
-        {
-#if ENABLE_UNITY_COLLECTIONS_CHECKS || UNITY_DOTS_DEBUG
             if (Hint.Unlikely(e == Entity.Null))
-                throw new InvalidOperationException("Invalid Entity.Null passed. ECBCommand.AppendToBufferCommand");
-#endif
+                return;
+
             var data = ecb.m_Data;
             var chain = (ecb.m_ThreadIndex >= 0) ? &data->m_ThreadedChains[ecb.m_ThreadIndex] : &data->m_MainThreadChain;
             // NOTE: This has to be sizeof not TypeManager.SizeInChunk since we use UnsafeUtility.CopyStructureToPtr
@@ -91,15 +54,13 @@ namespace StatusEffectsFramework.Entities
             cmd->ValueRequiresEntityFixup = componentType.HasEntityReferences ? (byte)1 : (byte)0;
         }
 
-        public static bool RemoveAtSwapBack(byte* header, int typeSize, int index)
+        public static bool RemoveAtSwapBack(BufferHeader* header, int typeSize, int index)
         {
-            var bufferHeader = (BufferHeader*)header;
-
-            if (Hint.Unlikely(bufferHeader == null))
+            if (Hint.Unlikely(header == null))
                 return false;
 
-            var buffer = BufferHeader.GetElementPointer(bufferHeader);
-            ref var length = ref bufferHeader->Length;
+            var buffer = BufferHeader.GetElementPointer(header);
+            ref var length = ref header->Length;
             
             if (Hint.Unlikely(length <= index))
                 throw new IndexOutOfRangeException($"Value for index {index} is out of bounds.");

@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
@@ -17,5 +16,4 @@ namespace StatusEffectsFramework.Entities
     [UpdateAfter(typeof(StatusVariablePreEvaluateSystem))]
     [UpdateBefore(typeof(StatusVariablePostEvaluateSystem))]
     public partial class DynamicEffectPostEvaluateSystemGroup : ComponentSystemGroup {  }
-}
-#endif
+}

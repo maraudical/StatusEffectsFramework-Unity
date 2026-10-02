@@ -1,4 +1,3 @@
-#if ENTITIES
 using System;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;
@@ -188,7 +187,8 @@ namespace StatusEffectsFramework.Entities
                     var statusEffectEvents = statusEffectEventsAccessorRW[i];
 
                     // Iterate in reverse to not skip any that get removed. RemoveAt keeps the
-                    // order of the remaining effects, matching StatusEffectRequestsJob.
+                    // order of the remaining effects, matching StatusEffectRequestsJob. The buffer
+                    // must stay sorted by InstanceId for InterpolatedStatusEffectEventsSystem.
                     for (int e = statusEffects.Length - 1; e >= 0; e--)
                     {
                         var statusEffect = statusEffects[e];
@@ -313,7 +313,8 @@ namespace StatusEffectsFramework.Entities
                     statusEffectsChanged = true;
                 }
 
-                // Compact out removed effects, keeping the order of the rest.
+                // Compact out removed effects, keeping the order of the rest. The buffer must
+                // stay sorted by InstanceId for InterpolatedStatusEffectEventsSystem.
                 int length = 0;
                 for (int i = 0; i < statusEffects.Length; i++)
                     if (statusEffects[i].Stacks > 0)
@@ -329,4 +330,3 @@ namespace StatusEffectsFramework.Entities
         }
     }
 }
-#endif

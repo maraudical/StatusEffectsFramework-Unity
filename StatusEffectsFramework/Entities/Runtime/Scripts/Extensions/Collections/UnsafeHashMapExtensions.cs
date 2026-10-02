@@ -6,21 +6,29 @@ namespace StatusEffectsFramework.Entities
 {
     public static class UnsafeHashMapExtensions
     {
-        public unsafe static ref TValue TryGetValueByRef<TKey, TValue>(
-            this ref UnsafeHashMap<TKey, TValue> hashMap,
+        /// <summary>
+        /// Returns a reference to the value of <paramref name="key"/>, which is only valid when <paramref name="found"/>
+        /// is true and until the hash map is next modified.
+        /// </summary>
+        /// <remarks>
+        /// Takes the hash map by <see langword="in"/> since it only reads, so it also works on read-only variables
+        /// such as <see langword="using"/> locals. The value itself is still writable through the returned reference.
+        /// </remarks>
+        public unsafe static ref TValue GetValueRefOrNullRef<TKey, TValue>(
+            this in UnsafeHashMap<TKey, TValue> hashMap,
             in TKey key,
             out bool found)
             where TValue : unmanaged
             where TKey : unmanaged, IEquatable<TKey>
         {
-            ref var data = ref hashMap.m_Data;
+            ref readonly var data = ref hashMap.m_Data;
             int idx = data.Find(key);
             found = idx != -1;
 
             if (found)
                 return ref UnsafeUtility.ArrayElementAsRef<TValue>(data.Ptr, idx);
 
-            return ref UnsafeUtility.AsRef<TValue>(data.Ptr);
+            return ref UnsafeUtility.AsRef<TValue>(null);
         }
 
         /// <summary>

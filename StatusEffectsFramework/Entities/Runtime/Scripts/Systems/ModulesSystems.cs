@@ -1,4 +1,3 @@
-#if ENTITIES
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Burst.Intrinsics;
@@ -16,6 +15,7 @@ namespace StatusEffectsFramework.Entities
     {
         public UnmanagedStatusRegistry Registry;
         public EntityCommandBuffer.ParallelWriter CommandBuffer;
+        // Records ZeroLengthModules entries. See ZeroLengthModules for the removal chain.
         public EntityCommandBuffer.ParallelWriter LateCommandBuffer;
         public EntityTypeHandle EntityTypeHandle;
         public BufferTypeHandle<StatusEffectEvents> StatusEffectEventsHandle;
@@ -29,9 +29,8 @@ namespace StatusEffectsFramework.Entities
             BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
             BufferAccessor<ZeroLengthModules> zeroLengthModulesAccessor = chunk.GetBufferAccessorRW(ref ZeroLengthModulesHandle);
             
-            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
-            var typeToLength = new UnsafeHashMap<TypeIndex, int>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
-            var sizeOfUint = UnsafeUtility.SizeOf<uint>();
+            using var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+            using var typeToLength = new UnsafeHashMap<TypeIndex, int>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
 
             var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
             while (enumerator.NextEntityIndex(out var i))
@@ -54,7 +53,7 @@ namespace StatusEffectsFramework.Entities
                         
                         if (!typeToIndexAndTypeInfo.TryGetValue(moduleInfo.TypeIndex, out var info))
                         {
-                            info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, moduleInfo.TypeIndex), TypeManager.GetTypeInfo(moduleInfo.TypeIndex));
+                            info = (StatusEffectsUtility.GetIndexInTypeArray(chunk, moduleInfo.TypeIndex), TypeManager.GetTypeInfo(moduleInfo.TypeIndex));
                             typeToIndexAndTypeInfo.TryAdd(moduleInfo.TypeIndex, info);
                         }
 
@@ -65,34 +64,43 @@ namespace StatusEffectsFramework.Entities
                             // The actual adding to the buffer will be done in another system since there is a
                             // chance we will have to wait for structural changes before making any changes.
                             case StatusEffectEvent.Added:
-                                ref var addLength = ref typeToLength.TryGetValueByRef(moduleInfo.TypeIndex, out bool aFoundLength);
+                                ref var addLength = ref typeToLength.GetValueRefOrNullRef(moduleInfo.TypeIndex, out bool aFoundLength);
                                 var componentType = ComponentType.FromTypeIndex(moduleInfo.TypeIndex);
 
                                 if (aFoundLength)
                                     addLength++;
                                 else
                                 {
-                                    typeToLength.TryAdd(moduleInfo.TypeIndex, 1);
+                                    // Seed from the real length so later removals this update count correctly.
+                                    int currentLength = 0;
                                     if (info.IndexInTypeArray < 0)
                                         CommandBuffer.AddComponent(unfilteredChunkIndex, entity, componentType);
+                                    else
+                                    {
+                                        var addHeader = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRO(chunk, i, info.IndexInTypeArray);
+                                        if (Hint.Likely(addHeader != null))
+                                            currentLength = addHeader->Length;
+                                    }
+                                    typeToLength.TryAdd(moduleInfo.TypeIndex, currentLength + 1);
                                 }
 
                                 var ptr = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                UnsafeUtility.MemCpy(ptr + moduleInfo.IdOffset, &statusEffectEvent.InstanceId, sizeOfUint);
-                                UnsafeUtility.MemCpy(ptr + moduleInfo.StructOffset, moduleInfo.Bytes.GetUnsafePtr(), moduleInfo.Size);
-                                StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, ptr);
+                                ModulesSystem.WriteModuleElement(ptr, statusEffectEvent.InstanceId, ref moduleInfo);
+                                StatusEffectsUtility.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, ptr);
                                 UnsafeUtility.Free(ptr, Allocator.Temp);
                                 break;
                             case StatusEffectEvent.Removed:
                                 if (info.IndexInTypeArray < 0)
                                     break;
 
-                                var header = StatusEffectsECSInternals.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
+                                var header = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
 
-                                if (Hint.Unlikely(!StatusEffectsECSInternals.TryGetElementPointerAndLength(header, out var buffer, out var length)))
-                                    UnityEngine.Debug.LogError($"There was an issue with the provided module type <b>{info.TypeInfo.DebugTypeName}</b>.");
+                                if (Hint.Unlikely(header == null))
+                                    continue;
 
-                                ref var removeLength = ref typeToLength.TryGetValueByRef(moduleInfo.TypeIndex, out bool rFoundLength);
+                                var buffer = BufferHeader.GetElementPointer(header);
+                                var length = header->Length;
+                                ref var removeLength = ref typeToLength.GetValueRefOrNullRef(moduleInfo.TypeIndex, out bool rFoundLength);
 
                                 for (int n = length - 1; n >= 0; n--)
                                 {
@@ -100,7 +108,7 @@ namespace StatusEffectsFramework.Entities
                                     if (id != statusEffectEvent.InstanceId)
                                         continue;
                                     
-                                    StatusEffectsECSInternals.RemoveAtSwapBack(header, sizeOfModule, n);
+                                    StatusEffectsUtility.RemoveAtSwapBack(header, sizeOfModule, n);
 
                                     if (rFoundLength)
                                         removeLength--;
@@ -114,14 +122,17 @@ namespace StatusEffectsFramework.Entities
                                 if (info.IndexInTypeArray < 0)
                                     break;
 
-                                StatusEffectsECSInternals.SetChangeVersion(chunk, info.IndexInTypeArray, GlobalSystemVersion);
+                                StatusEffectsUtility.SetChangeVersion(chunk, info.IndexInTypeArray, GlobalSystemVersion);
                                 break;
                         }
                     }
                 }
 
+                // Empty buffers aren't removed here. They are queued in ZeroLengthModules and removed
+                // later by the ZeroLengthModulesJob only if they are still empty then. A type that has
+                // elements again cancels any removal already queued for it.
                 bool hasZeroLengthModules = false;
-                NativeSortExtension.Sort(zeroLengthModulesPtr, zeroLengthModules.Length);
+                bool zeroLengthModulesSorted = false;
 
                 foreach (var kvp in typeToLength)
                 {
@@ -132,11 +143,25 @@ namespace StatusEffectsFramework.Entities
                     }
                     else
                     {
-                        int index = NativeSortExtensions.BinarySearchLast(zeroLengthModulesPtr, zeroLengthModules.Length, kvp.Key);
-                        if (index >= 0)
+                        if (zeroLengthModules.Length == 0)
+                            continue;
+
+                        // Only sort once there is something to search for.
+                        if (!zeroLengthModulesSorted)
                         {
-                            for (int n = index; n >= 0 && zeroLengthModules[n].Value == kvp.Key; n--)
-                                zeroLengthModules.RemoveAtSwapBack(n);
+                            NativeSortExtension.Sort(zeroLengthModulesPtr, zeroLengthModules.Length);
+                            zeroLengthModulesSorted = true;
+                        }
+
+                        int last = NativeSortExtensions.BinarySearchLast(zeroLengthModulesPtr, zeroLengthModules.Length, kvp.Key);
+                        if (last >= 0)
+                        {
+                            int first = last;
+                            while (first > 0 && zeroLengthModules[first - 1].Value == kvp.Key)
+                                first--;
+
+                            // RemoveRange keeps the buffer sorted for the binary searches of the remaining types.
+                            zeroLengthModules.RemoveRange(first, last - first + 1);
                         }
                     }
                 }
@@ -144,12 +169,13 @@ namespace StatusEffectsFramework.Entities
                 if (hasZeroLengthModules)
                     LateCommandBuffer.SetComponentEnabled<ZeroLengthModules>(unfilteredChunkIndex, entity, true);
             }
-
-            typeToIndexAndTypeInfo.Dispose();
-            typeToLength.Dispose();
         }
     }
 
+    /// <summary>
+    /// The last step of the deferred removal described on <see cref="ZeroLengthModules"/>. Removes each
+    /// queued module type whose buffer is still empty, then clears and disables the queue.
+    /// </summary>
     [BurstCompile]
     internal struct ZeroLengthModulesJob : IJobChunk
     {
@@ -163,7 +189,7 @@ namespace StatusEffectsFramework.Entities
             NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
             BufferAccessor<ZeroLengthModules> zeroLengthModulesAccessor = chunk.GetBufferAccessorRW(ref ZeroLengthModulesHandle);
 
-            var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+            using var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
             
             var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
             while (enumerator.NextEntityIndex(out var i))
@@ -174,12 +200,15 @@ namespace StatusEffectsFramework.Entities
                 foreach (var typeIndex in zeroLengthModules)
                 {
                     if (!typeToIndexAndTypeInfo.TryGetValue(typeIndex, out var info))
-                        info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
+                    {
+                        info = (StatusEffectsUtility.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
+                        typeToIndexAndTypeInfo.TryAdd(typeIndex, info);
+                    }
 
                     if (info.IndexInTypeArray < 0)
                         continue;
-                    
-                    if (StatusEffectsECSInternals.IsEmpty(chunk, i, info.IndexInTypeArray))
+
+                    if (StatusEffectsUtility.IsEmpty(chunk, i, info.IndexInTypeArray))
                         CommandBuffer.RemoveComponent(unfilteredChunkIndex, entity, ComponentType.FromTypeIndex(typeIndex));
                 }
                 
@@ -187,8 +216,6 @@ namespace StatusEffectsFramework.Entities
             }
 
             chunk.SetComponentEnabledForAll(ref ZeroLengthModulesHandle, false);
-
-            typeToIndexAndTypeInfo.Dispose();
         }
     }
 
@@ -200,6 +227,15 @@ namespace StatusEffectsFramework.Entities
         EntityQuery m_ModulesQuery;
         EntityQuery m_ZeroLengthModulesQuery;
         private StatusTypeDependencies m_Dependencies;
+
+        /// <summary>
+        /// Writes a new module element for <paramref name="moduleInfo"/> to <paramref name="element"/>.
+        /// </summary>
+        internal static unsafe void WriteModuleElement(byte* element, uint instanceId, ref ModuleInfo moduleInfo)
+        {
+            *(uint*)(element + moduleInfo.IdOffset) = instanceId;
+            UnsafeUtility.MemCpy(element + moduleInfo.StructOffset, moduleInfo.Bytes.GetUnsafePtr(), moduleInfo.Size);
+        }
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -220,7 +256,7 @@ namespace StatusEffectsFramework.Entities
         public void OnUpdate(ref SystemState state)
         {
             var registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>();
-            m_Dependencies.Register(ref state, registry.Version, ref registry.ModuleTypes.Value, isReadOnly: false);
+            m_Dependencies.Register(ref state, registry.Version, ref registry.ModuleTypes, isReadOnly: false);
 
             var entityTypeHandle = SystemAPI.GetEntityTypeHandle();
             var zeroLengthModulesHandle = SystemAPI.GetBufferTypeHandle<ZeroLengthModules>();
@@ -235,8 +271,15 @@ namespace StatusEffectsFramework.Entities
                 ZeroLengthModulesHandle = zeroLengthModulesHandle,
                 GlobalSystemVersion = state.GlobalSystemVersion,
             };
+#if NETCODE
+            // On the server every event is created and handled by the PredictedModulesSystem. The client
+            // still needs this for the events the InterpolatedStatusEffectEventsSystem creates.
+            if (!state.WorldUnmanaged.IsServer())
+#endif
             state.Dependency = modulesJob.ScheduleParallelByRef(m_ModulesQuery, state.Dependency);
 
+            // Runs in every world, including the server, since the PredictedModulesSystem queues removals
+            // here too. The removals play back at the start of the next frame.
             var zeroLengthModulesJob = new ZeroLengthModulesJob()
             {
                 CommandBuffer = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
@@ -270,9 +313,12 @@ namespace StatusEffectsFramework.Entities
         public void OnUpdate(ref SystemState state)
         {
             var registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>();
-            m_Dependencies.Register(ref state, registry.Version, ref registry.ModuleTypes.Value, isReadOnly: false);
+            m_Dependencies.Register(ref state, registry.Version, ref registry.ModuleTypes, isReadOnly: false);
 
             var networkTime = SystemAPI.GetSingleton<NetworkTime>();
+            // ZeroLengthModules entries recorded on the first full prediction of a tick play back at the
+            // start of the next frame. Entries from resimulated or partial ticks play back at the end of
+            // that prediction tick, before the ModulesSystem checks them later this frame.
             var lateCommandBuffer = networkTime.IsFirstTimeFullyPredictingTick ? SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter() 
                 : SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
 
@@ -317,7 +363,7 @@ namespace StatusEffectsFramework.Entities
                 return;
 
             var registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>();
-            m_Dependencies.Register(ref state, registry.Version, ref registry.ModuleTypes.Value, isReadOnly: false);
+            m_Dependencies.Register(ref state, registry.Version, ref registry.ModuleTypes, isReadOnly: false);
             
             var firstPredictionTickJob = new ModulesFirstPredictionTickJob()
             {
@@ -352,10 +398,9 @@ namespace StatusEffectsFramework.Entities
                 BufferAccessor<InterpolatedStatusEffects> interpolatedStatusEffectsAccessor = chunk.GetBufferAccessorRO(ref InterpolatedStatusEffectsHandle);
 
 
-                var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
-                var interpolatedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
-                var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
-                var sizeOfUint = UnsafeUtility.SizeOf<uint>();
+                using var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var interpolatedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
@@ -410,7 +455,7 @@ namespace StatusEffectsFramework.Entities
 
                             if (!typeToIndexAndTypeInfo.TryGetValue(moduleInfo.TypeIndex, out var info))
                             {
-                                info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, moduleInfo.TypeIndex), TypeManager.GetTypeInfo(moduleInfo.TypeIndex));
+                                info = (StatusEffectsUtility.GetIndexInTypeArray(chunk, moduleInfo.TypeIndex), TypeManager.GetTypeInfo(moduleInfo.TypeIndex));
 
                                 typeToIndexAndTypeInfo.TryAdd(moduleInfo.TypeIndex, info);
                             }
@@ -426,64 +471,68 @@ namespace StatusEffectsFramework.Entities
                                 }
 
                                 var ptr = (byte*)UnsafeUtility.Malloc(sizeOfModule, info.TypeInfo.AlignmentInBytes, Allocator.Temp);
-                                UnsafeUtility.MemCpy(ptr + moduleInfo.IdOffset, &statusEffect.InstanceId, sizeOfUint);
-                                UnsafeUtility.MemCpy(ptr + moduleInfo.StructOffset, moduleInfo.Bytes.GetUnsafePtr(), moduleInfo.Size);
-                                StatusEffectsECSInternals.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, ptr);
+                                ModulesSystem.WriteModuleElement(ptr, statusEffect.InstanceId, ref moduleInfo);
+                                StatusEffectsUtility.AppendToBuffer(ref CommandBuffer, unfilteredChunkIndex, entity, componentType, sizeOfModule, ptr);
                                 UnsafeUtility.Free(ptr, Allocator.Temp);
                             }
                             else
                             {
-                                var header = StatusEffectsECSInternals.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
+                                var header = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
 
-                                if (Hint.Unlikely(!StatusEffectsECSInternals.TryGetElementPointerAndLength(header, out var buffer, out var length)))
-                                    UnityEngine.Debug.LogError($"There was an issue with the provided module type <b>{info.TypeInfo.DebugTypeName}</b>.");
+                                if (Hint.Unlikely(header == null))
+                                    continue;
 
-                                ref var lengthAsRef = ref StatusEffectsECSInternals.LengthAsRef(header);
+                                ref var length = ref header->Length;
 
                                 if (!typeAlreadyProcessed.Contains(moduleInfo.TypeIndex))
                                 {
-                                    lengthAsRef = 0;
+                                    length = 0;
                                     typeAlreadyProcessed.Add(moduleInfo.TypeIndex);
                                 }
 
-                                StatusEffectsECSInternals.EnsureCapacity(header, lengthAsRef + 1, sizeOfModule, info.TypeInfo.AlignmentInBytes);
+                                BufferHeader.EnsureCapacity(header, length + 1, sizeOfModule, info.TypeInfo.AlignmentInBytes, BufferHeader.TrashMode.RetainOldData, false, 0);
                                 
-                                var newElement = buffer + lengthAsRef * sizeOfModule;
-                                UnsafeUtility.MemCpy(newElement + moduleInfo.IdOffset, &statusEffect.InstanceId, sizeOfUint);
-                                UnsafeUtility.MemCpy(newElement + moduleInfo.StructOffset, moduleInfo.Bytes.GetUnsafePtr(), moduleInfo.Size);
-                                lengthAsRef++;
+                                var buffer = BufferHeader.GetElementPointer(header);
+
+                                var newElement = buffer + length * sizeOfModule;
+                                ModulesSystem.WriteModuleElement(newElement, statusEffect.InstanceId, ref moduleInfo);
+                                length++;
                             }
                         }
                     }
 
-                    // These are old module buffers leftover from before rollback.
+                    // These are old module buffers leftover from before rollback. They are emptied now and
+                    // queued in ZeroLengthModules so the ZeroLengthModulesJob removes them if they stay empty.
+                    bool hasZeroLengthModules = false;
                     foreach (var typeIndex in interpolatedTypes)
                     {
                         if (!typeToIndexAndTypeInfo.TryGetValue(typeIndex, out var info))
                         {
-                            info = (StatusEffectsECSInternals.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
+                            info = (StatusEffectsUtility.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex));
 
                             typeToIndexAndTypeInfo.TryAdd(typeIndex, info);
                         }
 
-                        var header = StatusEffectsECSInternals.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
+                        // Not on this entity, so there is nothing to clear or remove.
+                        if (info.IndexInTypeArray < 0)
+                            continue;
 
-                        ref var lengthAsRef = ref StatusEffectsECSInternals.LengthAsRef(header);
-                        lengthAsRef = 0;
+                        var header = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
+
+                        if (Hint.Unlikely(header == null))
+                            continue;
+                        
+                        header->Length = 0;
                         
                         CommandBuffer.AppendToBuffer(unfilteredChunkIndex, entity, new ZeroLengthModules { TypeIndex = typeIndex });
+                        hasZeroLengthModules = true;
                     }
 
-                    if (interpolatedTypes.Count > 0)
+                    if (hasZeroLengthModules)
                         CommandBuffer.SetComponentEnabled<ZeroLengthModules>(unfilteredChunkIndex, entity, true);
                 }
-
-                typeToIndexAndTypeInfo.Dispose();
-                interpolatedTypes.Dispose();
-                typeAlreadyProcessed.Dispose();
             }
         }
     }
 #endif
 }
-#endif

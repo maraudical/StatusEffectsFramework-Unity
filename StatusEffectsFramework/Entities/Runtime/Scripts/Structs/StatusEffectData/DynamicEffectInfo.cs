@@ -1,4 +1,3 @@
-#if ENTITIES
 using System;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Entities;
@@ -48,7 +47,7 @@ namespace StatusEffectsFramework.Entities
                     info.ValueOffset = UnsafeUtility.GetFieldOffset(type.GetField(nameof(DynamicBools<T>.Value)));
                     info.StructOffset = UnsafeUtility.GetFieldOffset(type.GetField(nameof(DynamicBools<T>.Struct)));
                     break;
-                default:
+                case ValueType.Float:
                     type = typeof(DynamicFloats<T>);
                     info.TypeIndex = TypeManager.GetTypeIndex<DynamicFloats<T>>();
                     info.InstanceIdOffset = UnsafeUtility.GetFieldOffset(type.GetField(nameof(DynamicFloats<T>.InstanceId)));
@@ -72,4 +71,3 @@ namespace StatusEffectsFramework.Entities
         }
     }
 }
-#endif

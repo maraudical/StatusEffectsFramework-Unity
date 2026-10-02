@@ -20,6 +20,11 @@ namespace StatusEffectsFramework
         public int Stacks { get => m_Stacks; set { m_PreviousStacks = m_Stacks; m_Stacks = value; StackUpdate?.Invoke(m_PreviousStacks, m_Stacks); } }
 
         internal uint m_Id;
+        /// <summary>
+        /// The event an <see cref="StatusEffectTiming.Event"/> effect counts down on, otherwise null.
+        /// Only used to tell whether two effects count down on the same event.
+        /// </summary>
+        internal StatusEvent StatusEvent;
 #if UNITY_EDITOR
         [SerializeField]
 #endif

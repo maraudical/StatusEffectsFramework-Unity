@@ -1,4 +1,3 @@
-#if ENTITIES
 using System;
 using Unity.Burst;
 using Unity.Entities;
@@ -124,5 +123,4 @@ namespace StatusEffectsFramework.Entities
             return foundIndex;
         }
     }
-}
-#endif
+}
