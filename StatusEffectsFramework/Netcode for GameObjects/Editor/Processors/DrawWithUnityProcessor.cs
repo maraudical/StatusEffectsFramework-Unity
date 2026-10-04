@@ -4,7 +4,7 @@ using Sirenix.OdinInspector;
 using System.Collections.Generic;
 using System;
 
-namespace StatusEffectsFramework.NetCode.Editor
+namespace StatusEffectsFramework.Netcode.Editor
 {
     public class NetworkStatusVariableProcessor : OdinAttributeProcessor<NetworkStatusVariable>
     {
@@ -13,5 +13,5 @@ namespace StatusEffectsFramework.NetCode.Editor
             attributes.Add(new DrawWithUnityAttribute() { PreferImGUI = true });
         }
     }
-}
+}
 #endif

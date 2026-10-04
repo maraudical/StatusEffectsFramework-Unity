@@ -1,3 +1,4 @@
+using StatusEffectsFramework.Entities;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
@@ -6,9 +7,9 @@ using Unity.Mathematics;
 using Unity.NetCode;
 #endif
 
-[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.Modules<StatusEffectsFramework.Entities.Samples.HealModuleStruct>))]
+[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.Modules<StatusEffectsFramework.Samples.HealModuleStruct>))]
 
-namespace StatusEffectsFramework.Entities.Samples
+namespace StatusEffectsFramework.Samples
 {
     public struct HealModuleStruct { }
     

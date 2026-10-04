@@ -1,12 +1,15 @@
 using Unity.NetCode;
 using UnityEngine.Scripting;
 
-[Preserve]
-public class AutoBootstrap : ClientServerBootstrap
+namespace StatusEffectsFramework.Samples
 {
-    public override bool Initialize(string defaultWorldName)
+    [Preserve]
+    public class AutoBootstrap : ClientServerBootstrap
     {
-        AutoConnectPort = 7979;
-        return base.Initialize(defaultWorldName);
+        public override bool Initialize(string defaultWorldName)
+        {
+            AutoConnectPort = 7979;
+            return base.Initialize(defaultWorldName);
+        }
     }
 }

@@ -1,6 +1,7 @@
+using StatusEffectsFramework.Entities;
 using Unity.Entities;
 
-namespace StatusEffectsFramework.Entities.Samples
+namespace StatusEffectsFramework.Samples
 {
     public struct ExamplePlayerComponent : IComponentData
     {

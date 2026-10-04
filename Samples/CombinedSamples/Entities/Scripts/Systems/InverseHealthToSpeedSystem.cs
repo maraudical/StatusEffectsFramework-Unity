@@ -1,10 +1,11 @@
+using StatusEffectsFramework.Entities;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
 
-[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.DynamicFloats<StatusEffectsFramework.Entities.Samples.InverseHealthToSpeedStruct>))]
+[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.DynamicFloats<StatusEffectsFramework.Samples.InverseHealthToSpeedStruct>))]
 
-namespace StatusEffectsFramework.Entities.Samples
+namespace StatusEffectsFramework.Samples
 {
     public struct InverseHealthToSpeedStruct
     {

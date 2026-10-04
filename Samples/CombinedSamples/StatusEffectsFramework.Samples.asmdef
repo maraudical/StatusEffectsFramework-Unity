@@ -1,16 +1,18 @@
 {
-    "name": "StatusEffectsFramework.Entities.Samples",
-    "rootNamespace": "StatusEffectsFramework.Entities.Samples",
+    "name": "StatusEffectsFramework.Samples",
+    "rootNamespace": "StatusEffectsFramework.Samples",
     "references": [
         "GUID:c1d753aaef5f86c4488844bae8cb6730",
         "GUID:3a9b1a1f578912d4aa07133f2f20f450",
+        "GUID:796f260ee26fd294db570fa45b76fb97",
         "GUID:2665a8d13d1b3f18800f46e256720795",
         "GUID:e0cd26848372d4e5c891c569017e11f1",
         "GUID:d8b63aba1907145bea998dd612889d6b",
         "GUID:734d92eba21c94caba915361bd5ac177",
         "GUID:8819f35a0fc84499b990e90a4ca1911f",
         "GUID:a5baed0c9693541a5bd947d336ec7659",
-        "GUID:953adc2a6b8b4e3c8df5b728bcd546e9"
+        "GUID:953adc2a6b8b4e3c8df5b728bcd546e9",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -18,9 +20,7 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [
-        "ENTITIES"
-    ],
+    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.entities",
@@ -31,6 +31,11 @@
             "name": "com.unity.netcode",
             "expression": "",
             "define": "NETCODE"
+        },
+        {
+            "name": "com.unity.netcode",
+            "expression": "",
+            "define": "UNITASK"
         }
     ],
     "noEngineReferences": false

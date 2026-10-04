@@ -1,10 +1,11 @@
+using StatusEffectsFramework.Entities;
 using System;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace StatusEffectsFramework.Entities.Samples
+namespace StatusEffectsFramework.Samples
 {
     // This would be more optimized and scalable from a SystemBase.
     // For simplicity everything is done in this MonoBehaviour.

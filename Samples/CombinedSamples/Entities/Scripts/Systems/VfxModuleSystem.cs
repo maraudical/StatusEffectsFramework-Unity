@@ -1,11 +1,12 @@
+using StatusEffectsFramework.Entities;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
 
-[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.Modules<StatusEffectsFramework.Entities.Samples.VfxModuleStruct>))]
+[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.Modules<StatusEffectsFramework.Samples.VfxModuleStruct>))]
 
-namespace StatusEffectsFramework.Entities.Samples
+namespace StatusEffectsFramework.Samples
 {
     public struct VfxModuleStruct
     {

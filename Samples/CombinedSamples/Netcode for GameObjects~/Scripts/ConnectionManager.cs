@@ -2,7 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace StatusEffectFramework.NetCode.Samples
+namespace StatusEffectsFramework.Samples
 {
     public class ConnectionManager : MonoBehaviour
     {

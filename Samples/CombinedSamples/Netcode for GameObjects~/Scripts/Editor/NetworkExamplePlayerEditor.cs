@@ -1,9 +1,7 @@
 using UnityEditor;
-using StatusEffectFramework.Samples;
-using StatusEffectFramework.Samples.Editor;
 using UnityEngine.UIElements;
 
-namespace StatusEffectFramework.NetCode.Example.Editor
+namespace StatusEffectsFramework.Samples
 {
     [CustomEditor(typeof(NetworkExamplePlayer))]
     [CanEditMultipleObjects]

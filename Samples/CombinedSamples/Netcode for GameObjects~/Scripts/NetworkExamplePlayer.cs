@@ -1,10 +1,10 @@
-using StatusEffectFramework.Samples;
+using StatusEffectsFramework.Netcode;
 using System;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace StatusEffectFramework.NetCode.Samples
+namespace StatusEffectsFramework.Samples
 {
     [RequireComponent(typeof(NetworkStatusManager))]
     public class NetworkExamplePlayer : NetworkBehaviour, IExamplePlayer

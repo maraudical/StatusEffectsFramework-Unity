@@ -1,13 +1,13 @@
 {
-    "name": "StatusEffectsFramework.NetCode",
-    "rootNamespace": "StatusEffectsFramework.NetCode",
+    "name": "StatusEffectsFramework.Netcode.Editor",
+    "rootNamespace": "StatusEffectsFramework.Netcode.Editor",
     "references": [
-        "GUID:c1d753aaef5f86c4488844bae8cb6730",
-        "GUID:df380645f10b7bc4b97d4f5eb6303d95",
-        "GUID:1491147abca9d7d4bb7105af628b223e",
-        "GUID:e0cd26848372d4e5c891c569017e11f1"
+        "GUID:80ad362050819f54ba03a46947ea083a",
+        "GUID:972260d8c361d5b4d96267583f616920"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
@@ -21,6 +21,11 @@
             "name": "com.unity.netcode.gameobjects",
             "expression": "1.8",
             "define": "NETCODE"
+        },
+        {
+            "name": "com.unity.addressables",
+            "expression": "",
+            "define": "ADDRESSABLES"
         }
     ],
     "noEngineReferences": false

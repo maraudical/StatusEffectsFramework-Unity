@@ -1,3 +1,4 @@
+using StatusEffectsFramework.Entities;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -5,9 +6,9 @@ using Unity.Mathematics;
 using Unity.NetCode;
 #endif
 
-[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.Modules<StatusEffectsFramework.Entities.Samples.DamageOverTimeModuleStruct>))]
+[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.Modules<StatusEffectsFramework.Samples.DamageOverTimeModuleStruct>))]
 
-namespace StatusEffectsFramework.Entities.Samples
+namespace StatusEffectsFramework.Samples
 {
     public struct DamageOverTimeModuleStruct
     {

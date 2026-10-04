@@ -5,7 +5,7 @@ using System.Collections;
 #endif
 using UnityEngine;
 
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     public partial class HealModule : Module
     {

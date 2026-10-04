@@ -1,9 +1,10 @@
+using StatusEffectsFramework.Entities;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
 
-namespace StatusEffectsFramework.Entities.Samples
+namespace StatusEffectsFramework.Samples
 {
     public struct PlayerEntryRequest : IRpcCommand { }
 

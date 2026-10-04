@@ -5,7 +5,7 @@ using System.Threading;
 using System.Collections;
 #endif
 
-namespace StatusEffectFramework.Samples
+namespace StatusEffectsFramework.Samples
 {
     public partial class InverseHealthToSpeed : DynamicEffectFloat
     {

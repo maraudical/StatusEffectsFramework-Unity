@@ -1,11 +1,12 @@
+using StatusEffectsFramework.Entities;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
 
-[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.DynamicFloats<StatusEffectsFramework.Entities.Samples.CoinMultiplierToSpeedStruct>))]
+[assembly: RegisterGenericComponentType(typeof(StatusEffectsFramework.Entities.DynamicFloats<StatusEffectsFramework.Samples.CoinMultiplierToSpeedStruct>))]
 
 
-namespace StatusEffectsFramework.Entities.Samples
+namespace StatusEffectsFramework.Samples
 {
     public struct CoinMultiplierToSpeedStruct { }
 

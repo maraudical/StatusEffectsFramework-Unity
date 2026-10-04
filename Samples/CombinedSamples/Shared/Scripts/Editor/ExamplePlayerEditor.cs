@@ -4,7 +4,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace StatusEffectsFramework.Samples.Editor
+namespace StatusEffectsFramework.Samples
 {
     [CustomEditor(typeof(ExamplePlayer))]
     [CanEditMultipleObjects]

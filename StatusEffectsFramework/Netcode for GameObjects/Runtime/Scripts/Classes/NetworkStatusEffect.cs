@@ -2,7 +2,7 @@
 using System;
 using Unity.Netcode;
 
-namespace StatusEffectsFramework.NetCode
+namespace StatusEffectsFramework.Netcode
 {
     /// <summary>
     /// Captures a <see cref="StatusEffect"/> as values that are serializable by Netcode for GameObjects.

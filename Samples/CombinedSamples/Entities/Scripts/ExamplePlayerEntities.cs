@@ -1,5 +1,4 @@
 using StatusEffectsFramework.Entities;
-using StatusEffectsFramework.Entities.Samples;
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Samples

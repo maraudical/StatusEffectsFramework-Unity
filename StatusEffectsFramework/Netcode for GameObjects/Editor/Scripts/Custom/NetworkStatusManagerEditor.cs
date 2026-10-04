@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace StatusEffectsFramework.NetCode.Editor
+namespace StatusEffectsFramework.Netcode.Editor
 {
     [CustomEditor(typeof(NetworkStatusManager))]
     [CanEditMultipleObjects]

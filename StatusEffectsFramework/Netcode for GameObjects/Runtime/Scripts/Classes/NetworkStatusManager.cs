@@ -7,9 +7,9 @@ using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
-using EventType = Unity.Netcode.NetworkListEvent<StatusEffectsFramework.NetCode.NetworkStatusEffect>.EventType;
+using EventType = Unity.Netcode.NetworkListEvent<StatusEffectsFramework.Netcode.NetworkStatusEffect>.EventType;
 
-namespace StatusEffectsFramework.NetCode
+namespace StatusEffectsFramework.Netcode
 {
     /// <summary>
     /// A component for a network synced StatusManager. The server runs all of the status effect
