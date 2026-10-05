@@ -1,0 +1,26 @@
+using UnityEngine;
+
+namespace StatusEffectsFramework.Samples
+{
+    [CreateAssetMenu(fileName = "Coin Multiplier to Speed", menuName = "Status Effects Framework/Dynamic Effects/Coin Multiplier To Speed", order = 1)]
+    public partial class CoinMultiplierToSpeed : DynamicEffectFloat 
+    {
+        public override bool PostEvaluate => true;
+
+        public override DynamicFloat ValueEvent(StatusManager manager, StatusEffect statusEffect, Effect effect)
+        {
+            var dynamicFloat = new DynamicFloat(this, effect);
+
+            if (manager.TryGetComponent(out ExamplePlayer player))
+            {
+                dynamicFloat.Value = Mathf.Max(0, player.CoinMultiplier - 1);
+                player.StatusCoinMultiplier.OnPreEvaluationValueChanged += UpdateValue;
+                statusEffect.Stopped += () => player.StatusCoinMultiplier.OnPreEvaluationValueChanged -= UpdateValue;
+
+                void UpdateValue(int previousValue, int currentValue) => dynamicFloat.Value = Mathf.Max(0, currentValue - 1);
+            }
+
+            return dynamicFloat;
+        }
+    }
+}

@@ -3,7 +3,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-#if NETCODE
+#if Netcode_for_Entities
 using Unity.NetCode;
 #endif
 
@@ -13,7 +13,7 @@ namespace StatusEffectsFramework.Samples
 {
     public struct HealModuleStruct { }
     
-#if NETCODE
+#if Netcode_for_Entities
     [UpdateInGroup(typeof(PredictedSimulationSystemGroup))]
 #else
     [UpdateInGroup(typeof(SimulationSystemGroup))]

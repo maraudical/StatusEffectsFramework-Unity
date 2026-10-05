@@ -19,7 +19,7 @@ namespace StatusEffectsFramework.Samples
         public uint Id;
         public UnityObjectRef<GameObject> Value;
     }
-#if NETCODE
+#if Netcode_for_Entities
     [WorldSystemFilter(WorldSystemFilterFlags.ClientSimulation)]
 #endif
     [UpdateInGroup(typeof(SimulationSystemGroup))]
@@ -81,7 +81,7 @@ namespace StatusEffectsFramework.Samples
                                 if (module.Id != statusEffectEvent.InstanceId)
                                     break;
 
-#if NETCODE
+#if Netcode_for_Entities
                                 // Special case where we don't want old events to instantiate VFX.
                                 if (!module.Struct.IsLooping && statusEffectEvent.IsOld)
                                     continue;
@@ -122,7 +122,7 @@ namespace StatusEffectsFramework.Samples
 
                             break;
                         case StatusEffectEvent.Updated:
-#if NETCODE
+#if Netcode_for_Entities
                             // Special case where we don't want old events to instantiate VFX.
                             if (statusEffectEvent.IsOld)
                                 break;

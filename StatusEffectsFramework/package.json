@@ -30,28 +30,28 @@
   "changelogUrl": "https://github.com/maraudical/StatusEffectsFramework-Unity/blob/main/CHANGELOG.md",
   "samples": [
   {
-	"displayName": "Shared Resources",
-	"description": "Add this sample first before adding any others. It mostly contains the necessary prefabs and base scripts for the other samples.",
-	"path": "Samples~/Shared"
-  },
-  {
 	"displayName": "Default Sample",
 	"description": "If you aren't using the Entities package you should download this sample.",
 	"path": "Samples~/Default"
   },
   {
-	"displayName": "Netcode for GameObjects Addon",
-	"description": "Add this with the Shared Resources and Default samples if you are using the Netcode for GameObjects package.",
+	"displayName": "Netcode for GameObjects Sample",
+	"description": "If you are using the Netcode for GameObjects package you should download this sample. It includes everything from the Default sample.",
 	"path": "Samples~/Netcode for GameObjects"
   },
   {
+	"displayName": "UniTask Sample",
+	"description": "If you are using the UniTask package you should download this sample instead of the Default sample.",
+	"path": "Samples~/UniTask"
+  },
+  {
 	"displayName": "Entities Sample",
-	"description": "If you are using the Entities package you should download this sample. Just note that there is an assembly defenition in the `Scripts/Define` folder just to use a netcode scripting define. You should remove or keep the associated preprocessing directives depending on if you are using Netcode for Entities or not.",
+	"description": "If you are using the Entities package you should download this sample.",
 	"path": "Samples~/Entities"
   },
   {
-	"displayName": "Netcode for Entities Addon",
-	"description": "Add this with the Shared Resources and Entities sample if you are using the Netcode for Entities package.",
+	"displayName": "Netcode for Entities Sample",
+	"description": "If you are using the Netcode for Entities package you should download this sample. It includes everything from the Entities sample.",
 	"path": "Samples~/Netcode for Entities"
   }
   ],

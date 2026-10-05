@@ -25,17 +25,17 @@
         {
             "name": "com.unity.entities",
             "expression": "",
-            "define": "ENTITIES"
+            "define": "Entities"
         },
         {
             "name": "com.unity.netcode",
             "expression": "",
-            "define": "NETCODE"
+            "define": "Netcode_for_Entities"
         },
         {
-            "name": "com.unity.netcode",
+            "name": "com.cysharp.unitask",
             "expression": "",
-            "define": "UNITASK"
+            "define": "UniTask"
         }
     ],
     "noEngineReferences": false

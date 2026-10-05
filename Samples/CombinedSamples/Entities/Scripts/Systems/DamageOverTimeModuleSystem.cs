@@ -2,7 +2,7 @@ using StatusEffectsFramework.Entities;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
-#if NETCODE
+#if Netcode_for_Entities
 using Unity.NetCode;
 #endif
 
@@ -16,7 +16,7 @@ namespace StatusEffectsFramework.Samples
         public int TimesDamaged;
     }
 
-#if NETCODE
+#if Netcode_for_Entities
     [UpdateInGroup(typeof(PredictedSimulationSystemGroup))]
 #else
     [UpdateInGroup(typeof(SimulationSystemGroup))]
@@ -24,7 +24,7 @@ namespace StatusEffectsFramework.Samples
     [BurstCompile]
     public partial struct DamageOverTimeModuleSystem : ISystem
     {
-#if NETCODE
+#if Netcode_for_Entities
         private EntityQuery m_FirstPredictionTickQuery;
 #endif
         private EntityQuery m_EntityQuery;
@@ -32,7 +32,7 @@ namespace StatusEffectsFramework.Samples
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-#if NETCODE
+#if Netcode_for_Entities
             m_FirstPredictionTickQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, Modules<DamageOverTimeModuleStruct>>().WithAll<Simulate>().Build();
             m_FirstPredictionTickQuery.AddChangedVersionFilter(ComponentType.ReadWrite<Modules<DamageOverTimeModuleStruct>>());
 #endif
@@ -45,7 +45,7 @@ namespace StatusEffectsFramework.Samples
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-#if NETCODE
+#if Netcode_for_Entities
             var networkTime = SystemAPI.GetSingleton<NetworkTime>();
             SystemAPI.TryGetSingleton<ClientServerTickRate>(out var tickRate);
             tickRate.ResolveDefaults();
@@ -63,7 +63,7 @@ namespace StatusEffectsFramework.Samples
 
             var damageOverTimeJob = new DamageOverTimeJob
             {
-#if NETCODE
+#if Netcode_for_Entities
                 NetworkTime = networkTime,
                 TickRate = tickRate,
 #else
@@ -73,7 +73,7 @@ namespace StatusEffectsFramework.Samples
             };
             state.Dependency = damageOverTimeJob.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
         }
-#if NETCODE
+#if Netcode_for_Entities
 
         [BurstCompile]
         partial struct DamageOverTimeModuleFirstPredictionTickJob : IJobEntity
@@ -101,7 +101,7 @@ namespace StatusEffectsFramework.Samples
         partial struct DamageOverTimeJob : IJobEntity
         {
             public UnmanagedStatusRegistry Registry;
-#if NETCODE
+#if Netcode_for_Entities
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
 #else
@@ -125,11 +125,11 @@ namespace StatusEffectsFramework.Samples
                     if (!exists)
                         continue;
 
-#if NETCODE
+#if Netcode_for_Entities
                     float timeSinceAdded = NetworkTime.ServerTick.TimeSince(statusEffect.TickAdded, NetworkTime.ServerTickFraction, TickRate);
                     while (timeSinceAdded >= module.Struct.IntervalSeconds * module.Struct.TimesDamaged)
 #else
-                    while (Time >= module.Struct.TimesDamaged * module.Struct.IntervalSeconds + statusEffect.TimeAdded)
+                    while (ElapsedTime >= module.Struct.TimesDamaged * module.Struct.IntervalSeconds + statusEffect.TimeAdded)
 #endif
                     {
                         module.Struct.TimesDamaged++;
