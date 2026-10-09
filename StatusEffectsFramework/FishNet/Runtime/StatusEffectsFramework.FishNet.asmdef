@@ -1,0 +1,19 @@
+{
+    "name": "StatusEffectsFramework.FishNet",
+    "rootNamespace": "StatusEffectsFramework.FishNet",
+    "references": [
+        "StatusEffectsFramework",
+        "FishNet.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "FISHNET"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,6 +1,6 @@
 namespace StatusEffectsFramework.Entities
 {
-    public enum ValueType
+    public enum ValueType : byte
     {
         Float,
         Int,

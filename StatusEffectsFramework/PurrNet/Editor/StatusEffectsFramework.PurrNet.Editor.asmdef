@@ -1,0 +1,22 @@
+{
+    "name": "StatusEffectsFramework.PurrNet.Editor",
+    "rootNamespace": "StatusEffectsFramework.PurrNet.Editor",
+    "references": [
+        "StatusEffectsFramework",
+        "StatusEffectsFramework.Editor",
+        "StatusEffectsFramework.PurrNet"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "PURRNET"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

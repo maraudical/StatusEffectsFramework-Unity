@@ -1,13 +1,12 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 using Unity.Burst;
 
 namespace StatusEffectsFramework
 {
     [Serializable]
-    public class StatusBool : StatusVariable
+    public class StatusBool : StatusVariable<StatusBoolState>
     {
         public event Action<bool, bool> OnValueChanged;
         public event Action<bool, bool> OnPreEvaluationValueChanged;
@@ -48,6 +47,14 @@ namespace StatusEffectsFramework
 
         public static implicit operator bool(StatusBool statusBool) => statusBool.Value;
 
+        public override StatusBoolState GetState() => new StatusBoolState(m_BaseValue);
+
+        public override void ApplyState(in StatusBoolState state)
+        {
+            m_BaseValue = state.BaseValue;
+            UpdateBaseValue();
+        }
+
         public override void SetManager(IStatusManager instance)
         {
             if (Manager != null)
@@ -73,6 +80,7 @@ namespace StatusEffectsFramework
                             dynamicBool.ValueChanged += UpdatePreEvaluationValue;
                     }
 
+            m_PreviousBaseValue = m_BaseValue;
             UpdatePreEvaluationValue(true);
         }
 
@@ -173,17 +181,13 @@ namespace StatusEffectsFramework
             {
                 OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
                 m_PreviousBaseValue = m_BaseValue;
+                RaiseStateChanged();
                 UpdatePreEvaluationValue();
             }
         }
 #if UNITY_EDITOR
 
-        protected virtual async void BaseValueUpdate()
-        {
-            await Task.Yield();
-
-            UpdateBaseValue();
-        }
+        internal virtual void InternalUpdateBaseValue() => UpdateBaseValue();
 #endif
     }
 

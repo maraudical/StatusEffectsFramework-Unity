@@ -1,0 +1,19 @@
+{
+    "name": "StatusEffectsFramework.PurrNet",
+    "rootNamespace": "StatusEffectsFramework.PurrNet",
+    "references": [
+        "StatusEffectsFramework",
+        "PurrNet"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "PURRNET"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

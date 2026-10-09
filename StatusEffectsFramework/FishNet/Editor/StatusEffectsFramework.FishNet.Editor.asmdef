@@ -1,0 +1,22 @@
+{
+    "name": "StatusEffectsFramework.FishNet.Editor",
+    "rootNamespace": "StatusEffectsFramework.FishNet.Editor",
+    "references": [
+        "StatusEffectsFramework",
+        "StatusEffectsFramework.Editor",
+        "StatusEffectsFramework.FishNet"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "FISHNET"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -23,7 +23,8 @@ namespace StatusEffectsFramework.Samples
 
         private void Awake()
         {
-            m_ShownStatusManager = m_StatusManager.GetComponents<IStatusManager>().First((m) => m is Component component && component.hideFlags == HideFlags.None);
+            // Networked players should go through their network manager so the server stays in charge.
+            m_ShownStatusManager = m_StatusManager.TryGetComponent(out INetworkStatusManager networkStatusManager) ? networkStatusManager : m_StatusManager;
             m_ExamplePlayer = m_StatusManager.GetComponent<IExamplePlayer>();
 
             m_StatusEffectUIs = new();

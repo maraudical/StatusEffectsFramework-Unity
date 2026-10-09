@@ -22,7 +22,7 @@ namespace StatusEffectsFramework.Editor
         // Samples built on top of other sample folders. Every other sample only bakes its own folder.
         private static readonly Dictionary<string, string[]> BaseFolders = new()
         {
-            ["Netcode for GameObjects"] = new[] { "Default" },
+            ["UniTask"] = new[] { "Default" },
             ["Netcode for Entities"] = new[] { "Entities" },
         };
 

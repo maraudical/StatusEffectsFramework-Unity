@@ -1,8 +1,6 @@
-#if NETCODE
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -22,7 +20,7 @@ namespace StatusEffectsFramework.Netcode
     [DisallowMultipleComponent]
     [RequireComponent(typeof(StatusManager))]
     [AddComponentMenu("Netcode/Network Status Manager")]
-    public class NetworkStatusManager : NetworkBehaviour, IStatusManager
+    public class NetworkStatusManager : NetworkBehaviour, INetworkStatusManager
     {
         public event Action<StatusEffect, StatusEffectAction, int, int> StatusEffectAction
         {
@@ -34,56 +32,45 @@ namespace StatusEffectsFramework.Netcode
 
         private StatusRegistry m_Registry;
         private NetworkList<NetworkStatusEffect> m_NetworkEffects;
-        private readonly NetworkVariable<FixedString64Bytes> m_RegistryHash = new();
 
         [SerializeField, HideInInspector] private StatusManager m_StatusManager;
 
-        private const HideFlags k_HideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
         private const string k_SyncError = "The Status Registry is not synced with the server! The Status Effect with id {0} could not be found, so it has failed to get added.";
 
+        // Caching the reference in the editor means instances don't need to get the component when they are created.
         private void OnValidate()
         {
             if (!m_StatusManager)
-                if (!TryGetComponent(out m_StatusManager))
-                    m_StatusManager = gameObject.AddComponent<StatusManager>();
-
-            if (m_StatusManager.hideFlags != k_HideFlags)
-                _ = NextFrameHideFlags();
-        }
-
-        private async Task NextFrameHideFlags()
-        {
-            await Task.Yield();
-
-            if (m_StatusManager)
-                m_StatusManager.hideFlags = k_HideFlags;
+                TryGetComponent(out m_StatusManager);
         }
 
         private void Awake()
         {
             m_NetworkEffects = new();
 
-            if (m_StatusManager.hideFlags != k_HideFlags)
-                m_StatusManager.hideFlags = k_HideFlags;
+            // Only needed when the reference wasn't serialized, such as when this component is added at runtime.
+            if (!m_StatusManager)
+                m_StatusManager = GetComponent<StatusManager>();
         }
 
         public override void OnNetworkSpawn()
         {
-            m_Registry = StatusRegistry.Get();
+            m_Registry = StatusRegistry.Instance;
 
             if (IsServer)
             {
-                m_RegistryHash.Value = m_Registry ? m_Registry.RegistryHashString : string.Empty;
-                // Effects that were added before spawning still need to be synced.
-                foreach (var statusEffect in m_StatusManager.StatusEffects)
-                    AddNetworkEffect(statusEffect);
+                // Status effects can only exist while spawned. Any that were added to the Status Manager directly
+                // are removed before subscribing so they aren't synced. Clients remove theirs in SyncAllForClient.
+                if (m_StatusManager.StatusEffects.Any())
+                {
+                    Debug.LogWarning("Status Effects were added to the Status Manager before it was spawned, so they have been removed. Only add Status Effects through the Network Status Manager while it is spawned.", this);
+                    m_StatusManager.RemoveAllStatusEffects();
+                }
 
                 m_StatusManager.StatusEffectAction += OnStatusEffectForServer;
             }
             else
             {
-                CheckRegistryHash();
-                m_RegistryHash.OnValueChanged += OnRegistryHashChanged;
                 SyncAllForClient();
                 m_NetworkEffects.OnListChanged += OnListChangedForClient;
             }
@@ -95,9 +82,12 @@ namespace StatusEffectsFramework.Netcode
         {
             base.OnNetworkDespawn();
 
+            // Status effects can only exist while spawned. The server removes them before unsubscribing so the
+            // network list is emptied too, otherwise pooled and in-scene objects would keep it when respawned.
+            m_StatusManager.RemoveAllStatusEffects();
+
             m_StatusManager.StatusEffectAction -= OnStatusEffectForServer;
             m_NetworkEffects.OnListChanged -= OnListChangedForClient;
-            m_RegistryHash.OnValueChanged -= OnRegistryHashChanged;
         }
 
         #region Status Manager Methods
@@ -187,14 +177,13 @@ namespace StatusEffectsFramework.Netcode
         #region Private Methods
         private bool CheckForServer()
         {
-            if (!NetworkManager || !NetworkManager.IsListening)
+            if (IsSpawned && IsServer)
                 return true;
-            if (!IsServer)
-            {
-                Debug.LogError("Please do not try to add or remove Status Effects from non-servers. If this is a Host/Server, double check that this GameObject has a NetworkObject component!");
-                return false;
-            }
-            return true;
+
+            Debug.LogError(IsSpawned
+                ? "Please do not try to add or remove Status Effects from clients. Only the Server/Host can change them."
+                : "Status Effects can only be added or removed while this object is spawned on the network.");
+            return false;
         }
 
         private int IndexOfInstance(uint instanceId)
@@ -204,15 +193,6 @@ namespace StatusEffectsFramework.Netcode
                     return i;
 
             return -1;
-        }
-
-        private void CheckRegistryHash()
-        {
-            if (!m_Registry || m_RegistryHash.Value.IsEmpty)
-                return;
-
-            if (m_RegistryHash.Value != m_Registry.RegistryHashString)
-                Debug.LogError($"|Client-{NetworkManager.LocalClientId}|{name}| The Status Registry doesn't match the server's, so status effects will refer to the wrong data. Make sure the server and clients have the same Status Effect Datas, Status Names, Comparable Names and Status Events registered.");
         }
         #endregion
 
@@ -242,9 +222,6 @@ namespace StatusEffectsFramework.Netcode
 
         private void AddNetworkEffect(StatusEffect statusEffect)
         {
-            if (IndexOfInstance(statusEffect.Id) >= 0)
-                return;
-
             // The elapsed time is measured on this machine, but clients need the time on the network clock.
             double serverTimeAdded = NetworkManager.ServerTime.Time - (Time.timeAsDouble - statusEffect.TimeAdded);
 
@@ -261,9 +238,6 @@ namespace StatusEffectsFramework.Netcode
 
         private void OnDurationUpdate(uint instanceId, float duration)
         {
-            if (!IsSpawned || !IsServer)
-                return;
-
             int index = IndexOfInstance(instanceId);
             if (index < 0)
                 return;
@@ -275,11 +249,6 @@ namespace StatusEffectsFramework.Netcode
         #endregion
 
         #region Client
-        private void OnRegistryHashChanged(FixedString64Bytes previous, FixedString64Bytes current)
-        {
-            CheckRegistryHash();
-        }
-
         private void OnListChangedForClient(NetworkListEvent<NetworkStatusEffect> changeEvent)
         {
             switch (changeEvent.Type)
@@ -355,4 +324,3 @@ namespace StatusEffectsFramework.Netcode
         #endregion
     }
 }
-#endif

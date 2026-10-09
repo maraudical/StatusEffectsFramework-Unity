@@ -1,7 +1,5 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
-using System;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -19,8 +17,6 @@ namespace StatusEffectsFramework.Editor
         "from going above 0.";
 
         private const string k_ValueTooltip = "The current value of this status variable. Will automatically update depending on status effects.";
-
-        private MethodInfo m_MethodInfo;
 
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
@@ -213,24 +209,16 @@ namespace StatusEffectsFramework.Editor
             void BaseValueChanged(SerializedPropertyChangeEvent changeEvent)
             {
                 if (isPlaying)
-                {
-                    m_MethodInfo = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
-                    foreach (var statusVariable in property.serializedObject.targetObjects)
-                        m_MethodInfo.Invoke(valueProperty.GetParent(statusVariable), null);
-                }
-                
+                    baseValue.schedule.Execute(() => InvokeUpdateBaseValue(valueProperty));
+
                 EvaluateSignLabel();
             }
 
             void SignProtectedChanged(SerializedPropertyChangeEvent changeEvent)
             {
                 if (isPlaying)
-                {
-                    m_MethodInfo = property.GetPropertyType().GetMethod("SignProtectedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
-                    foreach (var statusVariable in property.serializedObject.targetObjects)
-                        m_MethodInfo.Invoke(valueProperty.GetParent(statusVariable), null);
-                }
-                
+                    signProtected.schedule.Execute(() => InvokeUpdateSignProtected(valueProperty));
+
                 EvaluateSignLabel();
             }
 
@@ -238,7 +226,7 @@ namespace StatusEffectsFramework.Editor
             {
                 if (signProtectedProperty.boolValue || signProtectedProperty.hasMultipleDifferentValues)
                 {
-                    var sign = System.Convert.ToDouble(baseValueProperty.GetParent(baseValueProperty.serializedObject.targetObject).GetValue($"m_{nameof(StatusFloat.BaseValue)}")) >= 0;
+                    var sign = IsPositive(baseValueProperty);
                     Color color = signProtectedProperty.hasMultipleDifferentValues || baseValueProperty.hasMultipleDifferentValues ? Color.white : sign ? Color.green : Color.red;
                     signLabel.text = $"<color=#{ColorUtility.ToHtmlStringRGB(color)}>({(signProtectedProperty.hasMultipleDifferentValues || baseValueProperty.hasMultipleDifferentValues ? "?" : sign ? "+" : "-")})";
                 }
@@ -355,9 +343,8 @@ namespace StatusEffectsFramework.Editor
                 EditorGUI.PropertyField(position, m_BaseValue);
                 if (EditorGUI.EndChangeCheck() && isPlaying)
                 {
-                    m_MethodInfo = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
-                    foreach (var statusVariable in property.serializedObject.targetObjects)
-                        m_MethodInfo.Invoke(m_Value.GetParent(statusVariable), null);
+                    var valueProperty = m_Value.Copy();
+                    EditorApplication.delayCall += () => InvokeUpdateBaseValue(valueProperty);
                 }
                 position.y += m_FieldSize + m_Padding;
 
@@ -369,14 +356,13 @@ namespace StatusEffectsFramework.Editor
                 GUI.Label(offset, new GUIContent("", k_SignProtectedTooltip));
                 if (EditorGUI.EndChangeCheck() && isPlaying)
                 {
-                    m_MethodInfo = property.GetPropertyType().GetMethod("SignProtectedUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
-                    foreach (var statusVariable in property.serializedObject.targetObjects)
-                        m_MethodInfo.Invoke(m_Value.GetParent(statusVariable), null);
+                    var valueProperty = m_Value.Copy();
+                    EditorApplication.delayCall += () => InvokeUpdateSignProtected(valueProperty);
                 }
                 if (m_SignProtected.boolValue)
                 {
                     offset = new Rect(propertyPosition.x - k_SignSize, propertyPosition.y, k_SignSize, propertyPosition.height);
-                    bool sign = Convert.ToInt32(m_BaseValue.GetParent(m_BaseValue.serializedObject.targetObject).GetValue($"m_{nameof(StatusFloat.BaseValue)}")) >= 0;
+                    bool sign = IsPositive(m_BaseValue);
                     GUI.color = m_SignProtected.hasMultipleDifferentValues || m_BaseValue.hasMultipleDifferentValues ? Color.white : sign ? Color.green : Color.red;
                     EditorGUI.LabelField(offset, $"({(m_SignProtected.hasMultipleDifferentValues || m_BaseValue.hasMultipleDifferentValues ? "?" : sign ? "+" : "-")})");
                     GUI.color = Color.white;
@@ -404,5 +390,44 @@ namespace StatusEffectsFramework.Editor
         {
             return (m_FieldSize + m_Padding) * (property.isExpanded ? k_FieldCount : 1) - m_Padding;
         }
+
+        private static void InvokeUpdateBaseValue(SerializedProperty valueProperty)
+        {
+            foreach (var target in valueProperty.serializedObject.targetObjects)
+            {
+                switch (valueProperty.GetParent(target))
+                {
+                    case StatusFloat statusFloat:
+                        statusFloat.InternalUpdateBaseValue();
+                        break;
+                    case StatusInt statusInt:
+                        statusInt.InternalUpdateBaseValue();
+                        break;
+                }
+            }
+        }
+
+        private static void InvokeUpdateSignProtected(SerializedProperty valueProperty)
+        {
+            foreach (var target in valueProperty.serializedObject.targetObjects)
+            {
+                switch (valueProperty.GetParent(target))
+                {
+                    case StatusFloat statusFloat:
+                        statusFloat.InternalUpdateSignProtected();
+                        break;
+                    case StatusInt statusInt:
+                        statusInt.InternalUpdateSignProtected();
+                        break;
+                }
+            }
+        }
+
+        private static bool IsPositive(SerializedProperty baseValueProperty) => baseValueProperty.numericType switch
+        {
+            SerializedPropertyNumericType.Float => baseValueProperty.floatValue >= 0,
+            SerializedPropertyNumericType.Int32 => baseValueProperty.intValue >= 0,
+            _ => true
+        };
     }
 }

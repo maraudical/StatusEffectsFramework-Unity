@@ -1,3 +1,4 @@
+#if Entities
 using StatusEffectsFramework.Entities;
 using Unity.Collections;
 using Unity.Entities;
@@ -193,3 +194,4 @@ namespace StatusEffectsFramework.Samples
         }
     }
 }
+#endif

@@ -1,3 +1,4 @@
+#if Netcode_for_Entities
 using Unity.NetCode;
 using UnityEngine.Scripting;
 
@@ -13,3 +14,4 @@ namespace StatusEffectsFramework.Samples
         }
     }
 }
+#endif

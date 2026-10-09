@@ -25,7 +25,7 @@ namespace StatusEffectsFramework.Entities
 
             // In builds the registry is only loaded from Resources, so it can be missing. Without it there is
             // nothing to build, so disable the system. Systems that require the unmanaged registry won't run either.
-            m_StatusRegistry = StatusRegistry.Get();
+            m_StatusRegistry = StatusRegistry.Instance;
             if (!m_StatusRegistry)
             {
                 UnityEngine.Debug.LogError($"{nameof(UnmanagedStatusRegistrySetupSystem)} could not load the {nameof(StatusRegistry)}. The {nameof(UnmanagedStatusRegistry)} will not be created and status effects will not run on entities.");

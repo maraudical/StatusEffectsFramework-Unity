@@ -35,23 +35,24 @@ namespace StatusEffectsFramework.Editor
         {
             if (source == null)
                 return null;
-            var type = source.GetType();
-            ReflectField:
-            var f = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            if (f == null)
-            {
-                var p = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if (p == null)
-                {
-                    if (type.Namespace.Contains(nameof(UnityEngine)))
-                        return null;
+            const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
 
-                    type = type.BaseType;
-                    goto ReflectField;
-                }
-                return p.GetValue(source, null);
+            // Walk up the hierarchy since private members of base classes aren't returned by the derived type.
+            // Stop at UnityEngine types (Namespace is null for global types) and at object.
+            for (var type = source.GetType(); type != null && type != typeof(object); type = type.BaseType)
+            {
+                if (type.Namespace != null && type.Namespace.Contains(nameof(UnityEngine)))
+                    break;
+
+                var f = type.GetField(name, flags);
+                if (f != null)
+                    return f.GetValue(source);
+
+                var p = type.GetProperty(name, flags | BindingFlags.IgnoreCase);
+                if (p != null)
+                    return p.GetValue(source, null);
             }
-            return f.GetValue(source);
+            return null;
         }
 
         public static void SetValue(this object source, string name, object value)
@@ -141,14 +142,16 @@ namespace StatusEffectsFramework.Editor
 
             FieldInfo GetSerializedFieldInfo(Type type, string name)
             {
-                var field = type.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-
-                if (field == null)
+                // Type.GetField doesn't return private fields declared on base classes, so walk the hierarchy.
+                for (var t = type; t != null; t = t.BaseType)
                 {
-                    throw new MissingMemberException(type.FullName, name);
+                    var field = t.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+
+                    if (field != null)
+                        return field;
                 }
 
-                return field;
+                throw new MissingMemberException(type.FullName, name);
             }
         }
     }

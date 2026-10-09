@@ -1,31 +1,13 @@
 using Unity.Assertions;
 using Unity.Burst;
-using Unity.Burst.CompilerServices;
 using Unity.Entities;
-#if NETCODE
-using Unity.NetCode;
-#endif
 
 namespace StatusEffectsFramework.Entities
 {
     [BurstCompile]
     public struct UnmanagedStatusInt
     {
-#if NETCODE
-        [GhostField]
-#endif
         public Hash128 UniqueKey;
-#if NETCODE
-        [GhostField(SendData = false)]
-#endif
-        private ushort m_Id;
-#if NETCODE
-        [GhostField(SendData = false)]
-#endif
-        private ushort m_Version;
-#if NETCODE
-        [GhostField(SendData = false)]
-#endif
         private int m_CachedIndex;
 
         /// <summary>
@@ -68,33 +50,12 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         public bool TryGetIndex(ulong stableTypeHash, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusInts> buffer, out int index)
         {
-            if (m_Version != registry.Version)
-            {
-                m_Version = registry.Version;
-                m_CachedIndex = -1;
-
-                if (Hint.Unlikely(!registry.TryGetId(UniqueKey, out ushort id)))
-                {
-                    m_Id = StatusRegistry.NullId;
-                    UnityEngine.Debug.LogWarning($"{nameof(UnmanagedStatusInt)} with unique key \"{UniqueKey}\" does not exist in the registry.");
-                }
-                else
-                    m_Id = id;
-            }
-
-            if (Hint.Unlikely(m_Id == StatusRegistry.NullId))
-            {
-                index = -1;
-                return false;
-            }
-
             StatusInts statusInts;
-            int length = buffer.Length;
             index = m_CachedIndex;
             if (index >= 0 && index < buffer.Length)
             {
                 statusInts = buffer[index];
-                if (statusInts.StableTypeHash == stableTypeHash && statusInts.Id == m_Id)
+                if (statusInts.StableTypeHash == stableTypeHash && statusInts.UniqueKey == UniqueKey)
                     return true;
             }
 
@@ -103,7 +64,7 @@ namespace StatusEffectsFramework.Entities
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusInts = buffer[i];
-                if (statusInts.StableTypeHash == stableTypeHash && statusInts.Id == m_Id)
+                if (statusInts.StableTypeHash == stableTypeHash && statusInts.UniqueKey == UniqueKey)
                 {
                     index = i;
                     break;
@@ -117,8 +78,6 @@ namespace StatusEffectsFramework.Entities
         public UnmanagedStatusInt(Hash128 uniqueKey)
         {
             UniqueKey = uniqueKey;
-            m_Id = StatusRegistry.NullId;
-            m_Version = default;
             m_CachedIndex = -1;
         }
 

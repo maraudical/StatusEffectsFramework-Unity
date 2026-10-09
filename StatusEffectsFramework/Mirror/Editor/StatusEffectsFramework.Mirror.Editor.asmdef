@@ -1,0 +1,22 @@
+{
+    "name": "StatusEffectsFramework.Mirror.Editor",
+    "rootNamespace": "StatusEffectsFramework.Mirror.Editor",
+    "references": [
+        "StatusEffectsFramework",
+        "StatusEffectsFramework.Editor",
+        "StatusEffectsFramework.Mirror"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "MIRROR"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,3 +1,4 @@
+#if Netcode_for_Entities
 using StatusEffectsFramework.Entities;
 using UnityEngine;
 using System.Collections;
@@ -85,3 +86,4 @@ namespace StatusEffectsFramework.Samples
         }
     }
 }
+#endif

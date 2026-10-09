@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
 using Unity.Burst;
 using Unity.Mathematics;
@@ -8,7 +7,7 @@ using Unity.Mathematics;
 namespace StatusEffectsFramework
 {
     [Serializable]
-    public class StatusInt : StatusVariable
+    public class StatusInt : StatusVariable<StatusIntState>
     {
         public event Action<int, int> OnValueChanged;
         public event Action<int, int> OnPreEvaluationValueChanged;
@@ -57,6 +56,16 @@ namespace StatusEffectsFramework
 
         public static implicit operator int(StatusInt statusInt) => statusInt.Value;
 
+        public override StatusIntState GetState() => new StatusIntState(m_BaseValue, m_SignProtected);
+
+        public override void ApplyState(in StatusIntState state)
+        {
+            m_BaseValue = state.BaseValue;
+            UpdateBaseValue();
+            m_SignProtected = state.SignProtected;
+            UpdateSignProtected();
+        }
+
         public override void SetManager(IStatusManager instance)
         {
             if (Manager != null)
@@ -82,6 +91,8 @@ namespace StatusEffectsFramework
                             dynamicInt.ValueChanged += UpdatePreEvaluationValue;
                     }
 
+            m_PreviousBaseValue = m_BaseValue;
+            m_PreviousSignProtected = m_SignProtected;
             UpdatePreEvaluationValue(true);
         }
 
@@ -182,6 +193,7 @@ namespace StatusEffectsFramework
             {
                 OnBaseValueChanged?.Invoke(m_PreviousBaseValue, m_BaseValue);
                 m_PreviousBaseValue = m_BaseValue;
+                RaiseStateChanged();
                 UpdatePreEvaluationValue();
             }
         }
@@ -192,24 +204,14 @@ namespace StatusEffectsFramework
             {
                 OnSignProtectedChanged?.Invoke(m_PreviousSignProtected, m_SignProtected);
                 m_PreviousSignProtected = m_SignProtected;
+                RaiseStateChanged();
                 UpdatePreEvaluationValue();
             }
         }
 #if UNITY_EDITOR
 
-        protected virtual async void BaseValueUpdate()
-        {
-            await Task.Yield();
-
-            UpdateBaseValue();
-        }
-
-        protected virtual async void SignProtectedUpdate()
-        {
-            await Task.Yield();
-
-            UpdateSignProtected();
-        }
+        internal virtual void InternalUpdateBaseValue() => UpdateBaseValue();
+        internal virtual void InternalUpdateSignProtected() => UpdateSignProtected();
 #endif
     }
 

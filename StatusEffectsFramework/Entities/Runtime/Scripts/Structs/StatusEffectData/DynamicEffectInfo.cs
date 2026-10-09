@@ -58,6 +58,9 @@ namespace StatusEffectsFramework.Entities
                     info.ValueOffset = UnsafeUtility.GetFieldOffset(type.GetField(nameof(DynamicFloats<T>.Value)));
                     info.StructOffset = UnsafeUtility.GetFieldOffset(type.GetField(nameof(DynamicFloats<T>.Struct)));
                     break;
+                default:
+                    UnityEngine.Debug.LogError($"{nameof(DynamicEffectInfo)} cannot allocate a dynamic effect of type {typeof(T).Name} with unknown {nameof(ValueType)} \"{valueType}\". Its {nameof(TypeIndex)} will be null and it will not run.");
+                    return;
             }
             info.Size = UnsafeUtility.SizeOf<T>();
 

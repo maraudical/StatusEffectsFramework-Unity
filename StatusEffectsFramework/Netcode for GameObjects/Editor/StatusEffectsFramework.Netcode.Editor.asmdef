@@ -3,7 +3,8 @@
     "rootNamespace": "StatusEffectsFramework.Netcode.Editor",
     "references": [
         "GUID:80ad362050819f54ba03a46947ea083a",
-        "GUID:972260d8c361d5b4d96267583f616920"
+        "GUID:972260d8c361d5b4d96267583f616920",
+        "GUID:9f4f5bf029cebb64f983b7bdc29f62a1"
     ],
     "includePlatforms": [
         "Editor"

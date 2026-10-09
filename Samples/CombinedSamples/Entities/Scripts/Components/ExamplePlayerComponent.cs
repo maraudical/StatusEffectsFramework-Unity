@@ -1,3 +1,4 @@
+#if Entities
 using StatusEffectsFramework.Entities;
 using Unity.Entities;
 
@@ -12,3 +13,4 @@ namespace StatusEffectsFramework.Samples
         public float Health;
     }
 }
+#endif

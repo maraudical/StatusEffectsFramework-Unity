@@ -1,5 +1,3 @@
-using Unity.Entities;
-
 namespace StatusEffectsFramework.Entities
 {
     public struct UnmanagedEffect

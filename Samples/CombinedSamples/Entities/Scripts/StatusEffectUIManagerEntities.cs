@@ -1,3 +1,4 @@
+#if Entities
 using StatusEffectsFramework.Entities;
 using System.Collections.Generic;
 using System.Linq;
@@ -158,3 +159,4 @@ namespace StatusEffectsFramework.Samples
         }
     }
 }
+#endif

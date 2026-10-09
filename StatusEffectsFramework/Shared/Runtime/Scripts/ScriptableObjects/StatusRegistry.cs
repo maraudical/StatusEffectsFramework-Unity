@@ -33,7 +33,8 @@ namespace StatusEffectsFramework
         [InitializeOnEnterPlayMode]
         private static void OnPlayModeStateChanged()
         {
-            Get().Preprocess();
+            s_Instance = null;
+            Instance.Preprocess();
         }
 
         private void Preprocess()
@@ -55,7 +56,7 @@ namespace StatusEffectsFramework
         public void FindAssets<T>(List<T> assets) where T : Registrant
         {
             var guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
-            
+
             foreach (var guid in guids)
             {
                 var path = AssetDatabase.GUIDToAssetPath(guid);
@@ -123,32 +124,33 @@ namespace StatusEffectsFramework
         private List<StatusRegistryDependency> m_Dependencies;
 
 #endif
-        public static StatusRegistry Get()
+        public static StatusRegistry Instance { get => s_Instance != null ? s_Instance : Get(); }
+        private static StatusRegistry s_Instance;
+        private static StatusRegistry Get()
         {
-            var registry = Resources.Load<StatusRegistry>(RegistryName);
+            s_Instance = Resources.Load<StatusRegistry>(RegistryName);
 
 #if UNITY_EDITOR
-            if (registry == null)
+            if (s_Instance == null)
             {
-                registry = CreateInstance<StatusRegistry>();
-                AssetDatabase.CreateAsset(registry, RegistryPath);
+                s_Instance = CreateInstance<StatusRegistry>();
+                AssetDatabase.CreateAsset(s_Instance, RegistryPath);
                 AssetDatabase.SaveAssets();
             }
 
 #endif
-            return registry;
+            return s_Instance;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void RuntimeInitialize()
         {
-            var registry = Get();
-            if (registry == null)
+            if (Instance == null)
             {
                 Debug.LogError($"{nameof(StatusRegistry)} could not be found at path {RegistryPath}. Please ensure that the registry exists and is located in the Resources folder.");
                 return;
             }
-            registry.Rebuild();
+            Instance.Rebuild();
         }
 
         /// <summary>

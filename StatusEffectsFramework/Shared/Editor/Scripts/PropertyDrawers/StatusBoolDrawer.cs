@@ -1,6 +1,5 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,8 +9,6 @@ namespace StatusEffectsFramework.Editor
     internal class StatusBoolDrawer : PropertyDrawer
     {
         private const string k_ValueTooltip = "The current value of this status variable. Will automatically update depending on status effects.";
-
-        private MethodInfo m_MethodInfo;
 
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
@@ -149,9 +146,7 @@ namespace StatusEffectsFramework.Editor
 
             void BaseValueChanged(SerializedPropertyChangeEvent changeEvent)
             {
-                m_MethodInfo = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
-                foreach (var statusVariable in property.serializedObject.targetObjects)
-                    m_MethodInfo.Invoke(valueProperty.GetParent(statusVariable), null);
+                baseValue.schedule.Execute(() => InvokeUpdateBaseValue(valueProperty));
             }
 
             void EvaluateProperties()
@@ -249,9 +244,8 @@ namespace StatusEffectsFramework.Editor
                 EditorGUI.PropertyField(position, m_BaseValue);
                 if (EditorGUI.EndChangeCheck() && isPlaying)
                 {
-                    m_MethodInfo = property.GetPropertyType().GetMethod("BaseValueUpdate", BindingFlags.NonPublic | BindingFlags.Instance);
-                    foreach (var statusVariable in property.serializedObject.targetObjects)
-                        m_MethodInfo.Invoke(m_Value.GetParent(statusVariable), null);
+                    var valueProperty = m_Value.Copy();
+                    EditorApplication.delayCall += () => InvokeUpdateBaseValue(valueProperty);
                 }
                 position.y += m_FieldSize + m_Padding;
 
@@ -278,6 +272,13 @@ namespace StatusEffectsFramework.Editor
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             return (m_FieldSize + m_Padding) * (property.isExpanded ? k_FieldCount : 1) - m_Padding;
+        }
+
+        private static void InvokeUpdateBaseValue(SerializedProperty valueProperty)
+        {
+            foreach (var target in valueProperty.serializedObject.targetObjects)
+                if (valueProperty.GetParent(target) is StatusBool statusBool)
+                    statusBool.InternalUpdateBaseValue();
         }
     }
 }

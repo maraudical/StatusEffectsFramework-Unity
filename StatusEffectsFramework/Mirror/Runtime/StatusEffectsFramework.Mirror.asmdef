@@ -1,0 +1,19 @@
+{
+    "name": "StatusEffectsFramework.Mirror",
+    "rootNamespace": "StatusEffectsFramework.Mirror",
+    "references": [
+        "StatusEffectsFramework",
+        "Mirror"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "MIRROR"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

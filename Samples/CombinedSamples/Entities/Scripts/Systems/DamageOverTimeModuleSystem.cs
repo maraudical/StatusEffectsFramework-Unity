@@ -1,3 +1,4 @@
+#if Entities
 using StatusEffectsFramework.Entities;
 using Unity.Burst;
 using Unity.Entities;
@@ -142,3 +143,4 @@ namespace StatusEffectsFramework.Samples
         }
     }
 }
+#endif
