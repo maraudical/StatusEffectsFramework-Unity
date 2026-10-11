@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using UnityEngine;
-using Unity.Burst;
 
 namespace StatusEffectsFramework
 {
@@ -28,7 +27,7 @@ namespace StatusEffectsFramework
         protected bool m_PreviousPreEvaluationValue;
         protected bool m_PreviousPostEvaluationValue;
 
-        public StatusBool(bool baseValue, bool signProtected = true)
+        public StatusBool(bool baseValue)
         {
             m_BaseValue = baseValue;
             m_PreviousBaseValue = baseValue;
@@ -36,7 +35,7 @@ namespace StatusEffectsFramework
             PostEvaluationValue = baseValue;
         }
 
-        public StatusBool(bool baseValue, StatusNameBool statusName, bool signProtected = true)
+        public StatusBool(bool baseValue, StatusNameBool statusName)
         {
             m_StatusName = statusName;
             m_BaseValue = baseValue;
@@ -191,7 +190,6 @@ namespace StatusEffectsFramework
 #endif
     }
 
-    [BurstCompile]
     internal struct StatusBoolValue
     {
         public bool Value;
@@ -208,9 +206,10 @@ namespace StatusEffectsFramework
             Order = int.MinValue;
         }
 
+        /// <param name="value">The effect's value.</param>
+        /// <param name="priority">The highest priority wins.</param>
         /// <param name="order">Order of the status effect the value came from, oldest first. When omitted,
         /// the first effect applied wins ties.</param>
-        [BurstCompile]
         public void ApplyEffect(bool value, int priority, int order = int.MaxValue)
         {
             if (Priority < priority || (Priority == priority && order < Order))
@@ -221,7 +220,6 @@ namespace StatusEffectsFramework
             }
         }
 
-        [BurstCompile]
         public bool GetValue() => Value;
     }
 }

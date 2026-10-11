@@ -15,15 +15,15 @@ namespace StatusEffectsFramework.Netcode
         public StatusEffectTiming Timing;
         /// <summary>
         /// The <see cref="StatusEffect.Duration"/>. For <see cref="StatusEffectTiming.Duration"/> this is the
-        /// total duration, measured from <see cref="ServerTimeAdded"/>.
+        /// total duration, measured from <see cref="TickAdded"/>.
         /// </summary>
         public float Duration;
         public int Stacks;
         public uint InstanceId;
         /// <summary>
-        /// The server time the status effect was added at, so clients can work out how much time has passed.
+        /// The server tick the status effect was added on, so clients can work out how much time has passed.
         /// </summary>
-        public double ServerTimeAdded;
+        public int TickAdded;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -32,7 +32,7 @@ namespace StatusEffectsFramework.Netcode
             serializer.SerializeValue(ref Duration);
             serializer.SerializeValue(ref Stacks);
             serializer.SerializeValue(ref InstanceId);
-            serializer.SerializeValue(ref ServerTimeAdded);
+            serializer.SerializeValue(ref TickAdded);
         }
 
         public override int GetHashCode() => InstanceId.GetHashCode();
@@ -50,17 +50,17 @@ namespace StatusEffectsFramework.Netcode
                 && Timing == other.Timing
                 && Duration == other.Duration
                 && Stacks == other.Stacks
-                && ServerTimeAdded == other.ServerTimeAdded;
+                && TickAdded == other.TickAdded;
         }
 
-        public NetworkStatusEffect(ushort id, StatusEffectTiming timing, float duration, int stacks, uint instanceId, double serverTimeAdded)
+        public NetworkStatusEffect(ushort id, StatusEffectTiming timing, float duration, int stacks, uint instanceId, int tickAdded)
         {
             Id = id;
             Timing = timing;
             Duration = duration;
             Stacks = stacks;
             InstanceId = instanceId;
-            ServerTimeAdded = serverTimeAdded;
+            TickAdded = tickAdded;
         }
     }
 }

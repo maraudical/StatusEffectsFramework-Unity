@@ -23,7 +23,9 @@ namespace StatusEffectsFramework
         private INetworkStatusManager m_Manager;
         private bool m_Applying;
 
+        /// <param name="inner">The status variable being replicated.</param>
         /// <param name="markDirty">Called after a permitted local change so the library syncs the new state.</param>
+        /// <param name="writePermission">Who is allowed to change the variable locally.</param>
         public StatusVariableReplicator(TVar inner, Action markDirty, StatusWritePermission writePermission = StatusWritePermission.ServerAndOwner)
         {
             Inner = inner;

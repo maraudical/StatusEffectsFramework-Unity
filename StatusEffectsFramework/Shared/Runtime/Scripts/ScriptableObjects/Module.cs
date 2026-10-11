@@ -1,12 +1,3 @@
-#if UNITASK
-using System.Threading;
-using Cysharp.Threading.Tasks;
-#elif UNITY_2023_1_OR_NEWER
-using System.Threading;
-using System.Threading.Tasks;
-#else
-using System.Collections;
-#endif
 using UnityEngine;
 
 namespace StatusEffectsFramework

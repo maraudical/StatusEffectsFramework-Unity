@@ -1,7 +1,3 @@
-#if ENABLE_UNITY_COLLECTIONS_CHECKS
-#define BLOBHASHMAP_SAFE
-#endif
-
 using System;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -20,24 +16,18 @@ namespace StatusEffectsFramework.Entities
 
         // we store these values in the builder because we cannot access BlobHashMapData
         // itself (it must live in blob storage)
-        //private int allocatedIndexLength;
         private int bucketCapacityMask;
         internal int keyCapacity;
 
         internal ref TValue AddByRef(TKey key, bool multi)
         {
             ref int c = ref count[0];
-
-#if BLOBHASHMAP_SAFE
-            if (c >= keyCapacity)
-                throw new InvalidOperationException("HashMap is full");
-#endif
+            CheckCapacity(c);
 
             int bucket = key.GetHashCode() & bucketCapacityMask;
 
             if (!multi && ContainsKey(bucket, key))
                 throw new ArgumentException($"HashMap already contains key \"{key}\"");
-
 
             int index = c++;
             keys[index] = key;
@@ -49,17 +39,12 @@ namespace StatusEffectsFramework.Entities
         internal bool TryAdd(TKey key, TValue item, bool multi)
         {
             ref int c = ref count[0];
-
-#if BLOBHASHMAP_SAFE
-            if (c >= keyCapacity)
-                throw new InvalidOperationException("HashMap is full");
-#endif
+            CheckCapacity(c);
 
             int bucket = key.GetHashCode() & bucketCapacityMask;
 
             if (!multi && ContainsKey(bucket, key))
                 return false;
-
 
             int index = c++;
             keys[index] = key;
@@ -67,6 +52,14 @@ namespace StatusEffectsFramework.Entities
             next[index] = buckets[bucket];
             buckets[bucket] = index;
             return true;
+        }
+
+        // Always checked (not just with collections checks on): BlobBuilderArray doesn't bounds-check in release,
+        // so adding past capacity would silently write into adjacent blob memory
+        private void CheckCapacity(int c)
+        {
+            if (c >= keyCapacity)
+                throw new InvalidOperationException($"HashMap is full (capacity {keyCapacity})");
         }
 
         internal bool ContainsKey(TKey key)
@@ -100,6 +93,7 @@ namespace StatusEffectsFramework.Entities
                 buckets[i] = -1;
             for (int i = 0; i < next.Length; i++)
                 next[i] = -1;
+            count[0] = 0;
         }
 
         internal BlobBuilderHashMapData(int capacity, int bucketCapacityRatio, ref BlobBuilder blobBuilder, ref BlobHashMapData<TKey, TValue> data)
@@ -118,8 +112,8 @@ namespace StatusEffectsFramework.Entities
 
             // so far the only way I've found to modify the true count on the data itself (without using unsafe code)
             // is by storing it in an array we can still access in the Add method.
-            // count is only used in GetKeyArray and GetValueArray to size the array to the true count instead of capacity
-            // count and keyCapacity are like
+            // count is the number of keys actually added, used by Count and by GetKeyArray/GetValueArray
+            // to size their arrays to the true count instead of keyCapacity
             count = blobBuilder.Allocate(ref data.count, 1);
 
             Clear();

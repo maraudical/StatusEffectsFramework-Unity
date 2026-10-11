@@ -1,5 +1,4 @@
 using System;
-using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Collections;
@@ -9,8 +8,7 @@ using Unity.NetCode;
 
 namespace StatusEffectsFramework.Entities
 {
-    [BurstCompile]
-    public struct StatusEffects : IBufferElementData, IComparable<StatusEffects>, IEquatable<uint>, IEquatable<StatusEffects>
+    public struct StatusEffects : IBufferElementData, IComparable<StatusEffects>, IComparable<uint>, IEquatable<uint>, IEquatable<StatusEffects>
     {
 #if NETCODE
         [GhostField(Composite = true)]
@@ -34,13 +32,13 @@ namespace StatusEffectsFramework.Entities
         [GhostField]
 #endif
         public StatusEffectTiming Timing;
+        /// <summary>
+        /// The total duration until the status effect expires. Depending on the
+        /// <see cref="StatusEffectTiming"/> this may be seconds or based on an event.
+        /// </summary>
 #if NETCODE
         [GhostField(Quantization = 1000)]
 #endif
-        /// <summary>
-        /// The total duration until the status effect expires. Depending on the 
-        /// <see cref="StatusEffectTiming"/> this may be seconds or based on an event.
-        /// </summary>
         public float Duration;
 #if NETCODE
         [GhostField(Quantization = 1000)]
@@ -65,6 +63,8 @@ namespace StatusEffectsFramework.Entities
 
         public int CompareTo(StatusEffects other) => InstanceId.CompareTo(other.InstanceId);
 
+        public int CompareTo(uint other) => InstanceId.CompareTo(other);
+
         public bool Equals(uint other) => InstanceId.Equals(other);
 
         public bool Equals(StatusEffects other) => InstanceId.Equals(other.InstanceId);
@@ -72,15 +72,14 @@ namespace StatusEffectsFramework.Entities
         /// <summary>
         /// Calculated remaining time until the status effect expires.
         /// </summary>
-        [BurstCompile]
         public float TimeRemaining
 #if NETCODE
-            (NetworkTick currentTick, ClientServerTickRate tickRate)
+            (NetworkTick currentTick, in ClientServerTickRate tickRate)
         {
             return TimeRemaining(currentTick, 1f, tickRate);
         }
 
-        public float TimeRemaining (NetworkTick currentTick, float currentTickFraction, ClientServerTickRate tickRate)
+        public float TimeRemaining(NetworkTick currentTick, float currentTickFraction, in ClientServerTickRate tickRate)
         {
             return Timing switch
             {
@@ -104,17 +103,17 @@ namespace StatusEffectsFramework.Entities
         /// <summary>
         /// Finds the index in the <see cref="DynamicBuffer{T}"/> where the <see cref="StatusEffects.InstanceId"/> equals a given <paramref name="id"/>.
         /// </summary>
+        /// <remarks>The buffer is kept sorted by <see cref="StatusEffects.InstanceId"/>, so this is a binary search.</remarks>
         /// <returns>The index of the first occurrence of the value in the buffer. Returns -1 if no occurrence is found.</returns>
-        [BurstCompile]
         public static int IndexOfStatusEffect(in DynamicBuffer<StatusEffects> buffer, uint id)
         {
-            return buffer.AsNativeArray().IndexOf(id);
+            int index = buffer.AsNativeArray().BinarySearchFirst(id);
+            return index >= 0 ? index : -1;
         }
 
         /// <summary>
         /// Attempts to find the <see cref="StatusEffects"/> in a <see cref="DynamicBuffer{T}"/> where the <see cref="StatusEffects.InstanceId"/> equals a given <paramref name="id"/>.
         /// </summary>
-        [BurstCompile]
         public static bool TryGetStatusEffect(in DynamicBuffer<StatusEffects> buffer, uint id, out StatusEffects statusEffect)
         {
             var index = IndexOfStatusEffect(buffer, id);

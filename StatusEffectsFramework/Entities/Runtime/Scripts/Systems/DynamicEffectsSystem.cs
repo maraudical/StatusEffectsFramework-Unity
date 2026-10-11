@@ -86,12 +86,10 @@ namespace StatusEffectsFramework.Entities
             public BufferTypeHandle<StatusEffectEvents> StatusEffectEventsHandle;
             public uint GlobalSystemVersion;
 
-            [BurstCompile]
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
                 BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
-                TypeIndex typeIndex;
 
                 using var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 using var typeToLength = new UnsafeHashMap<TypeIndex, int>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
@@ -117,8 +115,7 @@ namespace StatusEffectsFramework.Entities
                             if (effect.ValueSource != ValueSource.DynamicValue)
                                 continue;
 
-                            typeIndex = effect.DynamicEffectInfo.TypeIndex;
-
+                            var typeIndex = effect.DynamicEffectInfo.TypeIndex;
 
                             if (!typeToIndexAndTypeInfo.TryGetValue(typeIndex, out var info))
                             {
@@ -165,7 +162,7 @@ namespace StatusEffectsFramework.Entities
                                     var header = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
 
                                     if (Hint.Unlikely(header == null))
-                                        continue;
+                                        break;
 
                                     var buffer = BufferHeader.GetElementPointer(header);
                                     var length = header->Length;
@@ -261,14 +258,12 @@ namespace StatusEffectsFramework.Entities
             public BufferTypeHandle<InterpolatedStatusEffects> InterpolatedStatusEffectsHandle;
             public uint GlobalSystemVersion;
 
-            [BurstCompile]
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
                 BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
                 BufferAccessor<StatusEffects> statusEffectsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectsHandle);
                 BufferAccessor<InterpolatedStatusEffects> interpolatedStatusEffectsAccessor = chunk.GetBufferAccessorRO(ref InterpolatedStatusEffectsHandle);
-                TypeIndex typeIndex;
 
                 using var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 using var interpolatedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
@@ -280,6 +275,7 @@ namespace StatusEffectsFramework.Entities
                 {
                     var statusEffects = statusEffectsAccessor[i];
                     var interpolatedStatusEffects = interpolatedStatusEffectsAccessor[i];
+                    var statusEffectEvents = statusEffectEventsAccessor[i].AsNativeArray();
 
                     interpolatedTypes.Clear();
                     typeAlreadyProcessed.Clear();
@@ -294,7 +290,14 @@ namespace StatusEffectsFramework.Entities
                         if (v >= statusEffects.Length || statusEffects[v].InstanceId != interpolatedStatusEffect.InstanceId)
                             noChange = false;
                         else
+                        {
+                            // A rollback to the tick an effect was added re-adds it with the same InstanceId, and
+                            // DynamicEffectsSystem will append it again, so its old elements still need clearing.
+                            int eventIndex = statusEffectEvents.IndexOf(interpolatedStatusEffect.InstanceId);
+                            if (eventIndex >= 0 && statusEffectEvents[eventIndex].Event is StatusEffectEvent.Added)
+                                noChange = false;
                             continue;
+                        }
 
                         ref var data = ref Registry.GetStatusEffectDataOrNullRefDebug(interpolatedStatusEffect.Id, out bool exists);
                         if (!exists)
@@ -309,7 +312,6 @@ namespace StatusEffectsFramework.Entities
                         continue;
 
                     var entity = entities[i];
-                    var statusEffectEvents = statusEffectEventsAccessor[i].AsNativeArray();
 
                     foreach (var statusEffect in statusEffects)
                     {
@@ -327,7 +329,7 @@ namespace StatusEffectsFramework.Entities
                             if (effect.ValueSource != ValueSource.DynamicValue)
                                 continue;
 
-                            typeIndex = effect.DynamicEffectInfo.TypeIndex;
+                            var typeIndex = effect.DynamicEffectInfo.TypeIndex;
 
                             interpolatedTypes.Remove(typeIndex);
 

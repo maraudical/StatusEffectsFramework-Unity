@@ -9,7 +9,7 @@ using Unity.Entities;
 namespace StatusEffectsFramework.Entities
 {
     /// <summary>
-    /// A read only multihashmap that can be used as inside blob asset
+    /// A read only multihashmap that can be used inside a blob asset
     /// </summary>
     [MayOnlyLiveInBlobStorage]
     public struct BlobMultiHashMap<TKey, TValue>
@@ -28,7 +28,7 @@ namespace StatusEffectsFramework.Entities
         /// Checks to see if the given key and index are valid.
         /// </summary>
         /// <param name="it">The iterator to check <see cref="BlobMultiHashMapIterator{TKey}.nextIndex"/> for.</param>
-        /// /// <returns>Returns true if the index is valid, otherwise returns false.</returns>
+        /// <returns>Returns true if the index is valid, otherwise returns false.</returns>
         public bool IsValidIndex(in BlobMultiHashMapIterator<TKey> it) => data.IsValidIndex(it);
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <param name="key">The key of the value to get.</param>
         /// <param name="index">The index within the values for the key.</param>
-        /// /// <returns>Returns true if the index is valid, otherwise returns false.</returns>
+        /// <returns>Returns true if the index is valid, otherwise returns false.</returns>
         public bool IsValidIndex(TKey key, int index) => data.IsValidIndex(key, index);
 
         /// <summary>

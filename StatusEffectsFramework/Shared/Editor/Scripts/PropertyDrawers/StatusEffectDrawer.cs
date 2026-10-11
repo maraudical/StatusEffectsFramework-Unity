@@ -57,7 +57,8 @@ namespace StatusEffectsFramework.Editor
                         var durationFloat = new FloatField(string.Empty);
                         duration = durationFloat;
                         StatusEffect statusEffect = (StatusEffect)durationProperty.GetParent(property.serializedObject.targetObject);
-                        durationFloat.schedule.Execute(() => { durationFloat.value = Mathf.Round(statusEffect.TimeRemaining(Time.timeAsDouble) * 100f) / 100f; }).Every(0);
+                        var statusManager = property.serializedObject.targetObject as StatusManager;
+                        durationFloat.schedule.Execute(() => { durationFloat.value = Mathf.Round(statusEffect.TimeRemaining(statusManager ? statusManager.CurrentTime : Time.timeAsDouble) * 100f) / 100f; }).Every(0);
                         break;
                     default:
                         duration = new PropertyField(durationProperty, string.Empty);

@@ -1,10 +1,8 @@
 using System;
-using Unity.Burst;
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
 {
-    [BurstCompile]
     public struct StatusEffectEvents : IBufferElementData, IEnableableComponent, IEquatable<uint>
     {
         public StatusEffectEvent Event;
@@ -27,14 +25,14 @@ namespace StatusEffectsFramework.Entities
         public const float SecondsTillOldThreshold = 0.5f;
 #endif
 
-        public StatusEffectEvents(uint id, ushort statusEffectDataId
+        public StatusEffectEvents(uint instanceId, ushort statusEffectDataId
 #if NETCODE
             , bool isOld = false
 #endif
             )
         {
             Event = StatusEffectEvent.Added;
-            InstanceId = id;
+            InstanceId = instanceId;
             Id = statusEffectDataId;
             PreviousStacks = 0;
 #if NETCODE
@@ -42,14 +40,14 @@ namespace StatusEffectsFramework.Entities
 #endif
         }
 
-        public StatusEffectEvents(uint id, ushort statusEffectDataId, int previousStacks, StatusEffectEvent statusEffectEvent
+        public StatusEffectEvents(uint instanceId, ushort statusEffectDataId, int previousStacks, StatusEffectEvent statusEffectEvent
 #if NETCODE
             , bool isOld = false
 #endif
             )
         {
             Event = statusEffectEvent;
-            InstanceId = id;
+            InstanceId = instanceId;
             Id = statusEffectDataId;
             PreviousStacks = previousStacks;
 #if NETCODE

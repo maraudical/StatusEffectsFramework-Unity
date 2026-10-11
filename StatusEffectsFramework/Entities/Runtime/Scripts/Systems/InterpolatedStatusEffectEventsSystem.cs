@@ -39,6 +39,9 @@ namespace StatusEffectsFramework.Entities
                 NetworkTime = SystemAPI.GetSingleton<NetworkTime>(),
                 TickRate = tickRate,
                 PredictedGhostHandle = SystemAPI.GetComponentTypeHandle<PredictedGhost>(true),
+                StatusEffectsHandle = SystemAPI.GetBufferTypeHandle<StatusEffects>(true),
+                StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(),
+                InterpolatedStatusEffectsHandle = SystemAPI.GetBufferTypeHandle<InterpolatedStatusEffects>(),
             };
             state.Dependency = statusEffectsInterpolatedEventsJob.ScheduleParallelByRef(m_StatusEffectsInterpolatedEventsQuery, state.Dependency);
         }
@@ -54,90 +57,115 @@ namespace StatusEffectsFramework.Entities
             } 
         }
 
+        // An IJobChunk rather than an IJobEntity so the events, the snapshot and the events enabled bits
+        // are only taken read-write, and their change versions bumped, for chunks that actually differ.
+        // The change filter on StatusEffects lets through every chunk that received a snapshot.
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
-        partial struct StatusEffectsInterpolatedEventsJob : IJobEntity, IJobEntityChunkBeginEnd
+        struct StatusEffectsInterpolatedEventsJob : IJobChunk
         {
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
             [ReadOnly] public ComponentTypeHandle<PredictedGhost> PredictedGhostHandle;
+            [ReadOnly] public BufferTypeHandle<StatusEffects> StatusEffectsHandle;
+            public BufferTypeHandle<StatusEffectEvents> StatusEffectEventsHandle;
+            public BufferTypeHandle<InterpolatedStatusEffects> InterpolatedStatusEffectsHandle;
 
-            private NetworkTick m_CurrentTick;
-
-            public bool OnChunkBegin(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
+            public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 // Predicted ghosts run on the server tick, interpolated ghosts on the interpolation tick.
-                m_CurrentTick = chunk.Has(ref PredictedGhostHandle) ? NetworkTime.ServerTick : NetworkTime.InterpolationTick;
+                var currentTick = chunk.Has(ref PredictedGhostHandle) ? NetworkTime.ServerTick : NetworkTime.InterpolationTick;
+
+                var statusEffectsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectsHandle);
+                var statusEffectEventsAccessor = new LazyBufferAccessor<StatusEffectEvents>(chunk, ref StatusEffectEventsHandle);
+                var interpolatedStatusEffectsAccessor = new LazyBufferAccessor<InterpolatedStatusEffects>(chunk, ref InterpolatedStatusEffectsHandle);
+
+                var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
+                while (enumerator.NextEntityIndex(out var e))
+                {
+                    var statusEffects = statusEffectsAccessor[e];
+
+                    // Both buffers are ordered by InstanceId: status effects are only appended with an
+                    // increasing AvailableId and removed in order, and the interpolated buffer is rebuilt
+                    // below in the same order. This lets us diff them with a single two-index merge.
+                    CheckSortedByInstanceId(statusEffects);
+
+                    // Every difference in InstanceId, Id or Stacks emits an event, so a matching snapshot
+                    // means there are no events to add and nothing to write.
+                    if (MatchesSnapshot(statusEffects, interpolatedStatusEffectsAccessor.GetReadOnly(e)))
+                        continue;
+
+                    var statusEffectEvents = statusEffectEventsAccessor.GetReadWrite(e);
+                    var interpolatedStatusEffects = interpolatedStatusEffectsAccessor.GetReadWrite(e);
+
+                    int length = statusEffects.Length;
+                    int interpolatedLength = interpolatedStatusEffects.Length;
+                    int i = 0, j = 0;
+
+                    while (i < length || j < interpolatedLength)
+                    {
+                        if (j == interpolatedLength || (i < length && statusEffects[i].InstanceId < interpolatedStatusEffects[j].InstanceId))
+                        {
+                            // Status effect was added, trigger added event.
+                            var statusEffect = statusEffects[i++];
+                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, IsOld(currentTick, statusEffect.TickAdded)));
+                        }
+                        else if (i == length || statusEffects[i].InstanceId > interpolatedStatusEffects[j].InstanceId)
+                        {
+                            // Status effect was removed, trigger removed event.
+                            var interpolatedStatusEffect = interpolatedStatusEffects[j++];
+                            statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.InstanceId, interpolatedStatusEffect.Id, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
+                        }
+                        else
+                        {
+                            var statusEffect = statusEffects[i++];
+                            var interpolatedStatusEffect = interpolatedStatusEffects[j++];
+                            if (statusEffect.Id != interpolatedStatusEffect.Id)
+                            {
+                                // Status effect was updated with a different status effect data, trigger removed and added events.
+                                // Instance ids aren't currently reused for different data, this is kept defensively.
+                                statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.InstanceId, interpolatedStatusEffect.Id, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
+                                statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, IsOld(currentTick, statusEffect.TickAdded)));
+                            }
+                            else if (statusEffect.Stacks != interpolatedStatusEffect.Stacks)
+                            {
+                                // Status effect was updated, trigger updated event.
+                                statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, interpolatedStatusEffect.Stacks, StatusEffectEvent.Updated, IsOld(currentTick, statusEffect.TickUpdated)));
+                            }
+                        }
+                    }
+
+                    chunk.SetComponentEnabled(ref StatusEffectEventsHandle, e, true);
+
+                    // Snapshot the status effects for the next diff. Done after the merge so the
+                    // previous snapshot doesn't need to be copied first.
+                    interpolatedStatusEffects.ResizeUninitialized(length);
+                    for (int k = 0; k < length; k++)
+                    {
+                        var statusEffect = statusEffects[k];
+                        interpolatedStatusEffects[k] = new InterpolatedStatusEffects { InstanceId = statusEffect.InstanceId, Id = statusEffect.Id, Stacks = statusEffect.Stacks };
+                    }
+                }
+            }
+
+            private static bool MatchesSnapshot(in DynamicBuffer<StatusEffects> statusEffects, in DynamicBuffer<InterpolatedStatusEffects> interpolatedStatusEffects)
+            {
+                if (statusEffects.Length != interpolatedStatusEffects.Length)
+                    return false;
+
+                for (int k = 0; k < statusEffects.Length; k++)
+                {
+                    var statusEffect = statusEffects[k];
+                    var interpolatedStatusEffect = interpolatedStatusEffects[k];
+                    if (statusEffect.InstanceId != interpolatedStatusEffect.InstanceId
+                        || statusEffect.Id != interpolatedStatusEffect.Id
+                        || statusEffect.Stacks != interpolatedStatusEffect.Stacks)
+                        return false;
+                }
+
                 return true;
             }
 
-            public void OnChunkEnd(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask, bool chunkWasExecuted) { }
-
-            public void Execute(EnabledRefRW<StatusEffectEvents> statusEffectEventsEnabledRW,
-                in DynamicBuffer<StatusEffects> statusEffects,
-                ref DynamicBuffer<StatusEffectEvents> statusEffectEvents, 
-                ref DynamicBuffer<InterpolatedStatusEffects> interpolatedStatusEffects)
-            {
-                // Both buffers are ordered by InstanceId: status effects are only appended with an
-                // increasing AvailableId and removed in order, and the interpolated buffer is rebuilt
-                // below in the same order. This lets us diff them with a single two-index merge.
-                CheckSortedByInstanceId(statusEffects);
-
-                int eventsLength = statusEffectEvents.Length;
-                int length = statusEffects.Length;
-                int interpolatedLength = interpolatedStatusEffects.Length;
-                int i = 0, j = 0;
-
-                while (i < length || j < interpolatedLength)
-                {
-                    if (j == interpolatedLength || (i < length && statusEffects[i].InstanceId < interpolatedStatusEffects[j].InstanceId))
-                    {
-                        // Status effect was added, trigger added event.
-                        var statusEffect = statusEffects[i++];
-                        statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, IsOld(statusEffect.TickAdded)));
-                    }
-                    else if (i == length || statusEffects[i].InstanceId > interpolatedStatusEffects[j].InstanceId)
-                    {
-                        // Status effect was removed, trigger removed event.
-                        var interpolatedStatusEffect = interpolatedStatusEffects[j++];
-                        statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.InstanceId, interpolatedStatusEffect.Id, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
-                    }
-                    else
-                    {
-                        var statusEffect = statusEffects[i++];
-                        var interpolatedStatusEffect = interpolatedStatusEffects[j++];
-                        if (statusEffect.Id != interpolatedStatusEffect.Id)
-                        {
-                            // Status effect was updated with a different status effect data, trigger removed and added events.
-                            // Instance ids aren't currently reused for different data, this is kept defensively.
-                            statusEffectEvents.Add(new StatusEffectEvents(interpolatedStatusEffect.InstanceId, interpolatedStatusEffect.Id, interpolatedStatusEffect.Stacks, StatusEffectEvent.Removed));
-                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, IsOld(statusEffect.TickAdded)));
-                        }
-                        else if (statusEffect.Stacks != interpolatedStatusEffect.Stacks)
-                        {
-                            // Status effect was updated, trigger updated event.
-                            statusEffectEvents.Add(new StatusEffectEvents(statusEffect.InstanceId, statusEffect.Id, interpolatedStatusEffect.Stacks, StatusEffectEvent.Updated, IsOld(statusEffect.TickUpdated)));
-                        }
-                    }
-                }
-
-                // Every difference in InstanceId, Id or Stacks emits an event, so no events means
-                // the snapshot already matches the status effects and doesn't need rewriting.
-                if (statusEffectEvents.Length == eventsLength)
-                    return;
-
-                statusEffectEventsEnabledRW.ValueRW = true;
-
-                // Snapshot the status effects for the next diff. Done after the merge so the
-                // previous snapshot doesn't need to be copied first.
-                interpolatedStatusEffects.ResizeUninitialized(length);
-                for (int k = 0; k < length; k++)
-                {
-                    var statusEffect = statusEffects[k];
-                    interpolatedStatusEffects[k] = new InterpolatedStatusEffects { InstanceId = statusEffect.InstanceId, Id = statusEffect.Id, Stacks = statusEffect.Stacks };
-                }
-            }
-
-            private bool IsOld(NetworkTick tick) => m_CurrentTick.TimeSince(tick, TickRate) > StatusEffectEvents.SecondsTillOldThreshold;
+            private bool IsOld(NetworkTick currentTick, NetworkTick tick) => currentTick.TimeSince(tick, TickRate) > StatusEffectEvents.SecondsTillOldThreshold;
 
             [System.Diagnostics.Conditional("ENABLE_UNITY_COLLECTIONS_CHECKS"), System.Diagnostics.Conditional("UNITY_DOTS_DEBUG")]
             private static void CheckSortedByInstanceId(in DynamicBuffer<StatusEffects> statusEffects)

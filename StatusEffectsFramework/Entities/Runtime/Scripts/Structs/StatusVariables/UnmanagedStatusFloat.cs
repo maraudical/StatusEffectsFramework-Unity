@@ -1,10 +1,8 @@
 using Unity.Assertions;
-using Unity.Burst;
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
 {
-    [BurstCompile]
     public struct UnmanagedStatusFloat
     {
         public Hash128 UniqueKey;
@@ -14,7 +12,6 @@ namespace StatusEffectsFramework.Entities
         /// Attempt to retrieve the <see cref="StatusFloats"/> value for this <see cref="UnmanagedStatusFloat"/>.
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
-        [BurstCompile]
         public bool TryGetValue(ulong stableTypeHash, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusFloats> buffer, out float value)
         {
             if (TryGetIndex(stableTypeHash, registry, buffer, out int index))
@@ -31,7 +28,6 @@ namespace StatusEffectsFramework.Entities
         /// Attempt to retrieve the <see cref="StatusFloats"/> for this <see cref="UnmanagedStatusFloat"/>.
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
-        [BurstCompile]
         public bool TryGetElement(ulong stableTypeHash, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusFloats> buffer, out StatusFloats value)
         {
             if (TryGetIndex(stableTypeHash, registry, buffer, out int index))
@@ -47,7 +43,6 @@ namespace StatusEffectsFramework.Entities
         /// <summary>
         /// Attempt to retrieve the <see cref="StatusFloats"/> index value for this <see cref="UnmanagedStatusFloat"/>.
         /// </summary>
-        [BurstCompile]
         public bool TryGetIndex(ulong stableTypeHash, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusFloats> buffer, out int index)
         {
             StatusFloats statusFloat;

@@ -21,20 +21,25 @@ namespace StatusEffectsFramework
     /// </summary>
     public class StatusRegistry : ScriptableObject
 #if UNITY_EDITOR
-        , IPreprocessBuildWithReport
     {
-        public int callbackOrder => 0;
-
-        public void OnPreprocessBuild(BuildReport report)
+        /// <summary>
+        /// Refreshes the registry asset before a build. Unity creates its own instance of every build
+        /// callback type, so this is kept off <see cref="StatusRegistry"/> and preprocesses the asset itself.
+        /// </summary>
+        internal sealed class BuildPreprocessor : IPreprocessBuildWithReport
         {
-            Preprocess();
+            public int callbackOrder => 0;
+
+            public void OnPreprocessBuild(BuildReport report)
+            {
+                Get().Preprocess();
+            }
         }
 
         [InitializeOnEnterPlayMode]
         private static void OnPlayModeStateChanged()
         {
-            s_Instance = null;
-            Instance.Preprocess();
+            Get().Preprocess();
         }
 
         private void Preprocess()

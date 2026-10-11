@@ -17,7 +17,7 @@ namespace StatusEffectsFramework
         public uint Id => m_Id;
         public double TimeAdded => m_TimeAdded;
         public float Duration { get => m_Duration; set { m_Duration = value; DurationUpdate?.Invoke(value); } }
-        public int Stacks { get => m_Stacks; set { m_PreviousStacks = m_Stacks; m_Stacks = value; StackUpdate?.Invoke(m_PreviousStacks, m_Stacks); } }
+        public int Stacks { get => m_Stacks; set { int previousStacks = m_Stacks; m_Stacks = value; StackUpdate?.Invoke(previousStacks, m_Stacks); } }
 
         internal uint m_Id;
         /// <summary>
@@ -38,7 +38,6 @@ namespace StatusEffectsFramework
 #endif
         private int m_Stacks;
 
-        private int m_PreviousStacks;
         private bool m_ModulesEnabled;
 
         internal DynamicFloat[] DynamicFloats;

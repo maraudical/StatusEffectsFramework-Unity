@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using UnityEngine;
-using Unity.Burst;
 using Unity.Mathematics;
 
 namespace StatusEffectsFramework
@@ -215,7 +214,6 @@ namespace StatusEffectsFramework
 #endif
     }
 
-    [BurstCompile]
     internal struct StatusFloatValue
     {
         public float BaseValue;
@@ -254,7 +252,10 @@ namespace StatusEffectsFramework
             }
         }
 
-        [BurstCompile]
+        /// <param name="valueModifier">How <paramref name="value"/> is combined with the other effects.</param>
+        /// <param name="value">The effect's value.</param>
+        /// <param name="priority">Only used by <see cref="ValueModifier.Minimum"/>, <see cref="ValueModifier.Maximum"/>
+        /// and <see cref="ValueModifier.Overwrite"/>. The highest priority wins.</param>
         /// <param name="order">Order of the status effect the value came from, oldest first. When omitted,
         /// the first effect applied wins ties.</param>
         public void ApplyEffect(ValueModifier valueModifier, float value, int priority, int order = int.MaxValue)
@@ -299,7 +300,6 @@ namespace StatusEffectsFramework
             }
         }
         
-        [BurstCompile]
         public float GetValue()
         {
             if (OverwritePriority >= 0)

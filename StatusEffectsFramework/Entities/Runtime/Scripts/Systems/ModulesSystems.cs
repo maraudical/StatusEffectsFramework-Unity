@@ -22,13 +22,13 @@ namespace StatusEffectsFramework.Entities
         public BufferTypeHandle<ZeroLengthModules> ZeroLengthModulesHandle;
         public uint GlobalSystemVersion;
 
-        [BurstCompile]
         public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
         {
             NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
             BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
-            BufferAccessor<ZeroLengthModules> zeroLengthModulesAccessor = chunk.GetBufferAccessorRW(ref ZeroLengthModulesHandle);
-            
+            // Only taken read-write once a queued removal has to be cancelled.
+            var zeroLengthModulesAccessor = new LazyBufferAccessor<ZeroLengthModules>(chunk, ref ZeroLengthModulesHandle);
+
             using var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
             using var typeToLength = new UnsafeHashMap<TypeIndex, int>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
 
@@ -37,8 +37,6 @@ namespace StatusEffectsFramework.Entities
             {
                 var entity = entities[i];
                 var statusEffectEvents = statusEffectEventsAccessor[i];
-                var zeroLengthModules = zeroLengthModulesAccessor[i].Reinterpret<TypeIndex>();
-                var zeroLengthModulesPtr = (TypeIndex*)zeroLengthModules.GetUnsafePtr();
                 typeToLength.Clear();
 
                 foreach (var statusEffectEvent in statusEffectEvents)
@@ -96,7 +94,7 @@ namespace StatusEffectsFramework.Entities
                                 var header = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
 
                                 if (Hint.Unlikely(header == null))
-                                    continue;
+                                    break;
 
                                 var buffer = BufferHeader.GetElementPointer(header);
                                 var length = header->Length;
@@ -132,7 +130,9 @@ namespace StatusEffectsFramework.Entities
                 // later by the ZeroLengthModulesJob only if they are still empty then. A type that has
                 // elements again cancels any removal already queued for it.
                 bool hasZeroLengthModules = false;
-                bool zeroLengthModulesSorted = false;
+                int queuedLength = zeroLengthModulesAccessor.GetReadOnly(i).Length;
+                DynamicBuffer<TypeIndex> zeroLengthModules = default;
+                TypeIndex* zeroLengthModulesPtr = null;
 
                 foreach (var kvp in typeToLength)
                 {
@@ -143,15 +143,18 @@ namespace StatusEffectsFramework.Entities
                     }
                     else
                     {
-                        if (zeroLengthModules.Length == 0)
+                        if (queuedLength == 0)
                             continue;
 
-                        // Only sort once there is something to search for.
-                        if (!zeroLengthModulesSorted)
+                        // Only take the buffer as RW and sort it once there is something to search for.
+                        if (zeroLengthModulesPtr == null)
                         {
+                            zeroLengthModules = zeroLengthModulesAccessor.GetReadWrite(i).Reinterpret<TypeIndex>();
+                            zeroLengthModulesPtr = (TypeIndex*)zeroLengthModules.GetUnsafePtr();
                             NativeSortExtension.Sort(zeroLengthModulesPtr, zeroLengthModules.Length);
-                            zeroLengthModulesSorted = true;
                         }
+                        else if (zeroLengthModules.Length == 0)
+                            continue;
 
                         int last = NativeSortExtensions.BinarySearchLast(zeroLengthModulesPtr, zeroLengthModules.Length, kvp.Key);
                         if (last >= 0)
@@ -183,7 +186,6 @@ namespace StatusEffectsFramework.Entities
         public EntityTypeHandle EntityTypeHandle;
         public BufferTypeHandle<ZeroLengthModules> ZeroLengthModulesHandle;
 
-        [BurstCompile]
         public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
         {
             NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
@@ -389,7 +391,6 @@ namespace StatusEffectsFramework.Entities
             public BufferTypeHandle<InterpolatedStatusEffects> InterpolatedStatusEffectsHandle;
             public uint GlobalSystemVersion;
 
-            [BurstCompile]
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
@@ -397,22 +398,24 @@ namespace StatusEffectsFramework.Entities
                 BufferAccessor<StatusEffects> statusEffectsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectsHandle);
                 BufferAccessor<InterpolatedStatusEffects> interpolatedStatusEffectsAccessor = chunk.GetBufferAccessorRO(ref InterpolatedStatusEffectsHandle);
 
-
                 using var typeToIndexAndTypeInfo = new UnsafeHashMap<TypeIndex, (int IndexInTypeArray, TypeManager.TypeInfo TypeInfo)>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 using var interpolatedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
                 using var typeAlreadyProcessed = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
+                using var addedTypes = new UnsafeHashSet<TypeIndex>(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
                 {
                     var statusEffects = statusEffectsAccessor[i];
                     var interpolatedStatusEffects = interpolatedStatusEffectsAccessor[i];
+                    var statusEffectEvents = statusEffectEventsAccessor[i].AsNativeArray();
 
                     interpolatedTypes.Clear();
                     typeAlreadyProcessed.Clear();
+                    addedTypes.Clear();
 
                     bool noChange = true;
-                    
+
                     for (int v = 0; v < interpolatedStatusEffects.Length; v++)
                     {
                         var interpolatedStatusEffect = interpolatedStatusEffects[v];
@@ -420,7 +423,14 @@ namespace StatusEffectsFramework.Entities
                         if (v >= statusEffects.Length || statusEffects[v].InstanceId != interpolatedStatusEffect.InstanceId)
                             noChange = false;
                         else
+                        {
+                            // A rollback to the tick an effect was added re-adds it with the same InstanceId, and
+                            // PredictedModulesSystem will append it again, so its old elements still need clearing.
+                            int eventIndex = statusEffectEvents.IndexOf(interpolatedStatusEffect.InstanceId);
+                            if (eventIndex >= 0 && statusEffectEvents[eventIndex].Event is StatusEffectEvent.Added)
+                                noChange = false;
                             continue;
+                        }
 
                         ref var data = ref Registry.GetStatusEffectDataOrNullRefDebug(interpolatedStatusEffect.Id, out bool exists);
                         if (!exists)
@@ -434,13 +444,11 @@ namespace StatusEffectsFramework.Entities
                         continue;
                     
                     var entity = entities[i];
-                    var statusEffectEvents = statusEffectEventsAccessor[i].AsNativeArray();
 
                     foreach (var statusEffect in statusEffects)
                     {
                         int index = statusEffectEvents.IndexOf(statusEffect.InstanceId);
-                        if (index >= 0 && statusEffectEvents[index].Event is StatusEffectEvent.Added)
-                            continue;
+                        bool addedThisTick = index >= 0 && statusEffectEvents[index].Event is StatusEffectEvent.Added;
 
                         ref var data = ref Registry.GetStatusEffectDataOrNullRefDebug(statusEffect.Id, out bool exists);
                         if (!exists)
@@ -452,6 +460,13 @@ namespace StatusEffectsFramework.Entities
                             var componentType = ComponentType.FromTypeIndex(moduleInfo.TypeIndex);
 
                             interpolatedTypes.Remove(moduleInfo.TypeIndex);
+
+                            // PredictedModulesSystem appends effects added this tick, so only keep their type.
+                            if (addedThisTick)
+                            {
+                                addedTypes.Add(moduleInfo.TypeIndex);
+                                continue;
+                            }
 
                             if (!typeToIndexAndTypeInfo.TryGetValue(moduleInfo.TypeIndex, out var info))
                             {
@@ -499,6 +514,30 @@ namespace StatusEffectsFramework.Entities
                                 length++;
                             }
                         }
+                    }
+
+                    // Types only needed by effects added this tick weren't rebuilt above, so any elements
+                    // in them are leftover from before rollback.
+                    foreach (var t in addedTypes)
+                    {
+                        if (typeAlreadyProcessed.Contains(t))
+                            continue;
+
+                        if (!typeToIndexAndTypeInfo.TryGetValue(t, out var info))
+                        {
+                            info = (StatusEffectsUtility.GetIndexInTypeArray(chunk, t), TypeManager.GetTypeInfo(t));
+                            typeToIndexAndTypeInfo.TryAdd(t, info);
+                        }
+
+                        if (info.IndexInTypeArray < 0)
+                            continue;
+
+                        var header = (BufferHeader*)StatusEffectsUtility.GetComponentDataWithTypeRW(chunk, i, info.IndexInTypeArray, GlobalSystemVersion);
+
+                        if (Hint.Unlikely(header == null))
+                            continue;
+
+                        header->Length = 0;
                     }
 
                     // These are old module buffers leftover from before rollback. They are emptied now and

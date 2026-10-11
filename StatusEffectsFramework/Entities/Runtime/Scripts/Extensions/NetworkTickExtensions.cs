@@ -1,16 +1,13 @@
 #if NETCODE
-using Unity.Burst;
 using Unity.Mathematics;
 using Unity.NetCode;
 
 namespace StatusEffectsFramework.Entities
 {
-    [BurstCompile]
     public static class NetworkTickExtensions
     {
         /// <inheritdoc cref="TimeSince(NetworkTick, in NetworkTick, float, in ClientServerTickRate)"/>
         /// <remarks>Treats <paramref name="tick"/> as a full tick.</remarks>
-        [BurstCompile]
         public static float TimeSince(this NetworkTick tick, in NetworkTick oldTick, in ClientServerTickRate tickRate)
         {
             return TimeSince(tick, oldTick, 1f, tickRate);
@@ -31,7 +28,6 @@ namespace StatusEffectsFramework.Entities
         /// <returns>The time in seconds that has elapsed since this tick, based on
         /// the current tick and the tick rate.
         /// </returns>
-        [BurstCompile]
         public static float TimeSince(this NetworkTick tick, in NetworkTick oldTick, float thisTickFraction, in ClientServerTickRate tickRate)
         {
             // A partial tick is still being simulated towards tick, so only (fraction - 1) of it

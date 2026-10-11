@@ -145,29 +145,17 @@ namespace StatusEffectsFramework.Entities
 
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
-                var statusEffectsAccessorRO = chunk.GetBufferAccessorRO(ref StatusEffectsHandle);
-                var statusEffectEventsAccessorRO = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
-                BufferAccessor<StatusEffects> statusEffectsAccessorRW = default;
-                BufferAccessor<StatusEffectEvents> statusEffectEventsAccessorRW = default;
-                bool hasStatusEffectsWriteAccess = false;
-                bool hasStatusEffectEventsWriteAccess = false;
+                var statusEffectsAccessor = new LazyBufferAccessor<StatusEffects>(chunk, ref StatusEffectsHandle);
+                var statusEffectEventsAccessor = new LazyBufferAccessor<StatusEffectEvents>(chunk, ref StatusEffectEventsHandle);
 
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
                 {
-                    bool hasExpiredStatusEffect = HasExpiredStatusEffect(statusEffectsAccessorRO[i]);
+                    bool hasExpiredStatusEffect = HasExpiredStatusEffect(statusEffectsAccessor.GetReadOnly(i));
 
                     // Only bump the change version of events in chunks with old events to clear or new ones to add.
-                    if (hasExpiredStatusEffect || statusEffectEventsAccessorRO[i].Length > 0)
-                    {
-                        if (!hasStatusEffectEventsWriteAccess)
-                        {
-                            statusEffectEventsAccessorRW = chunk.GetBufferAccessorRW(ref StatusEffectEventsHandle);
-                            hasStatusEffectEventsWriteAccess = true;
-                        }
-
-                        statusEffectEventsAccessorRW[i].Clear();
-                    }
+                    if (hasExpiredStatusEffect || statusEffectEventsAccessor.GetReadOnly(i).Length > 0)
+                        statusEffectEventsAccessor.GetReadWrite(i).Clear();
 
                     if (!hasExpiredStatusEffect)
                     {
@@ -177,14 +165,8 @@ namespace StatusEffectsFramework.Entities
                     }
 
                     // Only bump the change version of chunks that actually have expired effects.
-                    if (!hasStatusEffectsWriteAccess)
-                    {
-                        statusEffectsAccessorRW = chunk.GetBufferAccessorRW(ref StatusEffectsHandle);
-                        hasStatusEffectsWriteAccess = true;
-                    }
-
-                    var statusEffects = statusEffectsAccessorRW[i];
-                    var statusEffectEvents = statusEffectEventsAccessorRW[i];
+                    var statusEffects = statusEffectsAccessor.GetReadWrite(i);
+                    var statusEffectEvents = statusEffectEventsAccessor.GetReadWrite(i);
 
                     // Iterate in reverse to not skip any that get removed. RemoveAt keeps the
                     // order of the remaining effects, matching StatusEffectRequestsJob. The buffer

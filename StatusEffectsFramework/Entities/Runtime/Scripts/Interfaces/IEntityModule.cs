@@ -12,7 +12,7 @@ namespace StatusEffectsFramework.Entities
         /// Using the values in the <see cref="Module"/> and <see cref="ModuleInstance"/> this method 
         /// should be used to create the default values for the burstable module struct.
         /// </summary>
-        /// /// <remarks>
+        /// <remarks>
         /// Make sure to always use the <see cref="ModuleInfo.AllocateModule{T}(T, ref ModuleInfo, ref BlobBuilder)"/> method to create the 
         /// <see cref="ModuleInfo"/> struct that will be used to store the module data. This is required 
         /// to properly allocate the module struct.
@@ -26,7 +26,7 @@ namespace StatusEffectsFramework.Entities
         ///        // Copy values from the module instance to the module struct here
         ///        MyValue = myModuleInstance.MyValue,
         ///    };
-        ///    ModuleInfo.AllocateModule(myModuleStruct);
+        ///    ModuleInfo.AllocateModule(myModuleStruct, ref info, ref builder);
         ///}
         /// </code>
         /// </remarks>

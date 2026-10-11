@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using System.Collections.ObjectModel;
 #if LOCALIZED
 using UnityEngine.Localization;
 #endif
@@ -31,9 +30,9 @@ namespace StatusEffectsFramework
         public bool AllowEffectStacking => m_AllowEffectStacking;
         public NonStackingBehaviour NonStackingBehaviour => m_NonStackingBehaviour;
         public int MaxStacks => m_MaxStacks;
-        public ReadOnlyCollection<Effect> Effects => m_Effects.AsReadOnly();
-        public ReadOnlyCollection<Condition> Conditions => m_Conditions.AsReadOnly();
-        public ReadOnlyCollection<ModuleContainer> Modules => m_Modules.AsReadOnly();
+        public IReadOnlyList<Effect> Effects => m_Effects;
+        public IReadOnlyList<Condition> Conditions => m_Conditions;
+        public IReadOnlyList<ModuleContainer> Modules => m_Modules;
         #endregion
 
         #region Private Fields

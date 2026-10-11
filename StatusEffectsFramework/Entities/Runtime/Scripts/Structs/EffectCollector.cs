@@ -94,7 +94,7 @@ namespace StatusEffectsFramework.Entities
 
             if (!foundInfo)
             {
-                // The ref from TryGetValueByRef is not valid when the key was not found so rebind it to the new entry.
+                // The ref from GetValueRefOrNullRef is not valid when the key was not found so rebind it to the new entry.
                 info = ref m_TypeToIndexAndTypeInfo.AddByRef(typeIndex);
                 info = (StatusEffectsUtility.GetIndexInTypeArray(chunk, typeIndex), TypeManager.GetTypeInfo(typeIndex), entityIndex);
             }

@@ -15,40 +15,37 @@ namespace StatusEffectsFramework
         [NonReorderable]
         public string[] Groups = new string[32];
 
-        [SerializeField]
         public string DefaultUniqueKeyNamespace = "base";
-        [SerializeField]
         public string DefaultStatusDataPath = "ScriptableObjects/StatusEffectData";
-        [SerializeField]
         public string DefaultStatusNamesPath = "ScriptableObjects/StatusNames";
-        [SerializeField]
         public string DefaultComparableNamesPath = "ScriptableObjects/ComparableNames";
-        [SerializeField]
         public string DefaultModulesPath = "ScriptableObjects/Modules";
-        [SerializeField]
         public string DefaultDynamicEffectsPath = "ScriptableObjects/DynamicEffects";
 
-        public static StatusSettings GetOrCreateSettings()
+        public static StatusSettings Instance { get => s_Instance != null ? s_Instance : Get(); }
+        private static StatusSettings s_Instance;
+        private static StatusSettings Get()
         {
-            var settings = Resources.Load<StatusSettings>("StatusEffectSettings");
+            s_Instance = Resources.Load<StatusSettings>(SettingsName);
 #if UNITY_EDITOR
-            if (settings == null || settings.Groups == null || settings.Groups.Length != 32)
+            if (s_Instance == null || s_Instance.Groups == null || s_Instance.Groups.Length != 32)
             {
-                settings = CreateInstance<StatusSettings>();
-                settings.Groups = new string[32];
-                settings.Groups[0] = "Static";
-                settings.Groups[1] = "Negative";
-                settings.Groups[2] = "Positive";
-                AssetDatabase.CreateAsset(settings, SettingsPath);
+                s_Instance = CreateInstance<StatusSettings>();
+                s_Instance.Groups = new string[32];
+                s_Instance.Groups[0] = "Static";
+                s_Instance.Groups[1] = "Negative";
+                s_Instance.Groups[2] = "Positive";
+                AssetDatabase.CreateAsset(s_Instance, SettingsPath);
                 AssetDatabase.SaveAssets();
             }
 #endif
-            return settings;
+            return s_Instance;
         }
+        
 #if UNITY_EDITOR
         public static SerializedObject GetSerializedSettings()
         {
-            return new SerializedObject(GetOrCreateSettings());
+            return new SerializedObject(Instance);
         }
 #endif
     }

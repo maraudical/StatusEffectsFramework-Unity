@@ -56,9 +56,8 @@ namespace StatusEffectsFramework.Editor
             var root = new VisualElement();
 
             ModuleButton = new Button(() => SelectionType(ModuleSelection.Module)) { text = "Module" };
-            ModuleButton.SetEnabled(AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Any(type => type.IsSubclassOf(typeof(Module)) && !type.IsAbstract));
+            ModuleButton.SetEnabled(TypeCache.GetTypesDerivedFrom<Module>()
+                .Any(type => !type.IsAbstract && !type.ContainsGenericParameters));
             root.Add(ModuleButton);
 
             var moduleScriptButton = new Button(() => SelectionType(ModuleSelection.ModuleScript)) { text = "Module Script" };
@@ -86,9 +85,8 @@ namespace StatusEffectsFramework.Editor
         {
             var root = new VisualElement();
             
-            var types = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => type.IsSubclassOf(typeof(Module)) && !type.IsAbstract);
+            var types = TypeCache.GetTypesDerivedFrom<Module>()
+                .Where(type => !type.IsAbstract && !type.ContainsGenericParameters);
             foreach (var type in types)
             {
                 var moduleButton = new Button(() => SelectionType(type)) { text = type.Name };
@@ -109,9 +107,8 @@ namespace StatusEffectsFramework.Editor
             var root = new VisualElement();
 
             DynamicEffectButton = new Button(() => SelectionType(DynamicEffectSelection.DynamicEffect)) { text = "Dynamic Effect" };
-            DynamicEffectButton.SetEnabled(AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Any(type => type.IsSubclassOf(typeof(DynamicEffect)) && !type.IsAbstract));
+            DynamicEffectButton.SetEnabled(TypeCache.GetTypesDerivedFrom<DynamicEffect>()
+                .Any(type => !type.IsAbstract && !type.ContainsGenericParameters));
             root.Add(DynamicEffectButton);
 
             var dynamicEffectFloatScriptButton = new Button(() => SelectionType(DynamicEffectSelection.DynamicEffectFloatScript)) { text = "Dynamic Effect Float Script" };
@@ -143,9 +140,8 @@ namespace StatusEffectsFramework.Editor
         {
             var root = new VisualElement();
 
-            var types = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => type.IsSubclassOf(typeof(DynamicEffect)) && !type.IsAbstract);
+            var types = TypeCache.GetTypesDerivedFrom<DynamicEffect>()
+                .Where(type => !type.IsAbstract && !type.ContainsGenericParameters);
             foreach (var type in types)
             {
                 var moduleButton = new Button(() => SelectionType(type)) { text = type.Name };
@@ -983,7 +979,7 @@ namespace StatusEffectsFramework.Editor
                     space.style.minHeight = 8;
                     space.style.flexGrow = 0;
                     root.Add(space);
-                    var settings = CreateEditor(StatusSettings.GetOrCreateSettings()).CreateInspectorGUI();
+                    var settings = CreateEditor(StatusSettings.Instance).CreateInspectorGUI();
 #if UNITY_2023_1_OR_NEWER
                     var tabView = settings.Q<TabView>();
                     tabView.style.overflow = Overflow.Hidden;

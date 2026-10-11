@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Linq;
 using System;
 
@@ -20,23 +19,21 @@ namespace StatusEffectsFramework
         /// </summary>
         public static int GetGroup(params string[] groupNames)
         {
-            var groups = StatusSettings.GetOrCreateSettings().Groups;
+            var groups = StatusSettings.Instance.Groups;
 
-            BitArray bits = new BitArray(new[] { 0 });
+            int group = 0;
+            for (int i = 0; i < 32; i++)
+                if (groupNames.Contains(groups[i]))
+                    group |= 1 << i;
 
-            for (int i = 0; i < bits.Length; i++)
-                bits[i] = groupNames.Contains(groups[i]);
-
-            var result = new int[1];
-            bits.CopyTo(result, 0);
-            return result[0];
+            return group;
         }
         /// <summary>
         /// Given an <see cref="int"/> index, returns the name of the group as defined in the <see cref="StatusSettings"/>.
         /// </summary>
         public static string IndexToName(int group)
         {
-            var groups = StatusSettings.GetOrCreateSettings().Groups;
+            var groups = StatusSettings.Instance.Groups;
 
             return groups.ElementAtOrDefault(group);
         }
@@ -45,7 +42,7 @@ namespace StatusEffectsFramework
         /// </summary>
         public static int NameToIndex(string groupName)
         {
-            var groups = StatusSettings.GetOrCreateSettings().Groups;
+            var groups = StatusSettings.Instance.Groups;
 
             return Array.IndexOf(groups, groupName);
         }

@@ -10,9 +10,9 @@ namespace StatusEffectsFramework
     {
         public Type Type;
         
-        public AttachModuleInstanceAttribute(Type requiredComponent)
+        public AttachModuleInstanceAttribute(Type moduleInstanceType)
         {
-            Type = requiredComponent;
+            Type = moduleInstanceType;
         }
     }
 }

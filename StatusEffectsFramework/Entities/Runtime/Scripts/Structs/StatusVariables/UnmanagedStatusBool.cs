@@ -1,10 +1,8 @@
 using Unity.Assertions;
-using Unity.Burst;
 using Unity.Entities;
 
 namespace StatusEffectsFramework.Entities
 {
-    [BurstCompile]
     public struct UnmanagedStatusBool
     {
         public Hash128 UniqueKey;
@@ -14,7 +12,6 @@ namespace StatusEffectsFramework.Entities
         /// Attempt to retrieve the <see cref="StatusBools"/> value for this <see cref="UnmanagedStatusBool"/>.
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
-        [BurstCompile]
         public bool TryGetValue(ulong stableTypeHash, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusBools> buffer, out bool value)
         {
             if (TryGetIndex(stableTypeHash, registry, buffer, out int index))
@@ -31,7 +28,6 @@ namespace StatusEffectsFramework.Entities
         /// Attempt to retrieve the <see cref="StatusBools"/> for this <see cref="UnmanagedStatusBool"/>.
         /// </summary>
         /// <returns>True if a matching index was found.</returns>
-        [BurstCompile]
         public bool TryGetElement(ulong stableTypeHash, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusBools> buffer, out StatusBools value)
         {
             if (TryGetIndex(stableTypeHash, registry, buffer, out int index))
@@ -47,7 +43,6 @@ namespace StatusEffectsFramework.Entities
         /// <summary>
         /// Attempt to retrieve the <see cref="StatusBools"/> index value for this <see cref="UnmanagedStatusBool"/>.
         /// </summary>
-        [BurstCompile]
         public bool TryGetIndex(ulong stableTypeHash, in UnmanagedStatusRegistry registry, in DynamicBuffer<StatusBools> buffer, out int index)
         {
             StatusBools statusBool;

@@ -14,6 +14,10 @@ namespace StatusEffectsFramework.Netcode
     /// logic and clients mirror the resulting status effects.
     /// </summary>
     /// <remarks>
+    /// While spawned, status effects are timed on the server tick (<see cref="NetworkTime.FixedTime"/>) instead
+    /// of <see cref="Time.timeAsDouble"/>, so they count down the same on every machine and ignore
+    /// <see cref="Time.timeScale"/>. Use <see cref="StatusManager.CurrentTime"/> with <see cref="StatusEffect.TimeRemaining"/>.
+    /// <para/>
     /// Status effects are synced by the ids assigned in the <see cref="StatusRegistry"/>, so the server and
     /// clients must have the same registered assets. A client logs an error when its registry differs.
     /// </remarks>
@@ -57,6 +61,17 @@ namespace StatusEffectsFramework.Netcode
         {
             m_Registry = StatusRegistry.Instance;
 
+            if (!m_Registry)
+            {
+                Debug.LogError("No Status Registry was found, so Status Effects can't be synced.", this);
+                base.OnNetworkSpawn();
+                return;
+            }
+
+            // Every machine times status effects on the server tick so they match.
+            var networkManager = NetworkManager;
+            m_StatusManager.Clock = () => networkManager.ServerTime.FixedTime;
+
             if (IsServer)
             {
                 // Status effects can only exist while spawned. Any that were added to the Status Manager directly
@@ -85,13 +100,14 @@ namespace StatusEffectsFramework.Netcode
             // Status effects can only exist while spawned. The server removes them before unsubscribing so the
             // network list is emptied too, otherwise pooled and in-scene objects would keep it when respawned.
             m_StatusManager.RemoveAllStatusEffects();
+            m_StatusManager.Clock = null;
 
             m_StatusManager.StatusEffectAction -= OnStatusEffectForServer;
             m_NetworkEffects.OnListChanged -= OnListChangedForClient;
         }
 
         #region Status Manager Methods
-        public bool GetStatusEffect(uint instanceId, out StatusEffect statusEffect) => m_StatusManager.GetStatusEffect(instanceId, out statusEffect);
+        public bool TryGetStatusEffect(uint instanceId, out StatusEffect statusEffect) => m_StatusManager.TryGetStatusEffect(instanceId, out statusEffect);
 
 #nullable enable
         public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true) => m_StatusManager.GetStatusEffects(group, name, data, matchAllGroups);
@@ -222,16 +238,15 @@ namespace StatusEffectsFramework.Netcode
 
         private void AddNetworkEffect(StatusEffect statusEffect)
         {
-            // The elapsed time is measured on this machine, but clients need the time on the network clock.
-            double serverTimeAdded = NetworkManager.ServerTime.Time - (Time.timeAsDouble - statusEffect.TimeAdded);
-
             if (!m_Registry.TryGetId(statusEffect.Data, out var dataId))
             {
                 Debug.LogError($"The Status Effect Data \"{statusEffect.Data.name}\" is not in the Status Registry, so it can't be synced to clients.");
                 return;
             }
 
-            m_NetworkEffects.Add(new NetworkStatusEffect(dataId, statusEffect.Timing, statusEffect.Duration, statusEffect.Stacks, statusEffect.Id, serverTimeAdded));
+            // The time added is on the tick clock, so it converts back to a whole tick.
+            int tickAdded = (int)Math.Round(statusEffect.TimeAdded * NetworkManager.NetworkConfig.TickRate);
+            m_NetworkEffects.Add(new NetworkStatusEffect(dataId, statusEffect.Timing, statusEffect.Duration, statusEffect.Stacks, statusEffect.Id, tickAdded));
             // Event timed status effects count down when their event is invoked.
             statusEffect.DurationUpdate += (duration) => OnDurationUpdate(statusEffect.Id, duration);
         }
@@ -259,7 +274,7 @@ namespace StatusEffectsFramework.Netcode
                     break;
                 case EventType.Remove:
                 case EventType.RemoveAt:
-                    if (m_StatusManager.GetStatusEffect(changeEvent.Value.InstanceId, out var statusEffect))
+                    if (m_StatusManager.TryGetStatusEffect(changeEvent.Value.InstanceId, out var statusEffect))
                         m_StatusManager.RemoveStatusEffect(statusEffect);
                     else
                         SyncAllForClient();
@@ -297,20 +312,19 @@ namespace StatusEffectsFramework.Netcode
 
         private void AddForClient(NetworkStatusEffect networkEffect)
         {
-            if (!m_Registry || !m_Registry.IdToStatusEffectData.TryGetValue(networkEffect.Id, out var statusEffectData))
+            if (!m_Registry.IdToStatusEffectData.TryGetValue(networkEffect.Id, out var statusEffectData))
             {
                 Debug.LogError(string.Format(k_SyncError, networkEffect.Id));
                 return;
             }
 
-            // Work out when the status effect was added in local time.
-            double elapsedTime = Math.Max(0d, NetworkManager.ServerTime.Time - networkEffect.ServerTimeAdded);
-            m_StatusManager.ForceAddStatusEffect(networkEffect.InstanceId, statusEffectData, networkEffect.Timing, Time.timeAsDouble - elapsedTime, networkEffect.Duration, networkEffect.Stacks);
+            double timeAdded = new NetworkTime(NetworkManager.NetworkConfig.TickRate, networkEffect.TickAdded).FixedTime;
+            m_StatusManager.ForceAddStatusEffect(networkEffect.InstanceId, statusEffectData, networkEffect.Timing, timeAdded, networkEffect.Duration, networkEffect.Stacks);
         }
 
         private void UpdateForClient(NetworkStatusEffect networkEffect)
         {
-            if (!m_StatusManager.GetStatusEffect(networkEffect.InstanceId, out var statusEffect))
+            if (!m_StatusManager.TryGetStatusEffect(networkEffect.InstanceId, out var statusEffect))
             {
                 AddForClient(networkEffect);
                 return;

@@ -10,7 +10,7 @@ namespace StatusEffectsFramework.Entities
         /// <summary>
         /// This method should be used to create the default values for the burstable dynamic effect struct.
         /// </summary>
-        /// /// <remarks>
+        /// <remarks>
         /// Make sure to always use the <see cref="DynamicEffectInfo.AllocateDynamicEffect{T}(T, ValueType, ref DynamicEffectInfo, ref BlobBuilder)"/> method to create the 
         /// <see cref="DynamicEffectInfo"/> struct that will be used to store the dynamic effect data. This is required 
         /// to properly allocate the dynamic effect struct.
@@ -23,7 +23,7 @@ namespace StatusEffectsFramework.Entities
         ///        // Copy values from the dynamic effect to the struct here
         ///        MyValue = this.MyValue,
         ///    };
-        ///    DynamicEffectInfo.AllocateDynamicEffect(myDynamicEffectStruct);
+        ///    DynamicEffectInfo.AllocateDynamicEffect(myDynamicEffectStruct, valueType, ref info, ref builder);
         ///}
         /// </code>
         /// </remarks>

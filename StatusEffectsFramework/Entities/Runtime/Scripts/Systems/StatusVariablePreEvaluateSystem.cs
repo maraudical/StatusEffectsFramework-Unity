@@ -66,9 +66,11 @@ namespace StatusEffectsFramework.Entities
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 BufferAccessor<StatusEffects> statusEffectsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectsHandle);
-                BufferAccessor<StatusFloats> statusFloatsAccessor = chunk.GetBufferAccessorRW(ref StatusFloatsHandle);
-                BufferAccessor<StatusInts> statusIntsAccessor = chunk.GetBufferAccessorRW(ref StatusIntsHandle);
-                BufferAccessor<StatusBools> statusBoolsAccessor = chunk.GetBufferAccessorRW(ref StatusBoolsHandle);
+                // Values are only written when they change, so chunks whose values stay the same
+                // don't bump the change version of the status variable buffers.
+                var statusFloatsAccessor = new LazyBufferAccessor<StatusFloats>(chunk, ref StatusFloatsHandle);
+                var statusIntsAccessor = new LazyBufferAccessor<StatusInts>(chunk, ref StatusIntsHandle);
+                var statusBoolsAccessor = new LazyBufferAccessor<StatusBools>(chunk, ref StatusBoolsHandle);
 
                 using var effectCollector = new EffectCollector(UnmanagedStatusRegistry.CollectionsInitialCapacity, Allocator.Temp);
 
@@ -78,9 +80,9 @@ namespace StatusEffectsFramework.Entities
                     chunk.SetComponentEnabled(ref StatusVariablePostEvaluateUpdateHandle, i, true);
 
                     var statusEffects = statusEffectsAccessor[i];
-                    var statusFloats = statusFloatsAccessor[i];
-                    var statusInts = statusIntsAccessor[i];
-                    var statusBools = statusBoolsAccessor[i];
+                    var statusFloats = statusFloatsAccessor.GetReadOnly(i);
+                    var statusInts = statusIntsAccessor.GetReadOnly(i);
+                    var statusBools = statusBoolsAccessor.GetReadOnly(i);
 
                     effectCollector.BeginEntity(statusEffects);
 
@@ -106,20 +108,26 @@ namespace StatusEffectsFramework.Entities
 
                     for (int v = 0; v < statusFloats.Length; v++)
                     {
-                        ref var statusFloat = ref statusFloats.ElementAt(v);
-                        statusFloat.PreEvaluationValue = effectCollector.Evaluate(statusFloat.Id, statusFloat.BaseValue, statusFloat.SignProtected);
+                        var statusFloat = statusFloats[v];
+                        var value = effectCollector.Evaluate(statusFloat.Id, statusFloat.BaseValue, statusFloat.SignProtected);
+                        if (value != statusFloat.PreEvaluationValue)
+                            statusFloatsAccessor.GetReadWrite(i).ElementAt(v).PreEvaluationValue = value;
                     }
 
                     for (int v = 0; v < statusInts.Length; v++)
                     {
-                        ref var statusInt = ref statusInts.ElementAt(v);
-                        statusInt.PreEvaluationValue = effectCollector.Evaluate(statusInt.Id, statusInt.BaseValue, statusInt.SignProtected);
+                        var statusInt = statusInts[v];
+                        var value = effectCollector.Evaluate(statusInt.Id, statusInt.BaseValue, statusInt.SignProtected);
+                        if (value != statusInt.PreEvaluationValue)
+                            statusIntsAccessor.GetReadWrite(i).ElementAt(v).PreEvaluationValue = value;
                     }
 
                     for (int v = 0; v < statusBools.Length; v++)
                     {
-                        ref var statusBool = ref statusBools.ElementAt(v);
-                        statusBool.PreEvaluationValue = effectCollector.Evaluate(statusBool.Id, statusBool.BaseValue);
+                        var statusBool = statusBools[v];
+                        var value = effectCollector.Evaluate(statusBool.Id, statusBool.BaseValue);
+                        if (value != statusBool.PreEvaluationValue)
+                            statusBoolsAccessor.GetReadWrite(i).ElementAt(v).PreEvaluationValue = value;
                     }
                 }
 

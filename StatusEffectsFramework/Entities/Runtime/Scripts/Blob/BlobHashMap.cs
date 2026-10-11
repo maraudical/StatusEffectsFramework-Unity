@@ -32,7 +32,7 @@ namespace StatusEffectsFramework.Entities
 #if BLOBHASHMAP_SAFE
                 throw new KeyNotFoundException($"Key: {key} is not present in the BlobHashMap.");
 #else
-                 return default;
+                return default;
 #endif
             }
         }
@@ -53,7 +53,7 @@ namespace StatusEffectsFramework.Entities
         public bool TryGetValue(TKey key, out TValue item) => data.TryGetFirstValue(key, out item, out _);
 
         /// <summary>
-        /// Determines whether an key is in the container.
+        /// Determines whether a key is in the container.
         /// </summary>
         /// <param name="key">The key to locate in the container.</param>
         /// <returns>Returns true if the container contains the key.</returns>
@@ -96,7 +96,6 @@ namespace StatusEffectsFramework.Entities
         public ref TValue AddByRef(TKey key) => ref data.AddByRef(key, false);
         public void Add(TKey key, TValue item)
         {
-
 #if BLOBHASHMAP_SAFE
             if (!data.TryAdd(key, item, false))
                 throw new ArgumentException($"An item with key {key} already exists", nameof(key));

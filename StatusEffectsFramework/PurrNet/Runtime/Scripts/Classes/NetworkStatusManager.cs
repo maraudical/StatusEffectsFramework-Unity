@@ -71,7 +71,7 @@ namespace StatusEffectsFramework.PurrNet
         #endregion
 
         #region Status Manager Methods
-        public bool GetStatusEffect(uint instanceId, out StatusEffect statusEffect) => StatusManager.GetStatusEffect(instanceId, out statusEffect);
+        public bool TryGetStatusEffect(uint instanceId, out StatusEffect statusEffect) => StatusManager.TryGetStatusEffect(instanceId, out statusEffect);
 
 #nullable enable
         public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true) => StatusManager.GetStatusEffects(group, name, data, matchAllGroups);
@@ -253,7 +253,7 @@ namespace StatusEffectsFramework.PurrNet
 
         private void UpdateForClient(NetworkStatusEffect networkEffect)
         {
-            if (!StatusManager.GetStatusEffect(networkEffect.InstanceId, out var statusEffect))
+            if (!StatusManager.TryGetStatusEffect(networkEffect.InstanceId, out var statusEffect))
             {
                 AddForClient(networkEffect);
                 return;

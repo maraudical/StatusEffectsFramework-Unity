@@ -15,19 +15,18 @@ namespace StatusEffectsFramework.Entities
         private const int UseBucketCapacityRatioOfThreeUpTo = 16384;
 
         /// <summary>
-        /// Allocates a BlobHashMap and copies all key value pairs from the source NativeHashMap
+        /// Allocates a BlobHashMap and copies all key value pairs from the source NativeParallelHashMap
         /// </summary>
         /// <param name="builder">Reference to the struct BlobBuilder used to construct the hashmap</param>
         /// <param name="blobHashMap">Reference to the struct BlobHashMap field</param>
         /// <param name="source">Source hashmap to copy keys and values from</param>
         public static void ConstructHashMap<TKey, TValue>(
-            this ref BlobBuilder builder, ref BlobHashMap<TKey, TValue> blobHashMap, ref NativeParallelHashMap<TKey, TValue> source)
+            this ref BlobBuilder builder, ref BlobHashMap<TKey, TValue> blobHashMap, NativeParallelHashMap<TKey, TValue> source)
             where TKey : unmanaged, IEquatable<TKey>
             where TValue : unmanaged
         {
-            int count = source.Count();
-            var kv = source.GetKeyValueArrays(Allocator.Temp);
-            var hashMapBuilder = builder.AllocateHashMap(ref blobHashMap, count);
+            using var kv = source.GetKeyValueArrays(Allocator.Temp);
+            var hashMapBuilder = builder.AllocateHashMap(ref blobHashMap, kv.Length);
 
             for (int i = 0; i < kv.Length; i++)
                 hashMapBuilder.Add(kv.Keys[i], kv.Values[i]);
@@ -40,13 +39,12 @@ namespace StatusEffectsFramework.Entities
         /// <param name="blobHashMap">Reference to the struct BlobHashMap field</param>
         /// <param name="source">Source hashmap to copy keys and values from</param>
         public static void ConstructHashMap<TKey, TValue>(
-            this ref BlobBuilder builder, ref BlobHashMap<TKey, TValue> blobHashMap, ref NativeHashMap<TKey, TValue> source)
+            this ref BlobBuilder builder, ref BlobHashMap<TKey, TValue> blobHashMap, NativeHashMap<TKey, TValue> source)
             where TKey : unmanaged, IEquatable<TKey>
             where TValue : unmanaged
         {
-            int count = source.Count;
-            var kv = source.GetKeyValueArrays(Allocator.Temp);
-            var hashMapBuilder = builder.AllocateHashMap(ref blobHashMap, count);
+            using var kv = source.GetKeyValueArrays(Allocator.Temp);
+            var hashMapBuilder = builder.AllocateHashMap(ref blobHashMap, kv.Length);
 
             for (int i = 0; i < kv.Length; i++)
                 hashMapBuilder.Add(kv.Keys[i], kv.Values[i]);
@@ -63,21 +61,18 @@ namespace StatusEffectsFramework.Entities
             where TKey : unmanaged, IEquatable<TKey>
             where TValue : unmanaged
         {
-            int count = source.Count;
-            int ratio = count <= UseBucketCapacityRatioOfThreeUpTo ? 3 : 2;
-
-            var hashMapBuilder = builder.AllocateHashMap(ref blobHashMap, source.Count, ratio);
+            var hashMapBuilder = builder.AllocateHashMap(ref blobHashMap, source.Count);
             foreach (var kv in source)
                 hashMapBuilder.Add(kv.Key, kv.Value);
         }
 
         /// <summary>
-        /// Allocates a BlobHashMap and returns a builder than can be used to add values manually
+        /// Allocates a BlobHashMap and returns a builder that can be used to add values manually
         /// </summary>
         /// <param name="builder">Reference to the struct BlobBuilder used to construct the hashmap</param>
         /// <param name="blobHashMap">Reference to the struct BlobHashMap field</param>
         /// <param name="capacity">Capacity of the allocated hashmap. This value cannot be changed after allocation</param>
-        /// <returns>Builder that can be ued to add values to the hashmap</returns>
+        /// <returns>Builder that can be used to add values to the hashmap</returns>
         public static BlobBuilderHashMap<TKey, TValue> AllocateHashMap<TKey, TValue>(
             this ref BlobBuilder builder, ref BlobHashMap<TKey, TValue> blobHashMap, int capacity)
             where TKey : unmanaged, IEquatable<TKey>
@@ -87,16 +82,16 @@ namespace StatusEffectsFramework.Entities
         }
 
         /// <summary>
-        /// Allocates a BlobHashMap and returns a builder than can be used to add values manually
+        /// Allocates a BlobHashMap and returns a builder that can be used to add values manually
         /// </summary>
         /// <param name="builder">Reference to the struct BlobBuilder used to construct the hashmap</param>
         /// <param name="blobHashMap">Reference to the struct BlobHashMap field</param>
         /// <param name="capacity">Capacity of the allocated hashmap. This value cannot be changed after allocation</param>
         /// <param name="bucketCapacityRatio">
         /// Bucket capacity ratio to use when allocating the hashmap.
-        /// A higher value may result in less collisions and slightly better performance, but memory consumption increases exponentially.
+        /// A higher value may result in less collisions and slightly better performance, but bucket memory grows in proportion to the ratio (rounded up to a power of two).
         /// </param>
-        /// <returns>Builder that can be ued to add values to the hashmap</returns>
+        /// <returns>Builder that can be used to add values to the hashmap</returns>
         public static BlobBuilderHashMap<TKey, TValue> AllocateHashMap<TKey, TValue>(
             this ref BlobBuilder builder, ref BlobHashMap<TKey, TValue> blobHashMap,
             int capacity, int bucketCapacityRatio)

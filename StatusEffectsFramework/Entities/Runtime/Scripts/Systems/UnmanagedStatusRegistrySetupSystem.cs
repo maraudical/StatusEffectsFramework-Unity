@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -177,7 +176,12 @@ namespace StatusEffectsFramework.Entities
                         };
                     }
 
-                    List<ModuleContainer> entityModuleContainers = statusEffectData.Modules.Where((m) => m.Module is IEntityModule).ToList();
+                    // Only modules that implement IEntityModule are converted.
+                    var entityModuleContainers = new List<ModuleContainer>(statusEffectData.Modules.Count);
+                    foreach (var moduleContainer in statusEffectData.Modules)
+                        if (moduleContainer.Module is IEntityModule)
+                            entityModuleContainers.Add(moduleContainer);
+
                     var modules = builder.Allocate(ref unmanagedStatusEffectData.Modules, entityModuleContainers.Count);
 
                     for (int i = 0; i < modules.Length; i++)

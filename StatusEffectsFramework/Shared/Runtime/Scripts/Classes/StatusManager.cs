@@ -9,8 +9,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Events;
-using System.Runtime.CompilerServices;
 using System;
 
 namespace StatusEffectsFramework
@@ -35,6 +33,17 @@ namespace StatusEffectsFramework
         private Dictionary<uint, StatusEffect> m_StatusEffects;
         
         internal uint AvailableId;
+        /// <summary>
+        /// Replaces the clock effects are timed with, such as a network clock that every machine shares.
+        /// <see cref="Time.timeAsDouble"/> is used when this is null.
+        /// </summary>
+        internal Func<double> Clock;
+
+        /// <summary>
+        /// The time used for <see cref="StatusEffect.TimeAdded"/> and to count down timed effects. Pass this to
+        /// <see cref="StatusEffect.TimeRemaining"/>, since a networked manager may not use <see cref="Time.timeAsDouble"/>.
+        /// </summary>
+        public double CurrentTime => Clock?.Invoke() ?? Time.timeAsDouble;
 
 #if UNITY_EDITOR
         [SerializeField] private List<StatusEffect> m_EditorOnlyEffects;
@@ -47,7 +56,7 @@ namespace StatusEffectsFramework
         }
 
         #region Public Methods
-        public bool GetStatusEffect(uint id, out StatusEffect statusEffect)
+        public bool TryGetStatusEffect(uint id, out StatusEffect statusEffect)
         {
             return m_StatusEffects.TryGetValue(id, out statusEffect);
         }
@@ -81,10 +90,6 @@ namespace StatusEffectsFramework
 
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, int stacks = 1)
         {
-            // Check for null values
-            if (!statusEffectData)
-                Debug.LogError("The given Status Effect Data is null!");
-
             StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Duration, duration, null, null, stacks);
 
             if (statusEffect == null)
@@ -97,11 +102,9 @@ namespace StatusEffectsFramework
         
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, StatusEvent statusEvent, int stacks = 1)
         {
-            // Check for null values
-            if (!statusEffectData)
-                Debug.LogError("The given Status Effect Data is null!");
+            // Checked before adding, otherwise the effect would be added without anything to end it.
             if (statusEvent == null)
-                Debug.LogError("The given Status Event is null!");
+                throw new ArgumentNullException(nameof(statusEvent));
             // Create the effect
             StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Event, duration, null, statusEvent, stacks);
             // Check for null or 0 duration effect
@@ -115,11 +118,9 @@ namespace StatusEffectsFramework
         
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, Func<bool> predicate, int stacks = 1)
         {
-            // Check for null values
-            if (!statusEffectData)
-                Debug.LogError("The given Status Effect Data is null!");
+            // Checked before adding, otherwise the effect would be added without anything to end it.
             if (predicate == null)
-                Debug.LogError("The given predicate is null!");
+                throw new ArgumentNullException(nameof(predicate));
 
             StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Predicate, null, predicate, null, stacks);
 
@@ -233,7 +234,7 @@ namespace StatusEffectsFramework
         // Copied from IndexedStatusEffectComparer. Orders weakest first so removals take them first.
         private List<StatusEffect> OrderStatusEffects(IEnumerable<StatusEffect> statusEffects)
         {
-            double elapsedTime = Time.timeAsDouble;
+            double elapsedTime = CurrentTime;
             var ordered = statusEffects.ToList();
             ordered.Sort((x, y) =>
             {
@@ -328,7 +329,6 @@ namespace StatusEffectsFramework
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CreateTimer(StatusEffect statusEffect)
         {
 #if UNITASK
@@ -354,7 +354,7 @@ namespace StatusEffectsFramework
 #endif
             {
                 // Basic decreasing timer.
-                while (statusEffect.TimeRemaining(Time.timeAsDouble) > 0
+                while (statusEffect.TimeRemaining(CurrentTime) > 0
 #if UNITASK || UNITY_2023_1_OR_NEWER
                    && !token.IsCancellationRequested
 #endif
@@ -374,7 +374,6 @@ namespace StatusEffectsFramework
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CreateStatusEvent(StatusEffect statusEffect, StatusEvent statusEvent, bool remove = true)
         {
             // Check for 0 duration effect
@@ -407,7 +406,6 @@ namespace StatusEffectsFramework
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CreatePredicate(StatusEffect statusEffect, System.Func<bool> predicate, bool remove = true)
         {
 #if UNITASK
@@ -460,8 +458,7 @@ namespace StatusEffectsFramework
                 return null;
             
             if (!statusEffectData)
-                throw new System.Exception($"Attempted to add a null {typeof(StatusEffect).Name} " +
-                                           $"to a {typeof(MonoBehaviour).Name}. This is not allowed.");
+                throw new ArgumentNullException(nameof(statusEffectData), $"Attempted to add a null {nameof(StatusEffectData)} to a {nameof(StatusManager)}.");
             // If the duration given is less than zero it won't be applied.
             if (duration.HasValue && duration.Value < 0)
                 return null;
@@ -508,7 +505,7 @@ namespace StatusEffectsFramework
                     addedToStack = true;
                     goto CheckConditionals;
                 }
-                /// <summary>False when stack count is already max, otherwise true.</summary>
+                // False when stack count is already max, otherwise true.
                 bool TryToLimitStacks()
                 {
                     // Check if the current stacked amount is already max.
@@ -534,7 +531,7 @@ namespace StatusEffectsFramework
 
                 StatusEffectData oldData = oldStatusEffect.Data;
                 // Existing effects are compared by the time they have left, not the duration they were added with.
-                float oldTimeRemaining = oldStatusEffect.TimeRemaining(Time.timeAsDouble);
+                float oldTimeRemaining = oldStatusEffect.TimeRemaining(CurrentTime);
 
                 switch (statusEffectData.NonStackingBehaviour)
                 {
@@ -714,7 +711,7 @@ namespace StatusEffectsFramework
             else
             {
                 // Create a new status effect instance.
-                statusEffect = new StatusEffect(this, AvailableId, statusEffectData, timing, Time.timeAsDouble, durationValue, stacks);
+                statusEffect = new StatusEffect(this, AvailableId, statusEffectData, timing, CurrentTime, durationValue, stacks);
                 statusEffect.StatusEvent = statusEvent;
                 AvailableId++;
                 // Add the effect for a given monobehaviour. This also is the first time

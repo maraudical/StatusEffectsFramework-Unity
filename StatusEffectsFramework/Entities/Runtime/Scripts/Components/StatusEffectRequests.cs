@@ -1,4 +1,3 @@
-using Unity.Burst;
 using Unity.Entities;
 #if NETCODE
 using Unity.NetCode;
@@ -7,14 +6,13 @@ using Unity.NetCode;
 namespace StatusEffectsFramework.Entities
 {
     /// <summary>
-    /// Adding this to any <see cref="Entity"> will make a request to add/remove a 
+    /// Adding this to any <see cref="Entity"/> will make a request to add/remove a 
     /// StatusEffect. See the <see cref="StatusEffectRequests"/> static methods for 
     /// options.
     /// </summary>
 #if NETCODE
     [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]
 #endif
-    [BurstCompile]
     public struct StatusEffectRequests : IBufferElementData
     {
 #if NETCODE
@@ -63,7 +61,6 @@ namespace StatusEffectsFramework.Entities
         /// Constructs a <see cref="StatusEffectRequests"/> to request adding a new 
         /// effect. Optional <paramref name="stacks"/> count.
         /// </summary>
-        [BurstCompile]
         public static StatusEffectRequests Add(ushort id, int stacks = 1)
         {
             return new StatusEffectRequests
@@ -81,7 +78,6 @@ namespace StatusEffectsFramework.Entities
         /// effect with a <paramref name="duration"/>. Optional 
         /// <paramref name="stacks"/> count.
         /// </summary>
-        [BurstCompile]
         public static StatusEffectRequests AddWithDuration(ushort id, float duration, int stacks = 1)
         {
             return new StatusEffectRequests
@@ -102,11 +98,10 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <remarks>
         /// Note that decrementing duration for this effect must be controlled by the 
-        /// user. It will not happen automatically.This can be done by querying 
+        /// user. It will not happen automatically. This can be done by querying 
         /// relevant <see cref="StatusEffects"/> and checking for similar 
         /// <paramref name="eventId"/>.
         /// </remarks>
-        [BurstCompile]
         public static StatusEffectRequests AddWithEvent(ushort id, float duration, ushort eventId, float interval = 1, int stacks = 1)
         {
             return new StatusEffectRequests
@@ -128,12 +123,11 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         /// <remarks>
         /// Note that ending the predicate for this effect must be controlled by the 
-        /// user. It will not happen automatically.This can be done by querying 
+        /// user. It will not happen automatically. This can be done by querying 
         /// relevant <see cref="StatusEffects"/> and checking for similar 
         /// <paramref name="eventId"/>. The user only needs to set 
         /// <see cref="StatusEffects.Duration"/> to 0.
         /// </remarks>
-        [BurstCompile]
         public static StatusEffectRequests AddWithPredicate(ushort id, ushort eventId, int stacks = 1)
         {
             return new StatusEffectRequests
@@ -150,7 +144,6 @@ namespace StatusEffectsFramework.Entities
         /// <summary>
         /// Removes all <see cref="StatusEffects"/>. 
         ///</summary>
-        [BurstCompile]
         public static StatusEffectRequests RemoveAll()
         {
             return new StatusEffectRequests
@@ -166,7 +159,6 @@ namespace StatusEffectsFramework.Entities
         /// <see cref="uint"/> <paramref name="instanceId"/>. Optional 
         /// <paramref name="stacks"/> count.
         /// </summary>
-        [BurstCompile]
         public static StatusEffectRequests RemoveWithInstanceId(uint instanceId, int stacks = -1)
         {
             return new StatusEffectRequests
@@ -180,11 +172,10 @@ namespace StatusEffectsFramework.Entities
 
         /// <summary>
         /// Remove any amount of <see cref="StatusEffects"/> given a 
-        /// <see cref="Hash128"/> <paramref name="id"/> of the 
-        /// <see cref="UnmanagedStatusEffectData.Id"/> reference. Optional 
+        /// <see cref="ushort"/> <paramref name="id"/> matching the
+        /// <see cref="UnmanagedStatusEffectData.Id"/>. Optional
         /// <paramref name="stacks"/> count.
         /// </summary>
-        [BurstCompile]
         public static StatusEffectRequests RemoveWithId(ushort id, int stacks = -1)
         {
             return new StatusEffectRequests
@@ -198,11 +189,10 @@ namespace StatusEffectsFramework.Entities
 
         /// <summary>
         /// Remove any amount of <see cref="StatusEffects"/> given a 
-        /// <see cref="Hash128"/> <paramref name="name"/> of the 
-        /// <see cref="ComparableName"/> <see cref="Registr"/> reference. Optional 
+        /// <see cref="ushort"/> <paramref name="name"/>, the <see cref="StatusRegistry"/>
+        /// id of a <see cref="ComparableName"/>. Optional
         /// <paramref name="stacks"/> count.
         /// </summary>
-        [BurstCompile]
         public static StatusEffectRequests RemoveWithComparableName(ushort name, int stacks = -1)
         {
             return new StatusEffectRequests
@@ -221,7 +211,6 @@ namespace StatusEffectsFramework.Entities
         /// toggle to check if all group flags in the given <paramref name="group"/> 
         /// need to match in order to remove.
         /// </summary>
-        [BurstCompile]
         public static StatusEffectRequests RemoveWithGroup(StatusEffectGroup group, int stacks = -1, bool matchAllGroups = true)
         {
             return new StatusEffectRequests

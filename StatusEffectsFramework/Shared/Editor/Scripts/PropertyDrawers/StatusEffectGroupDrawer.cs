@@ -15,7 +15,7 @@ namespace StatusEffectsFramework.Editor
         {
             var valueProperty = property.FindPropertyRelative(nameof(StatusEffectGroup.Value));
 
-            Dictionary<int, string> choices = StatusSettings.GetOrCreateSettings().Groups.Select((g, index) => new KeyValuePair<int, string>(index, g))
+            Dictionary<int, string> choices = StatusSettings.Instance.Groups.Select((g, index) => new KeyValuePair<int, string>(index, g))
                                                                                                .Where(kvp => !string.IsNullOrEmpty(kvp.Value))
                                                                                                .ToDictionary(kvp => 1 << kvp.Key, kvp => kvp.Value);
             
@@ -73,7 +73,7 @@ namespace StatusEffectsFramework.Editor
 
             void Clicked()
             {
-                Selection.activeObject = StatusSettings.GetOrCreateSettings();
+                Selection.activeObject = StatusSettings.Instance;
             }
 
             void OnGeometryChanged(GeometryChangedEvent evt)
@@ -94,7 +94,7 @@ namespace StatusEffectsFramework.Editor
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             if (!m_Settings)
-                m_Settings = StatusSettings.GetOrCreateSettings();
+                m_Settings = StatusSettings.Instance;
 
             m_Value = property.FindPropertyRelative(nameof(StatusEffectGroup.Value));
             EditorGUI.BeginProperty(position, label, property);

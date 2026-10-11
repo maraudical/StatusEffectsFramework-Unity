@@ -46,7 +46,7 @@ namespace StatusEffectsFramework
                     if (this == null) return; // asset could've been deleted before this runs
                     if (string.IsNullOrEmpty(m_UniqueKey) && !string.IsNullOrEmpty(name))
                     {
-                        m_UniqueKey = $"{StatusSettings.GetOrCreateSettings().DefaultUniqueKeyNamespace}:{ToKebabCase(name)}";
+                        m_UniqueKey = $"{StatusSettings.Instance.DefaultUniqueKeyNamespace}:{ToKebabCase(name)}";
                         EditorUtility.SetDirty(this);
                     }
                 };
