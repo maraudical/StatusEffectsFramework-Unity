@@ -32,11 +32,14 @@ namespace StatusEffectsFramework.Entities
 #else
         public double ElapsedTime;
 #endif
+        // Conditions can add status effects that have conditions of their own, so a cycle (such as an
+        // effect that adds itself while it is absent) would never end. Adds stop at this depth.
+        private const int k_MaxConditionDepth = 16;
 
         public void Process(StatusEffectRequests request)
         {
             if (request.Type is StatusEffectRequestType.Add)
-                Add(request);
+                Add(request, 0);
             else
                 Remove(request);
         }
@@ -54,8 +57,15 @@ namespace StatusEffectsFramework.Entities
         }
 
         // Copied from regular private StatusManager.AddStatusEffect() with burstable types and math.
-        private void Add(StatusEffectRequests request)
+        /// <param name="depth">How many conditional adds deep this request is. 0 for a request from the buffer.</param>
+        private void Add(StatusEffectRequests request, int depth)
         {
+            if (depth >= k_MaxConditionDepth)
+            {
+                UnityEngine.Debug.LogError($"Dropped a request to add the status effect with id \"{request.Id}\" because its conditions add other status effects more than {k_MaxConditionDepth} levels deep. Check the conditions for status effects that add each other.");
+                return;
+            }
+
             if (request.Stacks <= 0)
                 return;
 
@@ -230,7 +240,7 @@ namespace StatusEffectsFramework.Entities
                         },
                         _ => StatusEffectRequests.Add(condition.ActionData, conditionalStacks),
                     };
-                    Add(conditionalRequest);
+                    Add(conditionalRequest, depth + 1);
                 }
                 // Special case where the configurable which is the
                 // current data to be added is tagged for removal.

@@ -38,7 +38,10 @@ namespace StatusEffectsFramework.Entities
         private EntityQuery m_RequestsQuery;
         private EntityQuery m_StatusEffectsQuery;
 #if NETCODE
+        private EntityQuery m_GhostRequestsQuery;
+        private EntityQuery m_GhostStatusEffectsQuery;
         private EntityQuery m_ClearEventsQuery;
+        private EntityQuery m_ClearNonGhostEventsQuery;
 #endif
 
         [BurstCompile]
@@ -48,8 +51,15 @@ namespace StatusEffectsFramework.Entities
             m_RequestsQuery.AddChangedVersionFilter(ComponentType.ReadWrite<StatusEffectRequests>());
             m_StatusEffectsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusEffectEvents, StatusVariablePreEvaluateUpdate>().WithAll<Simulate>().Build();
 #if NETCODE
-            // Only matches entities with enabled events, so ones with nothing to clear are skipped.
-            m_ClearEventsQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, Simulate>().Build();
+            // Only predicted entities, used on ticks that skip non-ghosts. See NetworkTickExtensions.SimulatesNonGhosts.
+            m_GhostRequestsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusEffectEvents, StatusVariablePreEvaluateUpdate>().WithAll<Simulate, PredictedStatusEffectsFlag>().WithAllRW<StatusManagerComponent, StatusEffectRequests>().Build();
+            m_GhostRequestsQuery.AddChangedVersionFilter(ComponentType.ReadWrite<StatusEffectRequests>());
+            m_GhostStatusEffectsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffects>().WithPresentRW<StatusEffectEvents, StatusVariablePreEvaluateUpdate>().WithAll<Simulate, PredictedStatusEffectsFlag>().Build();
+            // Only matches entities with enabled events, so ones with nothing to clear are skipped. Every
+            // ghost has InterpolatedStatusEffects, so this clears predicted and interpolated ghosts but
+            // leaves non-ghost events for systems after prediction.
+            m_ClearEventsQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, InterpolatedStatusEffects>().Build();
+            m_ClearNonGhostEventsQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents>().WithNone<InterpolatedStatusEffects>().Build();
 #endif
 
             state.RequireForUpdate(m_StatusEffectsQuery);
@@ -68,8 +78,14 @@ namespace StatusEffectsFramework.Entities
             var networkTime = SystemAPI.GetSingleton<NetworkTime>();
             SystemAPI.TryGetSingleton<ClientServerTickRate>(out var tickRate);
             tickRate.ResolveDefaults();
+
+            bool simulatesNonGhosts = networkTime.SimulatesNonGhosts(state.WorldUnmanaged);
+            var statusEffectsQuery = simulatesNonGhosts ? m_StatusEffectsQuery : m_GhostStatusEffectsQuery;
+            var requestsQuery = simulatesNonGhosts ? m_RequestsQuery : m_GhostRequestsQuery;
 #else
             var elapsedTime = SystemAPI.Time.ElapsedTime;
+            var statusEffectsQuery = m_StatusEffectsQuery;
+            var requestsQuery = m_RequestsQuery;
 #endif
 
             // Update and check durations.
@@ -85,7 +101,7 @@ namespace StatusEffectsFramework.Entities
                 StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(),
                 PreEvaluateUpdateHandle = SystemAPI.GetComponentTypeHandle<StatusVariablePreEvaluateUpdate>(),
             };
-            state.Dependency = statusEffectsJob.ScheduleParallelByRef(m_StatusEffectsQuery, state.Dependency);
+            state.Dependency = statusEffectsJob.ScheduleParallelByRef(statusEffectsQuery, state.Dependency);
 
             // Handle any add/remove requests.
             var statusEffectRequestsJob = new StatusEffectRequestsJob
@@ -98,7 +114,7 @@ namespace StatusEffectsFramework.Entities
 #endif
                 Registry = registry,
             };
-            state.Dependency = statusEffectRequestsJob.ScheduleParallelByRef(m_RequestsQuery, state.Dependency);
+            state.Dependency = statusEffectRequestsJob.ScheduleParallelByRef(requestsQuery, state.Dependency);
 
 #if NETCODE
             // Clear predicted events once prediction ends so systems after the prediction group don't see
@@ -106,18 +122,27 @@ namespace StatusEffectsFramework.Entities
             // events added this tick are included.
             if (!state.WorldUnmanaged.IsServer() && networkTime.IsFinalPredictionTick)
             {
-                var clearEventsJob = new ClearEventsAfterPredictionJob
+                var clearEventsJob = new ClearEventsJob
                 {
                     CommandBuffer = SystemAPI.GetSingleton<EndPredictedSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
                 };
                 state.Dependency = clearEventsJob.ScheduleParallelByRef(m_ClearEventsQuery, state.Dependency);
+
+                // Non-ghosts aren't re-simulated, so their events stay visible for the rest of the frame
+                // and are cleared just before the next prediction loop. Otherwise frames with only a partial
+                // tick would see the last full tick's events again.
+                var clearNonGhostEventsJob = new ClearEventsJob
+                {
+                    CommandBuffer = SystemAPI.GetSingleton<BeginSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter(),
+                };
+                state.Dependency = clearNonGhostEventsJob.ScheduleParallelByRef(m_ClearNonGhostEventsQuery, state.Dependency);
             }
 #endif
         }
 
 #if NETCODE
         [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
-        internal partial struct ClearEventsAfterPredictionJob : IJobEntity
+        internal partial struct ClearEventsJob : IJobEntity
         {
             public EntityCommandBuffer.ParallelWriter CommandBuffer;
 

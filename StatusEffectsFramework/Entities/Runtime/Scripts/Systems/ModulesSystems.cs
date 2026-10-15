@@ -243,7 +243,8 @@ namespace StatusEffectsFramework.Entities
         public void OnCreate(ref SystemState state)
         {
 #if NETCODE
-            m_ModulesQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents>().WithPresent<ZeroLengthModules>().WithNone<PredictedGhost>().Build();
+            // Only interpolated ghosts. Predicted ghosts and non-ghosts are handled by the PredictedModulesSystem.
+            m_ModulesQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents>().WithAny<GhostInstance, GhostChildEntity>().WithPresent<ZeroLengthModules>().WithNone<PredictedStatusEffectsFlag>().Build();
             m_ZeroLengthModulesQuery = SystemAPI.QueryBuilder().WithAll<ZeroLengthModules>().Build();
 #else
             m_ModulesQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents>().WithPresent<ZeroLengthModules>().Build();
@@ -299,12 +300,15 @@ namespace StatusEffectsFramework.Entities
     public partial struct PredictedModulesSystem : ISystem
     {
         EntityQuery m_ModulesQuery;
+        EntityQuery m_GhostModulesQuery;
         private StatusTypeDependencies m_Dependencies;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             m_ModulesQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, Simulate>().WithPresent<ZeroLengthModules>().Build();
+            // Only predicted entities, used on ticks that skip non-ghosts. See NetworkTickExtensions.SimulatesNonGhosts.
+            m_GhostModulesQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, Simulate, PredictedStatusEffectsFlag>().WithPresent<ZeroLengthModules>().Build();
 
             state.RequireForUpdate<NetworkTime>();
             state.RequireForUpdate<UnmanagedStatusRegistry>();
@@ -334,7 +338,8 @@ namespace StatusEffectsFramework.Entities
                 ZeroLengthModulesHandle = SystemAPI.GetBufferTypeHandle<ZeroLengthModules>(),
                 GlobalSystemVersion = state.GlobalSystemVersion,
             };
-            state.Dependency = modulesJob.ScheduleParallelByRef(m_ModulesQuery, state.Dependency);
+            var modulesQuery = networkTime.SimulatesNonGhosts(state.WorldUnmanaged) ? m_ModulesQuery : m_GhostModulesQuery;
+            state.Dependency = modulesJob.ScheduleParallelByRef(modulesQuery, state.Dependency);
         }
     }
 
@@ -350,7 +355,8 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, InterpolatedStatusEffects, Simulate>().WithPresent<StatusEffectEvents>().Build();
+            // Only predicted entities are rolled back, so nothing else needs its modules rebuilt.
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, InterpolatedStatusEffects, Simulate, PredictedStatusEffectsFlag>().WithPresent<StatusEffectEvents>().Build();
 
             state.RequireForUpdate<NetworkTime>();
             state.RequireForUpdate<UnmanagedStatusRegistry>();

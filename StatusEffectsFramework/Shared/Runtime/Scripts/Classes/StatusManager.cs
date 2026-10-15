@@ -49,6 +49,10 @@ namespace StatusEffectsFramework
         [SerializeField] private List<StatusEffect> m_EditorOnlyEffects;
 
 #endif
+        // Conditions can add status effects that have conditions of their own, so a cycle (such as an
+        // effect that adds itself while it is absent) would never end. Adds stop at this depth.
+        private const int k_MaxConditionDepth = 16;
+
         private void Awake()
         {
             AvailableId = 0;
@@ -85,19 +89,12 @@ namespace StatusEffectsFramework
 
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, int stacks = 1)
         {
-            return AddStatusEffect(statusEffectData, StatusEffectTiming.Infinite, null, null, null, stacks);
+            return AddStatusEffect(statusEffectData, StatusEffectTiming.Infinite, null, null, null, stacks, 0);
         }
 
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, int stacks = 1)
         {
-            StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Duration, duration, null, null, stacks);
-
-            if (statusEffect == null)
-                return null;
-            // Begin a timer on the monobehaviour.
-            CreateTimer(statusEffect);
-
-            return statusEffect;
+            return AddStatusEffect(statusEffectData, StatusEffectTiming.Duration, duration, null, null, stacks, 0);
         }
         
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, StatusEvent statusEvent, int stacks = 1)
@@ -105,15 +102,8 @@ namespace StatusEffectsFramework
             // Checked before adding, otherwise the effect would be added without anything to end it.
             if (statusEvent == null)
                 throw new ArgumentNullException(nameof(statusEvent));
-            // Create the effect
-            StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Event, duration, null, statusEvent, stacks);
-            // Check for null or 0 duration effect
-            if (statusEffect == null)
-                return null;
-            // Subscribe to the status event.
-            CreateStatusEvent(statusEffect, statusEvent);
 
-            return statusEffect;
+            return AddStatusEffect(statusEffectData, StatusEffectTiming.Event, duration, null, statusEvent, stacks, 0);
         }
         
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, Func<bool> predicate, int stacks = 1)
@@ -122,14 +112,7 @@ namespace StatusEffectsFramework
             if (predicate == null)
                 throw new ArgumentNullException(nameof(predicate));
 
-            StatusEffect statusEffect = AddStatusEffect(statusEffectData, StatusEffectTiming.Predicate, null, predicate, null, stacks);
-
-            if (statusEffect == null)
-                return null;
-            // Begin a predicate on the monobehaviour.
-            CreatePredicate(statusEffect, predicate);
-
-            return statusEffect;
+            return AddStatusEffect(statusEffectData, StatusEffectTiming.Predicate, null, predicate, null, stacks, 0);
         }
         
         public void RemoveStatusEffect(StatusEffect statusEffect)
@@ -443,8 +426,46 @@ namespace StatusEffectsFramework
             }
         }
 
+        /// <summary>
+        /// Adds the status effect, then starts whatever ends it: a timer, a status event or a predicate.
+        /// </summary>
+        /// <param name="depth">How many conditional adds deep this add is. 0 for a call from the public methods.</param>
 #nullable enable
-        private StatusEffect AddStatusEffect(StatusEffectData statusEffectData, StatusEffectTiming timing, float? duration, System.Func<bool> predicate, StatusEvent statusEvent, int stacks)
+        private StatusEffect AddStatusEffect(StatusEffectData statusEffectData, StatusEffectTiming timing, float? duration, System.Func<bool> predicate, StatusEvent statusEvent, int stacks, int depth)
+#nullable disable
+        {
+            if (depth >= k_MaxConditionDepth)
+            {
+                Debug.LogError($"Dropped adding {statusEffectData} because its conditions add other status effects more than {k_MaxConditionDepth} levels deep. Check the conditions for status effects that add each other.");
+                return null;
+            }
+
+            StatusEffect statusEffect = AddStatusEffectInternal(statusEffectData, timing, duration, predicate, statusEvent, stacks, depth);
+
+            if (statusEffect == null)
+                return null;
+
+            switch (timing)
+            {
+                case StatusEffectTiming.Duration:
+                    // Begin a timer on the monobehaviour.
+                    CreateTimer(statusEffect);
+                    break;
+                case StatusEffectTiming.Event:
+                    // Subscribe to the status event.
+                    CreateStatusEvent(statusEffect, statusEvent);
+                    break;
+                case StatusEffectTiming.Predicate:
+                    // Begin a predicate on the monobehaviour.
+                    CreatePredicate(statusEffect, predicate);
+                    break;
+            }
+
+            return statusEffect;
+        }
+
+#nullable enable
+        private StatusEffect AddStatusEffectInternal(StatusEffectData statusEffectData, StatusEffectTiming timing, float? duration, System.Func<bool> predicate, StatusEvent statusEvent, int stacks, int depth)
 #nullable disable
         {
 #if UNITY_EDITOR
@@ -616,27 +637,27 @@ namespace StatusEffectsFramework
                     switch (condition.Timing)
                     {
                         case ConditionalTiming.Duration:
-                            AddStatusEffect(condition.ActionData, condition.Duration, condition.Stacks * (condition.Scaled ? stacks : 1));
+                            AddStatusEffect(condition.ActionData, StatusEffectTiming.Duration, condition.Duration, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                             break;
                         case ConditionalTiming.Inherited:
                             switch (timing)
                             {
                                 case StatusEffectTiming.Duration:
-                                    AddStatusEffect(condition.ActionData, durationValue, condition.Stacks * (condition.Scaled ? stacks : 1));
+                                    AddStatusEffect(condition.ActionData, StatusEffectTiming.Duration, durationValue, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                                     break;
                                 case StatusEffectTiming.Event:
-                                    AddStatusEffect(condition.ActionData, durationValue, statusEvent, condition.Stacks * (condition.Scaled ? stacks : 1));
+                                    AddStatusEffect(condition.ActionData, StatusEffectTiming.Event, durationValue, null, statusEvent, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                                     break;
                                 case StatusEffectTiming.Predicate:
-                                    AddStatusEffect(condition.ActionData, predicate, condition.Stacks * (condition.Scaled ? stacks : 1));
+                                    AddStatusEffect(condition.ActionData, StatusEffectTiming.Predicate, null, predicate, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                                     break;
                                 default:
-                                    AddStatusEffect(condition.ActionData, condition.Stacks * (condition.Scaled ? stacks : 1));
+                                    AddStatusEffect(condition.ActionData, StatusEffectTiming.Infinite, null, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                                     break;
                             }
                             break;
                         default:
-                            AddStatusEffect(condition.ActionData, condition.Stacks * (condition.Scaled ? stacks : 1));
+                            AddStatusEffect(condition.ActionData, StatusEffectTiming.Infinite, null, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                             break;
                     }
                 }

@@ -6,7 +6,7 @@ using Unity.NetCode;
 namespace StatusEffectsFramework.Entities
 {
 #if NETCODE
-    [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]
+    [GhostComponent(PrefabType = GhostPrefabType.AllPredicted, SendDataForChildEntity = true)]
     [GhostEnabledBit]
 #endif
     public struct StatusVariablePostEvaluateUpdate : IComponentData, IEnableableComponent { }

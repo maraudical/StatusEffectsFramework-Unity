@@ -21,12 +21,21 @@ namespace StatusEffectsFramework.Entities
     public partial struct DynamicEffectsSystem : ISystem
     {
         EntityQuery m_EntityQuery;
+#if NETCODE
+        EntityQuery m_GhostEntityQuery;
+#endif
         private StatusTypeDependencies m_Dependencies;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, Simulate>().Build();
+#if NETCODE
+            // Only predicted entities, used on ticks that skip non-ghosts. See NetworkTickExtensions.SimulatesNonGhosts.
+            m_GhostEntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffectEvents, Simulate, PredictedStatusEffectsFlag>().Build();
+
+            state.RequireForUpdate<NetworkTime>();
+#endif
 
             state.RequireForUpdate(m_EntityQuery);
             state.RequireForUpdate<UnmanagedStatusRegistry>();
@@ -50,7 +59,12 @@ namespace StatusEffectsFramework.Entities
                 StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(true),
                 GlobalSystemVersion = state.GlobalSystemVersion,
             };
-            state.Dependency = job.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
+#if NETCODE
+            var entityQuery = SystemAPI.GetSingleton<NetworkTime>().SimulatesNonGhosts(state.WorldUnmanaged) ? m_EntityQuery : m_GhostEntityQuery;
+#else
+            var entityQuery = m_EntityQuery;
+#endif
+            state.Dependency = job.ScheduleParallelByRef(entityQuery, state.Dependency);
         }
 
         /// <summary>
@@ -217,7 +231,8 @@ namespace StatusEffectsFramework.Entities
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, InterpolatedStatusEffects, Simulate>().WithPresent<StatusEffectEvents>().Build();
+            // Only predicted entities are rolled back, so nothing else needs its dynamic effects rebuilt.
+            m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, InterpolatedStatusEffects, Simulate, PredictedStatusEffectsFlag>().WithPresent<StatusEffectEvents>().Build();
 
             state.RequireForUpdate<NetworkTime>();
             state.RequireForUpdate<UnmanagedStatusRegistry>();

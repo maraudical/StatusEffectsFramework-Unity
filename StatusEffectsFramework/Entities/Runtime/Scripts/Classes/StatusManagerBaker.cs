@@ -10,7 +10,11 @@ namespace StatusEffectsFramework.Entities
             AddComponent<StatusManagerComponent>(entity);
             AddBuffer<StatusEffects>(entity);
 #if NETCODE
-            AddBuffer<InterpolatedStatusEffects>(entity);
+            if (GetComponentInParent<Unity.NetCode.GhostAuthoringComponent>() != null)
+            {
+                AddBuffer<InterpolatedStatusEffects>(entity);
+                AddComponent<PredictedStatusEffectsFlag>(entity);
+            }
 #endif
             AddBuffer<StatusEffectRequests>(entity);
             AddBuffer<StatusEffectEvents>(entity);

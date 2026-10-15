@@ -1,13 +1,15 @@
 using System;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Collections;
 #if NETCODE
 using Unity.NetCode;
 #endif
 
 namespace StatusEffectsFramework.Entities
 {
+#if NETCODE
+    [GhostComponent(SendDataForChildEntity = true)]
+#endif
     public struct StatusEffects : IBufferElementData, IComparable<StatusEffects>, IComparable<uint>, IEquatable<uint>, IEquatable<StatusEffects>
     {
 #if NETCODE

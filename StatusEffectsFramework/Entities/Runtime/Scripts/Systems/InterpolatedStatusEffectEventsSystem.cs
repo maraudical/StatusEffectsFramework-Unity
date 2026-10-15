@@ -38,7 +38,7 @@ namespace StatusEffectsFramework.Entities
             {
                 NetworkTime = SystemAPI.GetSingleton<NetworkTime>(),
                 TickRate = tickRate,
-                PredictedGhostHandle = SystemAPI.GetComponentTypeHandle<PredictedGhost>(true),
+                PredictedHandle = SystemAPI.GetComponentTypeHandle<PredictedStatusEffectsFlag>(true),
                 StatusEffectsHandle = SystemAPI.GetBufferTypeHandle<StatusEffects>(true),
                 StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(),
                 InterpolatedStatusEffectsHandle = SystemAPI.GetBufferTypeHandle<InterpolatedStatusEffects>(),
@@ -65,7 +65,7 @@ namespace StatusEffectsFramework.Entities
         {
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
-            [ReadOnly] public ComponentTypeHandle<PredictedGhost> PredictedGhostHandle;
+            [ReadOnly] public ComponentTypeHandle<PredictedStatusEffectsFlag> PredictedHandle;
             [ReadOnly] public BufferTypeHandle<StatusEffects> StatusEffectsHandle;
             public BufferTypeHandle<StatusEffectEvents> StatusEffectEventsHandle;
             public BufferTypeHandle<InterpolatedStatusEffects> InterpolatedStatusEffectsHandle;
@@ -73,7 +73,7 @@ namespace StatusEffectsFramework.Entities
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 // Predicted ghosts run on the server tick, interpolated ghosts on the interpolation tick.
-                var currentTick = chunk.Has(ref PredictedGhostHandle) ? NetworkTime.ServerTick : NetworkTime.InterpolationTick;
+                var currentTick = chunk.Has(ref PredictedHandle) ? NetworkTime.ServerTick : NetworkTime.InterpolationTick;
 
                 var statusEffectsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectsHandle);
                 var statusEffectEventsAccessor = new LazyBufferAccessor<StatusEffectEvents>(chunk, ref StatusEffectEventsHandle);

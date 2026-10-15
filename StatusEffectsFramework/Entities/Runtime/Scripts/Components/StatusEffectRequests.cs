@@ -11,7 +11,7 @@ namespace StatusEffectsFramework.Entities
     /// options.
     /// </summary>
 #if NETCODE
-    [GhostComponent(PrefabType = GhostPrefabType.AllPredicted)]
+    [GhostComponent(PrefabType = GhostPrefabType.AllPredicted, SendDataForChildEntity = true)]
 #endif
     public struct StatusEffectRequests : IBufferElementData
     {

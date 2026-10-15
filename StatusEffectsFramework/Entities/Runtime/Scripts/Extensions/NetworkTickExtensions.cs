@@ -1,4 +1,5 @@
 #if NETCODE
+using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
 
@@ -36,6 +37,15 @@ namespace StatusEffectsFramework.Entities
             var ticksElapsed = tick.TicksSince(oldTick);
             float timeElapsed = (ticksElapsed - 1f + thisTickFraction) / tickRate.SimulationTickRate;
             return math.max(0f, timeElapsed);
+        }
+
+        /// <summary>
+        /// Non-ghosts aren't rolled back on the client, so they only run on the first full prediction
+        /// of each tick. The server never rolls back, so it runs them every tick.
+        /// </summary>
+        internal static bool SimulatesNonGhosts(this in NetworkTime networkTime, in WorldUnmanaged world)
+        {
+            return world.IsServer() || networkTime.IsFirstTimeFullyPredictingTick;
         }
     }
 }

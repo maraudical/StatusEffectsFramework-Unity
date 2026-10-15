@@ -6,12 +6,15 @@ using Unity.NetCode;
 
 namespace StatusEffectsFramework.Entities
 {
+#if NETCODE
+    [GhostComponent(SendDataForChildEntity = true)]
+#endif
     public struct StatusFloats : IBufferElementData
     {
         internal Hash128 UniqueKey;
         internal ulong StableTypeHash;
 #if NETCODE
-        [GhostField]
+        [GhostField(SendData = false)]
 #endif
         public ushort Id;
 #if NETCODE
