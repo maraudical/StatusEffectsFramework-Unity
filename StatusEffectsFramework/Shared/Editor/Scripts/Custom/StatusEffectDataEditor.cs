@@ -271,7 +271,7 @@ namespace StatusEffectsFramework.Editor
                 {
                     m_Condition = m_Data.Conditions.ElementAtOrDefault(i);
 
-                    if (m_Condition == null || !m_Condition.Add || m_Condition.ActionData != target)
+                    if (m_Condition == null || !m_Condition.Add || m_Condition.ActionData != m_Data)
                         continue;
 
                     displayConditionsWarning = true;

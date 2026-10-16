@@ -111,7 +111,8 @@ namespace StatusEffectsFramework.Editor
 
             foldout.RegisterValueChangedCallback(FoldoutChanged);
             
-            statusName.RegisterValueChangeCallback(StatusNameChanged);
+            // The status name is picked or typed inside its own drawer, so its property is tracked directly.
+            foldout.TrackPropertyValue(statusNameProperty, StatusNameChanged);
 
             baseValue.RegisterValueChangeCallback(BaseValueChanged);
 
@@ -241,14 +242,14 @@ namespace StatusEffectsFramework.Editor
                 EvaluateProperties();
             }
 
-            void StatusNameChanged(SerializedPropertyChangeEvent changeEvent)
+            void StatusNameChanged(SerializedProperty _)
             {
                 EvaluateProperties();
             }
 
             void EvaluateProperties()
             {
-                bool isNull = statusNameProperty.objectReferenceValue == null;
+                bool isNull = RegistrantKeyDrawer.IsEmpty(statusNameProperty);
                 
                 if (isNull)
                 {
@@ -318,7 +319,7 @@ namespace StatusEffectsFramework.Editor
             float width = position.width;
             position.width = property.isExpanded ? width : EditorGUIUtility.labelWidth;
 
-            GUI.color = !m_StatusName.objectReferenceValue && !property.isExpanded ? Color.red : Color.white;
+            GUI.color = RegistrantKeyDrawer.IsEmpty(m_StatusName) && !property.isExpanded ? Color.red : Color.white;
             property.isExpanded = EditorGUI.Foldout(position, property.isExpanded, label, true);
             GUI.color = Color.white;
 
@@ -332,7 +333,7 @@ namespace StatusEffectsFramework.Editor
             {
                 EditorGUI.indentLevel = indent + 1;
                 position.y += m_FieldSize + m_Padding;
-                GUI.color = !m_StatusName.objectReferenceValue ? Color.red : Color.white;
+                GUI.color = RegistrantKeyDrawer.IsEmpty(m_StatusName) ? Color.red : Color.white;
                 EditorGUI.BeginDisabledGroup(isPlaying);
                 EditorGUI.PropertyField(position, m_StatusName);
                 EditorGUI.EndDisabledGroup();

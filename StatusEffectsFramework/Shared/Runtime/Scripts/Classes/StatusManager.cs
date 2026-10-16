@@ -545,7 +545,8 @@ namespace StatusEffectsFramework
             {
                 stacks = 1;
 
-                StatusEffect oldStatusEffect = GetFirstStatusEffect(name: statusEffectData.ComparableName, data: statusEffectData.ComparableName ? null : statusEffectData);
+                var comparableName = statusEffectData.ComparableName.Resolve();
+                StatusEffect oldStatusEffect = GetFirstStatusEffect(name: comparableName, data: comparableName ? null : statusEffectData);
                 
                 if (oldStatusEffect == null)
                     goto CheckConditionals;
@@ -617,10 +618,10 @@ namespace StatusEffectsFramework
                 {
                     ConditionalConfigurable.AllGroups => GetFirstStatusEffect(group: condition.SearchableGroup, matchAllGroups: true) != null,
                     ConditionalConfigurable.AnyGroups => GetFirstStatusEffect(group: condition.SearchableGroup, matchAllGroups: false) != null,
-                    ConditionalConfigurable.Name => condition.SearchableComparableName != null
-                                                    && GetFirstStatusEffect(name: condition.SearchableComparableName) != null,
-                    _ => condition.SearchableData != null
-                         && GetFirstStatusEffect(data: condition.SearchableData) != null,
+                    ConditionalConfigurable.Name => condition.SearchableComparableName.TryResolve(out var searchableComparableName)
+                                                    && GetFirstStatusEffect(name: searchableComparableName) != null,
+                    _ => condition.SearchableData.TryResolve(out var searchableData)
+                         && GetFirstStatusEffect(data: searchableData) != null,
                 };
                 // If the condition is checking for existence and it doesn't exist or if
                 // its checking non-existence and does exist then skip this condition.
@@ -630,34 +631,34 @@ namespace StatusEffectsFramework
 
                 if (condition.Add)
                 {
-                    // No data to add was assigned.
-                    if (condition.ActionData == null)
+                    // No data to add was assigned, or it isn't registered.
+                    if (!condition.ActionData.TryResolve(out var actionData))
                         continue;
 
                     switch (condition.Timing)
                     {
                         case ConditionalTiming.Duration:
-                            AddStatusEffect(condition.ActionData, StatusEffectTiming.Duration, condition.Duration, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                            AddStatusEffect(actionData, StatusEffectTiming.Duration, condition.Duration, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                             break;
                         case ConditionalTiming.Inherited:
                             switch (timing)
                             {
                                 case StatusEffectTiming.Duration:
-                                    AddStatusEffect(condition.ActionData, StatusEffectTiming.Duration, durationValue, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                                    AddStatusEffect(actionData, StatusEffectTiming.Duration, durationValue, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                                     break;
                                 case StatusEffectTiming.Event:
-                                    AddStatusEffect(condition.ActionData, StatusEffectTiming.Event, durationValue, null, statusEvent, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                                    AddStatusEffect(actionData, StatusEffectTiming.Event, durationValue, null, statusEvent, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                                     break;
                                 case StatusEffectTiming.Predicate:
-                                    AddStatusEffect(condition.ActionData, StatusEffectTiming.Predicate, null, predicate, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                                    AddStatusEffect(actionData, StatusEffectTiming.Predicate, null, predicate, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                                     break;
                                 default:
-                                    AddStatusEffect(condition.ActionData, StatusEffectTiming.Infinite, null, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                                    AddStatusEffect(actionData, StatusEffectTiming.Infinite, null, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                                     break;
                             }
                             break;
                         default:
-                            AddStatusEffect(condition.ActionData, StatusEffectTiming.Infinite, null, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                            AddStatusEffect(actionData, StatusEffectTiming.Infinite, null, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
                             break;
                     }
                 }
@@ -687,10 +688,12 @@ namespace StatusEffectsFramework
                     switch (condition.ActionConfigurable)
                     {
                         case ConditionalConfigurable.Data:
-                            RemoveStatusEffect(condition.ActionData, stacks);
+                            if (condition.ActionData.TryResolve(out var removedData))
+                                RemoveStatusEffect(removedData, stacks);
                             break;
                         case ConditionalConfigurable.Name:
-                            RemoveStatusEffect(condition.ActionComparableName, stacks);
+                            if (condition.ActionComparableName.TryResolve(out var removedComparableName))
+                                RemoveStatusEffect(removedComparableName, stacks);
                             break;
                         case ConditionalConfigurable.AllGroups:
                             RemoveStatusEffect(condition.ActionGroup, stacks, true);

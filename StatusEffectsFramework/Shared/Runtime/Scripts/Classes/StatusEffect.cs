@@ -63,7 +63,8 @@ namespace StatusEffectsFramework
                 if (effect.ValueSource is not ValueSource.DynamicValue)
                     continue;
 
-                switch (effect.StatusName)
+                // The status name's type decides which kind of value the effect changes.
+                switch (effect.StatusName.Resolve())
                 {
                     case StatusNameFloat:
                         if (effect.DynamicFloatEffect)

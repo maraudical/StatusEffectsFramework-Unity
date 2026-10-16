@@ -49,9 +49,9 @@ namespace StatusEffectsFramework.Entities
         public StatusInts(ulong stableTypeHash, StatusInt statusInt)
         {
             Assert.IsNotNull(statusInt, $"{nameof(StatusInt)} cannot be null when creating a {nameof(StatusInts)} buffer element.");
-            Assert.IsNotNull(statusInt.StatusName, $"{nameof(StatusInt.StatusName)} cannot be null when creating a {nameof(StatusInts)} buffer element.");
+            Assert.IsFalse(statusInt.StatusName.IsEmpty, $"{nameof(StatusInt.StatusName)} cannot be empty when creating a {nameof(StatusInts)} buffer element.");
 
-            UniqueKey = statusInt.StatusName.GetUniqueKeyHash();
+            UniqueKey = statusInt.StatusName.GetKeyHash();
             StableTypeHash = stableTypeHash;
             Id = StatusRegistry.NullId;
             SignProtected = statusInt.SignProtected;

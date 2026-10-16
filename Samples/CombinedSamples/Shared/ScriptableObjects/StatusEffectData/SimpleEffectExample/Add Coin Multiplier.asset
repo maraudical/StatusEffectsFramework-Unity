@@ -12,10 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Add Coin Multiplier
   m_EditorClassIdentifier: 
+  m_OptionalRegistryDependency: {fileID: 0}
   m_UniqueKey: base:add-coin-multiplier
   m_Group:
     Value: 4
-  m_ComparableName: {fileID: 0}
+  m_ComparableName:
+    m_Key: 
+    m_Asset: {fileID: 0}
   m_BaseValue: 1
   m_Icon: {fileID: 21300000, guid: 7c5e5f5e82bc3ee4e97adfe8bf6e8cd8, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
@@ -26,7 +29,9 @@ MonoBehaviour:
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
   m_Effects:
-  - m_StatusName: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
+  - m_StatusName:
+      m_Key: base:coin-multiplier
+      m_Asset: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
     m_ValueModifier: 0
     m_ValueSource: 1
     m_Priority: 0

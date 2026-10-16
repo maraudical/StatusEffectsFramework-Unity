@@ -79,9 +79,9 @@ namespace StatusEffectsFramework.Entities
         public static implicit operator UnmanagedStatusFloat(StatusFloat statusFloat)
         {
             Assert.IsNotNull(statusFloat, $"{nameof(StatusFloat)} cannot be null when casting to an {nameof(UnmanagedStatusFloat)}.");
-            Assert.IsNotNull(statusFloat.StatusName, $"{nameof(StatusFloat.StatusName)} cannot be null when casting to an {nameof(UnmanagedStatusFloat)}.");
+            Assert.IsFalse(statusFloat.StatusName.IsEmpty, $"{nameof(StatusFloat.StatusName)} cannot be empty when casting to an {nameof(UnmanagedStatusFloat)}.");
 
-            return new UnmanagedStatusFloat(statusFloat.StatusName.GetUniqueKeyHash());
+            return new UnmanagedStatusFloat(statusFloat.StatusName.GetKeyHash());
         }
     }
 }

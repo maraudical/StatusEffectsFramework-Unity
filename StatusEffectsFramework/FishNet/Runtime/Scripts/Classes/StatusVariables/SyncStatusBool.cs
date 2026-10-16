@@ -9,7 +9,7 @@ namespace StatusEffectsFramework.FishNet
         public event Action<bool, bool> OnPreEvaluationValueChanged { add => m_Inner.OnPreEvaluationValueChanged += value; remove => m_Inner.OnPreEvaluationValueChanged -= value; }
         public event Action<bool, bool> OnBaseValueChanged { add => m_Inner.OnBaseValueChanged += value; remove => m_Inner.OnBaseValueChanged -= value; }
 
-        public StatusNameBool StatusName => m_Inner.StatusName;
+        public RegistrantKey<StatusNameBool> StatusName => m_Inner.StatusName;
         public bool BaseValue { get => m_Inner.BaseValue; set { if (CanWrite()) m_Inner.BaseValue = value; } }
         public bool Value => m_Inner.Value;
         public bool PreEvaluationValue => m_Inner.PreEvaluationValue;
@@ -18,7 +18,7 @@ namespace StatusEffectsFramework.FishNet
         public SyncStatusBool(bool baseValue, StatusWritePermission writePermission = StatusWritePermission.ServerAndOwner)
             : base(new StatusBool(baseValue), writePermission) { }
 
-        public SyncStatusBool(bool baseValue, StatusNameBool statusName, StatusWritePermission writePermission = StatusWritePermission.ServerAndOwner)
+        public SyncStatusBool(bool baseValue, RegistrantKey<StatusNameBool> statusName, StatusWritePermission writePermission = StatusWritePermission.ServerAndOwner)
             : base(new StatusBool(baseValue, statusName), writePermission) { }
 
         public static implicit operator bool(SyncStatusBool statusBool) => statusBool.Value;

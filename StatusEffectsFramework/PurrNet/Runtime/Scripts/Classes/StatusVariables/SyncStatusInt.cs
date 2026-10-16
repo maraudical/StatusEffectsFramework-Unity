@@ -11,7 +11,7 @@ namespace StatusEffectsFramework.PurrNet
         public event Action<int, int> OnBaseValueChanged { add => m_Inner.OnBaseValueChanged += value; remove => m_Inner.OnBaseValueChanged -= value; }
         public event Action<bool, bool> OnSignProtectedChanged { add => m_Inner.OnSignProtectedChanged += value; remove => m_Inner.OnSignProtectedChanged -= value; }
 
-        public StatusNameInt StatusName => m_Inner.StatusName;
+        public RegistrantKey<StatusNameInt> StatusName => m_Inner.StatusName;
         public int BaseValue { get => m_Inner.BaseValue; set { if (CanWrite()) m_Inner.BaseValue = value; } }
         public bool SignProtected { get => m_Inner.SignProtected; set { if (CanWrite()) m_Inner.SignProtected = value; } }
         public int Value => m_Inner.Value;
@@ -21,7 +21,7 @@ namespace StatusEffectsFramework.PurrNet
         public SyncStatusInt(int baseValue, bool signProtected = true, StatusWritePermission writePermission = StatusWritePermission.ServerAndOwner)
             : base(new StatusInt(baseValue, signProtected), writePermission) { }
 
-        public SyncStatusInt(int baseValue, StatusNameInt statusName, bool signProtected = true, StatusWritePermission writePermission = StatusWritePermission.ServerAndOwner)
+        public SyncStatusInt(int baseValue, RegistrantKey<StatusNameInt> statusName, bool signProtected = true, StatusWritePermission writePermission = StatusWritePermission.ServerAndOwner)
             : base(new StatusInt(baseValue, statusName, signProtected), writePermission) { }
 
         public static implicit operator int(SyncStatusInt statusInt) => statusInt.Value;

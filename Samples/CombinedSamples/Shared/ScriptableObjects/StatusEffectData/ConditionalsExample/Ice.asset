@@ -12,10 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Ice
   m_EditorClassIdentifier: 
+  m_OptionalRegistryDependency: {fileID: 0}
   m_UniqueKey: base:ice
   m_Group:
     Value: 2
-  m_ComparableName: {fileID: 0}
+  m_ComparableName:
+    m_Key: 
+    m_Asset: {fileID: 0}
   m_BaseValue: -0.3
   m_Icon: {fileID: 21300000, guid: 4bae7d79998147e40bfbd395c6b4bbfb, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
@@ -26,7 +29,9 @@ MonoBehaviour:
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
   m_Effects:
-  - m_StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
+  - m_StatusName:
+      m_Key: base:speed
+      m_Asset: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
     m_ValueModifier: 2
     m_ValueSource: 1
     m_Priority: 0
@@ -38,8 +43,12 @@ MonoBehaviour:
     m_DynamicBoolEffect: {fileID: 0}
   m_Conditions:
   - m_SearchableConfigurable: 0
-    m_SearchableData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    m_SearchableComparableName: {fileID: 0}
+    m_SearchableData:
+      m_Key: base:fire
+      m_Asset: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    m_SearchableComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_SearchableGroup:
       Value: 0
     m_Exists: 1
@@ -48,15 +57,23 @@ MonoBehaviour:
     m_UseStacks: 0
     m_Stacks: 1
     m_ActionConfigurable: 0
-    m_ActionData: {fileID: 11400000}
-    m_ActionComparableName: {fileID: 0}
+    m_ActionData:
+      m_Key: base:ice
+      m_Asset: {fileID: 11400000}
+    m_ActionComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_ActionGroup:
       Value: 0
     m_Timing: 0
     m_Duration: 0
   - m_SearchableConfigurable: 0
-    m_SearchableData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    m_SearchableComparableName: {fileID: 0}
+    m_SearchableData:
+      m_Key: base:fire
+      m_Asset: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    m_SearchableComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_SearchableGroup:
       Value: 0
     m_Exists: 1
@@ -65,8 +82,12 @@ MonoBehaviour:
     m_UseStacks: 0
     m_Stacks: 1
     m_ActionConfigurable: 0
-    m_ActionData: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
-    m_ActionComparableName: {fileID: 0}
+    m_ActionData:
+      m_Key: base:fire
+      m_Asset: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
+    m_ActionComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_ActionGroup:
       Value: 0
     m_Timing: 0

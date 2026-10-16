@@ -5,7 +5,7 @@ namespace StatusEffectsFramework
     public class DynamicBool
     {
         internal event Action ValueChanged;
-        public StatusName StatusName { get; private set; }
+        public RegistrantKey<StatusNameBool> StatusName { get; private set; }
         public bool PostEvaluate { get; private set; }
         public int Priority { get; private set; }
         public bool Value { get => m_Value; set { if (value == m_Value) return; m_Value = value; ValueChanged?.Invoke(); } }
@@ -13,7 +13,7 @@ namespace StatusEffectsFramework
 
         public DynamicBool(DynamicEffectBool dynamicBoolEffect, Effect effect, bool value = false)
         {
-            StatusName = effect.StatusName;
+            StatusName = new RegistrantKey<StatusNameBool>(effect.StatusName.Key);
             PostEvaluate = dynamicBoolEffect.PostEvaluate;
             Priority = effect.Priority;
             m_Value = value;

@@ -25,10 +25,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Weak Poison
   m_EditorClassIdentifier: 
+  m_OptionalRegistryDependency: {fileID: 0}
   m_UniqueKey: base:weak-poison
   m_Group:
     Value: 2
-  m_ComparableName: {fileID: 11400000, guid: b343dd2374330dd40bfadc3bd9490190, type: 2}
+  m_ComparableName:
+    m_Key: base:poison
+    m_Asset: {fileID: 11400000, guid: b343dd2374330dd40bfadc3bd9490190, type: 2}
   m_BaseValue: 2
   m_Icon: {fileID: 21300000, guid: 56d441688dd3f5d43b3455b1290a44b2, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
@@ -39,7 +42,9 @@ MonoBehaviour:
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
   m_Effects:
-  - m_StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
+  - m_StatusName:
+      m_Key: base:speed
+      m_Asset: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
     m_ValueModifier: 2
     m_ValueSource: 0
     m_Priority: 0

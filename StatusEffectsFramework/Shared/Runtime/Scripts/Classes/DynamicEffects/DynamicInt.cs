@@ -5,7 +5,7 @@ namespace StatusEffectsFramework
     public class DynamicInt
     {
         internal event Action ValueChanged;
-        public StatusName StatusName { get; private set; }
+        public RegistrantKey<StatusNameInt> StatusName { get; private set; }
         public ValueModifier ValueModifier { get; private set; }
         public bool PostEvaluate { get; private set; }
         public int Priority { get; private set; }
@@ -14,7 +14,7 @@ namespace StatusEffectsFramework
 
         public DynamicInt(DynamicEffectInt dynamicIntEffect, Effect effect, int value = 0)
         {
-            StatusName = effect.StatusName;
+            StatusName = new RegistrantKey<StatusNameInt>(effect.StatusName.Key);
             ValueModifier = effect.ValueModifier;
             PostEvaluate = dynamicIntEffect.PostEvaluate;
             Priority = effect.Priority;

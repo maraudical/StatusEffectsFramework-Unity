@@ -8,8 +8,8 @@ namespace StatusEffectsFramework
     public class Condition
     {
         public ConditionalConfigurable SearchableConfigurable => m_SearchableConfigurable;
-        public StatusEffectData SearchableData => m_SearchableData;
-        public ComparableName SearchableComparableName => m_SearchableComparableName;
+        public RegistrantKey<StatusEffectData> SearchableData => m_SearchableData;
+        public RegistrantKey<ComparableName> SearchableComparableName => m_SearchableComparableName;
         public StatusEffectGroup SearchableGroup => m_SearchableGroup;
         public bool Exists => m_Exists;
         public bool Add => m_Add;
@@ -17,8 +17,8 @@ namespace StatusEffectsFramework
         public bool UseStacks => m_UseStacks;
         public int Stacks => m_Stacks;
         public ConditionalConfigurable ActionConfigurable => m_ActionConfigurable;
-        public StatusEffectData ActionData => m_ActionData;
-        public ComparableName ActionComparableName => m_ActionComparableName;
+        public RegistrantKey<StatusEffectData> ActionData => m_ActionData;
+        public RegistrantKey<ComparableName> ActionComparableName => m_ActionComparableName;
         public StatusEffectGroup ActionGroup => m_ActionGroup;
         public ConditionalTiming Timing => m_Timing;
         public float Duration => m_Duration;
@@ -26,9 +26,9 @@ namespace StatusEffectsFramework
         [SerializeField, FormerlySerializedAs("SearchableConfigurable")]
         private ConditionalConfigurable m_SearchableConfigurable;
         [SerializeField, FormerlySerializedAs("SearchableData")]
-        private StatusEffectData m_SearchableData;
+        private RegistrantKey<StatusEffectData> m_SearchableData;
         [SerializeField, FormerlySerializedAs("SearchableComparableName")]
-        private ComparableName m_SearchableComparableName;
+        private RegistrantKey<ComparableName> m_SearchableComparableName;
         [SerializeField, FormerlySerializedAs("SearchableGroup")]
         private StatusEffectGroup m_SearchableGroup;
         [SerializeField, FormerlySerializedAs("Exists")]
@@ -44,9 +44,9 @@ namespace StatusEffectsFramework
         [SerializeField, FormerlySerializedAs("ActionConfigurable")]
         private ConditionalConfigurable m_ActionConfigurable;
         [SerializeField, FormerlySerializedAs("ActionData")]
-        private StatusEffectData m_ActionData;
+        private RegistrantKey<StatusEffectData> m_ActionData;
         [SerializeField, FormerlySerializedAs("ActionComparableName")]
-        private ComparableName m_ActionComparableName;
+        private RegistrantKey<ComparableName> m_ActionComparableName;
         [SerializeField, FormerlySerializedAs("ActionGroup")]
         private StatusEffectGroup m_ActionGroup;
         [SerializeField, FormerlySerializedAs("Timing")]

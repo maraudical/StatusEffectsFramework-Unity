@@ -49,9 +49,9 @@ namespace StatusEffectsFramework.Entities
         public StatusFloats(ulong stableTypeHash, StatusFloat statusFloat)
         {
             Assert.IsNotNull(statusFloat, $"{nameof(StatusFloat)} cannot be null when creating a {nameof(StatusFloats)} buffer element.");
-            Assert.IsNotNull(statusFloat.StatusName, $"{nameof(StatusFloat.StatusName)} cannot be null when creating a {nameof(StatusFloats)} buffer element.");
+            Assert.IsFalse(statusFloat.StatusName.IsEmpty, $"{nameof(StatusFloat.StatusName)} cannot be empty when creating a {nameof(StatusFloats)} buffer element.");
 
-            UniqueKey = statusFloat.StatusName.GetUniqueKeyHash();
+            UniqueKey = statusFloat.StatusName.GetKeyHash();
             StableTypeHash = stableTypeHash;
             Id = StatusRegistry.NullId;
             SignProtected = statusFloat.SignProtected;

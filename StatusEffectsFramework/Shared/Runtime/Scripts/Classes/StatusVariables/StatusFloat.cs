@@ -13,7 +13,7 @@ namespace StatusEffectsFramework
         public event Action<float, float> OnBaseValueChanged;
         public event Action<bool, bool> OnSignProtectedChanged;
 
-        public StatusNameFloat StatusName => m_StatusName;
+        public RegistrantKey<StatusNameFloat> StatusName => m_StatusName;
         public float BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; UpdateBaseValue(); } }
         public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; UpdateSignProtected(); } }
         public float Value => Manager != null ? PostEvaluationValue : m_BaseValue;
@@ -23,7 +23,7 @@ namespace StatusEffectsFramework
 #endif
         public float PostEvaluationValue { get; protected set; }
 
-        [SerializeField] protected StatusNameFloat m_StatusName;
+        [SerializeField] protected RegistrantKey<StatusNameFloat> m_StatusName;
         [SerializeField] protected float m_BaseValue;
         [SerializeField] protected bool m_SignProtected;
 
@@ -42,7 +42,7 @@ namespace StatusEffectsFramework
             PostEvaluationValue = baseValue;
         }
 
-        public StatusFloat(float baseValue, StatusNameFloat statusName, bool signProtected = true)
+        public StatusFloat(float baseValue, RegistrantKey<StatusNameFloat> statusName, bool signProtected = true)
         {
             m_StatusName = statusName;
             m_BaseValue = baseValue;
@@ -105,7 +105,7 @@ namespace StatusEffectsFramework
                         else
                             dynamicFloat.ValueChanged += UpdatePreEvaluationValue;
             // Only update if the status effect actually has any effects that have the same StatusName
-            if (statusEffect.Data.Effects.Any(effect => effect.StatusName == m_StatusName))
+            if (statusEffect.Data.Effects.Any(effect => effect.StatusName.Key == m_StatusName.Key))
                 UpdatePreEvaluationValue(true);
         }
 
@@ -122,7 +122,7 @@ namespace StatusEffectsFramework
             {
                 foreach (Effect effect in statusEffect.Data.Effects)
                 {
-                    if (effect.StatusName != m_StatusName)
+                    if (effect.StatusName.Key != m_StatusName.Key)
                         continue;
 
                     switch (effect.ValueSource)

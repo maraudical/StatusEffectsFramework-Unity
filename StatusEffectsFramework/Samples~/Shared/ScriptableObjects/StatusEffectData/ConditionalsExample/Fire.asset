@@ -28,7 +28,9 @@ MonoBehaviour:
   m_Effects: []
   m_Conditions:
   - m_SearchableConfigurable: 0
-    m_SearchableData: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
+    m_SearchableData:
+      m_Key: 
+      m_Asset: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
     m_SearchableComparableName: {fileID: 0}
     m_SearchableGroup:
       Value: 0
@@ -38,14 +40,18 @@ MonoBehaviour:
     m_UseStacks: 0
     m_Stacks: 1
     m_ActionConfigurable: 0
-    m_ActionData: {fileID: 11400000}
+    m_ActionData:
+      m_Key: 
+      m_Asset: {fileID: 11400000}
     m_ActionComparableName: {fileID: 0}
     m_ActionGroup:
       Value: 0
     m_Timing: 0
     m_Duration: 0
   - m_SearchableConfigurable: 0
-    m_SearchableData: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
+    m_SearchableData:
+      m_Key: 
+      m_Asset: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
     m_SearchableComparableName: {fileID: 0}
     m_SearchableGroup:
       Value: 0
@@ -55,7 +61,9 @@ MonoBehaviour:
     m_UseStacks: 0
     m_Stacks: 1
     m_ActionConfigurable: 0
-    m_ActionData: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
+    m_ActionData:
+      m_Key: 
+      m_Asset: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
     m_ActionComparableName: {fileID: 0}
     m_ActionGroup:
       Value: 0

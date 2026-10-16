@@ -14,7 +14,7 @@ namespace StatusEffectsFramework
     {
         #region Public Properties
         public StatusEffectGroup Group => m_Group;
-        public ComparableName ComparableName => m_ComparableName;
+        public RegistrantKey<ComparableName> ComparableName => m_ComparableName;
         public float BaseValue => m_BaseValue;
         public Sprite Icon => m_Icon;
         public Color Color => m_Color;
@@ -38,7 +38,7 @@ namespace StatusEffectsFramework
         #region Private Fields
         [SerializeField] private StatusEffectGroup m_Group;
         [Tooltip("This name can be used to categorize a series of Status Effects. For example, \"Poison\" may be used for multiple different poison effects.")]
-        [SerializeField] private ComparableName m_ComparableName;
+        [SerializeField] private RegistrantKey<ComparableName> m_ComparableName;
         [SerializeField] private float m_BaseValue = 1f;
         [SerializeField] private Sprite m_Icon;
         [SerializeField] private Color m_Color = Color.white;

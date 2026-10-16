@@ -7,7 +7,7 @@ namespace StatusEffectsFramework
     [Serializable]
     public class Effect
     {
-        public StatusName StatusName => m_StatusName;
+        public RegistrantKey<StatusName> StatusName => m_StatusName;
         public ValueModifier ValueModifier => m_ValueModifier;
         public ValueSource ValueSource => m_ValueSource;
         public int Priority => m_Priority;
@@ -19,7 +19,7 @@ namespace StatusEffectsFramework
         public DynamicEffectBool DynamicBoolEffect => m_DynamicBoolEffect;
 
         [SerializeField, FormerlySerializedAs("StatusName")]
-        private StatusName m_StatusName;
+        private RegistrantKey<StatusName> m_StatusName;
         [SerializeField, FormerlySerializedAs("ValueModifier")]
         private ValueModifier m_ValueModifier;
         [SerializeField]

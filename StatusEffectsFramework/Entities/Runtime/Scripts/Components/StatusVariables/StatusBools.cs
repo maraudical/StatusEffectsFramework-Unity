@@ -44,9 +44,9 @@ namespace StatusEffectsFramework.Entities
         public StatusBools(ulong stableTypeHash, StatusBool statusBool)
         {
             Assert.IsNotNull(statusBool, $"{nameof(StatusBool)} cannot be null when creating a {nameof(StatusBools)} buffer element.");
-            Assert.IsNotNull(statusBool.StatusName, $"{nameof(StatusBool.StatusName)} cannot be null when creating a {nameof(StatusBools)} buffer element.");
+            Assert.IsFalse(statusBool.StatusName.IsEmpty, $"{nameof(StatusBool.StatusName)} cannot be empty when creating a {nameof(StatusBools)} buffer element.");
 
-            UniqueKey = statusBool.StatusName.GetUniqueKeyHash();
+            UniqueKey = statusBool.StatusName.GetKeyHash();
             StableTypeHash = stableTypeHash;
             Id = StatusRegistry.NullId;
             BaseValue = statusBool.BaseValue;

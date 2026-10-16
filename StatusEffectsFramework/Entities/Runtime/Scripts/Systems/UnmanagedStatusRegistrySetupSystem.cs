@@ -78,8 +78,8 @@ namespace StatusEffectsFramework.Entities
                     unmanagedStatusEffectData.Id = kvp.Key;
                     unmanagedStatusEffectData.Group = statusEffectData.Group;
                     ushort comparableName = StatusRegistry.NullId;
-                    if (statusEffectData.ComparableName && !keyToIds.TryGetValue(statusEffectData.ComparableName.GetUniqueKeyHash(), out comparableName))
-                        DebugError(statusEffectData.ComparableName.UniqueKey);
+                    if (!statusEffectData.ComparableName.IsEmpty && !keyToIds.TryGetValue(statusEffectData.ComparableName.GetKeyHash(), out comparableName))
+                        DebugError(statusEffectData.ComparableName.Key);
                     unmanagedStatusEffectData.ComparableName = comparableName;
                     unmanagedStatusEffectData.BaseValue = statusEffectData.BaseValue;
                     unmanagedStatusEffectData.Icon = statusEffectData.Icon;
@@ -144,17 +144,17 @@ namespace StatusEffectsFramework.Entities
                         var condition = statusEffectData.Conditions[i];
 
                         ushort searchableData = StatusRegistry.NullId;
-                        if (condition.SearchableData && !keyToIds.TryGetValue(condition.SearchableData.GetUniqueKeyHash(), out searchableData))
-                            DebugError(condition.SearchableData.UniqueKey);
+                        if (!condition.SearchableData.IsEmpty && !keyToIds.TryGetValue(condition.SearchableData.GetKeyHash(), out searchableData))
+                            DebugError(condition.SearchableData.Key);
                         ushort searchableComparableName = StatusRegistry.NullId;
-                        if (condition.SearchableComparableName && !keyToIds.TryGetValue(condition.SearchableComparableName.GetUniqueKeyHash(), out searchableComparableName))
-                            DebugError(condition.SearchableComparableName.UniqueKey);
+                        if (!condition.SearchableComparableName.IsEmpty && !keyToIds.TryGetValue(condition.SearchableComparableName.GetKeyHash(), out searchableComparableName))
+                            DebugError(condition.SearchableComparableName.Key);
                         ushort actionData = StatusRegistry.NullId;
-                        if (condition.ActionData && !keyToIds.TryGetValue(condition.ActionData.GetUniqueKeyHash(), out actionData))
-                            DebugError(condition.ActionData.UniqueKey);
+                        if (!condition.ActionData.IsEmpty && !keyToIds.TryGetValue(condition.ActionData.GetKeyHash(), out actionData))
+                            DebugError(condition.ActionData.Key);
                         ushort actionComparableName = StatusRegistry.NullId;
-                        if (condition.ActionComparableName && !keyToIds.TryGetValue(condition.ActionComparableName.GetUniqueKeyHash(), out actionComparableName))
-                            DebugError(condition.ActionComparableName.UniqueKey);
+                        if (!condition.ActionComparableName.IsEmpty && !keyToIds.TryGetValue(condition.ActionComparableName.GetKeyHash(), out actionComparableName))
+                            DebugError(condition.ActionComparableName.Key);
 
                         conditions[i] = new UnmanagedCondition()
                         {
@@ -271,12 +271,13 @@ namespace StatusEffectsFramework.Entities
         {
             resolvedEffect = default;
 
-            if (!effect.StatusName)
+            if (effect.StatusName.IsEmpty)
                 return false;
 
             ValueType valueType;
             DynamicEffect dynamicEffect;
-            switch (effect.StatusName)
+            // The status name's type decides which kind of value the effect changes.
+            switch (effect.StatusName.Resolve())
             {
                 case StatusNameFloat:
                     valueType = ValueType.Float;
@@ -303,9 +304,9 @@ namespace StatusEffectsFramework.Entities
             else
                 dynamicEffect = null;
 
-            if (!keyToIds.TryGetValue(effect.StatusName.GetUniqueKeyHash(), out var id))
+            if (!keyToIds.TryGetValue(effect.StatusName.GetKeyHash(), out var id))
             {
-                DebugError(effect.StatusName.UniqueKey);
+                DebugError(effect.StatusName.Key);
                 return false;
             }
 

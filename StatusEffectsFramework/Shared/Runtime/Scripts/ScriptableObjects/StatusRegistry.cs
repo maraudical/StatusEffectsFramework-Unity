@@ -109,12 +109,46 @@ namespace StatusEffectsFramework
             id = NullId;
             return registrant && m_KeyToId != null && m_KeyToId.TryGetValue(registrant.GetUniqueKeyHash(), out id);
         }
+        /// <summary>
+        /// Gets the id assigned to a <see cref="Registrant.UniqueKey"/>. Returns false if it isn't registered.
+        /// </summary>
+        public bool TryGetId(string key, out ushort id)
+        {
+            id = NullId;
+            return !string.IsNullOrEmpty(key) && m_StringKeyToId != null && m_StringKeyToId.TryGetValue(key, out id);
+        }
+        /// <summary>
+        /// Gets the registered <typeparamref name="T"/> with a <see cref="Registrant.UniqueKey"/>. Returns false if
+        /// nothing is registered with the key or the registrant with it isn't a <typeparamref name="T"/>.
+        /// </summary>
+        public bool TryGet<T>(string key, out T registrant) where T : Registrant
+        {
+            registrant = null;
+
+            // Nothing is registered until the first rebuild, so there is nothing to report yet either.
+            if (string.IsNullOrEmpty(key) || m_StringKeyToId == null)
+                return false;
+
+            if (!m_StringKeyToId.TryGetValue(key, out var id) || !m_IdToRegistrant.TryGetValue(id, out var item))
+            {
+                // The same missing reference is usually looked up repeatedly, so it is only reported once.
+                if (m_MissingKeys.Add(key))
+                    Debug.LogWarning($"Nothing is registered in the {nameof(StatusRegistry)} with the unique key \"{key}\". If it comes from separately built content, like a mod, make sure that content is loaded.");
+                return false;
+            }
+
+            registrant = item as T;
+            return registrant is not null;
+        }
 
         private Dictionary<ushort, StatusEffectData> m_IdToStatusEffectData;
         private Dictionary<ushort, StatusName> m_IdToStatusName;
         private Dictionary<ushort, ComparableName> m_IdToComparableName;
         private Dictionary<ushort, StatusEvent> m_IdToStatusEvent;
         private Dictionary<Hash128, ushort> m_KeyToId;
+        private Dictionary<string, ushort> m_StringKeyToId;
+        private Dictionary<ushort, Registrant> m_IdToRegistrant;
+        private readonly HashSet<string> m_MissingKeys = new(StringComparer.Ordinal);
 
         [SerializeField, HideInInspector]
         private List<StatusEffectData> m_StatusEffectDatas;
@@ -205,6 +239,9 @@ namespace StatusEffectsFramework
             });
 
             m_KeyToId = new();
+            m_StringKeyToId = new(StringComparer.Ordinal);
+            m_IdToRegistrant = new();
+            m_MissingKeys.Clear();
             m_IdToStatusEffectData = new();
             m_IdToStatusName = new();
             m_IdToComparableName = new();
@@ -229,6 +266,9 @@ namespace StatusEffectsFramework
                     Debug.LogWarning($"Duplicate key found: {item.UniqueKey}. Skipping registration for this {entry.Type} {item.name}.");
                     continue;
                 }
+
+                m_StringKeyToId[item.UniqueKey ?? string.Empty] = id;
+                m_IdToRegistrant[id] = item;
 
                 switch (entry.Type)
                 {

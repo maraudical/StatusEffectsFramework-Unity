@@ -12,10 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Fire
   m_EditorClassIdentifier: 
+  m_OptionalRegistryDependency: {fileID: 0}
   m_UniqueKey: base:fire
   m_Group:
     Value: 2
-  m_ComparableName: {fileID: 0}
+  m_ComparableName:
+    m_Key: 
+    m_Asset: {fileID: 0}
   m_BaseValue: 2
   m_Icon: {fileID: 21300000, guid: f52a186736cd10544870bb012d8f0b21, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
@@ -28,8 +31,12 @@ MonoBehaviour:
   m_Effects: []
   m_Conditions:
   - m_SearchableConfigurable: 0
-    m_SearchableData: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
-    m_SearchableComparableName: {fileID: 0}
+    m_SearchableData:
+      m_Key: base:ice
+      m_Asset: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
+    m_SearchableComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_SearchableGroup:
       Value: 0
     m_Exists: 1
@@ -38,15 +45,23 @@ MonoBehaviour:
     m_UseStacks: 0
     m_Stacks: 1
     m_ActionConfigurable: 0
-    m_ActionData: {fileID: 11400000}
-    m_ActionComparableName: {fileID: 0}
+    m_ActionData:
+      m_Key: base:fire
+      m_Asset: {fileID: 11400000}
+    m_ActionComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_ActionGroup:
       Value: 0
     m_Timing: 0
     m_Duration: 0
   - m_SearchableConfigurable: 0
-    m_SearchableData: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
-    m_SearchableComparableName: {fileID: 0}
+    m_SearchableData:
+      m_Key: base:ice
+      m_Asset: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
+    m_SearchableComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_SearchableGroup:
       Value: 0
     m_Exists: 1
@@ -55,8 +70,12 @@ MonoBehaviour:
     m_UseStacks: 0
     m_Stacks: 1
     m_ActionConfigurable: 0
-    m_ActionData: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
-    m_ActionComparableName: {fileID: 0}
+    m_ActionData:
+      m_Key: base:ice
+      m_Asset: {fileID: 11400000, guid: cd8dff560a8ec0f42bba9df522186f42, type: 2}
+    m_ActionComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_ActionGroup:
       Value: 0
     m_Timing: 0

@@ -93,7 +93,8 @@ namespace StatusEffectsFramework.Editor
 
             StatusNameChanged(default);
 
-            statusName.RegisterValueChangeCallback(StatusNameChanged);
+            // The status name is picked or typed inside its own drawer, so its property is tracked directly.
+            root.TrackPropertyValue(statusNameProperty, _ => StatusNameChanged(default));
 
             valueModifier.RegisterValueChangeCallback(ValueModifierChanged);
 
@@ -164,7 +165,8 @@ namespace StatusEffectsFramework.Editor
 
                 for (int i = 0; i < count; i++)
                 {
-                    statusNameReference = (statusNameProperty.GetParent(property.serializedObject.targetObjects[i]) as Effect).StatusName;
+                    // Typed keys (e.g. from a mod) have no asset, so like an empty status name they show float values.
+                    statusNameReference = (statusNameProperty.GetParent(property.serializedObject.targetObjects[i]) as Effect).StatusName.EditorAsset;
                     statusNameTypeDummy = statusNameReference is StatusNameBool ? typeof(StatusNameBool)
                                         : statusNameReference is StatusNameInt  ? typeof(StatusNameInt)
                                                                                 : typeof(StatusNameFloat);

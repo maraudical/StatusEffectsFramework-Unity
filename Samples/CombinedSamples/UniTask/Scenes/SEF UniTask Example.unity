@@ -3478,22 +3478,30 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   StatusMaxHealth:
     <PostEvaluationValue>k__BackingField: 100
-    m_StatusName: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
+    m_StatusName:
+      m_Key: 
+      m_Asset: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
     m_BaseValue: 100
     m_SignProtected: 1
   StatusSpeed:
     <PostEvaluationValue>k__BackingField: 5
-    m_StatusName: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
+    m_StatusName:
+      m_Key: 
+      m_Asset: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
     m_BaseValue: 5
     m_SignProtected: 1
   StatusCoinMultiplier:
     <PostEvaluationValue>k__BackingField: 1
-    m_StatusName: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
+    m_StatusName:
+      m_Key: 
+      m_Asset: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
     m_BaseValue: 1
     m_SignProtected: 1
   StatusStunned:
     <PostEvaluationValue>k__BackingField: 0
-    m_StatusName: {fileID: 11400000, guid: f7273fbb099977747b3d7284bf74e0c8, type: 2}
+    m_StatusName:
+      m_Key: 
+      m_Asset: {fileID: 11400000, guid: f7273fbb099977747b3d7284bf74e0c8, type: 2}
     m_BaseValue: 0
   m_Health: 0
   m_StatusEffectData: {fileID: 0}

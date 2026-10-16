@@ -26,7 +26,9 @@ MonoBehaviour:
   m_NonStackingBehaviour: 0
   m_MaxStacks: -1
   m_Effects:
-  - m_StatusName: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
+  - m_StatusName:
+      m_Key: 
+      m_Asset: {fileID: 11400000, guid: 7b852904d81b7e24f85a64812af52eac, type: 2}
     m_ValueModifier: 2
     m_ValueSource: 1
     m_Priority: 0

@@ -6,7 +6,7 @@ namespace StatusEffectsFramework
     public class DynamicFloat
     {
         internal event Action ValueChanged;
-        public StatusName StatusName { get; private set; }
+        public RegistrantKey<StatusNameFloat> StatusName { get; private set; }
         public ValueModifier ValueModifier { get; private set; }
         public bool PostEvaluate { get; private set; }
         public int Priority { get; private set; }
@@ -15,7 +15,7 @@ namespace StatusEffectsFramework
 
         public DynamicFloat(DynamicEffectFloat dynamicFloatEffect, Effect effect, float value = 0)
         {
-            StatusName = effect.StatusName;
+            StatusName = new RegistrantKey<StatusNameFloat>(effect.StatusName.Key);
             ValueModifier = effect.ValueModifier;
             PostEvaluate = dynamicFloatEffect.PostEvaluate;
             Priority = effect.Priority;
