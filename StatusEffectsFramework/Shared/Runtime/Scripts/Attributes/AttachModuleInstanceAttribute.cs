@@ -8,6 +8,9 @@ namespace StatusEffectsFramework
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class AttachModuleInstanceAttribute : Attribute
     {
+        /// <summary>
+        /// The <see cref="ModuleInstance"/> type that holds the data for the <see cref="Module"/>.
+        /// </summary>
         public Type Type;
         
         public AttachModuleInstanceAttribute(Type moduleInstanceType)

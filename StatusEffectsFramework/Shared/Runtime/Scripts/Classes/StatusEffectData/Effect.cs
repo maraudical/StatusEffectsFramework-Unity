@@ -1,9 +1,12 @@
 using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace StatusEffectsFramework
 {
+    /// <summary>
+    /// A change that a <see cref="StatusEffectData"/> makes to a status while its <see cref="StatusEffect"/> is active. The value is
+    /// multiplied by the stacks and applied to every status variable with the same <see cref="StatusName"/>.
+    /// </summary>
     [Serializable]
     public class Effect
     {
@@ -18,22 +21,28 @@ namespace StatusEffectsFramework
         public DynamicEffectInt DynamicIntEffect => m_DynamicIntEffect;
         public DynamicEffectBool DynamicBoolEffect => m_DynamicBoolEffect;
 
-        [SerializeField, FormerlySerializedAs("StatusName")]
+        [SerializeField]
         private RegistrantKey<StatusName> m_StatusName;
-        [SerializeField, FormerlySerializedAs("ValueModifier")]
+        [Tooltip("How the value is combined with the other effects on the same status. See the documentation for more information.")]
+        [SerializeField]
         private ValueModifier m_ValueModifier;
+        [Tooltip("Where the value comes from: a value entered here, the Base Value of the status effect, or a Dynamic Effect that sets it at runtime.")]
         [SerializeField]
         private ValueSource m_ValueSource;
-        [SerializeField, FormerlySerializedAs("Priority")]
+        [Tooltip("Only used by the Minimum, Maximum and Overwrite modifiers. When several effects use the same one on a status, the highest priority wins.")]
+        [SerializeField]
         [Min(0)] private int m_Priority;
-        [SerializeField, FormerlySerializedAs("FloatValue")]
+        [SerializeField]
         private float m_FloatValue;
-        [SerializeField, FormerlySerializedAs("IntValue")]
+        [SerializeField]
         private int m_IntValue;
-        [SerializeField, FormerlySerializedAs("BoolValue")]
+        [SerializeField]
         private bool m_BoolValue;
+        [Tooltip("Sets the value at runtime. Only used when the Value Source is Dynamic Value.")]
         [SerializeField] private DynamicEffectFloat m_DynamicFloatEffect;
+        [Tooltip("Sets the value at runtime. Only used when the Value Source is Dynamic Value.")]
         [SerializeField] private DynamicEffectInt m_DynamicIntEffect;
+        [Tooltip("Sets the value at runtime. Only used when the Value Source is Dynamic Value.")]
         [SerializeField] private DynamicEffectBool m_DynamicBoolEffect;
     }
 }

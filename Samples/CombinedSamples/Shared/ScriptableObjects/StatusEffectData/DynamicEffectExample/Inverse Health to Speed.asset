@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Inverse Health to Speed
   m_EditorClassIdentifier: Unity.StatusEffectsFramework::StatusEffectFramework.StatusEffectData
   m_OptionalRegistryDependency: {fileID: 0}
-  m_UniqueKey: base:inverse-health-to-speed
+  m_Key: base:inverse-health-to-speed
   m_Group:
     Value: 4
   m_ComparableName:

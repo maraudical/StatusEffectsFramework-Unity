@@ -22,6 +22,7 @@ namespace StatusEffectsFramework.Editor
 
             var maskField = new MaskField() { name = $"unity-input-{property.name}" };
             maskField.label = property.displayName;
+            maskField.tooltip = this.GetTooltip();
             maskField.choices = choices.Values.ToList();
             maskField.choicesMasks = choices.Keys.ToList();
             maskField.AddToClassList(BaseField<Enum>.alignedFieldUssClassName);
@@ -95,6 +96,8 @@ namespace StatusEffectsFramework.Editor
         {
             if (!m_Settings)
                 m_Settings = StatusSettings.Instance;
+
+            label = this.WithTooltip(label);
 
             m_Value = property.FindPropertyRelative(nameof(StatusEffectGroup.Value));
             EditorGUI.BeginProperty(position, label, property);

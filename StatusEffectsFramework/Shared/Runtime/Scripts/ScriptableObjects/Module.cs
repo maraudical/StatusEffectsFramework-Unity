@@ -2,6 +2,10 @@ using UnityEngine;
 
 namespace StatusEffectsFramework
 {
+    /// <summary>
+    /// Adds custom behaviour to a <see cref="StatusEffect"/>. Add it to the modules of a <see cref="StatusEffectData"/> and
+    /// override <see cref="EnableModule"/> and <see cref="DisableModule"/>.
+    /// </summary>
     public abstract class Module : ScriptableObject
     {
         /// <summary>

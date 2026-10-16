@@ -7,7 +7,7 @@ using Hash128 = Unity.Entities.Hash128;
 namespace StatusEffectsFramework
 {
     /// <summary>
-    /// References a <see cref="Registrant"/> by its <see cref="Registrant.UniqueKey"/> instead of by object.
+    /// References a <see cref="Registrant"/> by its <see cref="Registrant.Key"/> instead of by object.
     /// Builds only contain the key, so nothing referenced this way is pulled into a build or asset bundle with
     /// the asset referencing it. Separately built content, like mods, can reference registrants it doesn't
     /// contain, and they are found in the <see cref="StatusRegistry"/> at runtime.
@@ -19,6 +19,7 @@ namespace StatusEffectsFramework
     [Serializable]
     public struct RegistrantKey<T> : IEquatable<RegistrantKey<T>> where T : Registrant
     {
+        [Tooltip("The key of the asset to reference.")]
         [SerializeField] private string m_Key;
 #if UNITY_EDITOR
         [SerializeField] private T m_Asset;
@@ -34,14 +35,14 @@ namespace StatusEffectsFramework
 
         public RegistrantKey(T registrant)
         {
-            m_Key = (UnityEngine.Object)registrant ? registrant.UniqueKey : null;
+            m_Key = registrant ? registrant.Key : null;
 #if UNITY_EDITOR
             m_Asset = registrant;
 #endif
         }
 
         /// <summary>
-        /// The referenced <see cref="Registrant.UniqueKey"/>, or an empty string when nothing is referenced.
+        /// The referenced <see cref="Registrant.Key"/>, or an empty string when nothing is referenced.
         /// In the editor it comes from the assigned asset when there is one.
         /// </summary>
         public string Key
@@ -49,24 +50,27 @@ namespace StatusEffectsFramework
             get
             {
 #if UNITY_EDITOR
-                if ((UnityEngine.Object)m_Asset)
-                    return m_Asset.UniqueKey ?? string.Empty;
+                if (m_Asset)
+                    return m_Asset.Key ?? string.Empty;
 #endif
                 return m_Key ?? string.Empty;
             }
         }
 
-        public bool IsEmpty => Key.Length == 0;
+        /// <summary>
+        /// True when no key is assigned.
+        /// </summary>
+        public bool IsEmpty => string.IsNullOrWhiteSpace(Key);
 #if UNITY_EDITOR
 
         /// <summary>
         /// The assigned asset, or null when the key was typed. Only exists in the editor.
         /// </summary>
-        public T EditorAsset => m_Asset;
+        internal T EditorAsset => m_Asset;
 #endif
 
         /// <summary>
-        /// Hashes the key the same way as <see cref="Registrant.GetUniqueKeyHash"/>.
+        /// Hashes the key the same way as <see cref="Registrant.GetKeyHash"/>.
         /// </summary>
         public Hash128 GetKeyHash()
         {
@@ -95,6 +99,9 @@ namespace StatusEffectsFramework
             return TryResolve(out var registrant) ? registrant : null;
         }
 
+        /// <summary>
+        /// Keys are equal when their <see cref="Key"/>s are the same.
+        /// </summary>
         public bool Equals(RegistrantKey<T> other) => string.Equals(Key, other.Key, StringComparison.Ordinal);
 
         public override bool Equals(object obj) => obj is RegistrantKey<T> other && Equals(other);
@@ -103,8 +110,14 @@ namespace StatusEffectsFramework
 
         public override string ToString() => Key;
 
+        /// <summary>
+        /// Keys are equal when their <see cref="Key"/>s are the same.
+        /// </summary>
         public static bool operator ==(RegistrantKey<T> x, RegistrantKey<T> y) => x.Equals(y);
 
+        /// <summary>
+        /// Keys are different when their <see cref="Key"/>s are not the same.
+        /// </summary>
         public static bool operator !=(RegistrantKey<T> x, RegistrantKey<T> y) => !x.Equals(y);
 
         /// <summary>

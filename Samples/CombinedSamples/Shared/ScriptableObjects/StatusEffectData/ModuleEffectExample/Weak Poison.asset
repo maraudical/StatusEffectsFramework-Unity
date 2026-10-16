@@ -26,7 +26,7 @@ MonoBehaviour:
   m_Name: Weak Poison
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_UniqueKey: base:weak-poison
+  m_Key: base:weak-poison
   m_Group:
     Value: 2
   m_ComparableName:

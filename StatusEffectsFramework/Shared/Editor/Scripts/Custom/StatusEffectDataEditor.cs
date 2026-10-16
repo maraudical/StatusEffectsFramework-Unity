@@ -12,9 +12,6 @@ namespace StatusEffectsFramework.Editor
     [CanEditMultipleObjects]
     internal class StatusEffectDataEditor : UnityEditor.Editor
     {
-        private StatusEffectData m_Data;
-        private Condition m_Condition;
-
         public VisualTreeAsset VisualTree;
 
         public override VisualElement CreateInspectorGUI()
@@ -26,33 +23,14 @@ namespace StatusEffectsFramework.Editor
             // Also check that the StatusEffect is added to the Database.
             foreach (var target in targets)
             {
-                // Get the property on the corresponding serializedObject.
-                var path = AssetDatabase.GetAssetPath(target);
-
-                m_Data = target as StatusEffectData;
-
-                var modules = m_Data.Modules.Select(m => m.ModuleInstance);
-                var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
-
-                for (int v = subAssets.Length - 1; v >= 0; v--)
-                {
-                    var nestedModule = subAssets[v];
-                    // If there is somehow a loose module we need to clean it up.
-                    if (!modules.Contains(nestedModule))
-                    {
-                        AssetDatabase.RemoveObjectFromAsset(nestedModule);
-                        DestroyImmediate(nestedModule);
-                        EditorUtility.SetDirty(target);
-                    }
-                }
-
-                AssetDatabase.SaveAssetIfDirty(target);
+                if (target is StatusEffectData data && RemoveLooseSubAssets(data))
+                    AssetDatabase.SaveAssetIfDirty(target);
             }
 
 #if ADDRESSABLES
             var optionalRegistryDependencyProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.OptionalRegistryDependency)}");
 #endif
-            var uniqueKeyProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.UniqueKey)}");
+            var keyProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Key)}");
             var groupProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Group)}");
             var comparableNameProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.ComparableName)}");
             var baseValueProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.BaseValue)}");
@@ -77,8 +55,8 @@ namespace StatusEffectsFramework.Editor
             optionalRegistryDependency.BindProperty(optionalRegistryDependencyProperty);
 
 #endif
-            var uniqueKey = root.Q<PropertyField>("unique-key");
-            uniqueKey.BindProperty(uniqueKeyProperty);
+            var key = root.Q<PropertyField>("key");
+            key.BindProperty(keyProperty);
 
             var group = root.Q<PropertyField>("group");
             group.BindProperty(groupProperty);
@@ -116,36 +94,8 @@ namespace StatusEffectsFramework.Editor
             optionalFieldToggles.isMultipleSelection = true;
             optionalTogglesContainer.Add(optionalFieldToggles);
 
-            var iconToggle = new Button();
-            iconToggle.text = "Icon";
-            iconToggle.style.overflow = Overflow.Hidden;
-            iconToggle.style.textOverflow = TextOverflow.Ellipsis;
-            iconToggle.style.width = Length.Percent(20f);
-            optionalFieldToggles.Add(iconToggle);
-            var colorToggle = new Button();
-            colorToggle.text = "Color";
-            colorToggle.style.overflow = Overflow.Hidden;
-            colorToggle.style.textOverflow = TextOverflow.Ellipsis;
-            colorToggle.style.width = Length.Percent(20f);
-            optionalFieldToggles.Add(colorToggle);
-            var nameToggle = new Button();
-            nameToggle.text = "Name";
-            nameToggle.style.overflow = Overflow.Hidden;
-            nameToggle.style.textOverflow = TextOverflow.Ellipsis;
-            nameToggle.style.width = Length.Percent(20f);
-            optionalFieldToggles.Add(nameToggle);
-            var acronymToggle = new Button();
-            acronymToggle.text = "Acronym";
-            acronymToggle.style.overflow = Overflow.Hidden;
-            acronymToggle.style.textOverflow = TextOverflow.Ellipsis;
-            acronymToggle.style.width = Length.Percent(20f);
-            optionalFieldToggles.Add(acronymToggle);
-            var descriptionToggle = new Button();
-            descriptionToggle.text = "Description";
-            descriptionToggle.style.overflow = Overflow.Hidden;
-            descriptionToggle.style.textOverflow = TextOverflow.Ellipsis;
-            descriptionToggle.style.width = Length.Percent(20f);
-            optionalFieldToggles.Add(descriptionToggle);
+            foreach (var optionalFieldName in new[] { "Icon", "Color", "Name", "Acronym", "Description" })
+                optionalFieldToggles.Add(CreateOptionalFieldToggle(optionalFieldName));
 
             List<PropertyField> optionalFields = new()
             {
@@ -181,13 +131,15 @@ namespace StatusEffectsFramework.Editor
             var conditionsList = root.Q<ListView>("conditions-list");
             conditionsList.makeItem = () =>
             {
-                return new PropertyField();
+                var propertyField = new PropertyField();
+                // Items are reused when scrolling, so the callback is only added once.
+                propertyField.RegisterValueChangeCallback(ConditionChanged);
+                return propertyField;
             };
             conditionsList.bindItem = (existingElement, index) =>
             {
                 var propertyField = existingElement as PropertyField;
                 propertyField.BindProperty(conditionsProperty.FindPropertyRelative($"Array.data[{index}]"));
-                propertyField.RegisterValueChangeCallback(ConditionChanged);
             };
             conditionsList.BindProperty(conditionsProperty);
 
@@ -237,6 +189,15 @@ namespace StatusEffectsFramework.Editor
 
                 serializedObject.ApplyModifiedProperties();
             }
+
+            Button CreateOptionalFieldToggle(string text)
+            {
+                var toggle = new Button { text = text };
+                toggle.style.overflow = Overflow.Hidden;
+                toggle.style.textOverflow = TextOverflow.Ellipsis;
+                toggle.style.width = Length.Percent(20f);
+                return toggle;
+            }
 #endif
 
             BaseValueChanged(default);
@@ -265,13 +226,13 @@ namespace StatusEffectsFramework.Editor
             {
                 bool displayConditionsWarning = false;
 
-                m_Data = target as StatusEffectData;
+                var data = target as StatusEffectData;
 
                 for (int i = 0; i < conditionsProperty.arraySize; i++)
                 {
-                    m_Condition = m_Data.Conditions.ElementAtOrDefault(i);
+                    var condition = data.Conditions.ElementAtOrDefault(i);
 
-                    if (m_Condition == null || !m_Condition.Add || m_Condition.ActionData != m_Data)
+                    if (condition == null || !condition.IsAdded || condition.ActionData != data)
                         continue;
 
                     displayConditionsWarning = true;
@@ -283,32 +244,21 @@ namespace StatusEffectsFramework.Editor
 
             void ModulesAdded(IEnumerable<int> enumerable)
             {
+                // The new items are cleared directly, so undo needs to know about them.
+                Undo.RecordObjects(targets, "Add Module");
+
                 foreach (var target in targets)
                 {
-                    m_Data = target as StatusEffectData;
+                    var data = target as StatusEffectData;
 
                     foreach (var index in enumerable)
                     {
-                        var moduleContainer = m_Data.m_Modules[index];
+                        var moduleContainer = data.m_Modules[index];
                         moduleContainer.m_Module = null;
                         moduleContainer.m_ModuleInstance = null;
                     }
 
-                    var path = AssetDatabase.GetAssetPath(target);
-
-                    var modules = m_Data.Modules.Select(m => m.ModuleInstance);
-                    var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(path);
-
-                    for (int v = subAssets.Length - 1; v >= 0; v--)
-                    {
-                        var nestedModule = subAssets[v];
-                        // If there is somehow a loose module we need to clean it up.
-                        if (!modules.Contains(nestedModule))
-                        {
-                            AssetDatabase.RemoveObjectFromAsset(nestedModule);
-                            DestroyImmediate(nestedModule);
-                        }
-                    }
+                    RemoveLooseSubAssets(data);
 
                     EditorUtility.SetDirty(target);
                     AssetDatabase.SaveAssetIfDirty(target);
@@ -335,6 +285,39 @@ namespace StatusEffectsFramework.Editor
                     AssetDatabase.SaveAssetIfDirty(target);
                 }
             }
+        }
+
+        /// <summary>
+        /// Removes nested assets that no module references. Returns true if any were removed.
+        /// </summary>
+        private static bool RemoveLooseSubAssets(StatusEffectData data)
+        {
+            var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(data));
+            if (subAssets.Length == 0)
+                return false;
+
+            var moduleInstances = new HashSet<UnityEngine.Object>();
+            foreach (var module in data.Modules)
+                if (module.ModuleInstance != null)
+                    moduleInstances.Add(module.ModuleInstance);
+
+            bool removed = false;
+            for (int i = subAssets.Length - 1; i >= 0; i--)
+            {
+                var nestedAsset = subAssets[i];
+                // If there is somehow a loose module we need to clean it up.
+                if (moduleInstances.Contains(nestedAsset))
+                    continue;
+
+                AssetDatabase.RemoveObjectFromAsset(nestedAsset);
+                DestroyImmediate(nestedAsset);
+                removed = true;
+            }
+
+            if (removed)
+                EditorUtility.SetDirty(data);
+
+            return removed;
         }
     }
 }

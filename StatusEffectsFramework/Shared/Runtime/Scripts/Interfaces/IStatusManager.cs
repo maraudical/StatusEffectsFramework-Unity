@@ -2,6 +2,9 @@ using System.Collections.Generic;
 
 namespace StatusEffectsFramework
 {
+    /// <summary>
+    /// Manages the currently active <see cref="StatusEffect"/>s of a component.
+    /// </summary>
     public interface IStatusManager
     {
         /// <summary>

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -17,69 +16,51 @@ namespace StatusEffectsFramework
 #if UNITY_EDITOR && ADDRESSABLES
         internal StatusRegistryDependency OptionalRegistryDependency => m_OptionalRegistryDependency;
 #endif
-        public string UniqueKey => m_UniqueKey;
+        /// <summary>
+        /// The unique key, for example <c>base:poison</c>. It identifies this registrant in the <see cref="StatusRegistry"/>
+        /// and in a <see cref="RegistrantKey{T}"/>.
+        /// </summary>
+        public string Key => m_Key;
 
 #if UNITY_EDITOR && ADDRESSABLES
-        [Tooltip("When the game is built or played in the editor, all instances will be automatically added to the main registry. Only use a dependency if the instance should be excluded from the main build's registry.")]
         [SerializeField] private StatusRegistryDependency m_OptionalRegistryDependency = null;
 #endif
         [Tooltip("Should be a unique key identifier.")]
-        [SerializeField] private string m_UniqueKey;
+        [SerializeField] private string m_Key;
 
 #if UNITY_EDITOR
         private void Reset()
         {
-            CheckUniqueKey();
+            CheckKey();
         }
 
         private void OnEnable()
         {
-            CheckUniqueKey();
+            CheckKey();
         }
 
-        private void CheckUniqueKey()
+        private void CheckKey()
         {
-            if (string.IsNullOrEmpty(m_UniqueKey))
+            if (string.IsNullOrEmpty(m_Key))
             {
                 EditorApplication.delayCall += () =>
                 {
                     if (this == null) return; // asset could've been deleted before this runs
-                    if (string.IsNullOrEmpty(m_UniqueKey) && !string.IsNullOrEmpty(name))
+                    if (string.IsNullOrEmpty(m_Key) && !string.IsNullOrEmpty(name))
                     {
-                        m_UniqueKey = $"{StatusSettings.Instance.DefaultUniqueKeyNamespace}:{ToKebabCase(name)}";
+                        m_Key = $"{StatusSettings.Instance.DefaultKeyNamespace}:{name.ToKebabCase()}";
                         EditorUtility.SetDirty(this);
                     }
                 };
             }
         }
 #endif
-        public Hash128 GetUniqueKeyHash()
+        /// <summary>
+        /// Hashes the <see cref="Key"/>.
+        /// </summary>
+        public Hash128 GetKeyHash()
         {
-            return UnityEngine.Hash128.Compute(m_UniqueKey);
-        }
-
-        private static string ToKebabCase(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return input;
-
-            // Insert a dash between a lowercase/digit and a following uppercase letter
-            // e.g. abcDef -> abc-Def
-            string result = Regex.Replace(input, "(?<=[a-z0-9])(?=[A-Z])", "-");
-
-            // Insert a dash before the last uppercase letter of a run when it's
-            // followed by a lowercase letter (splits acronyms from the word after them)
-            // e.g. HTTPServer -> HTTP-Server
-            result = Regex.Replace(result, "(?<=[A-Z])(?=[A-Z][a-z])", "-");
-
-            // Collapse any whitespace runs into a single dash
-            result = Regex.Replace(result, @"\s+", "-");
-
-            // Collapse multiple consecutive dashes into one
-            result = Regex.Replace(result, "-+", "-");
-
-            // Trim leading/trailing dashes and lowercase everything
-            return result.Trim('-').ToLowerInvariant();
+            return UnityEngine.Hash128.Compute(m_Key);
         }
     }
 }

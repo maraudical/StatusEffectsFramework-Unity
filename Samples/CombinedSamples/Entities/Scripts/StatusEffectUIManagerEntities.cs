@@ -127,7 +127,7 @@ namespace StatusEffectsFramework.Samples
         protected virtual void AddButtonClicked()
         {
             if (!m_RegistryQuery.TryGetSingleton(out UnmanagedStatusRegistry registry) 
-                || !registry.TryGetId(m_StatusEffectData.GetUniqueKeyHash(), out var id))
+                || !registry.TryGetId(m_StatusEffectData.GetKeyHash(), out var id))
                 return;
 
             using var array = m_PlayerQuery.ToEntityArray(Allocator.Temp);
@@ -144,7 +144,7 @@ namespace StatusEffectsFramework.Samples
         protected virtual void RemoveButtonClicked()
         {
             if (!m_RegistryQuery.TryGetSingleton(out UnmanagedStatusRegistry registry)
-                || !registry.TryGetId(m_StatusEffectData.GetUniqueKeyHash(), out var id))
+                || !registry.TryGetId(m_StatusEffectData.GetKeyHash(), out var id))
                 return;
 
             using var array = m_PlayerQuery.ToEntityArray(Allocator.Temp);

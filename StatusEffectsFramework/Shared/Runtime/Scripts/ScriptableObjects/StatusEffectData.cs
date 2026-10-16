@@ -36,11 +36,15 @@ namespace StatusEffectsFramework
         #endregion
 
         #region Private Fields
+        [Tooltip("The groups this status effect is in. The groups are named in the Status Settings. Groups can be used to find or remove status effects, and in conditions.")]
         [SerializeField] private StatusEffectGroup m_Group;
-        [Tooltip("This name can be used to categorize a series of Status Effects. For example, \"Poison\" may be used for multiple different poison effects.")]
+        [Tooltip("This optional name can be used to categorize a series of Status Effects. For example, \"Poison\" may be used for multiple different poison effects. Leave empty if this effect is unique.")]
         [SerializeField] private RegistrantKey<ComparableName> m_ComparableName;
+        [Tooltip("A value for this status effect. Effects can use it by setting their Value Source to Base Value. It is also what the Non-Stacking Behaviour compares.")]
         [SerializeField] private float m_BaseValue = 1f;
+        [Tooltip("The icon to show for this status effect in your UI.")]
         [SerializeField] private Sprite m_Icon;
+        [Tooltip("The color to show for this status effect in your UI.")]
         [SerializeField] private Color m_Color = Color.white;
 #if LOCALIZED
         [SerializeField] private LocalizedString m_StatusEffectName;
@@ -56,6 +60,7 @@ namespace StatusEffectsFramework
         [SerializeField] private bool m_AllowEffectStacking;
         [Tooltip("Depending on the Non-Stacking Behaviour, the value and/or the duration may be adjusted when the effect already exists. See the documentation for more information.")]
         [SerializeField] private NonStackingBehaviour m_NonStackingBehaviour;
+        [Tooltip("The most stacks that can be active at once for this status effect. -1 is unlimited. Only used when Allow Effect Stacking is enabled.")]
         [Min(-1)]
         [SerializeField] private int m_MaxStacks = -1;
         [Tooltip("The effect list will apply value adjustments to the given Status.")]

@@ -5,7 +5,7 @@ namespace StatusEffectsFramework.Entities
 {
     public struct UnmanagedStatusInt
     {
-        public Hash128 UniqueKey;
+        public Hash128 KeyHash;
         private int m_CachedIndex;
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace StatusEffectsFramework.Entities
             if (index >= 0 && index < buffer.Length)
             {
                 statusInts = buffer[index];
-                if (statusInts.StableTypeHash == stableTypeHash && statusInts.UniqueKey == UniqueKey)
+                if (statusInts.StableTypeHash == stableTypeHash && statusInts.KeyHash == KeyHash)
                     return true;
             }
 
@@ -59,7 +59,7 @@ namespace StatusEffectsFramework.Entities
             for (int i = 0; i < buffer.Length; i++)
             {
                 statusInts = buffer[i];
-                if (statusInts.StableTypeHash == stableTypeHash && statusInts.UniqueKey == UniqueKey)
+                if (statusInts.StableTypeHash == stableTypeHash && statusInts.KeyHash == KeyHash)
                 {
                     index = i;
                     break;
@@ -70,9 +70,9 @@ namespace StatusEffectsFramework.Entities
             return index >= 0;
         }
 
-        public UnmanagedStatusInt(Hash128 uniqueKey)
+        public UnmanagedStatusInt(Hash128 keyHash)
         {
-            UniqueKey = uniqueKey;
+            KeyHash = keyHash;
             m_CachedIndex = -1;
         }
 

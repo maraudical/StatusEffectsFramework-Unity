@@ -5,25 +5,62 @@ using Unity.Mathematics;
 
 namespace StatusEffectsFramework
 {
+    /// <summary>
+    /// A int that <see cref="StatusEffect"/>s can change. Call <see cref="StatusVariable.SetManager"/> to start applying them, then
+    /// read <see cref="Value"/>.
+    /// </summary>
     [Serializable]
     public class StatusInt : StatusVariable<StatusIntState>
     {
+        /// <summary>
+        /// Raised with the previous and the new <see cref="Value"/> when it changes.
+        /// </summary>
         public event Action<int, int> OnValueChanged;
+        /// <summary>
+        /// Raised with the previous and the new <see cref="PreEvaluationValue"/> when it changes.
+        /// </summary>
         public event Action<int, int> OnPreEvaluationValueChanged;
+        /// <summary>
+        /// Raised with the previous and the new <see cref="BaseValue"/> when it changes.
+        /// </summary>
         public event Action<int, int> OnBaseValueChanged;
+        /// <summary>
+        /// Raised with the previous and the new <see cref="SignProtected"/> when it changes.
+        /// </summary>
         public event Action<bool, bool> OnSignProtectedChanged;
 
+        /// <summary>
+        /// The status that the effects must target to change this variable.
+        /// </summary>
         public RegistrantKey<StatusNameInt> StatusName => m_StatusName;
+        /// <summary>
+        /// The value before any status effect is applied. Changing it evaluates the status effects again.
+        /// </summary>
         public int BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; UpdateBaseValue(); } }
+        /// <summary>
+        /// Limits the value to the sign of the base value: a positive base value can't go below 0 and a negative one can't go above 0.
+        /// </summary>
         public bool SignProtected { get { return m_SignProtected; } set { m_SignProtected = value; UpdateSignProtected(); } }
+        /// <summary>
+        /// The value after all status effects are applied.
+        /// </summary>
         public int Value => Manager != null ? PostEvaluationValue : m_BaseValue;
+        /// <summary>
+        /// The <see cref="BaseValue"/> with the status effects applied, except the dynamic effects that
+        /// <see cref="DynamicEffect.PostEvaluate"/>.
+        /// </summary>
         public int PreEvaluationValue { get; protected set; }
 #if UNITY_EDITOR
         [field: SerializeField]
 #endif
+        /// <summary>
+        /// The <see cref="PreEvaluationValue"/> with the post evaluation dynamic effects applied. This is the final value.
+        /// </summary>
         public int PostEvaluationValue { get; protected set; }
 
+        [Tooltip("The Status Name that effects target to change this variable.")]
         [SerializeField] protected RegistrantKey<StatusNameInt> m_StatusName;
+        [Tooltip("The value before any status effect is applied.")]
         [SerializeField] protected int m_BaseValue;
         [SerializeField] protected bool m_SignProtected;
 
@@ -53,6 +90,9 @@ namespace StatusEffectsFramework
             PostEvaluationValue = baseValue;
         }
 
+        /// <summary>
+        /// Converts to the <see cref="Value"/>.
+        /// </summary>
         public static implicit operator int(StatusInt statusInt) => statusInt.Value;
 
         public override StatusIntState GetState() => new StatusIntState(m_BaseValue, m_SignProtected);

@@ -25,9 +25,11 @@ namespace StatusEffectsFramework
             add => StatusEffectAction += value;
             remove => StatusEffectAction -= value;
         }
+        /// <inheritdoc/>
         public event Action<StatusEffect, StatusEffectAction, int, int> StatusEffectAction;
 
         IEnumerable<StatusEffect> IStatusManager.StatusEffects => StatusEffects;
+        /// <inheritdoc/>
         public IEnumerable<StatusEffect> StatusEffects => m_StatusEffects?.Values ?? Enumerable.Empty<StatusEffect>();
         
         private Dictionary<uint, StatusEffect> m_StatusEffects;
@@ -60,11 +62,13 @@ namespace StatusEffectsFramework
         }
 
         #region Public Methods
+        /// <inheritdoc/>
         public bool TryGetStatusEffect(uint id, out StatusEffect statusEffect)
         {
             return m_StatusEffects.TryGetValue(id, out statusEffect);
         }
         
+        /// <inheritdoc/>
 #nullable enable
         public IEnumerable<StatusEffect> GetStatusEffects(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true)
 #nullable disable
@@ -76,6 +80,7 @@ namespace StatusEffectsFramework
                                    && (data  == null || se.Data == data));
         }
 
+        /// <inheritdoc/>
 #nullable enable
         public StatusEffect GetFirstStatusEffect(StatusEffectGroup? group = null, ComparableName? name = null, StatusEffectData? data = null, bool matchAllGroups = true)
 #nullable disable
@@ -87,16 +92,19 @@ namespace StatusEffectsFramework
                                             && (data  == null || se.Data == data));
         }
 
+        /// <inheritdoc/>
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, int stacks = 1)
         {
             return AddStatusEffect(statusEffectData, StatusEffectTiming.Infinite, null, null, null, stacks, 0);
         }
 
+        /// <inheritdoc/>
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, int stacks = 1)
         {
             return AddStatusEffect(statusEffectData, StatusEffectTiming.Duration, duration, null, null, stacks, 0);
         }
         
+        /// <inheritdoc/>
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, float duration, StatusEvent statusEvent, int stacks = 1)
         {
             // Checked before adding, otherwise the effect would be added without anything to end it.
@@ -106,6 +114,7 @@ namespace StatusEffectsFramework
             return AddStatusEffect(statusEffectData, StatusEffectTiming.Event, duration, null, statusEvent, stacks, 0);
         }
         
+        /// <inheritdoc/>
         public StatusEffect AddStatusEffect(StatusEffectData statusEffectData, Func<bool> predicate, int stacks = 1)
         {
             // Checked before adding, otherwise the effect would be added without anything to end it.
@@ -115,6 +124,7 @@ namespace StatusEffectsFramework
             return AddStatusEffect(statusEffectData, StatusEffectTiming.Predicate, null, predicate, null, stacks, 0);
         }
         
+        /// <inheritdoc/>
         public void RemoveStatusEffect(StatusEffect statusEffect)
         {
             // Already removed effects are ignored so removal is only reported once.
@@ -132,6 +142,7 @@ namespace StatusEffectsFramework
             StatusEffectAction?.Invoke(statusEffect, StatusEffectsFramework.StatusEffectAction.RemovedStatusEffect, statusEffect.Stacks, 0);
         }
         
+        /// <inheritdoc/>
 #nullable enable
         public void RemoveStatusEffect(StatusEffectData statusEffectData, int? stacks = null)
 #nullable disable
@@ -145,6 +156,7 @@ namespace StatusEffectsFramework
             IterateRemoval(OrderStatusEffects(m_StatusEffects.Values.Where(se => se.Data == statusEffectData)), stacks);
         }
         
+        /// <inheritdoc/>
         public void RemoveStatusEffect(ComparableName name, int? stacks = null)
         {
             if (name == null)
@@ -156,6 +168,7 @@ namespace StatusEffectsFramework
             IterateRemoval(OrderStatusEffects(m_StatusEffects.Values.Where(se => se.Data.ComparableName == name)), stacks);
         }
         
+        /// <inheritdoc/>
         public void RemoveStatusEffect(StatusEffectGroup group, int? stacks = null, bool matchAllGroups = true)
         {
             if (stacks.HasValue && stacks.Value <= 0)
@@ -164,6 +177,7 @@ namespace StatusEffectsFramework
             IterateRemoval(OrderStatusEffects(m_StatusEffects.Values.Where(se => matchAllGroups ? (se.Data.Group & group) == group : (se.Data.Group & group) != 0)), stacks);
         }
         
+        /// <inheritdoc/>
         public void RemoveAllStatusEffects()
         {
             // From the end of the list iterate through and remove all.
@@ -625,11 +639,11 @@ namespace StatusEffectsFramework
                 };
                 // If the condition is checking for existence and it doesn't exist or if
                 // its checking non-existence and does exist then skip this condition.
-                if ((condition.Exists && !exists)
-                || (!condition.Exists && exists))
+                if ((condition.IsPresent && !exists)
+                || (!condition.IsPresent && exists))
                     continue;
 
-                if (condition.Add)
+                if (condition.IsAdded)
                 {
                     // No data to add was assigned, or it isn't registered.
                     if (!condition.ActionData.TryResolve(out var actionData))
@@ -638,27 +652,27 @@ namespace StatusEffectsFramework
                     switch (condition.Timing)
                     {
                         case ConditionalTiming.Duration:
-                            AddStatusEffect(actionData, StatusEffectTiming.Duration, condition.Duration, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                            AddStatusEffect(actionData, StatusEffectTiming.Duration, condition.Duration, null, null, condition.Stacks * (condition.IsScaled ? stacks : 1), depth + 1);
                             break;
                         case ConditionalTiming.Inherited:
                             switch (timing)
                             {
                                 case StatusEffectTiming.Duration:
-                                    AddStatusEffect(actionData, StatusEffectTiming.Duration, durationValue, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                                    AddStatusEffect(actionData, StatusEffectTiming.Duration, durationValue, null, null, condition.Stacks * (condition.IsScaled ? stacks : 1), depth + 1);
                                     break;
                                 case StatusEffectTiming.Event:
-                                    AddStatusEffect(actionData, StatusEffectTiming.Event, durationValue, null, statusEvent, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                                    AddStatusEffect(actionData, StatusEffectTiming.Event, durationValue, null, statusEvent, condition.Stacks * (condition.IsScaled ? stacks : 1), depth + 1);
                                     break;
                                 case StatusEffectTiming.Predicate:
-                                    AddStatusEffect(actionData, StatusEffectTiming.Predicate, null, predicate, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                                    AddStatusEffect(actionData, StatusEffectTiming.Predicate, null, predicate, null, condition.Stacks * (condition.IsScaled ? stacks : 1), depth + 1);
                                     break;
                                 default:
-                                    AddStatusEffect(actionData, StatusEffectTiming.Infinite, null, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                                    AddStatusEffect(actionData, StatusEffectTiming.Infinite, null, null, null, condition.Stacks * (condition.IsScaled ? stacks : 1), depth + 1);
                                     break;
                             }
                             break;
                         default:
-                            AddStatusEffect(actionData, StatusEffectTiming.Infinite, null, null, null, condition.Stacks * (condition.Scaled ? stacks : 1), depth + 1);
+                            AddStatusEffect(actionData, StatusEffectTiming.Infinite, null, null, null, condition.Stacks * (condition.IsScaled ? stacks : 1), depth + 1);
                             break;
                     }
                 }
@@ -666,7 +680,7 @@ namespace StatusEffectsFramework
                 // current data to be added is tagged for removal.
                 else if (condition.ActionConfigurable is ConditionalConfigurable.Data && condition.ActionData == statusEffectData)
                 {
-                    int? conditionalStacks = condition.UseStacks ? condition.Stacks * (condition.Scaled ? stacks : 1) : null;
+                    int? conditionalStacks = condition.UseStacks ? condition.Stacks * (condition.IsScaled ? stacks : 1) : null;
                     if (!conditionalStacks.HasValue || conditionalStacks.Value >= stacks)
                     {
                         preventStatusEffect = true;
@@ -681,7 +695,7 @@ namespace StatusEffectsFramework
                 }
                 // Otherwise we remove effects.
                 else
-                    RemoveBasedOnConfigurable(condition.UseStacks ? condition.Stacks * (condition.Scaled ? stacks : 1) : null);
+                    RemoveBasedOnConfigurable(condition.UseStacks ? condition.Stacks * (condition.IsScaled ? stacks : 1) : null);
 
                 void RemoveBasedOnConfigurable(int? stacks)
                 {

@@ -214,12 +214,12 @@ namespace StatusEffectsFramework.Entities
                 UnmanagedCondition condition = data.Conditions[c];
                 // If the condition is checking for existence and it doesn't exist or if
                 // its checking non-existence and does exist then skip this condition.
-                if (condition.Exists != ConditionTargetExists(Buffer, condition, Registry))
+                if (condition.IsPresent != ConditionTargetExists(Buffer, condition, Registry))
                     continue;
 
-                int conditionalStacks = condition.Add || condition.UseStacks ? condition.Stacks * (condition.Scaled ? request.Stacks : 1) : -1;
+                int conditionalStacks = condition.IsAdded || condition.UseStacks ? condition.Stacks * (condition.IsScaled ? request.Stacks : 1) : -1;
 
-                if (condition.Add)
+                if (condition.IsAdded)
                 {
                     // No data to add was assigned.
                     if (condition.ActionData == StatusRegistry.NullId)

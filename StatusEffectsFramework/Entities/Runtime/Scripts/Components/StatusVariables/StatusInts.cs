@@ -11,7 +11,7 @@ namespace StatusEffectsFramework.Entities
 #endif
     public struct StatusInts : IBufferElementData
     {
-        internal Hash128 UniqueKey;
+        internal Hash128 KeyHash;
         internal ulong StableTypeHash;
 #if NETCODE
         [GhostField(SendData = false)]
@@ -35,9 +35,9 @@ namespace StatusEffectsFramework.Entities
         public int PostEvaluationValue;
         public int Value => PostEvaluationValue;
 
-        public StatusInts(ulong stableTypeHash, Hash128 uniqueKey, int baseValue, bool signProtected = true)
+        public StatusInts(ulong stableTypeHash, Hash128 keyHash, int baseValue, bool signProtected = true)
         {
-            UniqueKey = uniqueKey;
+            KeyHash = keyHash;
             StableTypeHash = stableTypeHash;
             Id = StatusRegistry.NullId;
             SignProtected = signProtected;
@@ -51,7 +51,7 @@ namespace StatusEffectsFramework.Entities
             Assert.IsNotNull(statusInt, $"{nameof(StatusInt)} cannot be null when creating a {nameof(StatusInts)} buffer element.");
             Assert.IsFalse(statusInt.StatusName.IsEmpty, $"{nameof(StatusInt.StatusName)} cannot be empty when creating a {nameof(StatusInts)} buffer element.");
 
-            UniqueKey = statusInt.StatusName.GetKeyHash();
+            KeyHash = statusInt.StatusName.GetKeyHash();
             StableTypeHash = stableTypeHash;
             Id = StatusRegistry.NullId;
             SignProtected = statusInt.SignProtected;

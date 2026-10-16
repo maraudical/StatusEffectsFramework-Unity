@@ -162,9 +162,9 @@ namespace StatusEffectsFramework.Entities
                             SearchableData = searchableData,
                             SearchableComparableName = searchableComparableName,
                             SearchableGroup = condition.SearchableGroup,
-                            Exists = condition.Exists,
-                            Add = condition.Add,
-                            Scaled = condition.Scaled,
+                            IsPresent = condition.IsPresent,
+                            IsAdded = condition.IsAdded,
+                            IsScaled = condition.IsScaled,
                             UseStacks = condition.UseStacks,
                             Stacks = condition.Stacks,
                             ActionConfigurable = condition.ActionConfigurable,
@@ -314,7 +314,7 @@ namespace StatusEffectsFramework.Entities
             return true;
         }
 
-        private static void DebugError(string uniqueKey) => UnityEngine.Debug.LogError($"Trying to setup an {nameof(UnmanagedStatusEffectData)} with the {nameof(Registrant)} that contains the unique key \"{uniqueKey}\" but the registry doesn't contain the ID associated with it.");
+        private static void DebugError(string key) => UnityEngine.Debug.LogError($"Trying to setup an {nameof(UnmanagedStatusEffectData)} with the {nameof(Registrant)} that contains the unique key \"{key}\" but the registry doesn't contain the ID associated with it.");
 
         /// <summary>
         /// Writes the types sorted so the blob contents don't depend on <see cref="HashSet{T}"/> iteration order.

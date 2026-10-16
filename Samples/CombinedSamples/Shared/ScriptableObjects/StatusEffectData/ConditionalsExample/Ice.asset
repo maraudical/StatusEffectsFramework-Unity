@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Ice
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_UniqueKey: base:ice
+  m_Key: base:ice
   m_Group:
     Value: 2
   m_ComparableName:
@@ -51,9 +51,9 @@ MonoBehaviour:
       m_Asset: {fileID: 0}
     m_SearchableGroup:
       Value: 0
-    m_Exists: 1
-    m_Add: 0
-    m_Scaled: 1
+    m_IsPresent: 1
+    m_IsAdded: 0
+    m_IsScaled: 1
     m_UseStacks: 0
     m_Stacks: 1
     m_ActionConfigurable: 0
@@ -76,9 +76,9 @@ MonoBehaviour:
       m_Asset: {fileID: 0}
     m_SearchableGroup:
       Value: 0
-    m_Exists: 1
-    m_Add: 0
-    m_Scaled: 1
+    m_IsPresent: 1
+    m_IsAdded: 0
+    m_IsScaled: 1
     m_UseStacks: 0
     m_Stacks: 1
     m_ActionConfigurable: 0

@@ -1,9 +1,12 @@
 using System;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace StatusEffectsFramework
 {
+    /// <summary>
+    /// A rule of a <see cref="StatusEffectData"/> that is checked when its <see cref="StatusEffect"/> is added. If a status effect
+    /// (the searchable) exists or doesn't exist, another (the action) is added or removed.
+    /// </summary>
     [Serializable]
     public class Condition
     {
@@ -11,9 +14,9 @@ namespace StatusEffectsFramework
         public RegistrantKey<StatusEffectData> SearchableData => m_SearchableData;
         public RegistrantKey<ComparableName> SearchableComparableName => m_SearchableComparableName;
         public StatusEffectGroup SearchableGroup => m_SearchableGroup;
-        public bool Exists => m_Exists;
-        public bool Add => m_Add;
-        public bool Scaled => m_Scaled;
+        public bool IsPresent => m_IsPresent;
+        public bool IsAdded => m_IsAdded;
+        public bool IsScaled => m_IsScaled;
         public bool UseStacks => m_UseStacks;
         public int Stacks => m_Stacks;
         public ConditionalConfigurable ActionConfigurable => m_ActionConfigurable;
@@ -23,35 +26,36 @@ namespace StatusEffectsFramework
         public ConditionalTiming Timing => m_Timing;
         public float Duration => m_Duration;
 
-        [SerializeField, FormerlySerializedAs("SearchableConfigurable")]
+        [SerializeField]
         private ConditionalConfigurable m_SearchableConfigurable;
-        [SerializeField, FormerlySerializedAs("SearchableData")]
+        [SerializeField]
         private RegistrantKey<StatusEffectData> m_SearchableData;
-        [SerializeField, FormerlySerializedAs("SearchableComparableName")]
+        [SerializeField]
         private RegistrantKey<ComparableName> m_SearchableComparableName;
-        [SerializeField, FormerlySerializedAs("SearchableGroup")]
+        [SerializeField]
         private StatusEffectGroup m_SearchableGroup;
-        [SerializeField, FormerlySerializedAs("Exists")]
-        private bool m_Exists = true;
-        [SerializeField, FormerlySerializedAs("Add")]
-        private bool m_Add = true;
-        [SerializeField, FormerlySerializedAs("Scaled")]
-        private bool m_Scaled = true;
-        [SerializeField, FormerlySerializedAs("UseStacks")]
+        [SerializeField]
+        private bool m_IsPresent = true;
+        [SerializeField]
+        private bool m_IsAdded = true;
+        [Tooltip("When enabled, the stacks of this condition are multiplied by the stacks of the status effect that is being added.")]
+        [SerializeField]
+        private bool m_IsScaled = true;
+        [SerializeField]
         private bool m_UseStacks;
-        [SerializeField, FormerlySerializedAs("Stacks")]
+        [SerializeField]
         [Min(1)] private int m_Stacks = 1;
-        [SerializeField, FormerlySerializedAs("ActionConfigurable")]
+        [SerializeField]
         private ConditionalConfigurable m_ActionConfigurable;
-        [SerializeField, FormerlySerializedAs("ActionData")]
+        [SerializeField]
         private RegistrantKey<StatusEffectData> m_ActionData;
-        [SerializeField, FormerlySerializedAs("ActionComparableName")]
+        [SerializeField]
         private RegistrantKey<ComparableName> m_ActionComparableName;
-        [SerializeField, FormerlySerializedAs("ActionGroup")]
+        [SerializeField]
         private StatusEffectGroup m_ActionGroup;
-        [SerializeField, FormerlySerializedAs("Timing")]
+        [SerializeField]
         private ConditionalTiming m_Timing;
-        [SerializeField, FormerlySerializedAs("Duration")]
+        [SerializeField]
         [Min(0)] private float m_Duration;
     }
 }

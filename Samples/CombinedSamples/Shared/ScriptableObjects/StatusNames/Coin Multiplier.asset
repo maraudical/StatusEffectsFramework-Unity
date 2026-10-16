@@ -12,4 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 860269c7aa108254f96e7f65fbe4b187, type: 3}
   m_Name: Coin Multiplier
   m_EditorClassIdentifier: StatusEffectsFramework::StatusEffectsFramework.StatusNameInt
-  m_UniqueKey: base:coin-multiplier
+  m_OptionalRegistryDependency: {fileID: 0}
+  m_Key: base:coin-multiplier

@@ -4,23 +4,54 @@ using UnityEngine;
 
 namespace StatusEffectsFramework
 {
+    /// <summary>
+    /// A bool that <see cref="StatusEffect"/>s can change. Call <see cref="StatusVariable.SetManager"/> to start applying them, then
+    /// read <see cref="Value"/>.
+    /// </summary>
     [Serializable]
     public class StatusBool : StatusVariable<StatusBoolState>
     {
+        /// <summary>
+        /// Raised with the previous and the new <see cref="Value"/> when it changes.
+        /// </summary>
         public event Action<bool, bool> OnValueChanged;
+        /// <summary>
+        /// Raised with the previous and the new <see cref="PreEvaluationValue"/> when it changes.
+        /// </summary>
         public event Action<bool, bool> OnPreEvaluationValueChanged;
+        /// <summary>
+        /// Raised with the previous and the new <see cref="BaseValue"/> when it changes.
+        /// </summary>
         public event Action<bool, bool> OnBaseValueChanged;
 
+        /// <summary>
+        /// The status that the effects must target to change this variable.
+        /// </summary>
         public RegistrantKey<StatusNameBool> StatusName => m_StatusName;
+        /// <summary>
+        /// The value before any status effect is applied. Changing it evaluates the status effects again.
+        /// </summary>
         public bool BaseValue { get { return m_BaseValue; } set { m_BaseValue = value; UpdateBaseValue(); } }
+        /// <summary>
+        /// The value after all status effects are applied.
+        /// </summary>
         public bool Value => Manager != null ? PostEvaluationValue : m_BaseValue;
+        /// <summary>
+        /// The <see cref="BaseValue"/> with the status effects applied, except the dynamic effects that
+        /// <see cref="DynamicEffect.PostEvaluate"/>.
+        /// </summary>
         public bool PreEvaluationValue { get; protected set; }
 #if UNITY_EDITOR
         [field: SerializeField]
 #endif
+        /// <summary>
+        /// The <see cref="PreEvaluationValue"/> with the post evaluation dynamic effects applied. This is the final value.
+        /// </summary>
         public bool PostEvaluationValue { get; protected set; }
 
+        [Tooltip("The Status Name that effects target to change this variable.")]
         [SerializeField] protected RegistrantKey<StatusNameBool> m_StatusName;
+        [Tooltip("The value before any status effect is applied.")]
         [SerializeField] protected bool m_BaseValue;
 
         protected bool m_PreviousBaseValue;
@@ -44,6 +75,9 @@ namespace StatusEffectsFramework
             PostEvaluationValue = baseValue;
         }
 
+        /// <summary>
+        /// Converts to the <see cref="Value"/>.
+        /// </summary>
         public static implicit operator bool(StatusBool statusBool) => statusBool.Value;
 
         public override StatusBoolState GetState() => new StatusBoolState(m_BaseValue);

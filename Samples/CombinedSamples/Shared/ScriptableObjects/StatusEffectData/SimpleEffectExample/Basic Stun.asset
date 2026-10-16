@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Basic Stun
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_UniqueKey: base:basic-stun
+  m_Key: base:basic-stun
   m_Group:
     Value: 2
   m_ComparableName:

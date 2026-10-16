@@ -5,23 +5,35 @@ using UnityEditor;
 
 namespace StatusEffectsFramework
 {
-    // Create a new type of Settings Asset.
+    /// <summary>
+    /// The project wide settings of the framework, such as the names of the groups.
+    /// </summary>
     public class StatusSettings : ScriptableObject
     {
         public const string SettingsName = "StatusSettings";
         public const string SettingsPath = "Assets/Settings/Resources/" + SettingsName + ".asset";
 
+        [Tooltip("The names of the groups a status effect can be in. A status effect stores its groups as flags, so there are 32.")]
         [Space]
         [NonReorderable]
         public string[] Groups = new string[32];
 
-        public string DefaultUniqueKeyNamespace = "base";
+        [Tooltip("The namespace new keys start with, for example \"base\" gives \"base:poison\".")]
+        public string DefaultKeyNamespace = "base";
+        [Tooltip("The folder, relative to Assets, that is opened when creating new Status Effect Data.")]
         public string DefaultStatusDataPath = "ScriptableObjects/StatusEffectData";
+        [Tooltip("The folder, relative to Assets, that is opened when creating new Status Names.")]
         public string DefaultStatusNamesPath = "ScriptableObjects/StatusNames";
+        [Tooltip("The folder, relative to Assets, that is opened when creating new Comparable Names.")]
         public string DefaultComparableNamesPath = "ScriptableObjects/ComparableNames";
+        [Tooltip("The folder, relative to Assets, that is opened when creating new Modules.")]
         public string DefaultModulesPath = "ScriptableObjects/Modules";
+        [Tooltip("The folder, relative to Assets, that is opened when creating new Dynamic Effects.")]
         public string DefaultDynamicEffectsPath = "ScriptableObjects/DynamicEffects";
 
+        /// <summary>
+        /// The settings asset, which is loaded from Resources. In the editor it is created when missing.
+        /// </summary>
         public static StatusSettings Instance { get => s_Instance != null ? s_Instance : Get(); }
         private static StatusSettings s_Instance;
         private static StatusSettings Get()

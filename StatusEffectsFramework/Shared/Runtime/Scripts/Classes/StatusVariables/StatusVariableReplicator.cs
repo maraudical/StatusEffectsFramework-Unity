@@ -12,7 +12,13 @@ namespace StatusEffectsFramework
         where TVar : StatusVariable<TState>
         where TState : struct, IStatusState<TState>
     {
+        /// <summary>
+        /// The status variable being replicated.
+        /// </summary>
         public TVar Inner { get; }
+        /// <summary>
+        /// Who is allowed to change the base values of the status variable.
+        /// </summary>
         public StatusWritePermission WritePermission { get; set; }
         /// <summary>
         /// True if the manager has been set and this instance is the server or host.
@@ -60,12 +66,18 @@ namespace StatusEffectsFramework
             return false;
         }
 
+        /// <summary>
+        /// Writes the base values of the status variable.
+        /// </summary>
         public void Write<TSerializer>(ref TSerializer serializer) where TSerializer : struct, IStatusSerializer
         {
             var state = Inner.GetState();
             state.Serialize(ref serializer);
         }
 
+        /// <summary>
+        /// Reads the base values and applies them to the status variable without sending them back out.
+        /// </summary>
         public void Read<TSerializer>(ref TSerializer serializer) where TSerializer : struct, IStatusSerializer
         {
             var state = default(TState);

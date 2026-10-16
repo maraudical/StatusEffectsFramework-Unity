@@ -6,6 +6,9 @@ namespace StatusEffectsFramework
     /// </summary>
     public class StatusEvent : Registrant 
     {
+        /// <summary>
+        /// Raised by <see cref="Invoke"/> with the value that was passed.
+        /// </summary>
         public event Action<float> Invoked;
 
         /// <summary>

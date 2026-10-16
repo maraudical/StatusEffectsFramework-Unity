@@ -88,10 +88,10 @@ namespace StatusEffectsFramework.Editor
                 var assetPath = property.propertyPath;
                 var keyPath = assetPath.Substring(0, assetPath.Length - RegistrantKeyDrawer.AssetPropertyName.Length) + RegistrantKeyDrawer.KeyPropertyName;
                 var keyProperty = serializedObject.FindProperty(keyPath);
-                if (keyProperty == null || keyProperty.propertyType != SerializedPropertyType.String || keyProperty.stringValue == registrant.UniqueKey)
+                if (keyProperty == null || keyProperty.propertyType != SerializedPropertyType.String || keyProperty.stringValue == registrant.Key)
                     continue;
 
-                keyProperty.stringValue = registrant.UniqueKey;
+                keyProperty.stringValue = registrant.Key;
                 baked++;
             }
 

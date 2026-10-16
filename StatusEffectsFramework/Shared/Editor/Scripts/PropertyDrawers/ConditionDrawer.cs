@@ -17,10 +17,10 @@ namespace StatusEffectsFramework.Editor
             var searchableDataProperty = property.FindPropertyRelative($"m_{nameof(Condition.SearchableData)}");
             var searchableComparableNameProperty = property.FindPropertyRelative($"m_{nameof(Condition.SearchableComparableName)}");
             var searchableGroupProperty = property.FindPropertyRelative($"m_{nameof(Condition.SearchableGroup)}");
-            var existsProperty = property.FindPropertyRelative($"m_{nameof(Condition.Exists)}");
-            var addProperty = property.FindPropertyRelative($"m_{nameof(Condition.Add)}");
+            var isPresentProperty = property.FindPropertyRelative($"m_{nameof(Condition.IsPresent)}");
+            var isAddedProperty = property.FindPropertyRelative($"m_{nameof(Condition.IsAdded)}");
             var stacksProperty = property.FindPropertyRelative($"m_{nameof(Condition.Stacks)}");
-            var scaledProperty = property.FindPropertyRelative($"m_{nameof(Condition.Scaled)}");
+            var isScaledProperty = property.FindPropertyRelative($"m_{nameof(Condition.IsScaled)}");
             var useStacksProperty = property.FindPropertyRelative($"m_{nameof(Condition.UseStacks)}");
             var actionConfigurableProperty = property.FindPropertyRelative($"m_{nameof(Condition.ActionConfigurable)}");
             var actionDataProperty = property.FindPropertyRelative($"m_{nameof(Condition.ActionData)}");
@@ -172,16 +172,16 @@ namespace StatusEffectsFramework.Editor
 
             searchableConfigurable.RegisterValueChangeCallback(SearchableConfigurableValueChanged);
 
-            existence.SetValueWithoutNotify((Existence)Convert.ToInt32(existsProperty.boolValue));
-            existence.showMixedValue = existsProperty.hasMultipleDifferentValues;
+            existence.SetValueWithoutNotify((Existence)Convert.ToInt32(isPresentProperty.boolValue));
+            existence.showMixedValue = isPresentProperty.hasMultipleDifferentValues;
             existence.RegisterValueChangedCallback(ExistenceValueChanged);
 
-            configurability.SetValueWithoutNotify((Configurability)Convert.ToInt32(addProperty.boolValue));
-            configurability.showMixedValue = addProperty.hasMultipleDifferentValues;
+            configurability.SetValueWithoutNotify((Configurability)Convert.ToInt32(isAddedProperty.boolValue));
+            configurability.showMixedValue = isAddedProperty.hasMultipleDifferentValues;
             configurability.RegisterValueChangedCallback(ConfigurabilityValueChanged);
 
-            scaleOption.SetValueWithoutNotify((ScaleOption)Convert.ToInt32(scaledProperty.boolValue));
-            scaleOption.showMixedValue = scaledProperty.hasMultipleDifferentValues;
+            scaleOption.SetValueWithoutNotify((ScaleOption)Convert.ToInt32(isScaledProperty.boolValue));
+            scaleOption.showMixedValue = isScaledProperty.hasMultipleDifferentValues;
             scaleOption.RegisterValueChangedCallback(ScaleOptionValueChanged);
 
             removeOption.SetValueWithoutNotify((RemoveOption)Convert.ToInt32(useStacksProperty.boolValue));
@@ -203,21 +203,21 @@ namespace StatusEffectsFramework.Editor
 
             void ExistenceValueChanged(ChangeEvent<Enum> changeEvent)
             {
-                existsProperty.boolValue = Convert.ToBoolean((int)(Existence)changeEvent.newValue);
-                existsProperty.serializedObject.ApplyModifiedProperties();
+                isPresentProperty.boolValue = Convert.ToBoolean((int)(Existence)changeEvent.newValue);
+                isPresentProperty.serializedObject.ApplyModifiedProperties();
             }
 
             void ConfigurabilityValueChanged(ChangeEvent<Enum> changeEvent)
             {
-                addProperty.boolValue = Convert.ToBoolean((int)(Configurability)changeEvent.newValue);
-                addProperty.serializedObject.ApplyModifiedProperties();
+                isAddedProperty.boolValue = Convert.ToBoolean((int)(Configurability)changeEvent.newValue);
+                isAddedProperty.serializedObject.ApplyModifiedProperties();
                 EvaluateProperties();
             }
 
             void ScaleOptionValueChanged(ChangeEvent<Enum> changeEvent)
             {
-                scaledProperty.boolValue = Convert.ToBoolean((int)(ScaleOption)changeEvent.newValue);
-                scaledProperty.serializedObject.ApplyModifiedProperties();
+                isScaledProperty.boolValue = Convert.ToBoolean((int)(ScaleOption)changeEvent.newValue);
+                isScaledProperty.serializedObject.ApplyModifiedProperties();
             }
 
             void RemoveOptionValueChanged(ChangeEvent<Enum> changeEvent)
@@ -244,10 +244,10 @@ namespace StatusEffectsFramework.Editor
                 var conditionalTiming = (ConditionalTiming)timingProperty.enumValueIndex;
 
                 bool searchableDifference = searchableConfigurableProperty.hasMultipleDifferentValues;
-                bool addDifference = searchableDifference || addProperty.hasMultipleDifferentValues;
-                bool useStacksDifference = addDifference || (!addProperty.boolValue && useStacksProperty.hasMultipleDifferentValues);
-                bool actionDifference = addDifference || (!addProperty.boolValue && actionConfigurableProperty.hasMultipleDifferentValues);
-                bool timingDifference = addDifference || (addProperty.boolValue && timingProperty.hasMultipleDifferentValues);
+                bool addDifference = searchableDifference || isAddedProperty.hasMultipleDifferentValues;
+                bool useStacksDifference = addDifference || (!isAddedProperty.boolValue && useStacksProperty.hasMultipleDifferentValues);
+                bool actionDifference = addDifference || (!isAddedProperty.boolValue && actionConfigurableProperty.hasMultipleDifferentValues);
+                bool timingDifference = addDifference || (isAddedProperty.boolValue && timingProperty.hasMultipleDifferentValues);
 
                 bool anyDifference = searchableDifference || addDifference || useStacksDifference || actionDifference;
 
@@ -259,17 +259,17 @@ namespace StatusEffectsFramework.Editor
                 existence.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
                 thenLabel.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
                 configurability.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
-                stacks.style.display = !addDifference && !useStacksDifference && (addProperty.boolValue || useStacksProperty.boolValue) ? DisplayStyle.Flex : DisplayStyle.None;
-                scaleOption.style.display = !addDifference && !useStacksDifference && (addProperty.boolValue || useStacksProperty.boolValue) ? DisplayStyle.Flex : DisplayStyle.None;
-                removeOption.style.display = !addDifference && !addProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
-                stacksLabel.style.display = !addDifference && addProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+                stacks.style.display = !addDifference && !useStacksDifference && (isAddedProperty.boolValue || useStacksProperty.boolValue) ? DisplayStyle.Flex : DisplayStyle.None;
+                scaleOption.style.display = !addDifference && !useStacksDifference && (isAddedProperty.boolValue || useStacksProperty.boolValue) ? DisplayStyle.Flex : DisplayStyle.None;
+                removeOption.style.display = !addDifference && !isAddedProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+                stacksLabel.style.display = !addDifference && isAddedProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
                 ofLabel.style.display = !addDifference && !useStacksDifference ? DisplayStyle.Flex : DisplayStyle.None;
-                actionConfigurable.style.display = !useStacksDifference && !addProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
-                actionData.style.display = !addDifference && !actionDifference && (addProperty.boolValue || actionConfigurableValue is ConditionalConfigurable.Data) ? DisplayStyle.Flex : DisplayStyle.None;
-                actionComparableName.style.display = !addDifference && !actionDifference && !addProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.Name ? DisplayStyle.Flex : DisplayStyle.None;
-                actionGroup.style.display = !addDifference && !actionDifference && !addProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.AllGroups or ConditionalConfigurable.AnyGroups ? DisplayStyle.Flex : DisplayStyle.None;
-                duration.style.display = !timingDifference && addProperty.boolValue && conditionalTiming is ConditionalTiming.Duration ? DisplayStyle.Flex : DisplayStyle.None;
-                timing.style.display = !addDifference && addProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+                actionConfigurable.style.display = !useStacksDifference && !isAddedProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
+                actionData.style.display = !addDifference && !actionDifference && (isAddedProperty.boolValue || actionConfigurableValue is ConditionalConfigurable.Data) ? DisplayStyle.Flex : DisplayStyle.None;
+                actionComparableName.style.display = !addDifference && !actionDifference && !isAddedProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.Name ? DisplayStyle.Flex : DisplayStyle.None;
+                actionGroup.style.display = !addDifference && !actionDifference && !isAddedProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.AllGroups or ConditionalConfigurable.AnyGroups ? DisplayStyle.Flex : DisplayStyle.None;
+                duration.style.display = !timingDifference && isAddedProperty.boolValue && conditionalTiming is ConditionalTiming.Duration ? DisplayStyle.Flex : DisplayStyle.None;
+                timing.style.display = !addDifference && isAddedProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
                 dashLabel.style.display = anyDifference ? DisplayStyle.Flex : DisplayStyle.None;
             }
         }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Add Coin Multiplier
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_UniqueKey: base:add-coin-multiplier
+  m_Key: base:add-coin-multiplier
   m_Group:
     Value: 4
   m_ComparableName:

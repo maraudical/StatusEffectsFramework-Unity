@@ -26,7 +26,7 @@ MonoBehaviour:
   m_Name: Advanced Health Boost
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_UniqueKey: base:advanced-health-boost
+  m_Key: base:advanced-health-boost
   m_Group:
     Value: 4
   m_ComparableName:

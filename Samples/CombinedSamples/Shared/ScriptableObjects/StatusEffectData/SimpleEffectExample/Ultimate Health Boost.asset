@@ -26,7 +26,7 @@ MonoBehaviour:
   m_Name: Ultimate Health Boost
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_UniqueKey: base:ultimate-health-boost
+  m_Key: base:ultimate-health-boost
   m_Group:
     Value: 4
   m_ComparableName:

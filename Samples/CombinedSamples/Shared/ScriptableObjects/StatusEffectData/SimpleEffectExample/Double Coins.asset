@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Double Coins
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_UniqueKey: base:double-coins
+  m_Key: base:double-coins
   m_Group:
     Value: 4
   m_ComparableName:

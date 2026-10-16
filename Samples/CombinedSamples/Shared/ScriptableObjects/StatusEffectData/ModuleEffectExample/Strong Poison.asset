@@ -39,7 +39,7 @@ MonoBehaviour:
   m_Name: Strong Poison
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_UniqueKey: base:strong-poison
+  m_Key: base:strong-poison
   m_Group:
     Value: 2
   m_ComparableName:

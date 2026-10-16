@@ -164,7 +164,7 @@ namespace StatusEffectsFramework.Editor
         public override VisualElement CreateInspectorGUI()
         {
             var groupsProperty = serializedObject.FindProperty(nameof(StatusSettings.Groups));
-            var defaultUniqueKeyNamespaceProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultUniqueKeyNamespace));
+            var defaultKeyNamespaceProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultKeyNamespace));
             var defaultStatusDataPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultStatusDataPath));
             var defaultStatusNamesPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultStatusNamesPath));
             var defaultComparableNamesPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultComparableNamesPath));
@@ -441,7 +441,7 @@ namespace StatusEffectsFramework.Editor
                 var foldout = element.Q<Foldout>("foldout");
                 var icon = element.Q<Image>("icon");
                 SetIcon(data.Icon);
-                element.Q<Label>("subtext").bindingPath = nameof(data.UniqueKey);
+                element.Q<Label>("subtext").bindingPath = nameof(data.Key);
                 BindListItem(element, index, data);
                 foldout.Q<Toggle>().RegisterValueChangedCallback((changeEvent) =>
                 {
@@ -507,7 +507,7 @@ namespace StatusEffectsFramework.Editor
                 if (name == null)
                     return;
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(name));
-                element.Q<Label>("subtext").bindingPath = nameof(name.UniqueKey);
+                element.Q<Label>("subtext").bindingPath = nameof(name.Key);
                 BindListItem(element, index, name);
             };
             namesListView.onAdd += (listView) =>
@@ -557,7 +557,7 @@ namespace StatusEffectsFramework.Editor
                 if (comparable == null)
                     return;
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(comparable));
-                element.Q<Label>("subtext").bindingPath = nameof(comparable.UniqueKey);
+                element.Q<Label>("subtext").bindingPath = nameof(comparable.Key);
                 BindListItem(element, index, comparable);
             };
             comparablesListView.onAdd += (listView) =>
@@ -835,9 +835,9 @@ namespace StatusEffectsFramework.Editor
             pathsBox.AddToClassList(StatusEffectsStyleSheet.BoxGroupClassName);
             pathsTab.Add(pathsBox);
 
-            var defaultUniqueKeyNamespace = new PropertyField();
-            defaultUniqueKeyNamespace.BindProperty(defaultUniqueKeyNamespaceProperty);
-            pathsBox.Add(defaultUniqueKeyNamespace);
+            var defaultKeyNamespace = new PropertyField();
+            defaultKeyNamespace.BindProperty(defaultKeyNamespaceProperty);
+            pathsBox.Add(defaultKeyNamespace);
 
             var defaultStatusDataPathGroup = new VisualElement();
             defaultStatusDataPathGroup.style.flexDirection = FlexDirection.Row;

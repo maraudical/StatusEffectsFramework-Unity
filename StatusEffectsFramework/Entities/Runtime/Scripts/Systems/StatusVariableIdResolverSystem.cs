@@ -15,25 +15,25 @@ namespace StatusEffectsFramework.Entities
             for (int i = 0; i < statusFloats.Length; i++)
             {
                 ref var statusFloat = ref statusFloats.ElementAt(i);
-                if (!Registry.TryGetId(statusFloat.UniqueKey, out statusFloat.Id))
-                    DebugError(statusFloat.UniqueKey);
+                if (!Registry.TryGetId(statusFloat.KeyHash, out statusFloat.Id))
+                    DebugError(statusFloat.KeyHash);
             }
 
             for (int i = 0; i < statusInts.Length; i++)
             {
                 ref var statusInt = ref statusInts.ElementAt(i);
-                if (!Registry.TryGetId(statusInt.UniqueKey, out statusInt.Id))
-                    DebugError(statusInt.UniqueKey);
+                if (!Registry.TryGetId(statusInt.KeyHash, out statusInt.Id))
+                    DebugError(statusInt.KeyHash);
             }
 
             for (int i = 0; i < statusBools.Length; i++)
             {
                 ref var statusBool = ref statusBools.ElementAt(i);
-                if (!Registry.TryGetId(statusBool.UniqueKey, out statusBool.Id))
-                    DebugError(statusBool.UniqueKey);
+                if (!Registry.TryGetId(statusBool.KeyHash, out statusBool.Id))
+                    DebugError(statusBool.KeyHash);
             }
 
-            void DebugError(Hash128 uniqueKey) => UnityEngine.Debug.LogError($"A status variable that contains the unique key hash \"{uniqueKey}\" was not found in the registry. Make sure all registry dependencies are loaded.");
+            void DebugError(Hash128 keyHash) => UnityEngine.Debug.LogError($"A status variable that contains the unique key hash \"{keyHash}\" was not found in the registry. Make sure all registry dependencies are loaded.");
         }
     }
 

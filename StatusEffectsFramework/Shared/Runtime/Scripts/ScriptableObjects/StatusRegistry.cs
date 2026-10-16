@@ -57,8 +57,8 @@ namespace StatusEffectsFramework
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssetIfDirty(this);
         }
-
-        public void FindAssets<T>(List<T> assets) where T : Registrant
+        
+        private void FindAssets<T>(List<T> assets) where T : Registrant
         {
             var guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
 
@@ -77,7 +77,13 @@ namespace StatusEffectsFramework
 #else
     {
 #endif
+        /// <summary>
+        /// The name of the registry asset, which is also what it is loaded by from Resources.
+        /// </summary>
         public const string RegistryName = "StatusRegistry";
+        /// <summary>
+        /// Where the registry asset is created in the editor. It must be in a Resources folder.
+        /// </summary>
         public const string RegistryPath = "Assets/Settings/Resources/" + RegistryName + ".asset";
         /// <summary>
         /// Id that is never assigned to a <see cref="Registrant"/>, used to mean no reference.
@@ -85,15 +91,33 @@ namespace StatusEffectsFramework
         /// </summary>
         public const ushort NullId = 0;
 
+        /// <summary>
+        /// Raised at the end of <see cref="Rebuild"/>, once the ids have been reassigned.
+        /// </summary>
         public event Action RegistryRebuilt;
 
+        /// <summary>
+        /// The registered <see cref="StatusEffectData"/> by id.
+        /// </summary>
         public IReadOnlyDictionary<ushort, StatusEffectData> IdToStatusEffectData => m_IdToStatusEffectData;
+        /// <summary>
+        /// The registered <see cref="StatusName"/>s by id.
+        /// </summary>
         public IReadOnlyDictionary<ushort, StatusName> IdToStatusName => m_IdToStatusName;
+        /// <summary>
+        /// The registered <see cref="ComparableName"/>s by id.
+        /// </summary>
         public IReadOnlyDictionary<ushort, ComparableName> IdToComparableName => m_IdToComparableName;
+        /// <summary>
+        /// The registered <see cref="StatusEvent"/>s by id.
+        /// </summary>
         public IReadOnlyDictionary<ushort, StatusEvent> IdToStatusEvent => m_IdToStatusEvent;
+        /// <summary>
+        /// The id of each registered <see cref="Registrant"/> by the hash of its key. See <see cref="Registrant.GetKeyHash"/>.
+        /// </summary>
         public IReadOnlyDictionary<Hash128, ushort> KeyToId => m_KeyToId;
         /// <summary>
-        /// Hash of every registered <see cref="Registrant.UniqueKey"/> in id order. Two registries
+        /// Hash of every registered <see cref="Registrant.Key"/> in id order. Two registries
         /// with the same hash assign the same ids. Updated on every <see cref="Rebuild"/>.
         /// </summary>
         public Hash128 RegistryHash { get; private set; }
@@ -107,10 +131,10 @@ namespace StatusEffectsFramework
         public bool TryGetId(Registrant registrant, out ushort id)
         {
             id = NullId;
-            return registrant && m_KeyToId != null && m_KeyToId.TryGetValue(registrant.GetUniqueKeyHash(), out id);
+            return registrant && m_KeyToId != null && m_KeyToId.TryGetValue(registrant.GetKeyHash(), out id);
         }
         /// <summary>
-        /// Gets the id assigned to a <see cref="Registrant.UniqueKey"/>. Returns false if it isn't registered.
+        /// Gets the id assigned to a <see cref="Registrant.Key"/>. Returns false if it isn't registered.
         /// </summary>
         public bool TryGetId(string key, out ushort id)
         {
@@ -118,7 +142,7 @@ namespace StatusEffectsFramework
             return !string.IsNullOrEmpty(key) && m_StringKeyToId != null && m_StringKeyToId.TryGetValue(key, out id);
         }
         /// <summary>
-        /// Gets the registered <typeparamref name="T"/> with a <see cref="Registrant.UniqueKey"/>. Returns false if
+        /// Gets the registered <typeparamref name="T"/> with a <see cref="Registrant.Key"/>. Returns false if
         /// nothing is registered with the key or the registrant with it isn't a <typeparamref name="T"/>.
         /// </summary>
         public bool TryGet<T>(string key, out T registrant) where T : Registrant
@@ -163,6 +187,9 @@ namespace StatusEffectsFramework
         private List<StatusRegistryDependency> m_Dependencies;
 
 #endif
+        /// <summary>
+        /// The registry, which is loaded from Resources. In the editor it is created when missing.
+        /// </summary>
         public static StatusRegistry Instance { get => s_Instance != null ? s_Instance : Get(); }
         private static StatusRegistry s_Instance;
         private static StatusRegistry Get()
@@ -197,7 +224,7 @@ namespace StatusEffectsFramework
         /// </summary>
         /// <remarks>
         /// Every <see cref="Registrant"/> is collected into one list and sorted by its
-        /// <see cref="Registrant.UniqueKey"/>, so ids don't depend on the order assets
+        /// <see cref="Registrant.Key"/>, so ids don't depend on the order assets
         /// were found or dependencies were registered.
         /// </remarks>
         public void Rebuild()
@@ -226,7 +253,7 @@ namespace StatusEffectsFramework
             // so which duplicate wins is the same everywhere the same assets are registered.
             entries.Sort((x, y) =>
             {
-                int comparison = string.CompareOrdinal(x.Item.UniqueKey, y.Item.UniqueKey);
+                int comparison = string.CompareOrdinal(x.Item.Key, y.Item.Key);
                 if (comparison != 0)
                     return comparison;
                 comparison = x.Type.CompareTo(y.Type);
@@ -261,13 +288,13 @@ namespace StatusEffectsFramework
                     continue;
                 }
 
-                if (!m_KeyToId.TryAdd(item.GetUniqueKeyHash(), id))
+                if (!m_KeyToId.TryAdd(item.GetKeyHash(), id))
                 {
-                    Debug.LogWarning($"Duplicate key found: {item.UniqueKey}. Skipping registration for this {entry.Type} {item.name}.");
+                    Debug.LogWarning($"Duplicate key found: {item.Key}. Skipping registration for this {entry.Type} {item.name}.");
                     continue;
                 }
 
-                m_StringKeyToId[item.UniqueKey ?? string.Empty] = id;
+                m_StringKeyToId[item.Key ?? string.Empty] = id;
                 m_IdToRegistrant[id] = item;
 
                 switch (entry.Type)
@@ -287,7 +314,7 @@ namespace StatusEffectsFramework
                 }
 
                 // Ids are assigned in order, so hashing the keys in order covers which key every id maps to.
-                registryHash.Append(item.UniqueKey ?? string.Empty);
+                registryHash.Append(item.Key ?? string.Empty);
 
                 id++;
             }

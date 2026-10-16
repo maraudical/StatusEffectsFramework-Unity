@@ -1,5 +1,9 @@
 namespace StatusEffectsFramework
 {
+    /// <summary>
+    /// What happens when a <see cref="StatusEffectData"/> that doesn't allow stacking is added while a
+    /// <see cref="StatusEffect"/> with the same <see cref="StatusEffectData"/> or <see cref="ComparableName"/> already exists.
+    /// </summary>
     public enum NonStackingBehaviour
     {
         /// <summary>

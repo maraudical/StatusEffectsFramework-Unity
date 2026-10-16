@@ -11,18 +11,6 @@ namespace StatusEffectsFramework.Editor
     [CustomPropertyDrawer(typeof(ModuleContainer))]
     internal class ModuleContainerDrawer : PropertyDrawer
     {
-        private UnityEngine.Object m_Target;
-        private object m_ModuleReference;
-        private object m_ModuleInstanceReference;
-        private Type m_PreviousModuleInstanceType;
-        private Type m_ModuleInstanceType;
-        private Attribute m_Attribute;
-
-        private List<UnityEngine.Object> m_ModuleInstances;
-
-        private SerializedObject m_Instance;
-        private SerializedProperty m_Iterator;
-
         private static readonly string k_ModuleName = $"m_{nameof(ModuleContainer.Module)}";
         private static readonly string k_ModuleInstanceName = $"m_{nameof(ModuleContainer.ModuleInstance)}";
 
@@ -37,119 +25,117 @@ namespace StatusEffectsFramework.Editor
 
             root.Add(module);
             root.Add(instanceRoot);
-            
+
             module.RegisterValueChangeCallback(ModuleChanged);
 
             return root;
 
             void ModuleChanged(SerializedPropertyChangeEvent callback)
             {
-                if (m_ModuleInstances == null)
-                    m_ModuleInstances = new();
-                else
-                    m_ModuleInstances.Clear();
-
-                m_PreviousModuleInstanceType = null;
+                var moduleInstances = new List<UnityEngine.Object>();
+                Type previousModuleInstanceType = null;
                 // Find all relevant module instance references
                 bool isDirty = false;
                 bool differentModuleTypes = false;
                 bool containsNullModule = false;
-                int count = property.serializedObject.targetObjects.Length;
-                for (int i = 0; i < count; i++)
+                var targetObjects = property.serializedObject.targetObjects;
+                for (int i = 0; i < targetObjects.Length; i++)
                 {
-                    m_Target = property.serializedObject.targetObjects[i];
+                    var target = targetObjects[i];
+                    // Assets are only touched and saved when something had to be fixed.
+                    bool changed = false;
                     bool requireReimport = false;
-                    m_ModuleReference = moduleProperty.GetParent(m_Target).GetValue(k_ModuleName);
-                    m_ModuleInstanceReference = moduleInstanceProperty.GetParent(m_Target).GetValue(k_ModuleInstanceName);
+                    object moduleReference = moduleProperty.GetParent(target).GetValue(k_ModuleName);
+                    object moduleInstanceReference = moduleInstanceProperty.GetParent(target).GetValue(k_ModuleInstanceName);
                     // If the module reference was removed destroy the instance
-                    if (m_ModuleReference == null && m_ModuleInstanceReference != null && !m_ModuleInstanceReference.Equals(null))
+                    if (moduleReference == null && moduleInstanceReference != null && !moduleInstanceReference.Equals(null))
                     {
-                        ScriptableObject instance = m_ModuleInstanceReference as ScriptableObject;
+                        ScriptableObject instance = moduleInstanceReference as ScriptableObject;
                         AssetDatabase.RemoveObjectFromAsset(instance);
-                        EditorUtility.SetDirty(m_Target);
-                        isDirty = true;
+                        EditorUtility.SetDirty(target);
+                        changed = true;
                         UnityEngine.Object.DestroyImmediate(instance);
                     }
-                    if (m_ModuleReference != null)
+                    if (moduleReference != null)
                     {
-                        m_Attribute = Attribute.GetCustomAttribute(m_ModuleReference.GetType(), typeof(AttachModuleInstanceAttribute));
-
-                        if (m_Attribute != null)
-                            m_ModuleInstanceType = ((AttachModuleInstanceAttribute)m_Attribute).Type;
+                        var attribute = (AttachModuleInstanceAttribute)Attribute.GetCustomAttribute(moduleReference.GetType(), typeof(AttachModuleInstanceAttribute));
+                        Type moduleInstanceType = attribute?.Type;
 
                         // If the module reference was changed we add or destroy the instance, note that
                         // we also check in the StatusEffectDataEditor for when list items are removed.
-                        if (m_ModuleInstanceReference != null && !m_ModuleInstanceReference.Equals(null) && (m_Attribute == null || m_ModuleInstanceType != m_ModuleInstanceReference.GetType()))
+                        if (moduleInstanceReference != null && !moduleInstanceReference.Equals(null) && (attribute == null || moduleInstanceType != moduleInstanceReference.GetType()))
                         {
-                            ScriptableObject instance = m_ModuleInstanceReference as ScriptableObject;
+                            ScriptableObject instance = moduleInstanceReference as ScriptableObject;
                             AssetDatabase.RemoveObjectFromAsset(instance);
-                            EditorUtility.SetDirty(m_Target);
-                            isDirty = true;
+                            EditorUtility.SetDirty(target);
+                            changed = true;
                             requireReimport = true;
                             UnityEngine.Object.DestroyImmediate(instance);
                         }
 
-                        if (m_Attribute == null)
-                            goto SaveAsset;
-                        
-                        if (m_ModuleInstanceReference == null || m_ModuleInstanceReference.Equals(null))
+                        if (attribute != null)
                         {
-                            ScriptableObject instance = ScriptableObject.CreateInstance(m_ModuleInstanceType);
-                            AssetDatabase.AddObjectToAsset(instance, m_Target as ScriptableObject);
-                            moduleInstanceProperty.GetParent(m_Target).SetValue(k_ModuleInstanceName, instance);
-                            m_ModuleInstanceReference = instance;
-                            EditorUtility.SetDirty(m_Target);
-                            isDirty = true;
-                        }
-                        
-                        // Check if there are different module instance types
-                        if (i > 0 && m_PreviousModuleInstanceType != m_ModuleInstanceType)
-                            differentModuleTypes = true;
+                            if (moduleInstanceReference == null || moduleInstanceReference.Equals(null))
+                            {
+                                ScriptableObject instance = ScriptableObject.CreateInstance(moduleInstanceType);
+                                AssetDatabase.AddObjectToAsset(instance, target as ScriptableObject);
+                                moduleInstanceProperty.GetParent(target).SetValue(k_ModuleInstanceName, instance);
+                                moduleInstanceReference = instance;
+                                EditorUtility.SetDirty(target);
+                                changed = true;
+                            }
 
-                        m_PreviousModuleInstanceType = m_ModuleInstanceType;
-                        m_ModuleInstances.Add(m_ModuleInstanceReference as ModuleInstance);
+                            // Check if there are different module instance types
+                            if (i > 0 && previousModuleInstanceType != moduleInstanceType)
+                                differentModuleTypes = true;
+
+                            previousModuleInstanceType = moduleInstanceType;
+                            moduleInstances.Add(moduleInstanceReference as ModuleInstance);
+                        }
                     }
                     else
                         containsNullModule = true;
 
-                    SaveAsset:
-                    
-                    AssetDatabase.SaveAssetIfDirty(m_Target);
+                    if (changed)
+                    {
+                        isDirty = true;
+                        AssetDatabase.SaveAssetIfDirty(target);
+                    }
 
                     if (requireReimport)
                         // Unity bug with removing the final sub asset by changing the module to
                         // one without a module instance.
-                        AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(m_Target), ImportAssetOptions.ImportRecursive);
+                        AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(target), ImportAssetOptions.ImportRecursive);
                 }
-                
+
                 if (isDirty)
                 {
                     property.serializedObject.ApplyModifiedProperties();
                     property.serializedObject.Update();
                 }
-                
+
                 foreach (var child in instanceRoot.Children().Reverse())
                     instanceRoot.Remove(child);
-                
-                if (!differentModuleTypes && !containsNullModule && m_ModuleInstances.Count > 0)
+
+                if (!differentModuleTypes && !containsNullModule && moduleInstances.Count > 0)
                 {
                     // Iterate through the module instance to display properties even if they are derived.
-                    m_Instance = UnityEditor.Editor.CreateEditor(m_ModuleInstances.ToArray()).serializedObject;
+                    var moduleInstancesObject = new SerializedObject(moduleInstances.ToArray());
 
-                    m_Iterator = m_Instance.GetIterator();
+                    var iterator = moduleInstancesObject.GetIterator();
                     // Skip the script property
-                    m_Iterator.NextVisible(true);
-                    
-                    if (m_Iterator.NextVisible(true))
+                    iterator.NextVisible(true);
+
+                    if (iterator.NextVisible(true))
                     {
                         do
                         {
-                            var propertyField = new PropertyField() { name = "property-field: " + m_Iterator.propertyPath };
-                            propertyField.BindProperty(m_Iterator.Copy());
+                            var propertyField = new PropertyField() { name = "property-field: " + iterator.propertyPath };
+                            propertyField.BindProperty(iterator.Copy());
 
                             instanceRoot.Add(propertyField);
                         }
-                        while (m_Iterator.NextVisible(false));
+                        while (iterator.NextVisible(false));
                     }
                 }
             }

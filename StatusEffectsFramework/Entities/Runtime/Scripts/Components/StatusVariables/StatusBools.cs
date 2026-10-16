@@ -11,7 +11,7 @@ namespace StatusEffectsFramework.Entities
 #endif
     public struct StatusBools : IBufferElementData
     {
-        internal Hash128 UniqueKey;
+        internal Hash128 KeyHash;
         internal ulong StableTypeHash;
 #if NETCODE
         [GhostField(SendData = false)]
@@ -31,9 +31,9 @@ namespace StatusEffectsFramework.Entities
         public bool PostEvaluationValue;
         public bool Value => PostEvaluationValue;
 
-        public StatusBools(ulong stableTypeHash, Hash128 uniqueKey, bool baseValue)
+        public StatusBools(ulong stableTypeHash, Hash128 keyHash, bool baseValue)
         {
-            UniqueKey = uniqueKey;
+            KeyHash = keyHash;
             StableTypeHash = stableTypeHash;
             Id = StatusRegistry.NullId;
             BaseValue = baseValue;
@@ -46,7 +46,7 @@ namespace StatusEffectsFramework.Entities
             Assert.IsNotNull(statusBool, $"{nameof(StatusBool)} cannot be null when creating a {nameof(StatusBools)} buffer element.");
             Assert.IsFalse(statusBool.StatusName.IsEmpty, $"{nameof(StatusBool.StatusName)} cannot be empty when creating a {nameof(StatusBools)} buffer element.");
 
-            UniqueKey = statusBool.StatusName.GetKeyHash();
+            KeyHash = statusBool.StatusName.GetKeyHash();
             StableTypeHash = stableTypeHash;
             Id = StatusRegistry.NullId;
             BaseValue = statusBool.BaseValue;

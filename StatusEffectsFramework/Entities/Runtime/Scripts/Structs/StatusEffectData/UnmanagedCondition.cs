@@ -6,9 +6,9 @@ namespace StatusEffectsFramework.Entities
         public ushort SearchableData;
         public ushort SearchableComparableName;
         public StatusEffectGroup SearchableGroup;
-        public bool Exists;
-        public bool Add;
-        public bool Scaled;
+        public bool IsPresent;
+        public bool IsAdded;
+        public bool IsScaled;
         public bool UseStacks;
         public int Stacks;
         public ConditionalConfigurable ActionConfigurable;

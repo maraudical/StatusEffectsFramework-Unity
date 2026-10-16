@@ -48,6 +48,7 @@ namespace StatusEffectsFramework.Editor
             var registrantType = GetRegistrantType(fieldInfo.FieldType);
 
             var root = new VisualElement();
+            root.tooltip = this.GetTooltip();
 
             var objectField = new ObjectField(preferredLabel);
             objectField.objectType = registrantType;
@@ -135,7 +136,7 @@ namespace StatusEffectsFramework.Editor
             var assetProperty = property.FindPropertyRelative(AssetPropertyName);
             var registrantType = GetRegistrantType(fieldInfo.FieldType);
 
-            label = EditorGUI.BeginProperty(position, label, property);
+            label = EditorGUI.BeginProperty(position, this.WithTooltip(label), property);
 
             if (assetProperty.hasMultipleDifferentValues || assetProperty.objectReferenceValue != null)
             {

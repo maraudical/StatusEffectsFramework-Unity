@@ -32,9 +32,9 @@ MonoBehaviour:
     m_SearchableComparableName: {fileID: 0}
     m_SearchableGroup:
       Value: 2
-    m_Exists: 1
-    m_Add: 0
-    m_Scaled: 1
+    m_IsPresent: 1
+    m_IsAdded: 0
+    m_IsScaled: 1
     m_UseStacks: 0
     m_Stacks: 0
     m_ActionConfigurable: 2
@@ -51,9 +51,9 @@ MonoBehaviour:
     m_SearchableComparableName: {fileID: 0}
     m_SearchableGroup:
       Value: 2
-    m_Exists: 0
-    m_Add: 0
-    m_Scaled: 1
+    m_IsPresent: 0
+    m_IsAdded: 0
+    m_IsScaled: 1
     m_UseStacks: 0
     m_Stacks: 0
     m_ActionConfigurable: 0
