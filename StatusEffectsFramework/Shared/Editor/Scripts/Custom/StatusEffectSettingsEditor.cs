@@ -271,52 +271,81 @@ namespace StatusEffectsFramework.Editor
 
                 var scriptButton = root.Q<Button>("script-button");
                 if (scriptButton != null)
+                {
                     scriptButton.iconImage = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D;
+                    scriptButton.clicked += () =>
+                    {
+                        if (root.userData is ScriptableObject item)
+                            EditorGUIUtility.PingObject(MonoScript.FromScriptableObject(item));
+                    };
+                }
 
                 var pingButton = root.Q<Button>("ping-button");
                 pingButton.iconImage = EditorGUIUtility.IconContent("FolderOpened Icon").image as Texture2D;
+                pingButton.clicked += () => EditorGUIUtility.PingObject(root.userData as UnityEngine.Object);
 
                 info.RegisterCallback<PointerEnterEvent>((_) => { renameIcon.style.display = DisplayStyle.Flex; buttonContainer.style.display = DisplayStyle.Flex; });
                 info.RegisterCallback<PointerLeaveEvent>((_) => { renameIcon.style.display = DisplayStyle.None; buttonContainer.style.display = DisplayStyle.None; });
 
                 name.RegisterCallback<PointerUpEvent>((_) =>
                 {
+                    renameField.userData = root.userData;
                     renameContainer.style.display = DisplayStyle.Flex;
                     nameContainer.style.display = DisplayStyle.None;
                     renameField.value = name.text;
                     renameField.Focus();
                 });
-                renameField.RegisterCallback<BlurEvent>((_) => { renameContainer.style.display = DisplayStyle.None; nameContainer.style.display = DisplayStyle.Flex; });
-
-                return root;
-            }
-
-            void BindListItem<T>(VisualElement element, int index, T item) where T : UnityEngine.Object
-            {
-                if (item == null)
-                {
-                    element.style.display = DisplayStyle.None;
-                    return;
-                }
-                element.Q<Button>("ping-button").clicked += () => EditorGUIUtility.PingObject(item);
-                var title = element.Q<Label>("name");
-                title.bindingPath = nameof(name);
-                var renameField = element.Q<TextField>("rename-field");
                 renameField.RegisterCallback<BlurEvent>((_) =>
                 {
+                    renameContainer.style.display = DisplayStyle.None;
+                    nameContainer.style.display = DisplayStyle.Flex;
+
+                    var item = renameField.userData as UnityEngine.Object;
+                    renameField.userData = null;
                     var value = renameField.value;
-                    renameField.value = title.text;
-                    if (string.IsNullOrEmpty(value) || value == title.text)
+                    renameField.value = name.text;
+                    if (item == null || string.IsNullOrEmpty(value) || value == name.text)
                         return;
 
                     if (string.IsNullOrEmpty(AssetDatabase.RenameAsset(AssetDatabase.GetAssetPath(item), value)))
                         return;
 
-                    title.experimental.animation.Start(Color.red, Color.clear, 300, (element, color) =>
+                    name.experimental.animation.Start(Color.red, Color.clear, 300, (element, color) =>
                     {
                         element.style.backgroundColor = color;
                     }).Ease(Easing.OutCubic);
                 });
+
+                return root;
+            }
+
+            // Rows are reused for different items, so the handlers set up in MakeListItem read the current item from userData.
+            void BindListItem(VisualElement element, UnityEngine.Object item)
+            {
+                element.userData = item;
+                element.style.visibility = item == null ? Visibility.Hidden : Visibility.Visible;
+                if (item == null)
+                    return;
+                element.Q<Label>("name").bindingPath = nameof(name);
+            }
+
+            void UnbindListItem(VisualElement element)
+            {
+                element.userData = null;
+
+                // Clearing the rename target stops a rename that is still open from being applied to the next item.
+                var renameField = element.Q<TextField>("rename-field");
+                renameField.userData = null;
+                renameField.Blur();
+                element.Q("rename-container").style.display = DisplayStyle.None;
+                element.Q("name-container").style.display = DisplayStyle.Flex;
+
+                var foldout = element.Q<Foldout>("foldout");
+                if (foldout != null)
+                {
+                    foldout.SetValueWithoutNotify(false);
+                    foldout.Clear();
+                }
             }
 
             void InitializeListSubscriptions<T>(List<T> list, ListView listView, Tab tab, ToolbarSearchField searchBar) where T : UnityEngine.Object
@@ -432,45 +461,51 @@ namespace StatusEffectsFramework.Editor
             var datas = new List<StatusEffectData>();
             var datasListView = datasTab.Q<ListView>();
             datasListView.itemsSource = datas;
-            datasListView.makeItem = () => MakeListItem(StatusEffectSettingsDataVisualTree);
-            datasListView.bindItem = (element, index) =>
+            datasListView.makeItem = () =>
             {
-                var data = datas[index];
-                if (data == null)
-                    return;
+                var element = MakeListItem(StatusEffectSettingsDataVisualTree);
                 var foldout = element.Q<Foldout>("foldout");
                 var icon = element.Q<Image>("icon");
-                SetIcon(data.Icon);
-                element.Q<Label>("subtext").bindingPath = nameof(data.Key);
-                BindListItem(element, index, data);
                 foldout.Q<Toggle>().RegisterValueChangedCallback((changeEvent) =>
                 {
-                    if (changeEvent.newValue)
+                    if (changeEvent.newValue && element.userData is StatusEffectData data)
                     {
                         var editor = CreateEditor(data).CreateInspectorGUI();
                         editor.Q<PropertyField>("icon").RegisterValueChangeCallback(IconChanged);
                         foldout.Add(editor);
 
-                        void IconChanged(SerializedPropertyChangeEvent evt) => SetIcon(evt.changedProperty.objectReferenceValue as Sprite);
+                        void IconChanged(SerializedPropertyChangeEvent evt) => SetDataIcon(icon, data, evt.changedProperty.objectReferenceValue as Sprite);
                     }
                     else
                         foldout.Clear();
                 });
-
-                void SetIcon(Sprite sprite)
-                {
-                    if (sprite)
-                    {
-                        icon.image = sprite.texture;
-                        icon.style.opacity = 1f;
-                    }
-                    else
-                    {
-                        icon.image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(data));
-                        icon.style.opacity = 0.2f;
-                    }
-                }
+                return element;
             };
+            datasListView.bindItem = (element, index) =>
+            {
+                var data = datas[index];
+                BindListItem(element, data);
+                if (data == null)
+                    return;
+                SetDataIcon(element.Q<Image>("icon"), data, data.Icon);
+                element.Q<Label>("subtext").bindingPath = nameof(data.Key);
+            };
+            datasListView.unbindItem = (element, _) => UnbindListItem(element);
+
+            void SetDataIcon(Image icon, StatusEffectData data, Sprite sprite)
+            {
+                if (sprite)
+                {
+                    icon.image = sprite.texture;
+                    icon.style.opacity = 1f;
+                }
+                else
+                {
+                    icon.image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(data));
+                    icon.style.opacity = 0.2f;
+                }
+            }
+
             datasListView.onAdd += (listView) =>
             {
                 listView.ClearSelection();
@@ -504,12 +539,13 @@ namespace StatusEffectsFramework.Editor
             namesListView.bindItem = (element, index) =>
             {
                 var name = names[index];
+                BindListItem(element, name);
                 if (name == null)
                     return;
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(name));
                 element.Q<Label>("subtext").bindingPath = nameof(name.Key);
-                BindListItem(element, index, name);
             };
+            namesListView.unbindItem = (element, _) => UnbindListItem(element);
             namesListView.onAdd += (listView) =>
             {
                 listView.ClearSelection();
@@ -554,12 +590,13 @@ namespace StatusEffectsFramework.Editor
             comparablesListView.bindItem = (element, index) =>
             {
                 var comparable = comparables[index];
+                BindListItem(element, comparable);
                 if (comparable == null)
                     return;
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(comparable));
                 element.Q<Label>("subtext").bindingPath = nameof(comparable.Key);
-                BindListItem(element, index, comparable);
             };
+            comparablesListView.unbindItem = (element, _) => UnbindListItem(element);
             comparablesListView.onAdd += (listView) =>
             {
                 listView.ClearSelection();
@@ -590,20 +627,13 @@ namespace StatusEffectsFramework.Editor
             VisualElement modulesAddButton = null;
             moduleListView.RegisterCallbackOnce<GeometryChangedEvent>((_) => { modulesAddButton = moduleListView.Q(BaseListView.footerAddButtonName); });
             moduleListView.itemsSource = modules;
-            moduleListView.makeItem = () => MakeListItem(StatusEffectSettingsScriptTypeVisualTree);
-            moduleListView.bindItem = (element, index) =>
+            moduleListView.makeItem = () =>
             {
-                var module = modules[index];
-                if (module == null)
-                    return;
+                var element = MakeListItem(StatusEffectSettingsScriptTypeVisualTree);
                 var foldout = element.Q<Foldout>("foldout");
-                var foldoutToggle = foldout.Q<Toggle>();
-                var modulePropertyCheck = CreateEditor(module).serializedObject.GetIterator();
-                modulePropertyCheck.NextVisible(true);
-                foldoutToggle.style.display = modulePropertyCheck.NextVisible(true) ? DisplayStyle.Flex : DisplayStyle.None;
-                foldoutToggle.RegisterValueChangedCallback((changeEvent) =>
+                foldout.Q<Toggle>().RegisterValueChangedCallback((changeEvent) =>
                 {
-                    if (changeEvent.newValue)
+                    if (changeEvent.newValue && element.userData is Module module)
                     {
                         var root = new VisualElement();
                         var instance = CreateEditor(module).serializedObject;
@@ -628,12 +658,22 @@ namespace StatusEffectsFramework.Editor
                     else
                         foldout.Clear();
                 });
+                return element;
+            };
+            moduleListView.bindItem = (element, index) =>
+            {
+                var module = modules[index];
+                BindListItem(element, module);
+                if (module == null)
+                    return;
+                var modulePropertyCheck = CreateEditor(module).serializedObject.GetIterator();
+                modulePropertyCheck.NextVisible(true);
+                element.Q<Foldout>("foldout").Q<Toggle>().style.display = modulePropertyCheck.NextVisible(true) ? DisplayStyle.Flex : DisplayStyle.None;
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(module));
                 var script = MonoScript.FromScriptableObject(module);
                 element.Q<Label>("subtext").text = script.GetClass().ToString();
-                element.Q<Button>("script-button").clicked += () => EditorGUIUtility.PingObject(script);
-                BindListItem(element, index, module);
             };
+            moduleListView.unbindItem = (element, _) => UnbindListItem(element);
             moduleListView.onAdd += (listView) =>
             {
                 listView.ClearSelection();
@@ -706,20 +746,13 @@ namespace StatusEffectsFramework.Editor
             VisualElement dynamicEffectsAddButton = null;
             dynamicEffectListView.RegisterCallbackOnce<GeometryChangedEvent>((_) => { dynamicEffectsAddButton = dynamicEffectListView.Q(BaseListView.footerAddButtonName); });
             dynamicEffectListView.itemsSource = dynamicEffects;
-            dynamicEffectListView.makeItem = () => MakeListItem(StatusEffectSettingsScriptTypeVisualTree);
-            dynamicEffectListView.bindItem = (element, index) =>
+            dynamicEffectListView.makeItem = () =>
             {
-                var dynamicEffect = dynamicEffects[index];
-                if (dynamicEffect == null)
-                    return;
+                var element = MakeListItem(StatusEffectSettingsScriptTypeVisualTree);
                 var foldout = element.Q<Foldout>("foldout");
-                var foldoutToggle = foldout.Q<Toggle>();
-                var dynamicEffectPropertyCheck = CreateEditor(dynamicEffect).serializedObject.GetIterator();
-                dynamicEffectPropertyCheck.NextVisible(true);
-                foldoutToggle.style.display = dynamicEffectPropertyCheck.NextVisible(true) ? DisplayStyle.Flex : DisplayStyle.None;
-                foldoutToggle.RegisterValueChangedCallback((changeEvent) =>
+                foldout.Q<Toggle>().RegisterValueChangedCallback((changeEvent) =>
                 {
-                    if (changeEvent.newValue)
+                    if (changeEvent.newValue && element.userData is DynamicEffect dynamicEffect)
                     {
                         var root = new VisualElement();
                         var instance = CreateEditor(dynamicEffect).serializedObject;
@@ -744,12 +777,22 @@ namespace StatusEffectsFramework.Editor
                     else
                         foldout.Clear();
                 });
+                return element;
+            };
+            dynamicEffectListView.bindItem = (element, index) =>
+            {
+                var dynamicEffect = dynamicEffects[index];
+                BindListItem(element, dynamicEffect);
+                if (dynamicEffect == null)
+                    return;
+                var dynamicEffectPropertyCheck = CreateEditor(dynamicEffect).serializedObject.GetIterator();
+                dynamicEffectPropertyCheck.NextVisible(true);
+                element.Q<Foldout>("foldout").Q<Toggle>().style.display = dynamicEffectPropertyCheck.NextVisible(true) ? DisplayStyle.Flex : DisplayStyle.None;
                 element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(dynamicEffect));
                 var script = MonoScript.FromScriptableObject(dynamicEffect);
                 element.Q<Label>("subtext").text = script.GetClass().ToString();
-                element.Q<Button>("script-button").clicked += () => EditorGUIUtility.PingObject(script);
-                BindListItem(element, index, dynamicEffect);
             };
+            dynamicEffectListView.unbindItem = (element, _) => UnbindListItem(element);
             dynamicEffectListView.onAdd += (listView) =>
             {
                 listView.ClearSelection();

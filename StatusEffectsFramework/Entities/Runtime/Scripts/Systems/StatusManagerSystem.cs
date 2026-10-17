@@ -42,6 +42,9 @@ namespace StatusEffectsFramework.Entities
         private EntityQuery m_GhostStatusEffectsQuery;
         private EntityQuery m_ClearEventsQuery;
         private EntityQuery m_ClearNonGhostEventsQuery;
+        // Version of the last update that processed non-ghost requests. The system also updates on
+        // ticks that skip non-ghosts, so LastSystemVersion would move past changes made between them.
+        private uint m_NonGhostRequestsVersion;
 #endif
 
         [BurstCompile]
@@ -82,6 +85,13 @@ namespace StatusEffectsFramework.Entities
             bool simulatesNonGhosts = networkTime.SimulatesNonGhosts(state.WorldUnmanaged);
             var statusEffectsQuery = simulatesNonGhosts ? m_StatusEffectsQuery : m_GhostStatusEffectsQuery;
             var requestsQuery = simulatesNonGhosts ? m_RequestsQuery : m_GhostRequestsQuery;
+
+            if (simulatesNonGhosts)
+            {
+                // Overrides the LastSystemVersion that was set before this update.
+                m_RequestsQuery.SetChangedFilterRequiredVersion(m_NonGhostRequestsVersion);
+                m_NonGhostRequestsVersion = state.GlobalSystemVersion;
+            }
 #else
             var elapsedTime = SystemAPI.Time.ElapsedTime;
             var statusEffectsQuery = m_StatusEffectsQuery;
@@ -107,6 +117,7 @@ namespace StatusEffectsFramework.Entities
             var statusEffectRequestsJob = new StatusEffectRequestsJob
             {
 #if NETCODE
+                IsServer = state.WorldUnmanaged.IsServer(),
                 NetworkTime = networkTime,
                 TickRate = tickRate,
 #else
@@ -240,6 +251,7 @@ namespace StatusEffectsFramework.Entities
         internal partial struct StatusEffectRequestsJob : IJobEntity
         {
 #if NETCODE
+            public bool IsServer;
             public NetworkTime NetworkTime;
             public ClientServerTickRate TickRate;
 #else

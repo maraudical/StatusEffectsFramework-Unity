@@ -1,8 +1,6 @@
 #if Netcode_for_Entities
-using StatusEffectsFramework.Entities;
-using UnityEngine;
-using System.Collections;
 using Unity.Collections;
+using Unity.Entities;
 using Unity.NetCode;
 
 namespace StatusEffectsFramework.Samples
@@ -13,76 +11,45 @@ namespace StatusEffectsFramework.Samples
     {
         public bool kill = false;
 
-        private bool m_Initialized;
-
-        protected override void Awake()
-        {
-            base.Awake();
-        }
-
-        protected override void OnEnable()
-        {
-            base.OnEnable();
-        }
-
-        protected override void OnDisable()
-        {
-            base.OnDisable();
-        }
-
-        private new IEnumerator Start()
-        {
-            yield return new WaitUntil(() => ClientServerBootstrap.HasClientWorlds || ClientServerBootstrap.HasServerWorld);
-
-            if (!ClientServerBootstrap.HasServerWorld)
-            {
-                enabled = false;
-                yield break;
-            } 
-
-            m_Manager = ClientServerBootstrap.ServerWorld.EntityManager;
-            m_Initialized = true;
-
-            m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
-            m_StatusEffectsQuery = m_Manager.CreateEntityQuery(typeof(StatusEffects));
-            m_RegistryQuery = m_Manager.CreateEntityQuery(typeof(UnmanagedStatusRegistry));
-        }
+        // Only the instance hosting the server displays and changes status effects.
+        protected override World GetWorld() => ClientServerBootstrap.ServerWorld;
 
         protected override void Update()
         {
-            if (!m_Initialized)
-                return;
-
             if (kill)
                 Kill();
-            
+
             base.Update();
         }
 
         protected override void AddButtonClicked()
         {
-            if (!m_Initialized)
+            if (!ClientServerBootstrap.HasServerWorld)
                 return;
-            
+
             base.AddButtonClicked();
         }
 
         protected override void RemoveButtonClicked()
         {
-            if (!m_Initialized)
+            if (!ClientServerBootstrap.HasServerWorld)
                 return;
 
             base.RemoveButtonClicked();
         }
-        
+
         public void Kill()
         {
             kill = false;
-            var manager = ClientServerBootstrap.ServerWorld.EntityManager;
-            var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
-            using var array = playerQuery.ToEntityArray(Allocator.Temp);
-            foreach (var entity in array)
-                manager.DestroyEntity(entity);
+
+            var world = GetWorld();
+
+            if (world == null || !world.IsCreated)
+                return;
+
+            var manager = world.EntityManager;
+            using var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
+            manager.DestroyEntity(playerQuery);
         }
     }
 }

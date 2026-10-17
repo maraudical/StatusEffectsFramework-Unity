@@ -38,20 +38,27 @@ namespace StatusEffectsFramework.Entities
             //       even on zero size components.
             var sizeNeeded = EntityCommandBufferData.Align(sizeof(EntityComponentCommand) + typeSize, EntityCommandBufferData.ALIGN_64_BIT);
 
+#if UNITY_6000_6_OR_NEWER
+            // Entities 6.6+ allocates real entities at record time, so there is no command batching or entity fixup.
+            var cmd = (EntityComponentCommand*)data->Reserve(chain, sortKey, sizeNeeded);
+            cmd->Header.EntityCount = 0;
+            cmd->Header.Entities = null;
+#else
             data->ResetCommandBatching(chain);
             var cmd = (EntityComponentCommand*)data->Reserve(chain, sortKey, sizeNeeded);
+            cmd->Header.IdentityIndex = 0;
+            cmd->Header.BatchCount = 1;
+            cmd->ValueRequiresEntityFixup = componentType.HasEntityReferences ? (byte)1 : (byte)0;
+#endif
 
             cmd->Header.Header.CommandType = ECBCommand.AppendToBuffer;
             cmd->Header.Header.TotalSize = sizeNeeded;
             cmd->Header.Header.SortKey = chain->m_LastSortKey;
             cmd->Header.Entity = e;
-            cmd->Header.IdentityIndex = 0;
-            cmd->Header.BatchCount = 1;
             cmd->ComponentTypeIndex = componentType.TypeIndex;
             cmd->ComponentSize = (short)typeSize;
             byte* componentValue = (byte*)(cmd + 1);
             UnsafeUtility.MemCpy(componentValue, value, typeSize);
-            cmd->ValueRequiresEntityFixup = componentType.HasEntityReferences ? (byte)1 : (byte)0;
         }
 
         public static bool RemoveAtSwapBack(BufferHeader* header, int typeSize, int index)

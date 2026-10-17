@@ -19,46 +19,46 @@ namespace StatusEffectsFramework.Samples
         [SerializeField] private Text m_Stunned;
 
         private ulong m_StableTypeHash;
-        private EntityManager m_Manager;
-        private EntityQuery m_PlayerQuery;
-        private EntityQuery m_RegistryQuery;
-        private DynamicBuffer<StatusFloats> m_StatusFloatBuffer;
-        private DynamicBuffer<StatusInts> m_StatusIntBuffer;
-        private DynamicBuffer<StatusBools> m_StatusBoolBuffer;
 
         protected virtual void Start()
         {
             m_StableTypeHash = TypeManager.GetTypeInfo<ExamplePlayerComponent>().StableTypeHash;
-
-            m_Manager = World.DefaultGameObjectInjectionWorld.EntityManager;
-
-            m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
-            m_RegistryQuery = m_Manager.CreateEntityQuery(typeof(UnmanagedStatusRegistry));
         }
 
         private void Update()
         {
-            using var array = m_PlayerQuery.ToEntityArray(Allocator.Temp);
+            // The world, EntityManager, queries and buffers are looked up every frame instead of being
+            // stored, since they become invalid when the world is disposed, such as on a domain reload.
+            var world = World.DefaultGameObjectInjectionWorld;
+
+            if (world == null || !world.IsCreated)
+                return;
+
+            var manager = world.EntityManager;
+
+            using var registryQuery = manager.CreateEntityQuery(typeof(UnmanagedStatusRegistry));
+
+            if (!registryQuery.TryGetSingleton(out UnmanagedStatusRegistry registry))
+                return;
+
+            using var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
+            using var array = playerQuery.ToEntityArray(Allocator.Temp);
 
             if (array.Length <= 0)
                 return;
 
             var entity = array[0];
 
-            if (!m_RegistryQuery.TryGetSingleton(out UnmanagedStatusRegistry registry))
-                return;
+            var player = manager.GetComponentData<ExamplePlayerComponent>(entity);
 
-            var player = m_Manager.GetComponentData<ExamplePlayerComponent>(entity);
+            var statusFloatBuffer = manager.GetBuffer<StatusFloats>(entity, true);
+            var statusIntBuffer = manager.GetBuffer<StatusInts>(entity, true);
+            var statusBoolBuffer = manager.GetBuffer<StatusBools>(entity, true);
 
-            m_StatusFloatBuffer = m_Manager.GetBuffer<StatusFloats>(entity);
-            m_StatusIntBuffer = m_Manager.GetBuffer<StatusInts>(entity);
-            m_StatusBoolBuffer = m_Manager.GetBuffer<StatusBools>(entity);
-            
-            // May want to check for structural changes to the Status Buffers but in this example it is assumed there aren't any.
-            if (!player.MaxHealth.TryGetElement(m_StableTypeHash, registry, m_StatusFloatBuffer, out var maxHealth)
-                || !player.Speed.TryGetElement(m_StableTypeHash, registry, m_StatusFloatBuffer, out var speed)
-                || !player.CoinMultiplier.TryGetElement(m_StableTypeHash, registry, m_StatusIntBuffer, out var coinMultiplier)
-                || !player.Stunned.TryGetElement(m_StableTypeHash, registry, m_StatusBoolBuffer, out var stunned))
+            if (!player.MaxHealth.TryGetElement(m_StableTypeHash, registry, statusFloatBuffer, out var maxHealth)
+                || !player.Speed.TryGetElement(m_StableTypeHash, registry, statusFloatBuffer, out var speed)
+                || !player.CoinMultiplier.TryGetElement(m_StableTypeHash, registry, statusIntBuffer, out var coinMultiplier)
+                || !player.Stunned.TryGetElement(m_StableTypeHash, registry, statusBoolBuffer, out var stunned))
                 return;
             
             m_Health.text = player.Health.ToString("0.0");

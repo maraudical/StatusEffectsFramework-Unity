@@ -305,6 +305,10 @@ namespace StatusEffectsFramework.Editor
             for (int i = subAssets.Length - 1; i >= 0; i--)
             {
                 var nestedAsset = subAssets[i];
+                // Sub assets whose script can't be loaded come back as null. They can't be removed
+                // here, and the script may only be missing temporarily, such as during a compile error.
+                if (nestedAsset == null)
+                    continue;
                 // If there is somehow a loose module we need to clean it up.
                 if (moduleInstances.Contains(nestedAsset))
                     continue;
@@ -318,6 +322,26 @@ namespace StatusEffectsFramework.Editor
                 EditorUtility.SetDirty(data);
 
             return removed;
+        }
+
+        /// <summary>
+        /// Removes nested assets whose script can't be loaded. This is a manual action rather than part of
+        /// <see cref="RemoveLooseSubAssets"/> since the script may only be missing temporarily.
+        /// </summary>
+        [MenuItem("CONTEXT/StatusEffectData/Remove Missing Script Sub Assets")]
+        private static void RemoveMissingScriptSubAssets(MenuCommand command)
+        {
+            var path = AssetDatabase.GetAssetPath(command.context);
+            int count = AssetDatabase.RemoveScriptableObjectsWithMissingScript(path);
+
+            if (count > 0)
+            {
+                AssetDatabase.SaveAssetIfDirty(command.context);
+                // The Project window keeps showing the removed sub assets until the asset is reimported.
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            }
+
+            Debug.Log($"Removed {count} sub asset(s) with missing scripts from {path}.", command.context);
         }
     }
 }

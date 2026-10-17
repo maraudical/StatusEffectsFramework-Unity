@@ -22,7 +22,7 @@ namespace StatusEffectsFramework.Entities
         /// </summary>
         public bool IsOld;
 
-        public const float SecondsTillOldThreshold = 0.5f;
+        public const float SecondsTillOldThreshold = 2f;
 #endif
 
         public StatusEffectEvents(uint instanceId, ushort statusEffectDataId

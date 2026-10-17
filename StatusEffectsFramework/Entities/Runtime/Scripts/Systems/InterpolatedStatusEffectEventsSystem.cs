@@ -14,6 +14,7 @@ namespace StatusEffectsFramework.Entities
     {
         private EntityQuery m_StatusEffectEventsQuery;
         private EntityQuery m_StatusEffectsInterpolatedEventsQuery;
+        private EntityQuery m_InterpolatedRequestsQuery;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -21,6 +22,9 @@ namespace StatusEffectsFramework.Entities
             m_StatusEffectEventsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffectEvents>().WithAll<InterpolatedStatusEffects>().Build();
             m_StatusEffectsInterpolatedEventsQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects>().WithAllRW<InterpolatedStatusEffects>().WithPresentRW<StatusEffectEvents>().Build();
             m_StatusEffectsInterpolatedEventsQuery.SetChangedVersionFilter(ComponentType.ReadOnly<StatusEffects>());
+            // Interpolated ghosts never process requests on the client, so any added to them are cleared.
+            m_InterpolatedRequestsQuery = SystemAPI.QueryBuilder().WithAllRW<StatusEffectRequests>().WithAll<InterpolatedStatusEffects>().WithNone<PredictedStatusEffectsFlag>().Build();
+            m_InterpolatedRequestsQuery.SetChangedVersionFilter(ComponentType.ReadWrite<StatusEffectRequests>());
 
             state.RequireForUpdate(m_StatusEffectsInterpolatedEventsQuery);
             state.RequireForUpdate<NetworkTime>();
@@ -33,6 +37,7 @@ namespace StatusEffectsFramework.Entities
             tickRate.ResolveDefaults();
 
             state.Dependency = new ClearStatusEffectEventsJob().ScheduleParallel(m_StatusEffectEventsQuery, state.Dependency);
+            state.Dependency = new ClearInterpolatedRequestsJob().ScheduleParallel(m_InterpolatedRequestsQuery, state.Dependency);
 
             var statusEffectsInterpolatedEventsJob = new StatusEffectsInterpolatedEventsJob
             {
@@ -54,7 +59,16 @@ namespace StatusEffectsFramework.Entities
             {
                 statusEffectEventsEnabledRW.ValueRW = false;
                 statusEffectEvents.Clear();
-            } 
+            }
+        }
+
+        [BurstCompile(OptimizeFor = OptimizeFor.Performance)]
+        partial struct ClearInterpolatedRequestsJob : IJobEntity
+        {
+            public void Execute(ref DynamicBuffer<StatusEffectRequests> statusEffectRequests)
+            {
+                statusEffectRequests.Clear();
+            }
         }
 
         // An IJobChunk rather than an IJobEntity so the events, the snapshot and the events enabled bits
