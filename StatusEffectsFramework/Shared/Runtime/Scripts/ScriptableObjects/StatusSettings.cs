@@ -32,6 +32,8 @@ namespace StatusEffectsFramework
         public string DefaultModulesPath = "ScriptableObjects/Modules";
         [Tooltip("The folder, relative to Assets, that is opened when creating new Dynamic Effects.")]
         public string DefaultDynamicEffectsPath = "ScriptableObjects/DynamicEffects";
+        [Tooltip("The folder, relative to Assets, that is opened when creating new Status Events.")]
+        public string DefaultStatusEventsPath = "ScriptableObjects/StatusEvents";
 
         /// <summary>
         /// The settings asset, which is loaded from Resources. In the editor it is created when missing.

@@ -1,6 +1,7 @@
 //#EXCLUDEFROMPROCESSING#
-#if UNITY_2023_1_OR_NEWER
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -34,15 +35,11 @@ namespace StatusEffectsFramework.Templates
         {
             public override void Action(EntityId entityId, string pathName, string resourceFile)
             {
-                string directoryPath = Path.GetDirectoryName(pathName);
-                string enteredName = Path.GetFileNameWithoutExtension(pathName);
-                string cleanedEnteredNamed = enteredName.Replace(" ", "");
-
                 try
                 {
                     AssetDatabase.StartAssetEditing();
 
-                    Object o = CreateScriptAssetFromContent(resourceFile, Path.Combine(directoryPath, cleanedEnteredNamed + ".cs"), enteredName, cleanedEnteredNamed);
+                    Object o = CreateScriptAsset(resourceFile, pathName);
                     ProjectWindowUtil.ShowCreatedAsset(o);
                 }
                 finally
@@ -50,6 +47,47 @@ namespace StatusEffectsFramework.Templates
                     AssetDatabase.StopAssetEditing();
                 }
             }
+        }
+
+        private static readonly HashSet<string> s_Keywords = new()
+        {
+            "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class", "const", "continue",
+            "decimal", "default", "delegate", "do", "double", "else", "enum", "event", "explicit", "extern", "false", "finally",
+            "fixed", "float", "for", "foreach", "goto", "if", "implicit", "in", "int", "interface", "internal", "is", "lock",
+            "long", "namespace", "new", "null", "object", "operator", "out", "override", "params", "private", "protected",
+            "public", "readonly", "ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static", "string",
+            "struct", "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort",
+            "using", "virtual", "void", "volatile", "while",
+        };
+
+        /// <summary>
+        /// Turns the name entered in a save dialog into a valid class name. Characters a class name can't have are
+        /// removed, and a name that starts with a digit or is a keyword gets an underscore in front.
+        /// </summary>
+        internal static string ToClassName(string name)
+        {
+            var builder = new StringBuilder(name.Length + 1);
+            foreach (var character in name)
+                if (char.IsLetterOrDigit(character) || character == '_')
+                    builder.Append(character);
+
+            if (builder.Length == 0)
+                return "NewScript";
+
+            var className = builder.ToString();
+            return char.IsDigit(className[0]) || s_Keywords.Contains(className) ? "_" + className : className;
+        }
+
+        /// <summary>
+        /// Creates a script from a template at the path chosen in a save dialog. The file and class are named
+        /// with <see cref="ToClassName"/>, and the name that was entered is used for the display name.
+        /// </summary>
+        internal static Object CreateScriptAsset(string content, string chosenPath)
+        {
+            string enteredName = Path.GetFileNameWithoutExtension(chosenPath);
+            string className = ToClassName(enteredName);
+            string targetPath = Path.Combine(Path.GetDirectoryName(chosenPath), className + ".cs").Replace('\\', '/');
+            return CreateScriptAssetFromContent(content, targetPath, enteredName, className);
         }
 
         internal static Object CreateScriptAssetFromContent(string content, string targetPath, string displayName, string scriptName)
@@ -60,7 +98,8 @@ namespace StatusEffectsFramework.Templates
         static string PreprocessScriptTemplate(string content, string displayName, string scriptName)
         {
             content = content.Replace("#SCRIPTNAME#", scriptName);
-            content = content.Replace("#DISPLAYNAME#", displayName);
+            // The display name ends up inside a string literal in the script.
+            content = content.Replace("#DISPLAYNAME#", displayName.Replace("\\", "\\\\").Replace("\"", "\\\""));
 
             return content;
         }
@@ -466,4 +505,3 @@ public partial struct #SCRIPTNAME#System : ISystem
 }";
     }
 }
-#endif

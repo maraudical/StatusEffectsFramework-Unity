@@ -13,7 +13,7 @@
             </ui:VisualElement>
             <ui:ListView virtualization-method="DynamicHeight" selection-type="Multiple" show-add-remove-footer="true" show-alternating-row-backgrounds="All" show-border="true"/>
         </ui:Tab>
-        <ui:Tab label="Comparables" view-data-key="comparables" name="comparables-tab">
+        <ui:Tab label="Comparables" view-data-key="sef-comparables" name="comparables-tab">
             <ui:VisualElement class="box-group" style="flex-grow: 1; flex-shrink: 0; border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; margin-bottom: -2px; padding-bottom: 1px;">
                 <uie:ToolbarSearchField style="flex-grow: 1; width: auto; margin-left: 2px;"/>
             </ui:VisualElement>
@@ -26,6 +26,12 @@
             <ui:ListView virtualization-method="DynamicHeight" selection-type="Multiple" show-add-remove-footer="true" show-alternating-row-backgrounds="All" show-border="true"/>
         </ui:Tab>
         <ui:Tab label="Dyn. Effects" view-data-key="sef-dynamic-effects" name="dynamic-effects-tab">
+            <ui:VisualElement class="box-group" style="flex-grow: 1; flex-shrink: 0; border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; margin-bottom: -2px; padding-bottom: 1px;">
+                <uie:ToolbarSearchField style="flex-grow: 1; width: auto; margin-left: 2px;"/>
+            </ui:VisualElement>
+            <ui:ListView virtualization-method="DynamicHeight" selection-type="Multiple" show-add-remove-footer="true" show-alternating-row-backgrounds="All" show-border="true"/>
+        </ui:Tab>
+        <ui:Tab label="Events" view-data-key="sef-events" name="events-tab">
             <ui:VisualElement class="box-group" style="flex-grow: 1; flex-shrink: 0; border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; margin-bottom: -2px; padding-bottom: 1px;">
                 <uie:ToolbarSearchField style="flex-grow: 1; width: auto; margin-left: 2px;"/>
             </ui:VisualElement>

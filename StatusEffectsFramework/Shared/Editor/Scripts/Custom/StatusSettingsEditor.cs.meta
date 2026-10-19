@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b343c070b13ea9946b5197d0e89c49cc
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - StatusSettingsVisualTree: {fileID: 9197481963319205126, guid: be9d9c2222631844f9fc71080ce33ed1, type: 3}
+  - StatusSettingsDataVisualTree: {fileID: 9197481963319205126, guid: d88aeb870bbde7c4eabe2063d54ea661, type: 3}
+  - StatusSettingsScriptTypeVisualTree: {fileID: 9197481963319205126, guid: 65264aa543bf57148b93cc19e7d2ee84, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

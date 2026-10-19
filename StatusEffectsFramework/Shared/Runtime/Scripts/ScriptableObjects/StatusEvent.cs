@@ -1,9 +1,11 @@
 using System;
+using UnityEngine;
 namespace StatusEffectsFramework
 {
     /// <summary>
     /// A ScriptableObject that represents a status event. It serves as a base class for creating specific events that can be triggered and handled within the framework.
     /// </summary>
+    [CreateAssetMenu(fileName = "New Status Event", menuName = "Status Effects Framework/Status Event", order = 0)]
     public class StatusEvent : Registrant 
     {
         /// <summary>

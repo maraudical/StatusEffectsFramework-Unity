@@ -1,4 +1,3 @@
-#if UNITY_2023_1_OR_NEWER
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,11 +20,16 @@ namespace StatusEffectsFramework.Editor
         /// Called after <see cref="Content"/> was removed, to release what was created for it.
         /// </summary>
         public readonly Action Dispose;
+        /// <summary>
+        /// The serialized object that <see cref="Content"/> edits, if any. The row follows its changes.
+        /// </summary>
+        public readonly SerializedObject SerializedObject;
 
-        public ListItemDetails(VisualElement content, Action dispose = null)
+        public ListItemDetails(VisualElement content, Action dispose = null, SerializedObject serializedObject = null)
         {
             Content = content;
             Dispose = dispose;
+            SerializedObject = serializedObject;
         }
     }
 
@@ -43,9 +47,9 @@ namespace StatusEffectsFramework.Editor
             return iterator.NextVisible(true);
         }
 
-        public static ListItemDetails Create(UnityEngine.Object target)
+        public static ListItemDetails Create(params UnityEngine.Object[] targets)
         {
-            var serializedObject = new SerializedObject(target);
+            var serializedObject = new SerializedObject(targets);
             var root = new VisualElement();
 
             var iterator = serializedObject.GetIterator();
@@ -64,7 +68,7 @@ namespace StatusEffectsFramework.Editor
                 while (iterator.NextVisible(false));
             }
 
-            return new ListItemDetails(root, serializedObject.Dispose);
+            return new ListItemDetails(root, serializedObject.Dispose, serializedObject);
         }
     }
 
@@ -83,13 +87,15 @@ namespace StatusEffectsFramework.Editor
         /// </summary>
         public Func<T, string> GetSubtext = item => item is Registrant registrant ? registrant.Key : string.Empty;
         /// <summary>
-        /// Whether a row can be expanded. Only used by rows that have a foldout.
+        /// Whether a row can be expanded. Only used by rows that have a foldout. By default when the asset has
+        /// properties to show.
         /// </summary>
-        public Func<T, bool> HasDetails;
+        public Func<T, bool> HasDetails = item => InspectorFields.Any(item);
         /// <summary>
-        /// Creates the content shown when a row is expanded. It receives the row so it can update it.
+        /// Creates the content shown when a row is expanded. It receives the row so it can update it. By default the
+        /// serialized fields of the asset, such as its key.
         /// </summary>
-        public Func<T, VisualElement, ListItemDetails> CreateDetails;
+        public Func<T, VisualElement, ListItemDetails> CreateDetails = (item, _) => InspectorFields.Create(item);
         /// <summary>
         /// Called when the add button of the list is pressed.
         /// </summary>
@@ -244,14 +250,35 @@ namespace StatusEffectsFramework.Editor
             info.RegisterCallback<PointerEnterEvent>((_) => { renameIcon.style.display = DisplayStyle.Flex; buttonContainer.style.display = DisplayStyle.Flex; });
             info.RegisterCallback<PointerLeaveEvent>((_) => { renameIcon.style.display = DisplayStyle.None; buttonContainer.style.display = DisplayStyle.None; });
 
-            title.RegisterCallback<PointerUpEvent>((_) =>
+            void BeginRename()
             {
+                if (state.Item == null)
+                    return;
+
                 state.RenameTarget = state.Item;
                 renameContainer.style.display = DisplayStyle.Flex;
                 nameContainer.style.display = DisplayStyle.None;
                 renameField.value = title.text;
                 renameField.Focus();
-            });
+            }
+
+            title.RegisterCallback<PointerUpEvent>((_) => BeginRename());
+            renameIcon.RegisterCallback<PointerUpEvent>((_) => BeginRename());
+            // Enter applies the new name and Escape cancels, both by leaving the field.
+            renameField.RegisterCallback<KeyDownEvent>(keyEvent =>
+            {
+                if (keyEvent.keyCode is KeyCode.Return or KeyCode.KeypadEnter)
+                {
+                    renameField.Blur();
+                    keyEvent.StopPropagation();
+                }
+                else if (keyEvent.keyCode == KeyCode.Escape)
+                {
+                    state.RenameTarget = null;
+                    renameField.Blur();
+                    keyEvent.StopPropagation();
+                }
+            }, TrickleDown.TrickleDown);
             renameField.RegisterCallback<BlurEvent>((_) =>
             {
                 renameContainer.style.display = DisplayStyle.None;
@@ -264,11 +291,15 @@ namespace StatusEffectsFramework.Editor
                 if (item == null || string.IsNullOrEmpty(value) || value == title.text)
                     return;
 
-                if (string.IsNullOrEmpty(AssetDatabase.RenameAsset(AssetDatabase.GetAssetPath(item), value)))
+                var error = AssetDatabase.RenameAsset(AssetDatabase.GetAssetPath(item), value);
+                if (string.IsNullOrEmpty(error))
                 {
                     title.text = item.name;
                     return;
                 }
+
+                // Shown after the field has finished losing focus.
+                EditorApplication.delayCall += () => EditorUtility.DisplayDialog("Could not rename the asset", error, "Ok");
 
                 title.experimental.animation.Start(Color.red, Color.clear, 300, (element, color) =>
                 {
@@ -322,6 +353,16 @@ namespace StatusEffectsFramework.Editor
 
             state.Details = CreateDetails(state.Item, row);
             foldout.Add(state.Details.Content);
+
+            // Editing the key changes the text under the name.
+            if (state.Details.SerializedObject != null)
+                state.Details.Content.TrackSerializedObjectValue(state.Details.SerializedObject, _ => RefreshSubtext(row, state));
+        }
+
+        private void RefreshSubtext(VisualElement row, RowState state)
+        {
+            if (state.Item != null)
+                row.Q<Label>("subtext").text = GetSubtext(state.Item);
         }
 
         private static void CloseDetails(Foldout foldout, RowState state)
@@ -392,7 +433,9 @@ namespace StatusEffectsFramework.Editor
             m_Items.Clear();
             m_ListView.Rebuild();
 
-            m_Context = SearchService.CreateContext($"t={typeof(T).Name} {m_SearchBar.value}");
+            // The AssetDatabase provider with the full type name. The indexed provider doesn't match every type
+            // (it finds no DynamicEffect assets), and a short name like Module is mistaken for another type.
+            m_Context = SearchService.CreateContext(new[] { "adb" }, $"t:{typeof(T).FullName} {m_SearchBar.value}");
             SearchService.Request(m_Context, OnSearchResults, default, SearchFlags.None);
         }
 
@@ -473,4 +516,3 @@ namespace StatusEffectsFramework.Editor
         }
     }
 }
-#endif

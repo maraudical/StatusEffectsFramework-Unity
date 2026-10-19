@@ -40,19 +40,7 @@ namespace StatusEffectsFramework.Editor
             settingsButton.style.paddingTop = 0;
             settingsButton.style.paddingBottom = 0;
             settingsButton.focusable = false;
-#if UNITY_2023_1_OR_NEWER
             settingsButton.iconImage = new Background { texture = EditorGUIUtility.IconContent("_Popup").image as Texture2D };
-#else
-            settingsButton.style.backgroundImage = EditorGUIUtility.IconContent("_Popup").image as Texture2D;
-            settingsButton.RegisterCallback<GeometryChangedEvent>(GeometryChanged);
-
-            void GeometryChanged(GeometryChangedEvent changeEvent)
-            {
-                float size = settingsButton.resolvedStyle.height;
-                settingsButton.style.width = size;
-                settingsButton.style.backgroundSize = new BackgroundSize(size - 3, size - 3);
-            }
-#endif
             settingsButton.clicked += Clicked;
             maskField.Add(settingsButton);
 

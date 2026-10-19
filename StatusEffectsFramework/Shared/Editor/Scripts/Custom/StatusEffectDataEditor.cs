@@ -85,7 +85,6 @@ namespace StatusEffectsFramework.Editor
             var description = root.Q<PropertyField>("description");
             description.BindProperty(descriptionProperty);
 
-#if UNITY_2023_1_OR_NEWER
 
             var optionalTogglesContainer = root.Q("optional-toggles-container");
 
@@ -105,7 +104,6 @@ namespace StatusEffectsFramework.Editor
                 acronym,
                 description
             };
-#endif
 
             var allowEffectStacking = root.Q<PropertyField>("allow-effect-stacking");
             allowEffectStacking.BindProperty(allowEffectStackingProperty);
@@ -139,25 +137,19 @@ namespace StatusEffectsFramework.Editor
             conditionsList.bindItem = (existingElement, index) =>
             {
                 var propertyField = existingElement as PropertyField;
-                propertyField.BindProperty(conditionsProperty.FindPropertyRelative($"Array.data[{index}]"));
+                propertyField.BindProperty(conditionsProperty.GetArrayElementAtIndex(index));
             };
             conditionsList.BindProperty(conditionsProperty);
 
             var modulesList = root.Q<ListView>("modules-list");
             modulesList.SetEnabled(!isPlaying);
-#if UNITY_2021_1_OR_NEWER
             modulesList.showAddRemoveFooter = !isPlaying;
-#else
-            modulesList.showAddRemoveFooter = !modulesProperty.hasMultipleDifferentValues && !isPlaying;
-            //modulesList.reorderable = false;
-#endif
             modulesList.itemsAdded += ModulesAdded;
             modulesList.itemsRemoved += ModulesRemoved;
             modulesList.BindProperty(modulesProperty);
 
 
 
-#if UNITY_2023_1_OR_NEWER
             List<SerializedProperty> optionalProperties = new()
             {
                 serializedObject.FindProperty("m_EnableIcon"),
@@ -198,7 +190,6 @@ namespace StatusEffectsFramework.Editor
                 toggle.style.width = Length.Percent(20f);
                 return toggle;
             }
-#endif
 
             BaseValueChanged(default);
             baseValue.RegisterValueChangeCallback(BaseValueChanged);

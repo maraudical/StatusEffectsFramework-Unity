@@ -3,12 +3,12 @@ using UnityEngine;
 
 namespace StatusEffectsFramework.Editor
 {
-    public class StatusEffectSettingsWindow : EditorWindow
+    public class StatusSettingsWindow : EditorWindow
     {
         [MenuItem("Tools/Status Effects Framework/Settings")]
-        public static void OpenStatusEffectSettingsWindow()
+        public static void OpenStatusSettingsWindow()
         {
-            EditorWindow window = GetWindow<StatusEffectSettingsWindow>();
+            EditorWindow window = GetWindow<StatusSettingsWindow>();
             window.titleContent = new GUIContent("Status Effect Settings");
         }
 

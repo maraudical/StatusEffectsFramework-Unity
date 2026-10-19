@@ -119,24 +119,8 @@ namespace StatusEffectsFramework.Editor
 
                 if (!differentModuleTypes && !containsNullModule && moduleInstances.Count > 0)
                 {
-                    // Iterate through the module instance to display properties even if they are derived.
-                    var moduleInstancesObject = new SerializedObject(moduleInstances.ToArray());
-
-                    var iterator = moduleInstancesObject.GetIterator();
-                    // Skip the script property
-                    iterator.NextVisible(true);
-
-                    if (iterator.NextVisible(true))
-                    {
-                        do
-                        {
-                            var propertyField = new PropertyField() { name = "property-field: " + iterator.propertyPath };
-                            propertyField.BindProperty(iterator.Copy());
-
-                            instanceRoot.Add(propertyField);
-                        }
-                        while (iterator.NextVisible(false));
-                    }
+                    // Show the properties of the module instances, even the ones of derived types.
+                    instanceRoot.Add(InspectorFields.Create(moduleInstances.ToArray()).Content);
                 }
             }
         }

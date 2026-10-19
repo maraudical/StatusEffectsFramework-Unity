@@ -13,151 +13,12 @@ using static StatusEffectsFramework.Editor.DynamicEffectPopup;
 
 namespace StatusEffectsFramework.Editor
 {
-    public class StatusNamePopup : PopupWindowContent
-    {
-        public event Action<StatusNameSelection> SelectionType;
-
-        public override VisualElement CreateGUI()
-        {
-            var root = new VisualElement();
-
-            var floatButton = new Button(() => SelectionType(StatusNameSelection.Float));
-            floatButton.text = "Float";
-            root.Add(floatButton);
-
-            var intButton = new Button(() => SelectionType(StatusNameSelection.Int));
-            intButton.text = "Int";
-            root.Add(intButton);
-
-            var boolButton = new Button(() => SelectionType(StatusNameSelection.Bool));
-            boolButton.text = "Bool";
-            root.Add(boolButton);
-
-            return root;
-        }
-
-        public enum StatusNameSelection
-        {
-            Float,
-            Int,
-            Bool,
-        }
-    }
-
-    public class ModulePopup : PopupWindowContent
-    {
-        public event Action<ModuleSelection> SelectionType;
-        public Button ModuleButton;
-
-        public override VisualElement CreateGUI()
-        {
-            var root = new VisualElement();
-
-            ModuleButton = new Button(() => SelectionType(ModuleSelection.Module)) { text = "Module" };
-            ModuleButton.SetEnabled(TypeCache.GetTypesDerivedFrom<Module>()
-                .Any(type => !type.IsAbstract && !type.ContainsGenericParameters));
-            root.Add(ModuleButton);
-
-            var moduleScriptButton = new Button(() => SelectionType(ModuleSelection.ModuleScript)) { text = "Module Script" };
-            root.Add(moduleScriptButton);
-
-            var moduleInstanceScript = new Button(() => SelectionType(ModuleSelection.ModuleInstanceScript)) { text = "Module Instance Script" };
-            root.Add(moduleInstanceScript);
-
-            return root;
-        }
-
-        public enum ModuleSelection
-        {
-            Module,
-            ModuleScript,
-            ModuleInstanceScript
-        }
-    }
-
-    public class ModuleTypePopup : PopupWindowContent
-    {
-        public event Action<Type> SelectionType;
-
-        public override VisualElement CreateGUI()
-        {
-            var root = new VisualElement();
-            
-            var types = TypeCache.GetTypesDerivedFrom<Module>()
-                .Where(type => !type.IsAbstract && !type.ContainsGenericParameters);
-            foreach (var type in types)
-            {
-                var moduleButton = new Button(() => SelectionType(type)) { text = type.Name };
-                root.Add(moduleButton);
-            }
-
-            return root;
-        }
-    }
-
-    public class DynamicEffectPopup : PopupWindowContent
-    {
-        public event Action<DynamicEffectSelection> SelectionType;
-        public Button DynamicEffectButton;
-
-        public override VisualElement CreateGUI()
-        {
-            var root = new VisualElement();
-
-            DynamicEffectButton = new Button(() => SelectionType(DynamicEffectSelection.DynamicEffect)) { text = "Dynamic Effect" };
-            DynamicEffectButton.SetEnabled(TypeCache.GetTypesDerivedFrom<DynamicEffect>()
-                .Any(type => !type.IsAbstract && !type.ContainsGenericParameters));
-            root.Add(DynamicEffectButton);
-
-            var dynamicEffectFloatScriptButton = new Button(() => SelectionType(DynamicEffectSelection.DynamicEffectFloatScript)) { text = "Dynamic Effect Float Script" };
-            root.Add(dynamicEffectFloatScriptButton);
-
-            var dynamicEffectIntScriptButton = new Button(() => SelectionType(DynamicEffectSelection.DynamicEffectIntScript)) { text = "Dynamic Effect Int Script" };
-            root.Add(dynamicEffectIntScriptButton);
-
-            var dynamicEffectBoolScriptButton = new Button(() => SelectionType(DynamicEffectSelection.DynamicEffectBoolScript)) { text = "Dynamic Effect Bool Script" };
-            root.Add(dynamicEffectBoolScriptButton);
-
-            return root;
-        }
-
-        public enum DynamicEffectSelection
-        {
-            DynamicEffect,
-            DynamicEffectFloatScript,
-            DynamicEffectIntScript,
-            DynamicEffectBoolScript
-        }
-    }
-
-    public class DynamicEffectTypePopup : PopupWindowContent
-    {
-        public event Action<Type> SelectionType;
-
-        public override VisualElement CreateGUI()
-        {
-            var root = new VisualElement();
-
-            var types = TypeCache.GetTypesDerivedFrom<DynamicEffect>()
-                .Where(type => !type.IsAbstract && !type.ContainsGenericParameters);
-            foreach (var type in types)
-            {
-                var moduleButton = new Button(() => SelectionType(type)) { text = type.Name };
-                root.Add(moduleButton);
-            }
-
-            return root;
-        }
-    }
-
     [CustomEditor(typeof(StatusSettings))]
-    [CanEditMultipleObjects]
-    internal class StatusEffectSettingsEditor : UnityEditor.Editor
+    internal class StatusSettingsEditor : UnityEditor.Editor
     {
-        public VisualTreeAsset StatusEffectSettingsVisualTree;
-        public VisualTreeAsset StatusEffectSettingsDataVisualTree;
-        public VisualTreeAsset StatusEffectSettingsNameVisualTree;
-        public VisualTreeAsset StatusEffectSettingsScriptTypeVisualTree;
+        public VisualTreeAsset StatusSettingsVisualTree;
+        public VisualTreeAsset StatusSettingsDataVisualTree;
+        public VisualTreeAsset StatusSettingsScriptTypeVisualTree;
 
         public override VisualElement CreateInspectorGUI()
         {
@@ -168,60 +29,37 @@ namespace StatusEffectsFramework.Editor
             var defaultComparableNamesPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultComparableNamesPath));
             var defaultModulesPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultModulesPath));
             var defaultDynamicEffectsPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultDynamicEffectsPath));
+            var defaultStatusEventsPathProperty = serializedObject.FindProperty(nameof(StatusSettings.DefaultStatusEventsPath));
 
             var root = new VisualElement();
             root.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
-#if UNITY_2023_1_OR_NEWER
 
-            StatusEffectSettingsVisualTree.CloneTree(root);
+            StatusSettingsVisualTree.CloneTree(root);
             root.Q(className: TabView.headerContainerClassName).style.flexGrow = 1;
 
             var tabView = root.Q<TabView>();
 
-            var groupTab = root.Q<Tab>("groups-tab");
-            groupTab.iconImage = EditorGUIUtility.IconContent("VerticalLayoutGroup Icon").image as Texture2D;
-            var groupHeader = groupTab.tabHeader;
-            groupHeader.style.flexGrow = 1;
-            groupHeader.style.justifyContent = Justify.Center;
+            var groupTab = SetUpTab("groups-tab", EditorGUIUtility.IconContent("VerticalLayoutGroup Icon").image as Texture2D);
+            var datasTab = SetUpTab("datas-tab", AssetPreview.GetMiniTypeThumbnail(typeof(StatusEffectData)));
+            var namesTab = SetUpTab("names-tab", AssetPreview.GetMiniTypeThumbnail(typeof(StatusName)));
+            var comparablesTab = SetUpTab("comparables-tab", AssetPreview.GetMiniTypeThumbnail(typeof(ComparableName)));
+            var modulesTab = SetUpTab("modules-tab", AssetPreview.GetMiniTypeThumbnail(typeof(Module)));
+            var dynamicEffectsTab = SetUpTab("dynamic-effects-tab", AssetPreview.GetMiniTypeThumbnail(typeof(DynamicEffect)));
+            var eventsTab = SetUpTab("events-tab", AssetPreview.GetMiniTypeThumbnail(typeof(StatusEvent)));
+            var pathsTab = SetUpTab("paths-tab", EditorGUIUtility.IconContent("FolderOpened Icon").image as Texture2D);
 
-            var datasTab = root.Q<Tab>("datas-tab");
-            datasTab.iconImage = AssetPreview.GetMiniTypeThumbnail(typeof(StatusEffectData));
-            var dataHeader = datasTab.tabHeader;
-            dataHeader.style.flexGrow = 1;
-            dataHeader.style.justifyContent = Justify.Center;
-
-            var namesTab = root.Q<Tab>("names-tab");
-            namesTab.iconImage = AssetPreview.GetMiniTypeThumbnail(typeof(StatusName));
-            var namesHeader = namesTab.tabHeader;
-            namesHeader.style.flexGrow = 1;
-            namesHeader.style.justifyContent = Justify.Center;
-
-            var comparablesTab = root.Q<Tab>("comparables-tab");
-            comparablesTab.iconImage = AssetPreview.GetMiniTypeThumbnail(typeof(ComparableName));
-            var comparablesHeader = comparablesTab.tabHeader;
-            comparablesHeader.style.flexGrow = 1;
-            comparablesHeader.style.justifyContent = Justify.Center;
-
-            var modulesTab = root.Q<Tab>("modules-tab");
-            modulesTab.iconImage = AssetPreview.GetMiniTypeThumbnail(typeof(Module));
-            var modulesHeader = modulesTab.tabHeader;
-            modulesHeader.style.flexGrow = 1;
-            modulesHeader.style.justifyContent = Justify.Center;
-
-            var dynamicEffectsTab = root.Q<Tab>("dynamic-effects-tab");
-            dynamicEffectsTab.iconImage = AssetPreview.GetMiniTypeThumbnail(typeof(DynamicEffect));
-            var dynamicEffectsHeader = dynamicEffectsTab.tabHeader;
-            dynamicEffectsHeader.style.flexGrow = 1;
-            dynamicEffectsHeader.style.justifyContent = Justify.Center;
-
-            var pathsTab = root.Q<Tab>("paths-tab");
-            pathsTab.iconImage = EditorGUIUtility.IconContent("FolderOpened Icon").image as Texture2D;
-            var pathsHeader = pathsTab.tabHeader;
-            pathsHeader.style.flexGrow = 1;
-            pathsHeader.style.justifyContent = Justify.Center;
+            Tab SetUpTab(string tabName, Texture2D icon)
+            {
+                var tab = root.Q<Tab>(tabName);
+                tab.iconImage = icon;
+                var header = tab.tabHeader;
+                header.style.flexGrow = 1;
+                header.style.justifyContent = Justify.Center;
+                return tab;
+            }
 
             #region Sections
-            var datasSection = new AssetListSection<StatusEffectData>(tabView, datasTab, StatusEffectSettingsDataVisualTree)
+            var datasSection = new AssetListSection<StatusEffectData>(tabView, datasTab, StatusSettingsDataVisualTree)
             {
                 UpdateIcon = (icon, data) => SetDataIcon(icon, data, data.Icon),
                 CreateDetails = CreateDataDetails,
@@ -236,7 +74,7 @@ namespace StatusEffectsFramework.Editor
                 datasSection.AddCreatedAsset(data);
             };
 
-            var namesSection = new AssetListSection<StatusName>(tabView, namesTab, StatusEffectSettingsNameVisualTree);
+            var namesSection = new AssetListSection<StatusName>(tabView, namesTab, StatusSettingsDataVisualTree);
             namesSection.OnAdd = () =>
             {
                 var popup = new StatusNamePopup();
@@ -260,7 +98,7 @@ namespace StatusEffectsFramework.Editor
                 }
             };
 
-            var comparablesSection = new AssetListSection<ComparableName>(tabView, comparablesTab, StatusEffectSettingsNameVisualTree);
+            var comparablesSection = new AssetListSection<ComparableName>(tabView, comparablesTab, StatusSettingsDataVisualTree);
             comparablesSection.OnAdd = () =>
             {
                 var path = SaveAssetPanel("Creating new ComparableName", "Enter the name of the new ComparableName", defaultComparableNamesPathProperty.stringValue, "Comparable Names path");
@@ -272,11 +110,9 @@ namespace StatusEffectsFramework.Editor
                 comparablesSection.AddCreatedAsset(comparable);
             };
 
-            var modulesSection = new AssetListSection<Module>(tabView, modulesTab, StatusEffectSettingsScriptTypeVisualTree)
+            var modulesSection = new AssetListSection<Module>(tabView, modulesTab, StatusSettingsScriptTypeVisualTree)
             {
                 GetSubtext = module => module.GetType().ToString(),
-                HasDetails = InspectorFields.Any,
-                CreateDetails = (module, _) => InspectorFields.Create(module),
             };
             modulesSection.OnAdd = () =>
             {
@@ -289,9 +125,9 @@ namespace StatusEffectsFramework.Editor
                     if (selection is ModuleSelection.Module)
                     {
                         popup.editorWindow.Close();
-                        var typePopup = new ModuleTypePopup();
+                        var typePopup = new TypePopup<Module>();
                         typePopup.SelectionType += OnModuleType;
-                        UnityEditor.PopupWindow.Show(popup.ModuleButton.worldBound, typePopup);
+                        UnityEditor.PopupWindow.Show(modulesSection.AddButtonBounds, typePopup);
 
                         void OnModuleType(Type type)
                         {
@@ -309,9 +145,6 @@ namespace StatusEffectsFramework.Editor
                         var path = EditorUtility.SaveFilePanelInProject($"Creating new {typeName}", "", "cs", $"Enter the name of the new {typeName}");
                         if (string.IsNullOrEmpty(path))
                             return;
-                        string directoryPath = Path.GetDirectoryName(path);
-                        string enteredName = Path.GetFileNameWithoutExtension(path);
-                        string cleanedEnteredNamed = enteredName.Replace(" ", "");
                         var content = selection switch
                         {
                             ModuleSelection.ModuleInstanceScript => StatusEffectScriptTemplates.ModuleInstanceScriptContent,
@@ -323,17 +156,15 @@ namespace StatusEffectsFramework.Editor
 #endif
 
                         };
-                        var script = StatusEffectScriptTemplates.CreateScriptAssetFromContent(content, Path.Combine(directoryPath, cleanedEnteredNamed + ".cs"), enteredName, cleanedEnteredNamed);
+                        var script = StatusEffectScriptTemplates.CreateScriptAsset(content, path);
                         EditorGUIUtility.PingObject(script);
                     }
                 }
             };
 
-            var dynamicEffectsSection = new AssetListSection<DynamicEffect>(tabView, dynamicEffectsTab, StatusEffectSettingsScriptTypeVisualTree)
+            var dynamicEffectsSection = new AssetListSection<DynamicEffect>(tabView, dynamicEffectsTab, StatusSettingsScriptTypeVisualTree)
             {
                 GetSubtext = dynamicEffect => dynamicEffect.GetType().ToString(),
-                HasDetails = InspectorFields.Any,
-                CreateDetails = (dynamicEffect, _) => InspectorFields.Create(dynamicEffect),
             };
             dynamicEffectsSection.OnAdd = () =>
             {
@@ -346,9 +177,9 @@ namespace StatusEffectsFramework.Editor
                     if (selection is DynamicEffectSelection.DynamicEffect)
                     {
                         popup.editorWindow.Close();
-                        var typePopup = new DynamicEffectTypePopup();
+                        var typePopup = new TypePopup<DynamicEffect>();
                         typePopup.SelectionType += OnDynamicEffectType;
-                        UnityEditor.PopupWindow.Show(popup.DynamicEffectButton.worldBound, typePopup);
+                        UnityEditor.PopupWindow.Show(dynamicEffectsSection.AddButtonBounds, typePopup);
 
                         void OnDynamicEffectType(Type type)
                         {
@@ -371,9 +202,6 @@ namespace StatusEffectsFramework.Editor
                         var path = EditorUtility.SaveFilePanelInProject($"Creating new {typeName}", "", "cs", $"Enter the name of the new {typeName}");
                         if (string.IsNullOrEmpty(path))
                             return;
-                        string directoryPath = Path.GetDirectoryName(path);
-                        string enteredName = Path.GetFileNameWithoutExtension(path);
-                        string cleanedEnteredNamed = enteredName.Replace(" ", "");
                         var content = selection switch
                         {
                             DynamicEffectSelection.DynamicEffectIntScript =>
@@ -395,10 +223,22 @@ namespace StatusEffectsFramework.Editor
                             StatusEffectScriptTemplates.DynamicEffectFloatScriptContent
 #endif
                         };
-                        var script = StatusEffectScriptTemplates.CreateScriptAssetFromContent(content, Path.Combine(directoryPath, cleanedEnteredNamed + ".cs"), enteredName, cleanedEnteredNamed);
+                        var script = StatusEffectScriptTemplates.CreateScriptAsset(content, path);
                         EditorGUIUtility.PingObject(script);
                     }
                 }
+            };
+
+            var statusEventsSection = new AssetListSection<StatusEvent>(tabView, eventsTab, StatusSettingsDataVisualTree);
+            statusEventsSection.OnAdd = () =>
+            {
+                var path = SaveAssetPanel("Creating new StatusEvent", "Enter the name of the new StatusEvent", defaultStatusEventsPathProperty.stringValue, "Status Events path");
+                if (string.IsNullOrEmpty(path))
+                    return;
+
+                var statusEvent = CreateInstance<StatusEvent>();
+                AssetDatabase.CreateAsset(statusEvent, path);
+                statusEventsSection.AddCreatedAsset(statusEvent);
             };
             #endregion
 
@@ -414,55 +254,24 @@ namespace StatusEffectsFramework.Editor
             defaultKeyNamespace.BindProperty(defaultKeyNamespaceProperty);
             pathsBox.Add(defaultKeyNamespace);
 
-            var defaultStatusDataPathGroup = new VisualElement();
-            defaultStatusDataPathGroup.style.flexDirection = FlexDirection.Row;
-            pathsBox.Add(defaultStatusDataPathGroup);
-            var defaultStatusDataPath = new PropertyField();
-            defaultStatusDataPath.style.flexGrow = 1;
-            defaultStatusDataPath.BindProperty(defaultStatusDataPathProperty);
-            defaultStatusDataPathGroup.Add(defaultStatusDataPath);
-            var defaultStatusDataPathButton = MakePathButton(defaultStatusDataPathProperty);
-            defaultStatusDataPathGroup.Add(defaultStatusDataPathButton);
+            AddPathField(defaultStatusDataPathProperty);
+            AddPathField(defaultStatusNamesPathProperty);
+            AddPathField(defaultComparableNamesPathProperty);
+            AddPathField(defaultModulesPathProperty);
+            AddPathField(defaultDynamicEffectsPathProperty);
+            AddPathField(defaultStatusEventsPathProperty);
 
-            var defaultStatusNamesPathGroup = new VisualElement();
-            defaultStatusNamesPathGroup.style.flexDirection = FlexDirection.Row;
-            pathsBox.Add(defaultStatusNamesPathGroup);
-            var defaultStatusNamesPath = new PropertyField();
-            defaultStatusNamesPath.style.flexGrow = 1;
-            defaultStatusNamesPath.BindProperty(defaultStatusNamesPathProperty);
-            defaultStatusNamesPathGroup.Add(defaultStatusNamesPath);
-            var defaultStatusNamesPathButton = MakePathButton(defaultStatusNamesPathProperty);
-            defaultStatusNamesPathGroup.Add(defaultStatusNamesPathButton);
-
-            var defaultComparableNamesPathGroup = new VisualElement();
-            defaultComparableNamesPathGroup.style.flexDirection = FlexDirection.Row;
-            pathsBox.Add(defaultComparableNamesPathGroup);
-            var defaultComparableNamesPath = new PropertyField();
-            defaultComparableNamesPath.style.flexGrow = 1;
-            defaultComparableNamesPath.BindProperty(defaultComparableNamesPathProperty);
-            defaultComparableNamesPathGroup.Add(defaultComparableNamesPath);
-            var defaultComparableNamesPathButton = MakePathButton(defaultComparableNamesPathProperty);
-            defaultComparableNamesPathGroup.Add(defaultComparableNamesPathButton);
-
-            var defaultModulesPathGroup = new VisualElement();
-            defaultModulesPathGroup.style.flexDirection = FlexDirection.Row;
-            pathsBox.Add(defaultModulesPathGroup);
-            var defaultModulesPath = new PropertyField();
-            defaultModulesPath.style.flexGrow = 1;
-            defaultModulesPath.BindProperty(defaultModulesPathProperty);
-            defaultModulesPathGroup.Add(defaultModulesPath);
-            var defaultModulesPathButton = MakePathButton(defaultModulesPathProperty);
-            defaultModulesPathGroup.Add(defaultModulesPathButton);
-
-            var defaultDynamicEffectsPathGroup = new VisualElement();
-            defaultDynamicEffectsPathGroup.style.flexDirection = FlexDirection.Row;
-            pathsBox.Add(defaultDynamicEffectsPathGroup);
-            var defaultDynamicEffectsPath = new PropertyField();
-            defaultDynamicEffectsPath.style.flexGrow = 1;
-            defaultDynamicEffectsPath.BindProperty(defaultDynamicEffectsPathProperty);
-            defaultDynamicEffectsPathGroup.Add(defaultDynamicEffectsPath);
-            var defaultDynamicEffectsPathButton = MakePathButton(defaultDynamicEffectsPathProperty);
-            defaultDynamicEffectsPathGroup.Add(defaultDynamicEffectsPathButton);
+            void AddPathField(SerializedProperty property)
+            {
+                var group = new VisualElement();
+                group.style.flexDirection = FlexDirection.Row;
+                pathsBox.Add(group);
+                var field = new PropertyField();
+                field.style.flexGrow = 1;
+                field.BindProperty(property);
+                group.Add(field);
+                group.Add(MakePathButton(property));
+            }
 
             Button MakePathButton(SerializedProperty property)
             {
@@ -494,7 +303,6 @@ namespace StatusEffectsFramework.Editor
                 image.style.height = Length.Percent(100);
                 return button;
             }
-#endif
 
             var groupList = new ListView();
             groupList.virtualizationMethod = CollectionVirtualizationMethod.DynamicHeight;
@@ -515,14 +323,10 @@ namespace StatusEffectsFramework.Editor
             {
                 var propertyField = existingElement as PropertyField;
                 propertyField.label = $"Group {index}";
-                propertyField.BindProperty(groupsProperty.FindPropertyRelative($"Array.data[{index}]"));
+                propertyField.BindProperty(groupsProperty.GetArrayElementAtIndex(index));
             };
             groupList.BindProperty(groupsProperty);
-#if UNITY_2023_1_OR_NEWER
             groupTab.Add(groupList);
-#else
-            root.Add(groupList);
-#endif
             var groupScroll = groupList.Q<ScrollView>();
             groupScroll.style.borderTopLeftRadius = 0;
             groupScroll.style.borderTopRightRadius = 0;
@@ -534,7 +338,7 @@ namespace StatusEffectsFramework.Editor
         {
             if (sprite)
             {
-                icon.image = sprite.texture;
+                icon.sprite = sprite;
                 icon.style.opacity = 1f;
             }
             else
@@ -625,7 +429,7 @@ namespace StatusEffectsFramework.Editor
         }
 
         [SettingsProvider]
-        public static SettingsProvider CreateStatusEffectSettingsProvider()
+        public static SettingsProvider CreateStatusSettingsProvider()
         {
             // First parameter is the path in the Settings window.
             // Second parameter is the scope of this setting: it only appears in the Project Settings window.
@@ -651,12 +455,10 @@ namespace StatusEffectsFramework.Editor
                     root.Add(space);
                     settingsEditor = CreateEditor(StatusSettings.Instance);
                     var settings = settingsEditor.CreateInspectorGUI();
-#if UNITY_2023_1_OR_NEWER
                     var tabView = settings.Q<TabView>();
                     tabView.style.overflow = Overflow.Hidden;
                     tabView.style.borderTopLeftRadius = 6;
                     tabView.style.borderTopRightRadius = 6;
-#endif
                     root.Add(settings);
                 },
 
@@ -668,7 +470,7 @@ namespace StatusEffectsFramework.Editor
                 },
 
                 // Populate the search keywords to enable smart search filtering and label highlighting:
-                keywords = new HashSet<string>(new[] { "Status", "Effect", "Group", "Stack", "Framework" })
+                keywords = new HashSet<string>(new[] { "Status", "Effect", "Group", "Stack", "Framework", "Event", "Module", "Dynamic", "Comparable", "Path", "Key" })
             };
 
             return provider;
