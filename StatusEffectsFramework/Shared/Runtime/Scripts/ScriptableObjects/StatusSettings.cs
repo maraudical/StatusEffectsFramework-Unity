@@ -1,5 +1,7 @@
 using UnityEngine;
 #if UNITY_EDITOR
+using System;
+using System.IO;
 using UnityEditor;
 #endif
 
@@ -40,19 +42,48 @@ namespace StatusEffectsFramework
         {
             s_Instance = Resources.Load<StatusSettings>(SettingsName);
 #if UNITY_EDITOR
-            if (s_Instance == null || s_Instance.Groups == null || s_Instance.Groups.Length != 32)
+            if (s_Instance == null)
             {
                 s_Instance = CreateInstance<StatusSettings>();
                 s_Instance.Groups = new string[32];
                 s_Instance.Groups[0] = "Static";
                 s_Instance.Groups[1] = "Negative";
                 s_Instance.Groups[2] = "Positive";
+                EnsureFolder(Path.GetDirectoryName(SettingsPath));
                 AssetDatabase.CreateAsset(s_Instance, SettingsPath);
                 AssetDatabase.SaveAssets();
+            }
+            else if (s_Instance.Groups == null || s_Instance.Groups.Length != 32)
+            {
+                // Keep the existing asset and its other settings, only fix the length of the groups.
+                var groups = new string[32];
+                if (s_Instance.Groups != null)
+                    Array.Copy(s_Instance.Groups, groups, Math.Min(s_Instance.Groups.Length, groups.Length));
+                s_Instance.Groups = groups;
+                EditorUtility.SetDirty(s_Instance);
+                AssetDatabase.SaveAssetIfDirty(s_Instance);
             }
 #endif
             return s_Instance;
         }
+#if UNITY_EDITOR
+
+        /// <summary>
+        /// Creates the folder and any missing parent folders, so an asset can be created in it.
+        /// Returns the topmost folder that was created, or null if the folder already existed.
+        /// </summary>
+        internal static string EnsureFolder(string folder)
+        {
+            folder = folder.Replace('\\', '/');
+            if (AssetDatabase.IsValidFolder(folder))
+                return null;
+
+            var parent = Path.GetDirectoryName(folder).Replace('\\', '/');
+            var createdFolder = EnsureFolder(parent) ?? folder;
+            AssetDatabase.CreateFolder(parent, Path.GetFileName(folder));
+            return createdFolder;
+        }
+#endif
         
 #if UNITY_EDITOR
         public static SerializedObject GetSerializedSettings()

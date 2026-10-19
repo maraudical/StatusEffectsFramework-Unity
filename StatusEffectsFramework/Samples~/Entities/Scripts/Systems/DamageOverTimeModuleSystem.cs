@@ -63,7 +63,7 @@ namespace StatusEffectsFramework.Samples
                     if (!exists)
                         continue;
 
-                    while (Time >= module.Struct.TimesDamaged * module.Struct.IntervalSeconds + statusEffect.TimeAdded)
+                    while (ElapsedTime >= module.Struct.TimesDamaged * module.Struct.IntervalSeconds + statusEffect.TimeAdded)
                     {
                         module.Struct.TimesDamaged++;
                         player.Health -= data.BaseValue * statusEffect.Stacks;

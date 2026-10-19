@@ -66,18 +66,21 @@ namespace StatusEffectsFramework.Templates
         }
 
         internal const string ModuleScriptContent =
-@"using StatusEffectsFramework
-using System.Threading;
-using System.Threading.Tasks;
+@"using StatusEffectsFramework;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Modules/#DISPLAYNAME#"", order = 1)]
-//[AttachModuleInstance(typeof(#DISPLAYNAME#Instance))]
+//[AttachModuleInstance(typeof(#SCRIPTNAME#Instance))]
 public class #SCRIPTNAME# : Module
 {
-    public override async Awaitable EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance, CancellationToken token)
+    public override void EnableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
     {
-        await Task.CompletedTask; return;
+        // Called when the status effect starts.
+    }
+
+    public override void DisableModule(StatusManager manager, StatusEffect statusEffect, ModuleInstance moduleInstance)
+    {
+        // Called when the status effect ends.
     }
 }";
 
@@ -95,177 +98,371 @@ using UnityEngine;
 //[AttachModuleInstance(typeof(#SCRIPTNAME#Instance))]
 public class #SCRIPTNAME# : Module, IEntityModule
 {
-    public ModuleInfo CreateModuleInfo(ModuleInstance moduleInstance)
+    public void CreateModuleInfo(ModuleInstance moduleInstance, ref ModuleInfo info, ref BlobBuilder builder)
     {
         //var instance = moduleInstance as #SCRIPTNAME#Instance;
         var moduleStruct = new #SCRIPTNAME#Struct
         {
             // Add in struct specific values and/or copy them from the module instance.
         };
-        return (this as IEntityModule).AllocateModule(moduleStruct);
+        ModuleInfo.AllocateModule(moduleStruct, ref info, ref builder);
     }
 }
 
 public struct #SCRIPTNAME#Struct
 {
-            
+
 }
 
 [UpdateInGroup(typeof(SimulationSystemGroup))]
 [BurstCompile]
 public partial struct #SCRIPTNAME#System : ISystem
 {
-    private EntityQuery m_EventQuery;
-
-    private TypeIndex m_TypeIndex;
+    private EntityQuery m_EntityQuery;
 
     [BurstCompile]
     public void OnCreate(ref SystemState state)
     {
-        m_EventQuery = SystemAPI.QueryBuilder().WithAll<ActiveStatusEffects, StatusEffectEvents>().WithAll<Simulate>().Build();
+        m_EntityQuery = SystemAPI.QueryBuilder().WithAll<StatusEffects, StatusEffectEvents, Modules<#SCRIPTNAME#Struct>>().WithAll<Simulate>().Build();
 
-        m_TypeIndex = TypeManager.GetTypeIndex<Modules<#SCRIPTNAME#Struct>>();
-
-        state.RequireForUpdate<StatusReferences>();
-        state.RequireForUpdate(m_EventQuery);
+        state.RequireForUpdate(m_EntityQuery);
+        state.RequireForUpdate<UnmanagedStatusRegistry>();
     }
 
     [BurstCompile]
     public void OnUpdate(ref SystemState state)
     {
-        var statusReferences = SystemAPI.GetSingleton<StatusReferences>();
-        var commandBuffer = SystemAPI.GetSingleton<EndSimulationEntityCommandBufferSystem.Singleton>().CreateCommandBuffer(state.WorldUnmanaged).AsParallelWriter();
-        var lookup = SystemAPI.GetBufferLookup<Modules<#SCRIPTNAME#Struct>>();
-
-        var eventJob = new #SCRIPTNAME#EventJob
+        var job = new #SCRIPTNAME#Job
         {
-            TypeIndex = m_TypeIndex,
-            References = statusReferences,
-            CommandBuffer = commandBuffer,
-            Lookup = lookup,
+            Registry = SystemAPI.GetSingleton<UnmanagedStatusRegistry>(),
         };
-        state.Dependency = eventJob.ScheduleParallelByRef(m_EventQuery, state.Dependency);
+        state.Dependency = job.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
     }
 
     [BurstCompile]
-    partial struct #SCRIPTNAME#EventJob : IJobEntity
+    partial struct #SCRIPTNAME#Job : IJobEntity
     {
-        public TypeIndex TypeIndex;
-        public StatusReferences References;
-        public EntityCommandBuffer.ParallelWriter CommandBuffer;
-        [NativeDisableParallelForRestriction]
-        public BufferLookup<Modules<#SCRIPTNAME#Struct>> Lookup;
+        public UnmanagedStatusRegistry Registry;
 
-        public void Execute([ChunkIndexInQuery] int sortKey, Entity entity, in DynamicBuffer<ActiveStatusEffects> statusEffects, in DynamicBuffer<StatusEffectEvents> statusEffectEvents)
+        public void Execute(in DynamicBuffer<StatusEffects> statusEffects,
+            in DynamicBuffer<StatusEffectEvents> statusEffectEvents,
+            ref DynamicBuffer<Modules<#SCRIPTNAME#Struct>> modules)
         {
-            bool foundBuffer = Lookup.TryGetBuffer(entity, out var buffer);
+            // AsNativeArray does not create a copy of the data so any changes will effect the source buffer.
+            var modulesArray = modules.AsNativeArray();
+            modulesArray.Sort();
 
             foreach (var statusEffectEvent in statusEffectEvents)
             {
-                if (!References.TryGetReference(statusEffectEvent.StatusEffectDataId, out var reference))
-                    continue;
-
-                ref var data = ref reference.Value;
-
-                if (!StatusEffectsUtility.ModuleInfosContainType(ref data.Modules, TypeIndex))
+                ref var data = ref Registry.GetStatusEffectDataOrNullRef(statusEffectEvent.Id, out bool exists);
+                if (!exists)
                     continue;
 
                 switch (statusEffectEvent.Event)
                 {
                     case StatusEffectEvent.Added:
-                        ref var modules = ref data.Modules;
-                        for (int i = 0; i < modules.Length; i++)
-                        {
-                            var moduleInfo = modules[i];
-
-                            if (moduleInfo.TypeIndex != TypeIndex)
-                                continue;
-
-                            if (!foundBuffer)
-                            {
-                                foundBuffer = true;
-                                buffer = CommandBuffer.AddBuffer<Modules<#SCRIPTNAME#Struct>>(sortKey, entity);
-                            }
-                            var module = StatusEffectsUtility.AddModuleToBuffer(ref buffer, moduleInfo, statusEffectEvent.Id);
-                            // Put specific logic when added here.
-                        }
-
+                        // Put specific logic when added here. The modules of this status effect are the
+                        // elements with Id equal to statusEffectEvent.InstanceId, found with
+                        // modulesArray.BinarySearchFirst(statusEffectEvent.InstanceId).
+                        break;
+                    case StatusEffectEvent.Updated:
+                        // Put specific logic when the stacks change here. The previous stack count
+                        // is statusEffectEvent.PreviousStacks.
                         break;
                     case StatusEffectEvent.Removed:
-                        if (foundBuffer)
-                            StatusEffectsUtility.RemoveModulesFromBuffer(ref buffer, statusEffectEvent.Id);
-                        // Put specific logic when removed here. Do not use the buffer since the modules have already been removed.
+                        // Put specific logic when removed here. The modules have already been removed from the buffer.
                         break;
-                        /*case StatusEffectEvent.Updated:
-                            foreach (var module in buffer)
-                                if (module.Id == statusEffectEvent.Id)
-                                {
-                                    Put specific logic when updated here.
-                                }
-                            break;*/
                 }
             }
-
-            if (foundBuffer && buffer.Length <= 0)
-                CommandBuffer.RemoveComponent<Modules<#SCRIPTNAME#Struct>>(sortKey, entity);
         }
     }
 }";
 
         internal const string ModuleInstanceScriptContent =
-@"using StatusEffectsFramework
+@"using StatusEffectsFramework;
 
 public class #SCRIPTNAME# : ModuleInstance
 {
-        
+
 }";
 
         internal const string DynamicEffectFloatScriptContent =
-@"using StatusEffectsFramework
+@"using StatusEffectsFramework;
+using UnityEngine;
 
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Dynamic Effects/#DISPLAYNAME#"", order = 1)]
 public class #SCRIPTNAME# : DynamicEffectFloat
 {
-        
+    // Whether the value is applied after all other effects instead of together with them.
+    public override bool PostEvaluate => false;
+
+    public override DynamicFloat ValueEvent(StatusManager manager, StatusEffect statusEffect, Effect effect)
+    {
+        var dynamicFloat = new DynamicFloat(this, effect);
+
+        // Set dynamicFloat.Value now and whenever it changes. Stop updating it when statusEffect.Stopped is raised.
+
+        return dynamicFloat;
+    }
 }";
 
         internal const string EntityDynamicEffectFloatScriptContent =
-@"using StatusEffectsFramework
+@"using StatusEffectsFramework;
+using StatusEffectsFramework.Entities;
+using Unity.Burst;
+using Unity.Entities;
+using UnityEngine;
 
+[assembly: RegisterGenericComponentType(typeof(DynamicFloats<#SCRIPTNAME#Struct>))]
+
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Dynamic Effects/#DISPLAYNAME#"", order = 1)]
 public class #SCRIPTNAME# : DynamicEffectFloat, IEntityDynamicEffect
 {
-        
+    // Whether the value is applied after all other effects instead of together with them.
+    // Update the values in the matching system group below: DynamicEffectPostEvaluateSystemGroup
+    // when this is true, DynamicEffectPreEvaluateSystemGroup when it is false.
+    public override bool PostEvaluate => false;
+
+    public void CreateDynamicEffectInfo(ValueType valueType, ref DynamicEffectInfo info, ref BlobBuilder builder)
+    {
+        var dynamicEffectStruct = new #SCRIPTNAME#Struct
+        {
+            // Copy values from this dynamic effect to the struct here.
+        };
+        DynamicEffectInfo.AllocateDynamicEffect(dynamicEffectStruct, valueType, ref info, ref builder);
+    }
+
+    // Only used when Entities is not running the status effects.
+    public override DynamicFloat ValueEvent(StatusManager manager, StatusEffect statusEffect, Effect effect)
+    {
+        return new DynamicFloat(this, effect);
+    }
+}
+
+public struct #SCRIPTNAME#Struct
+{
+
+}
+
+[UpdateInGroup(typeof(DynamicEffectPreEvaluateSystemGroup))]
+[BurstCompile]
+public partial struct #SCRIPTNAME#System : ISystem
+{
+    private EntityQuery m_EntityQuery;
+
+    [BurstCompile]
+    public void OnCreate(ref SystemState state)
+    {
+        m_EntityQuery = SystemAPI.QueryBuilder().WithAll<DynamicFloats<#SCRIPTNAME#Struct>>().WithAll<Simulate>().Build();
+
+        state.RequireForUpdate(m_EntityQuery);
+    }
+
+    [BurstCompile]
+    public void OnUpdate(ref SystemState state)
+    {
+        var job = new #SCRIPTNAME#Job();
+        state.Dependency = job.ScheduleParallel(m_EntityQuery, state.Dependency);
+    }
+
+    [BurstCompile]
+    partial struct #SCRIPTNAME#Job : IJobEntity
+    {
+        public void Execute(ref DynamicBuffer<DynamicFloats<#SCRIPTNAME#Struct>> dynamicValues)
+        {
+            for (int i = 0; i < dynamicValues.Length; i++)
+            {
+                ref var dynamicValue = ref dynamicValues.ElementAt(i);
+                // Set dynamicValue.Value here.
+            }
+        }
+    }
 }";
 
         internal const string DynamicEffectIntScriptContent =
-@"using StatusEffectsFramework
+@"using StatusEffectsFramework;
+using UnityEngine;
 
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Dynamic Effects/#DISPLAYNAME#"", order = 1)]
 public class #SCRIPTNAME# : DynamicEffectInt
 {
-        
+    // Whether the value is applied after all other effects instead of together with them.
+    public override bool PostEvaluate => false;
+
+    public override DynamicInt ValueEvent(StatusManager manager, StatusEffect statusEffect, Effect effect)
+    {
+        var dynamicInt = new DynamicInt(this, effect);
+
+        // Set dynamicInt.Value now and whenever it changes. Stop updating it when statusEffect.Stopped is raised.
+
+        return dynamicInt;
+    }
 }";
 
         internal const string EntityDynamicEffectIntScriptContent =
-@"using StatusEffectsFramework
+@"using StatusEffectsFramework;
+using StatusEffectsFramework.Entities;
+using Unity.Burst;
+using Unity.Entities;
+using UnityEngine;
 
+[assembly: RegisterGenericComponentType(typeof(DynamicInts<#SCRIPTNAME#Struct>))]
+
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Dynamic Effects/#DISPLAYNAME#"", order = 1)]
 public class #SCRIPTNAME# : DynamicEffectInt, IEntityDynamicEffect
 {
-        
+    // Whether the value is applied after all other effects instead of together with them.
+    // Update the values in the matching system group below: DynamicEffectPostEvaluateSystemGroup
+    // when this is true, DynamicEffectPreEvaluateSystemGroup when it is false.
+    public override bool PostEvaluate => false;
+
+    public void CreateDynamicEffectInfo(ValueType valueType, ref DynamicEffectInfo info, ref BlobBuilder builder)
+    {
+        var dynamicEffectStruct = new #SCRIPTNAME#Struct
+        {
+            // Copy values from this dynamic effect to the struct here.
+        };
+        DynamicEffectInfo.AllocateDynamicEffect(dynamicEffectStruct, valueType, ref info, ref builder);
+    }
+
+    // Only used when Entities is not running the status effects.
+    public override DynamicInt ValueEvent(StatusManager manager, StatusEffect statusEffect, Effect effect)
+    {
+        return new DynamicInt(this, effect);
+    }
+}
+
+public struct #SCRIPTNAME#Struct
+{
+
+}
+
+[UpdateInGroup(typeof(DynamicEffectPreEvaluateSystemGroup))]
+[BurstCompile]
+public partial struct #SCRIPTNAME#System : ISystem
+{
+    private EntityQuery m_EntityQuery;
+
+    [BurstCompile]
+    public void OnCreate(ref SystemState state)
+    {
+        m_EntityQuery = SystemAPI.QueryBuilder().WithAll<DynamicInts<#SCRIPTNAME#Struct>>().WithAll<Simulate>().Build();
+
+        state.RequireForUpdate(m_EntityQuery);
+    }
+
+    [BurstCompile]
+    public void OnUpdate(ref SystemState state)
+    {
+        var job = new #SCRIPTNAME#Job();
+        state.Dependency = job.ScheduleParallel(m_EntityQuery, state.Dependency);
+    }
+
+    [BurstCompile]
+    partial struct #SCRIPTNAME#Job : IJobEntity
+    {
+        public void Execute(ref DynamicBuffer<DynamicInts<#SCRIPTNAME#Struct>> dynamicValues)
+        {
+            for (int i = 0; i < dynamicValues.Length; i++)
+            {
+                ref var dynamicValue = ref dynamicValues.ElementAt(i);
+                // Set dynamicValue.Value here.
+            }
+        }
+    }
 }";
 
         internal const string DynamicEffectBoolScriptContent =
-@"using StatusEffectsFramework
+@"using StatusEffectsFramework;
+using UnityEngine;
 
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Dynamic Effects/#DISPLAYNAME#"", order = 1)]
 public class #SCRIPTNAME# : DynamicEffectBool
 {
-        
+    // Whether the value is applied after all other effects instead of together with them.
+    public override bool PostEvaluate => false;
+
+    public override DynamicBool ValueEvent(StatusManager manager, StatusEffect statusEffect, Effect effect)
+    {
+        var dynamicBool = new DynamicBool(this, effect);
+
+        // Set dynamicBool.Value now and whenever it changes. Stop updating it when statusEffect.Stopped is raised.
+
+        return dynamicBool;
+    }
 }";
 
         internal const string EntityDynamicEffectBoolScriptContent =
-@"using StatusEffectsFramework
+@"using StatusEffectsFramework;
+using StatusEffectsFramework.Entities;
+using Unity.Burst;
+using Unity.Entities;
+using UnityEngine;
 
+[assembly: RegisterGenericComponentType(typeof(DynamicBools<#SCRIPTNAME#Struct>))]
+
+[CreateAssetMenu(fileName = ""#DISPLAYNAME#"", menuName = ""Status Effects Framework/Dynamic Effects/#DISPLAYNAME#"", order = 1)]
 public class #SCRIPTNAME# : DynamicEffectBool, IEntityDynamicEffect
 {
-        
+    // Whether the value is applied after all other effects instead of together with them.
+    // Update the values in the matching system group below: DynamicEffectPostEvaluateSystemGroup
+    // when this is true, DynamicEffectPreEvaluateSystemGroup when it is false.
+    public override bool PostEvaluate => false;
+
+    public void CreateDynamicEffectInfo(ValueType valueType, ref DynamicEffectInfo info, ref BlobBuilder builder)
+    {
+        var dynamicEffectStruct = new #SCRIPTNAME#Struct
+        {
+            // Copy values from this dynamic effect to the struct here.
+        };
+        DynamicEffectInfo.AllocateDynamicEffect(dynamicEffectStruct, valueType, ref info, ref builder);
+    }
+
+    // Only used when Entities is not running the status effects.
+    public override DynamicBool ValueEvent(StatusManager manager, StatusEffect statusEffect, Effect effect)
+    {
+        return new DynamicBool(this, effect);
+    }
+}
+
+public struct #SCRIPTNAME#Struct
+{
+
+}
+
+[UpdateInGroup(typeof(DynamicEffectPreEvaluateSystemGroup))]
+[BurstCompile]
+public partial struct #SCRIPTNAME#System : ISystem
+{
+    private EntityQuery m_EntityQuery;
+
+    [BurstCompile]
+    public void OnCreate(ref SystemState state)
+    {
+        m_EntityQuery = SystemAPI.QueryBuilder().WithAll<DynamicBools<#SCRIPTNAME#Struct>>().WithAll<Simulate>().Build();
+
+        state.RequireForUpdate(m_EntityQuery);
+    }
+
+    [BurstCompile]
+    public void OnUpdate(ref SystemState state)
+    {
+        var job = new #SCRIPTNAME#Job();
+        state.Dependency = job.ScheduleParallel(m_EntityQuery, state.Dependency);
+    }
+
+    [BurstCompile]
+    partial struct #SCRIPTNAME#Job : IJobEntity
+    {
+        public void Execute(ref DynamicBuffer<DynamicBools<#SCRIPTNAME#Struct>> dynamicValues)
+        {
+            for (int i = 0; i < dynamicValues.Length; i++)
+            {
+                ref var dynamicValue = ref dynamicValues.ElementAt(i);
+                // Set dynamicValue.Value here.
+            }
+        }
+    }
 }";
     }
 }

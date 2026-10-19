@@ -1,4 +1,5 @@
 using StatusEffectsFramework.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
@@ -27,11 +28,6 @@ namespace StatusEffectsFramework.Samples
         protected Dictionary<ushort, int> m_CurrentStackCounts;
         protected HashSet<ushort> m_CombinedStatusEffects;
 
-        protected EntityManager m_Manager;
-        protected EntityQuery m_PlayerQuery;
-        protected EntityQuery m_StatusEffectsQuery;
-        protected EntityQuery m_RegistryQuery;
-
         protected virtual void Awake()
         {
             m_StatusEffectUIs = new();
@@ -56,29 +52,36 @@ namespace StatusEffectsFramework.Samples
             m_EffectRemoveButton.onClick.RemoveListener(RemoveButtonClicked);
         }
 
-        protected virtual void Start()
-        {
-            m_Manager = World.DefaultGameObjectInjectionWorld.EntityManager;
-            
-            m_PlayerQuery = m_Manager.CreateEntityQuery(typeof(ExamplePlayerComponent));
-            m_RegistryQuery = m_Manager.CreateEntityQuery(typeof(UnmanagedStatusRegistry));
-        }
+        /// <summary>
+        /// The world the UI displays. It is looked up every time instead of being stored, along with
+        /// the EntityManager and queries, since they become invalid when the world is disposed, such
+        /// as on a domain reload or when exiting play mode.
+        /// </summary>
+        protected virtual World GetWorld() => World.DefaultGameObjectInjectionWorld;
 
         protected virtual void Update()
         {
-            using var array = m_PlayerQuery.ToEntityArray(Allocator.Temp);
+            var world = GetWorld();
+
+            if (world == null || !world.IsCreated)
+                return;
+
+            var manager = world.EntityManager;
+
+            if (!TryGetRegistry(manager, out var registry))
+                return;
+
+            using var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayerComponent), typeof(StatusEffects));
+            using var array = playerQuery.ToEntityArray(Allocator.Temp);
 
             if (array.Length <= 0)
                 return;
 
             var entity = array[0];
 
-            if (!m_RegistryQuery.TryGetSingleton(out UnmanagedStatusRegistry registry))
-                return;
-            
             m_CurrentStackCounts.Clear();
 
-            var buffer = m_Manager.GetBuffer<StatusEffects>(entity);
+            var buffer = manager.GetBuffer<StatusEffects>(entity);
 
             foreach (var statusEffect in buffer)
                 if (m_CurrentStackCounts.TryGetValue(statusEffect.Id, out int value))
@@ -125,36 +128,47 @@ namespace StatusEffectsFramework.Samples
 
         protected virtual void AddButtonClicked()
         {
-            if (!m_RegistryQuery.TryGetSingleton(out UnmanagedStatusRegistry registry) 
-                || !registry.TryGetId(m_StatusEffectData.GetUniqueKeyHash(), out var id))
+            AddRequest(id => StatusEffectRequests.Add(id));
+        }
+
+        protected virtual void RemoveButtonClicked()
+        {
+            AddRequest(id => StatusEffectRequests.RemoveWithId(id, 1));
+        }
+
+        protected virtual void AddRequest(Func<ushort, StatusEffectRequests> createRequest)
+        {
+            // Non-ghost entities are baked into every world with their own copy, so each world
+            // needs the request for systems like VFX on the client to see it. Predicted ghosts
+            // predict the request and interpolated ghosts have their requests cleared.
+            foreach (var world in World.All)
+                if ((world.Flags & WorldFlags.Live) == WorldFlags.Live)
+                    AddRequest(world.EntityManager, createRequest);
+        }
+
+        protected void AddRequest(EntityManager manager, Func<ushort, StatusEffectRequests> createRequest)
+        {
+            // Ids are resolved per world since each world has its own registry.
+            if (!TryGetRegistry(manager, out var registry)
+                || !registry.TryGetId(m_StatusEffectData.GetKeyHash(), out var id))
                 return;
 
-            using var array = m_PlayerQuery.ToEntityArray(Allocator.Temp);
+            using var playerQuery = manager.CreateEntityQuery(typeof(ExamplePlayerComponent), typeof(StatusEffectRequests));
+            using var array = playerQuery.ToEntityArray(Allocator.Temp);
 
-            foreach (var entity in array) 
+            foreach (var entity in array)
             {
-                var buffer = m_Manager.GetBuffer<StatusEffectRequests>(entity);
-                buffer.Add(StatusEffectRequests.Add(id));
+                var buffer = manager.GetBuffer<StatusEffectRequests>(entity);
+                buffer.Add(createRequest(id));
                 if (onlyOne)
                     return;
             }
         }
 
-        protected virtual void RemoveButtonClicked()
+        protected static bool TryGetRegistry(EntityManager manager, out UnmanagedStatusRegistry registry)
         {
-            if (!m_RegistryQuery.TryGetSingleton(out UnmanagedStatusRegistry registry)
-                || !registry.TryGetId(m_StatusEffectData.GetUniqueKeyHash(), out var id))
-                return;
-
-            using var array = m_PlayerQuery.ToEntityArray(Allocator.Temp);
-
-            foreach (var entity in array)
-            {
-                var buffer = m_Manager.GetBuffer<StatusEffectRequests>(entity);
-                buffer.Add(StatusEffectRequests.RemoveWithId(id, 1));
-                if (onlyOne)
-                    return;
-            }
+            using var registryQuery = manager.CreateEntityQuery(typeof(UnmanagedStatusRegistry));
+            return registryQuery.TryGetSingleton(out registry);
         }
     }
 }

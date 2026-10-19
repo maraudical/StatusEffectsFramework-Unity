@@ -25,10 +25,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Advanced Health Boost
   m_EditorClassIdentifier: 
-  m_UniqueKey: base:advanced-health-boost
+  m_OptionalRegistryDependency: {fileID: 0}
+  m_Key: base:advanced-health-boost
   m_Group:
     Value: 4
-  m_ComparableName: {fileID: 0}
+  m_ComparableName:
+    m_Key: 
+    m_Asset: {fileID: 0}
   m_BaseValue: 25
   m_Icon: {fileID: 21300000, guid: 723d90c4f8c3a154c8a11b4e45fc5e7c, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
@@ -40,7 +43,7 @@ MonoBehaviour:
   m_MaxStacks: -1
   m_Effects:
   - m_StatusName:
-      m_Key: 
+      m_Key: base:max-health
       m_Asset: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
     m_ValueModifier: 0
     m_ValueSource: 1

@@ -6,7 +6,7 @@ using UnityEngine.Events;
 
 namespace StatusEffectsFramework.Samples
 {
-    [RequireComponent(typeof(NetworkStatusManager))]
+    /*[RequireComponent(typeof(NetworkStatusManager))]
     public class NetworkExamplePlayer : NetworkBehaviour, IExamplePlayer
     {
         [NonSerialized] public NetworkStatusManager StatusManager;
@@ -87,5 +87,5 @@ namespace StatusEffectsFramework.Samples
         public void DebugAddStatusEffectPredicate() { StatusManager?.AddStatusEffect(StatusEffectData, () => PredicateBool, Stack); }
         public void DebugRemoveStatusEffect() { StatusManager?.RemoveStatusEffect(StatusEffectData, Stack); }
         public void DebugRemoveStatusEffectGroup() { StatusManager?.RemoveStatusEffect(Group); }
-    }
+    }*/
 }

@@ -4,11 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.Search;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEngine.UIElements.Experimental;
 using static StatusEffectsFramework.Editor.ModulePopup;
 using static StatusEffectsFramework.Editor.StatusNamePopup;
 using static StatusEffectsFramework.Editor.DynamicEffectPopup;
@@ -222,464 +220,69 @@ namespace StatusEffectsFramework.Editor
             pathsHeader.style.flexGrow = 1;
             pathsHeader.style.justifyContent = Justify.Center;
 
-            #region List View Methods
-            VisualElement MakeListItem(VisualTreeAsset visualTreeAsset)
+            #region Sections
+            var datasSection = new AssetListSection<StatusEffectData>(tabView, datasTab, StatusEffectSettingsDataVisualTree)
             {
-                var root = new VisualElement();
-                visualTreeAsset.CloneTree(root);
-                
-                var foldout = root.Q<Foldout>();
-                if (foldout != null)
-                {
-                    var foldoutContainer = foldout.contentContainer;
-                    foldoutContainer.style.marginLeft = 0;
-                    foldoutContainer.style.paddingLeft = 10;
-                    foldoutContainer.style.paddingRight = 10;
-                    foldoutContainer.style.paddingTop = 10;
-                    foldoutContainer.style.paddingBottom = 10;
-                    foldoutContainer.AddToClassList(StatusEffectsStyleSheet.BackgroundColorClassName);
-                    var foldoutToggle = foldout.Q<Toggle>();
-                    foldoutToggle.style.marginBottom = 0;
-                    foldoutToggle.style.marginRight = 0;
-                    foldoutToggle.style.marginTop = 0;
-                    var checkmark = foldout.Q("unity-checkmark");
-                    checkmark.style.marginLeft = 5;
-
-                    var foldoutRow = root.Q("foldout-row");
-
-                    foldout.RegisterCallbackOnce<GeometryChangedEvent>((_) => { foldout.hierarchy.Insert(0, foldoutRow); foldoutRow.Insert(0, foldoutToggle); });
-                }
-
-                var info = root.Q("info");
-
-                var nameContainer = root.Q("name-container");
-
-                var name = root.Q<Label>("name");
-
-                var renameIcon = root.Q("rename-icon");
-                renameIcon.style.backgroundImage = EditorGUIUtility.IconContent("editicon.sml").image as Texture2D;
-
-                var renameContainer = root.Q("rename-container");
-
-                var renameField = root.Q<TextField>("rename-field");
-                var renameText = renameField.Q<TextElement>();
-                renameText.style.marginLeft = 0;
-                renameText.style.paddingTop = 0;
-                renameText.style.paddingRight = 0;
-
-                var buttonContainer = root.Q("button-container");
-
-                var scriptButton = root.Q<Button>("script-button");
-                if (scriptButton != null)
-                {
-                    scriptButton.iconImage = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D;
-                    scriptButton.clicked += () =>
-                    {
-                        if (root.userData is ScriptableObject item)
-                            EditorGUIUtility.PingObject(MonoScript.FromScriptableObject(item));
-                    };
-                }
-
-                var pingButton = root.Q<Button>("ping-button");
-                pingButton.iconImage = EditorGUIUtility.IconContent("FolderOpened Icon").image as Texture2D;
-                pingButton.clicked += () => EditorGUIUtility.PingObject(root.userData as UnityEngine.Object);
-
-                info.RegisterCallback<PointerEnterEvent>((_) => { renameIcon.style.display = DisplayStyle.Flex; buttonContainer.style.display = DisplayStyle.Flex; });
-                info.RegisterCallback<PointerLeaveEvent>((_) => { renameIcon.style.display = DisplayStyle.None; buttonContainer.style.display = DisplayStyle.None; });
-
-                name.RegisterCallback<PointerUpEvent>((_) =>
-                {
-                    renameField.userData = root.userData;
-                    renameContainer.style.display = DisplayStyle.Flex;
-                    nameContainer.style.display = DisplayStyle.None;
-                    renameField.value = name.text;
-                    renameField.Focus();
-                });
-                renameField.RegisterCallback<BlurEvent>((_) =>
-                {
-                    renameContainer.style.display = DisplayStyle.None;
-                    nameContainer.style.display = DisplayStyle.Flex;
-
-                    var item = renameField.userData as UnityEngine.Object;
-                    renameField.userData = null;
-                    var value = renameField.value;
-                    renameField.value = name.text;
-                    if (item == null || string.IsNullOrEmpty(value) || value == name.text)
-                        return;
-
-                    if (string.IsNullOrEmpty(AssetDatabase.RenameAsset(AssetDatabase.GetAssetPath(item), value)))
-                        return;
-
-                    name.experimental.animation.Start(Color.red, Color.clear, 300, (element, color) =>
-                    {
-                        element.style.backgroundColor = color;
-                    }).Ease(Easing.OutCubic);
-                });
-
-                return root;
-            }
-
-            // Rows are reused for different items, so the handlers set up in MakeListItem read the current item from userData.
-            void BindListItem(VisualElement element, UnityEngine.Object item)
-            {
-                element.userData = item;
-                element.style.visibility = item == null ? Visibility.Hidden : Visibility.Visible;
-                if (item == null)
-                    return;
-                element.Q<Label>("name").bindingPath = nameof(name);
-            }
-
-            void UnbindListItem(VisualElement element)
-            {
-                element.userData = null;
-
-                // Clearing the rename target stops a rename that is still open from being applied to the next item.
-                var renameField = element.Q<TextField>("rename-field");
-                renameField.userData = null;
-                renameField.Blur();
-                element.Q("rename-container").style.display = DisplayStyle.None;
-                element.Q("name-container").style.display = DisplayStyle.Flex;
-
-                var foldout = element.Q<Foldout>("foldout");
-                if (foldout != null)
-                {
-                    foldout.SetValueWithoutNotify(false);
-                    foldout.Clear();
-                }
-            }
-
-            void InitializeListSubscriptions<T>(List<T> list, ListView listView, Tab tab, ToolbarSearchField searchBar) where T : UnityEngine.Object
-            {
-                SearchContext context = null;
-                
-                listView.onRemove += OnRemoveItem;
-                tabView.activeTabChanged += TabCheck;
-                searchBar.RegisterValueChangedCallback(SearchRefresh);
-                tab.RegisterCallback<DetachFromPanelEvent>(_ =>
-                {
-                    context?.Dispose();
-                    SearchMonitor.contentRefreshed -= OnContentRefreshed;
-                });
-                TabCheck(null, tabView.activeTab);
-
-                void OnContentRefreshed(IEnumerable<string> updated, IEnumerable<string> removed, IEnumerable<string> moved)
-                {
-                    bool needsRefresh = false;
-                    if (removed.Any())
-                    {
-                        needsRefresh = true;
-                        list.RemoveAll(item => { return item == null || removed.Contains(AssetDatabase.GetAssetPath(item)); });
-                    }
-                    if (updated.Any())
-                    {
-                        foreach (var path in updated)
-                        {
-                            var item = AssetDatabase.LoadAssetAtPath<T>(path);
-                            if (item != null && !list.Contains(item))
-                            {
-                                needsRefresh = true;
-                                list.Add(item);
-                            } 
-                        }
-                    }
-                    if (needsRefresh)
-                        listView.Rebuild();
-                }
-
-                void OnRemoveItem(BaseListView listView)
-                {
-                    List<string> paths = new();
-                    foreach (var index in listView.selectedIndices)
-                        paths.Add(AssetDatabase.GetAssetPath(list[index]));
-
-                    if (paths.Count <= 0)
-                    {
-                        NothingSelectedDialogue();
-                        return;
-                    }
-
-                    if (!DeleteAssetsDialogue(paths))
-                        return;
-                    
-                    listView.viewController.RemoveItems(listView.selectedIndices.ToList());
-                    listView.ClearSelection();
-                    
-                    AssetDatabase.DeleteAssets(paths.ToArray(), paths);
-                }
-
-                void TabCheck(Tab previous, Tab current)
-                {
-                    if (previous == tab)
-                    {
-                        context?.Dispose();
-                        SearchMonitor.contentRefreshed -= OnContentRefreshed;
-                    }
-                    if (current == tab)
-                    {
-                        list.Clear();
-                        listView.Rebuild();
-                        context = SearchService.CreateContext($"t={typeof(T).Name} {searchBar.value}");
-                        SearchService.Request(context, SearchResults, default, SearchFlags.None);
-                        SearchMonitor.contentRefreshed += OnContentRefreshed;
-                    }
-                }
-
-                void SearchRefresh(ChangeEvent<string> _)
-                {
-                    ItemsChanged();
-                }
-
-                void ItemsChanged()
-                {
-                    context?.Dispose();
-                    list.Clear();
-                    listView.Rebuild();
-                    context = SearchService.CreateContext($"t={typeof(T).Name} {searchBar.value}");
-                    SearchService.Request(context, SearchResults, default, SearchFlags.None);
-                }
-
-                void SearchResults(SearchContext context, IEnumerable<SearchItem> items)
-                {
-                    foreach (var item in items)
-                    {
-                        var itemObject = item.ToObject<T>();
-                        if (itemObject == null)
-                            continue;
-                        list.Add(itemObject);
-                    }
-                    listView.Rebuild();
-                }
-
-                bool NothingSelectedDialogue() => EditorUtility.DisplayDialog("Delete selected asset?", "Nothing is selected.\n", "Ok");
-                bool DeleteAssetsDialogue(IEnumerable<string> paths) => EditorUtility.DisplayDialog($"Delete selected asset{(paths.Count() > 1 ? "s" : "")}?", $"{string.Join("\n", paths)}\n\nYou cannot undo the delete assets action.\n", "Delete", "Cancel");
-
-            }
-            #endregion
-
-            #region Datas Section
-            var dataSearchBar = datasTab.Q<ToolbarSearchField>();
-            var datas = new List<StatusEffectData>();
-            var datasListView = datasTab.Q<ListView>();
-            datasListView.itemsSource = datas;
-            datasListView.makeItem = () =>
-            {
-                var element = MakeListItem(StatusEffectSettingsDataVisualTree);
-                var foldout = element.Q<Foldout>("foldout");
-                var icon = element.Q<Image>("icon");
-                foldout.Q<Toggle>().RegisterValueChangedCallback((changeEvent) =>
-                {
-                    if (changeEvent.newValue && element.userData is StatusEffectData data)
-                    {
-                        var editor = CreateEditor(data).CreateInspectorGUI();
-                        editor.Q<PropertyField>("icon").RegisterValueChangeCallback(IconChanged);
-                        foldout.Add(editor);
-
-                        void IconChanged(SerializedPropertyChangeEvent evt) => SetDataIcon(icon, data, evt.changedProperty.objectReferenceValue as Sprite);
-                    }
-                    else
-                        foldout.Clear();
-                });
-                return element;
+                UpdateIcon = (icon, data) => SetDataIcon(icon, data, data.Icon),
+                CreateDetails = CreateDataDetails,
             };
-            datasListView.bindItem = (element, index) =>
+            datasSection.OnAdd = () =>
             {
-                var data = datas[index];
-                BindListItem(element, data);
-                if (data == null)
-                    return;
-                SetDataIcon(element.Q<Image>("icon"), data, data.Icon);
-                element.Q<Label>("subtext").bindingPath = nameof(data.Key);
-            };
-            datasListView.unbindItem = (element, _) => UnbindListItem(element);
-
-            void SetDataIcon(Image icon, StatusEffectData data, Sprite sprite)
-            {
-                if (sprite)
-                {
-                    icon.image = sprite.texture;
-                    icon.style.opacity = 1f;
-                }
-                else
-                {
-                    icon.image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(data));
-                    icon.style.opacity = 0.2f;
-                }
-            }
-
-            datasListView.onAdd += (listView) =>
-            {
-                listView.ClearSelection();
-                Directory.CreateDirectory(Path.Combine(Application.dataPath, defaultStatusDataPathProperty.stringValue));
-                var path = EditorUtility.SaveFilePanelInProject("Creating new StatusEffectData", "", "asset", "Enter the name of the new StatusEffectData", Path.Combine("Assets", defaultStatusDataPathProperty.stringValue));
+                var path = SaveAssetPanel("Creating new StatusEffectData", "Enter the name of the new StatusEffectData", defaultStatusDataPathProperty.stringValue, "Status Effect Data path");
                 if (string.IsNullOrEmpty(path))
                     return;
                 var data = CreateInstance<StatusEffectData>();
                 AssetDatabase.CreateAsset(data, path);
-                var itemsSourceCount = listView.itemsSource.Count;
-                listView.itemsSource.Add(data);
-                listView.ScrollToItem(itemsSourceCount);
-                EditorGUIUtility.PingObject(data);
+                datasSection.AddCreatedAsset(data);
             };
-            InitializeListSubscriptions(datas, datasListView, datasTab, dataSearchBar);
 
-            var dataScroll = datasListView.Q<ScrollView>();
-            dataScroll.style.borderTopRightRadius = 0;
-            dataScroll.style.borderTopLeftRadius = 0;
-            #endregion
-
-            #region Names Section
-            var nameSearchBar = namesTab.Q<ToolbarSearchField>();
-
-            var names = new List<StatusName>();
-            var namesListView = namesTab.Q<ListView>();
-            VisualElement namesAddButton = null;
-            namesListView.RegisterCallbackOnce<GeometryChangedEvent>((_) => { namesAddButton = namesListView.Q(BaseListView.footerAddButtonName); });
-            namesListView.itemsSource = names;
-            namesListView.makeItem = () => MakeListItem(StatusEffectSettingsNameVisualTree);
-            namesListView.bindItem = (element, index) =>
+            var namesSection = new AssetListSection<StatusName>(tabView, namesTab, StatusEffectSettingsNameVisualTree);
+            namesSection.OnAdd = () =>
             {
-                var name = names[index];
-                BindListItem(element, name);
-                if (name == null)
-                    return;
-                element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(name));
-                element.Q<Label>("subtext").bindingPath = nameof(name.Key);
-            };
-            namesListView.unbindItem = (element, _) => UnbindListItem(element);
-            namesListView.onAdd += (listView) =>
-            {
-                listView.ClearSelection();
                 var popup = new StatusNamePopup();
                 popup.SelectionType += OnSelectionType;
-                UnityEditor.PopupWindow.Show(namesAddButton.worldBound, popup);
+                UnityEditor.PopupWindow.Show(namesSection.AddButtonBounds, popup);
 
                 void OnSelectionType(StatusNameSelection selection)
                 {
-                    Directory.CreateDirectory(Path.Combine(Application.dataPath, defaultStatusNamesPathProperty.stringValue));
-                    var path = EditorUtility.SaveFilePanelInProject("Creating new StatusName", "", "asset", "Enter the name of the new StatusName", Path.Combine("Assets", defaultStatusNamesPathProperty.stringValue));
+                    var path = SaveAssetPanel("Creating new StatusName", "Enter the name of the new StatusName", defaultStatusNamesPathProperty.stringValue, "Status Names path");
                     if (string.IsNullOrEmpty(path))
                         return;
 
-                    StatusName name = selection switch
+                    StatusName statusName = selection switch
                     {
                         StatusNameSelection.Int => CreateInstance<StatusNameInt>(),
                         StatusNameSelection.Bool => CreateInstance<StatusNameBool>(),
                         _ => CreateInstance<StatusNameFloat>()
                     };
-                    AssetDatabase.CreateAsset(name, path);
-                    var itemsSourceCount = listView.itemsSource.Count;
-                    listView.itemsSource.Add(name);
-                    listView.ScrollToItem(itemsSourceCount);
-                    EditorGUIUtility.PingObject(name);
+                    AssetDatabase.CreateAsset(statusName, path);
+                    namesSection.AddCreatedAsset(statusName);
                 }
             };
-            InitializeListSubscriptions(names, namesListView, namesTab, nameSearchBar);
 
-            var nameScroll = namesListView.Q<ScrollView>();
-            nameScroll.style.borderTopRightRadius = 0;
-            nameScroll.style.borderTopLeftRadius = 0;
-            #endregion
-
-            #region Comparables Section
-            var comparableSearchBar = comparablesTab.Q<ToolbarSearchField>();
-
-            var comparables = new List<ComparableName>();
-            var comparablesListView = comparablesTab.Q<ListView>();
-            comparablesListView.itemsSource = comparables;
-            comparablesListView.makeItem = () => MakeListItem(StatusEffectSettingsNameVisualTree);
-            comparablesListView.bindItem = (element, index) =>
+            var comparablesSection = new AssetListSection<ComparableName>(tabView, comparablesTab, StatusEffectSettingsNameVisualTree);
+            comparablesSection.OnAdd = () =>
             {
-                var comparable = comparables[index];
-                BindListItem(element, comparable);
-                if (comparable == null)
-                    return;
-                element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(comparable));
-                element.Q<Label>("subtext").bindingPath = nameof(comparable.Key);
-            };
-            comparablesListView.unbindItem = (element, _) => UnbindListItem(element);
-            comparablesListView.onAdd += (listView) =>
-            {
-                listView.ClearSelection();
-                Directory.CreateDirectory(Path.Combine(Application.dataPath, defaultComparableNamesPathProperty.stringValue));
-                var path = EditorUtility.SaveFilePanelInProject("Creating new ComparableName", "", "asset", "Enter the name of the new ComparableName", Path.Combine("Assets", defaultComparableNamesPathProperty.stringValue));
+                var path = SaveAssetPanel("Creating new ComparableName", "Enter the name of the new ComparableName", defaultComparableNamesPathProperty.stringValue, "Comparable Names path");
                 if (string.IsNullOrEmpty(path))
                     return;
 
-                ComparableName comparable = CreateInstance<ComparableName>();
+                var comparable = CreateInstance<ComparableName>();
                 AssetDatabase.CreateAsset(comparable, path);
-                var itemsSourceCount = listView.itemsSource.Count;
-                listView.itemsSource.Add(comparable);
-                listView.ScrollToItem(itemsSourceCount);
-                EditorGUIUtility.PingObject(comparable);
+                comparablesSection.AddCreatedAsset(comparable);
             };
-            InitializeListSubscriptions(comparables, comparablesListView, comparablesTab, comparableSearchBar);
 
-            var comparableScroll = comparablesListView.Q<ScrollView>();
-            comparableScroll.style.borderTopRightRadius = 0;
-            comparableScroll.style.borderTopLeftRadius = 0;
-            #endregion
-
-            #region Modules Section
-            var moduleSearchBar = modulesTab.Q<ToolbarSearchField>();
-
-            var modules = new List<Module>();
-            var moduleListView = modulesTab.Q<ListView>();
-            VisualElement modulesAddButton = null;
-            moduleListView.RegisterCallbackOnce<GeometryChangedEvent>((_) => { modulesAddButton = moduleListView.Q(BaseListView.footerAddButtonName); });
-            moduleListView.itemsSource = modules;
-            moduleListView.makeItem = () =>
+            var modulesSection = new AssetListSection<Module>(tabView, modulesTab, StatusEffectSettingsScriptTypeVisualTree)
             {
-                var element = MakeListItem(StatusEffectSettingsScriptTypeVisualTree);
-                var foldout = element.Q<Foldout>("foldout");
-                foldout.Q<Toggle>().RegisterValueChangedCallback((changeEvent) =>
-                {
-                    if (changeEvent.newValue && element.userData is Module module)
-                    {
-                        var root = new VisualElement();
-                        var instance = CreateEditor(module).serializedObject;
-
-                        var iterator = instance.GetIterator();
-                        // Skip the script property
-                        iterator.NextVisible(true);
-
-                        if (iterator.NextVisible(true))
-                        {
-                            do
-                            {
-                                var propertyField = new PropertyField() { name = "property-field: " + iterator.propertyPath };
-                                propertyField.BindProperty(iterator.Copy());
-
-                                root.Add(propertyField);
-                            }
-                            while (iterator.NextVisible(false));
-                        }
-                        foldout.Add(root);
-                    }
-                    else
-                        foldout.Clear();
-                });
-                return element;
+                GetSubtext = module => module.GetType().ToString(),
+                HasDetails = InspectorFields.Any,
+                CreateDetails = (module, _) => InspectorFields.Create(module),
             };
-            moduleListView.bindItem = (element, index) =>
+            modulesSection.OnAdd = () =>
             {
-                var module = modules[index];
-                BindListItem(element, module);
-                if (module == null)
-                    return;
-                var modulePropertyCheck = CreateEditor(module).serializedObject.GetIterator();
-                modulePropertyCheck.NextVisible(true);
-                element.Q<Foldout>("foldout").Q<Toggle>().style.display = modulePropertyCheck.NextVisible(true) ? DisplayStyle.Flex : DisplayStyle.None;
-                element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(module));
-                var script = MonoScript.FromScriptableObject(module);
-                element.Q<Label>("subtext").text = script.GetClass().ToString();
-            };
-            moduleListView.unbindItem = (element, _) => UnbindListItem(element);
-            moduleListView.onAdd += (listView) =>
-            {
-                listView.ClearSelection();
                 var popup = new ModulePopup();
                 popup.SelectionType += OnSelectionType;
-                UnityEditor.PopupWindow.Show(modulesAddButton.worldBound, popup);
+                UnityEditor.PopupWindow.Show(modulesSection.AddButtonBounds, popup);
 
                 void OnSelectionType(ModuleSelection selection)
                 {
@@ -692,16 +295,12 @@ namespace StatusEffectsFramework.Editor
 
                         void OnModuleType(Type type)
                         {
-                            Directory.CreateDirectory(Path.Combine(Application.dataPath, defaultModulesPathProperty.stringValue));
-                            var path = EditorUtility.SaveFilePanelInProject("Creating new Module", "", "asset", "Enter the name of the new Module", Path.Combine("Assets", defaultModulesPathProperty.stringValue));
+                            var path = SaveAssetPanel("Creating new Module", "Enter the name of the new Module", defaultModulesPathProperty.stringValue, "Modules path");
                             if (string.IsNullOrEmpty(path))
                                 return;
                             var module = CreateInstance(type);
                             AssetDatabase.CreateAsset(module, path);
-                            var itemsSourceCount = listView.itemsSource.Count;
-                            listView.itemsSource.Add(module);
-                            listView.ScrollToItem(itemsSourceCount);
-                            EditorGUIUtility.PingObject(module);
+                            modulesSection.AddCreatedAsset(module as Module);
                         }
                     }
                     else
@@ -719,8 +318,6 @@ namespace StatusEffectsFramework.Editor
                             _ =>
 #if ENTITIES
                                 StatusEffectScriptTemplates.EntityModuleScriptContent
-#elif UNITASK
-                                StatusEffectScriptTemplates.UniTaskModuleScriptContent
 #else
                                 StatusEffectScriptTemplates.ModuleScriptContent
 #endif
@@ -731,74 +328,18 @@ namespace StatusEffectsFramework.Editor
                     }
                 }
             };
-            InitializeListSubscriptions(modules, moduleListView, modulesTab, moduleSearchBar);
 
-            var moduleScroll = moduleListView.Q<ScrollView>();
-            moduleScroll.style.borderTopRightRadius = 0;
-            moduleScroll.style.borderTopLeftRadius = 0;
-            #endregion
-
-            #region Dynamic Effects Section
-            var dynamicEffectSearchBar = dynamicEffectsTab.Q<ToolbarSearchField>();
-
-            var dynamicEffects = new List<DynamicEffect>();
-            var dynamicEffectListView = dynamicEffectsTab.Q<ListView>();
-            VisualElement dynamicEffectsAddButton = null;
-            dynamicEffectListView.RegisterCallbackOnce<GeometryChangedEvent>((_) => { dynamicEffectsAddButton = dynamicEffectListView.Q(BaseListView.footerAddButtonName); });
-            dynamicEffectListView.itemsSource = dynamicEffects;
-            dynamicEffectListView.makeItem = () =>
+            var dynamicEffectsSection = new AssetListSection<DynamicEffect>(tabView, dynamicEffectsTab, StatusEffectSettingsScriptTypeVisualTree)
             {
-                var element = MakeListItem(StatusEffectSettingsScriptTypeVisualTree);
-                var foldout = element.Q<Foldout>("foldout");
-                foldout.Q<Toggle>().RegisterValueChangedCallback((changeEvent) =>
-                {
-                    if (changeEvent.newValue && element.userData is DynamicEffect dynamicEffect)
-                    {
-                        var root = new VisualElement();
-                        var instance = CreateEditor(dynamicEffect).serializedObject;
-
-                        var iterator = instance.GetIterator();
-                        // Skip the script property
-                        iterator.NextVisible(true);
-
-                        if (iterator.NextVisible(true))
-                        {
-                            do
-                            {
-                                var propertyField = new PropertyField() { name = "property-field: " + iterator.propertyPath };
-                                propertyField.BindProperty(iterator.Copy());
-
-                                root.Add(propertyField);
-                            }
-                            while (iterator.NextVisible(false));
-                        }
-                        foldout.Add(root);
-                    }
-                    else
-                        foldout.Clear();
-                });
-                return element;
+                GetSubtext = dynamicEffect => dynamicEffect.GetType().ToString(),
+                HasDetails = InspectorFields.Any,
+                CreateDetails = (dynamicEffect, _) => InspectorFields.Create(dynamicEffect),
             };
-            dynamicEffectListView.bindItem = (element, index) =>
+            dynamicEffectsSection.OnAdd = () =>
             {
-                var dynamicEffect = dynamicEffects[index];
-                BindListItem(element, dynamicEffect);
-                if (dynamicEffect == null)
-                    return;
-                var dynamicEffectPropertyCheck = CreateEditor(dynamicEffect).serializedObject.GetIterator();
-                dynamicEffectPropertyCheck.NextVisible(true);
-                element.Q<Foldout>("foldout").Q<Toggle>().style.display = dynamicEffectPropertyCheck.NextVisible(true) ? DisplayStyle.Flex : DisplayStyle.None;
-                element.Q<Image>("icon").image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(dynamicEffect));
-                var script = MonoScript.FromScriptableObject(dynamicEffect);
-                element.Q<Label>("subtext").text = script.GetClass().ToString();
-            };
-            dynamicEffectListView.unbindItem = (element, _) => UnbindListItem(element);
-            dynamicEffectListView.onAdd += (listView) =>
-            {
-                listView.ClearSelection();
                 var popup = new DynamicEffectPopup();
                 popup.SelectionType += OnSelectionType;
-                UnityEditor.PopupWindow.Show(dynamicEffectsAddButton.worldBound, popup);
+                UnityEditor.PopupWindow.Show(dynamicEffectsSection.AddButtonBounds, popup);
 
                 void OnSelectionType(DynamicEffectSelection selection)
                 {
@@ -811,16 +352,12 @@ namespace StatusEffectsFramework.Editor
 
                         void OnDynamicEffectType(Type type)
                         {
-                            Directory.CreateDirectory(Path.Combine(Application.dataPath, defaultDynamicEffectsPathProperty.stringValue));
-                            var path = EditorUtility.SaveFilePanelInProject("Creating new Dynamic Effect", "", "asset", "Enter the name of the new Dynamic Effect", Path.Combine("Assets", defaultDynamicEffectsPathProperty.stringValue));
+                            var path = SaveAssetPanel("Creating new Dynamic Effect", "Enter the name of the new Dynamic Effect", defaultDynamicEffectsPathProperty.stringValue, "Dynamic Effects path");
                             if (string.IsNullOrEmpty(path))
                                 return;
                             var dynamicEffect = CreateInstance(type);
                             AssetDatabase.CreateAsset(dynamicEffect, path);
-                            var itemsSourceCount = listView.itemsSource.Count;
-                            listView.itemsSource.Add(dynamicEffect);
-                            listView.ScrollToItem(itemsSourceCount);
-                            EditorGUIUtility.PingObject(dynamicEffect);
+                            dynamicEffectsSection.AddCreatedAsset(dynamicEffect as DynamicEffect);
                         }
                     }
                     else
@@ -863,12 +400,7 @@ namespace StatusEffectsFramework.Editor
                     }
                 }
             };
-            InitializeListSubscriptions(dynamicEffects, dynamicEffectListView, dynamicEffectsTab, dynamicEffectSearchBar);
-
-            var dynamicEffectScroll = dynamicEffectListView.Q<ScrollView>();
-            dynamicEffectScroll.style.borderTopRightRadius = 0;
-            dynamicEffectScroll.style.borderTopLeftRadius = 0;
-#endregion
+            #endregion
 
             var pathsBox = new VisualElement();
             pathsBox.style.borderTopRightRadius = 0;
@@ -889,7 +421,7 @@ namespace StatusEffectsFramework.Editor
             defaultStatusDataPath.style.flexGrow = 1;
             defaultStatusDataPath.BindProperty(defaultStatusDataPathProperty);
             defaultStatusDataPathGroup.Add(defaultStatusDataPath);
-            var defaultStatusDataPathButton = MakePathButton(defaultStatusDataPath);
+            var defaultStatusDataPathButton = MakePathButton(defaultStatusDataPathProperty);
             defaultStatusDataPathGroup.Add(defaultStatusDataPathButton);
 
             var defaultStatusNamesPathGroup = new VisualElement();
@@ -899,7 +431,7 @@ namespace StatusEffectsFramework.Editor
             defaultStatusNamesPath.style.flexGrow = 1;
             defaultStatusNamesPath.BindProperty(defaultStatusNamesPathProperty);
             defaultStatusNamesPathGroup.Add(defaultStatusNamesPath);
-            var defaultStatusNamesPathButton = MakePathButton(defaultStatusNamesPath);
+            var defaultStatusNamesPathButton = MakePathButton(defaultStatusNamesPathProperty);
             defaultStatusNamesPathGroup.Add(defaultStatusNamesPathButton);
 
             var defaultComparableNamesPathGroup = new VisualElement();
@@ -909,7 +441,7 @@ namespace StatusEffectsFramework.Editor
             defaultComparableNamesPath.style.flexGrow = 1;
             defaultComparableNamesPath.BindProperty(defaultComparableNamesPathProperty);
             defaultComparableNamesPathGroup.Add(defaultComparableNamesPath);
-            var defaultComparableNamesPathButton = MakePathButton(defaultComparableNamesPath);
+            var defaultComparableNamesPathButton = MakePathButton(defaultComparableNamesPathProperty);
             defaultComparableNamesPathGroup.Add(defaultComparableNamesPathButton);
 
             var defaultModulesPathGroup = new VisualElement();
@@ -919,7 +451,7 @@ namespace StatusEffectsFramework.Editor
             defaultModulesPath.style.flexGrow = 1;
             defaultModulesPath.BindProperty(defaultModulesPathProperty);
             defaultModulesPathGroup.Add(defaultModulesPath);
-            var defaultModulesPathButton = MakePathButton(defaultModulesPath);
+            var defaultModulesPathButton = MakePathButton(defaultModulesPathProperty);
             defaultModulesPathGroup.Add(defaultModulesPathButton);
 
             var defaultDynamicEffectsPathGroup = new VisualElement();
@@ -929,23 +461,23 @@ namespace StatusEffectsFramework.Editor
             defaultDynamicEffectsPath.style.flexGrow = 1;
             defaultDynamicEffectsPath.BindProperty(defaultDynamicEffectsPathProperty);
             defaultDynamicEffectsPathGroup.Add(defaultDynamicEffectsPath);
-            var defaultDynamicEffectsPathButton = MakePathButton(defaultDynamicEffectsPath);
+            var defaultDynamicEffectsPathButton = MakePathButton(defaultDynamicEffectsPathProperty);
             defaultDynamicEffectsPathGroup.Add(defaultDynamicEffectsPathButton);
 
-            Button MakePathButton(PropertyField propertyField)
+            Button MakePathButton(SerializedProperty property)
             {
                 var button = new Button(EditorGUIUtility.IconContent("FolderOpened Icon").image as Texture2D, () =>
                 {
-                    var path = EditorUtility.OpenFolderPanel("Select Path", "Assets", string.Empty);
-                    if (string.IsNullOrWhiteSpace(path))
+                    var selected = EditorUtility.OpenFolderPanel("Select Path", "Assets", string.Empty);
+                    if (string.IsNullOrWhiteSpace(selected))
                         return;
-                    path = Path.GetRelativePath(Application.dataPath, path);
-                    if (path.StartsWith('.'))
+                    if (!TryGetPathRelativeToAssets(selected, out var relativePath))
                     {
                         EditorUtility.DisplayDialog("Invalid path", "Please select a folder within the Assets directory.\n", "Ok");
                         return;
                     }
-                    propertyField.Q<TextField>().value = path;
+                    property.stringValue = relativePath;
+                    property.serializedObject.ApplyModifiedProperties();
                 });
                 button.style.width = 19;
                 button.style.marginLeft = -2;
@@ -998,11 +530,106 @@ namespace StatusEffectsFramework.Editor
             return root;
         }
 
+        private static void SetDataIcon(Image icon, StatusEffectData data, Sprite sprite)
+        {
+            if (sprite)
+            {
+                icon.image = sprite.texture;
+                icon.style.opacity = 1f;
+            }
+            else
+            {
+                icon.image = AssetDatabase.GetCachedIcon(AssetDatabase.GetAssetPath(data));
+                icon.style.opacity = 0.2f;
+            }
+        }
+
+        // The inspector of a status effect data, which keeps the icon and key of its row up to date while it is edited.
+        private static ListItemDetails CreateDataDetails(StatusEffectData data, VisualElement row)
+        {
+            var editor = CreateEditor(data);
+            var content = editor.CreateInspectorGUI();
+            content.Q<PropertyField>("icon").RegisterValueChangeCallback(evt => SetDataIcon(row.Q<Image>("icon"), data, evt.changedProperty.objectReferenceValue as Sprite));
+            content.TrackSerializedObjectValue(editor.serializedObject, _ => row.Q<Label>("subtext").text = data.Key);
+            return new ListItemDetails(content, () => DestroyImmediate(editor));
+        }
+
+        /// <summary>
+        /// Opens a save dialog in the folder from a path setting. The folder is created for the dialog and removed
+        /// again if the asset isn't saved in it. Returns null if the dialog was cancelled or the setting is invalid.
+        /// </summary>
+        private static string SaveAssetPanel(string title, string message, string setting, string settingName)
+        {
+            if (!TryGetAssetFolder(setting, out var folder))
+            {
+                EditorUtility.DisplayDialog("Invalid path", $"The {settingName} must be a folder inside the Assets folder, for example ScriptableObjects/Modules.\n", "Ok");
+                return null;
+            }
+
+            var createdFolder = StatusSettings.EnsureFolder(folder);
+            var path = EditorUtility.SaveFilePanelInProject(title, "", "asset", message, folder);
+
+            // Don't leave folders behind that nothing was saved in.
+            if (createdFolder != null && (string.IsNullOrEmpty(path) || !path.StartsWith(createdFolder + "/", StringComparison.OrdinalIgnoreCase)))
+                AssetDatabase.DeleteAsset(createdFolder);
+
+            return string.IsNullOrEmpty(path) ? null : path;
+        }
+
+        /// <summary>
+        /// Turns a path setting, which is relative to Assets, into a folder path starting with Assets.
+        /// Fails for paths that leave the Assets folder or contain characters a folder name can't have.
+        /// </summary>
+        private static bool TryGetAssetFolder(string setting, out string folder)
+        {
+            folder = "Assets";
+            if (string.IsNullOrWhiteSpace(setting))
+                return true;
+
+            var invalidChars = Path.GetInvalidFileNameChars();
+            var segments = new List<string> { "Assets" };
+            foreach (var segment in setting.Trim().Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (segment == ".")
+                    continue;
+                if (segment == ".." || segment.IndexOfAny(invalidChars) >= 0)
+                    return false;
+                segments.Add(segment);
+            }
+
+            folder = string.Join("/", segments);
+            return true;
+        }
+
+        /// <summary>
+        /// Turns a folder on disk into a path relative to the Assets folder, using forward slashes.
+        /// Fails if the folder isn't inside Assets. The Assets folder itself gives an empty path.
+        /// </summary>
+        private static bool TryGetPathRelativeToAssets(string absolutePath, out string relativePath)
+        {
+            relativePath = null;
+            var assets = Application.dataPath.Replace('\\', '/').TrimEnd('/');
+            var path = absolutePath.Replace('\\', '/').TrimEnd('/');
+
+            if (path.Equals(assets, StringComparison.OrdinalIgnoreCase))
+            {
+                relativePath = string.Empty;
+                return true;
+            }
+
+            if (!path.StartsWith(assets + "/", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            relativePath = path.Substring(assets.Length + 1);
+            return true;
+        }
+
         [SettingsProvider]
         public static SettingsProvider CreateStatusEffectSettingsProvider()
         {
             // First parameter is the path in the Settings window.
             // Second parameter is the scope of this setting: it only appears in the Project Settings window.
+            UnityEditor.Editor settingsEditor = null;
             var provider = new SettingsProvider("Project/StatusEffectsFramework", SettingsScope.Project)
             {
                 // By default the last token of the path is used as display name if no label is provided.
@@ -1022,7 +649,8 @@ namespace StatusEffectsFramework.Editor
                     space.style.minHeight = 8;
                     space.style.flexGrow = 0;
                     root.Add(space);
-                    var settings = CreateEditor(StatusSettings.Instance).CreateInspectorGUI();
+                    settingsEditor = CreateEditor(StatusSettings.Instance);
+                    var settings = settingsEditor.CreateInspectorGUI();
 #if UNITY_2023_1_OR_NEWER
                     var tabView = settings.Q<TabView>();
                     tabView.style.overflow = Overflow.Hidden;
@@ -1030,6 +658,13 @@ namespace StatusEffectsFramework.Editor
                     tabView.style.borderTopRightRadius = 6;
 #endif
                     root.Add(settings);
+                },
+
+                deactivateHandler = () =>
+                {
+                    if (settingsEditor != null)
+                        DestroyImmediate(settingsEditor);
+                    settingsEditor = null;
                 },
 
                 // Populate the search keywords to enable smart search filtering and label highlighting:

@@ -12,10 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Basic Stun
   m_EditorClassIdentifier: 
-  m_UniqueKey: base:basic-stun
+  m_OptionalRegistryDependency: {fileID: 0}
+  m_Key: base:basic-stun
   m_Group:
     Value: 2
-  m_ComparableName: {fileID: 0}
+  m_ComparableName:
+    m_Key: 
+    m_Asset: {fileID: 0}
   m_BaseValue: 1
   m_Icon: {fileID: 21300000, guid: 34613bedb05a8f647a5a377e5a3ff0e4, type: 3}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
@@ -27,7 +30,7 @@ MonoBehaviour:
   m_MaxStacks: -1
   m_Effects:
   - m_StatusName:
-      m_Key: 
+      m_Key: base:stunned
       m_Asset: {fileID: 11400000, guid: f7273fbb099977747b3d7284bf74e0c8, type: 2}
     m_ValueModifier: 0
     m_ValueSource: 1

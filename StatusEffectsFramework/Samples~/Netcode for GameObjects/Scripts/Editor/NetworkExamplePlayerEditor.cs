@@ -3,7 +3,7 @@ using UnityEngine.UIElements;
 
 namespace StatusEffectsFramework.Samples
 {
-    [CustomEditor(typeof(NetworkExamplePlayer))]
+    /*[CustomEditor(typeof(NetworkExamplePlayer))]
     [CanEditMultipleObjects]
-    public class NetworkExamplePlayerEditor : ExamplePlayerEditor { }
+    public class NetworkExamplePlayerEditor : ExamplePlayerEditor { }*/
 }

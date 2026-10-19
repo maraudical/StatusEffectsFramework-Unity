@@ -12,10 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 589661282d7118c489bb59ad58a7640d, type: 3}
   m_Name: Cleanse
   m_EditorClassIdentifier: 
-  m_UniqueKey: base:cleanse
+  m_OptionalRegistryDependency: {fileID: 0}
+  m_Key: base:cleanse
   m_Group:
     Value: 4
-  m_ComparableName: {fileID: 0}
+  m_ComparableName:
+    m_Key: 
+    m_Asset: {fileID: 0}
   m_BaseValue: 1
   m_Icon: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 0}
@@ -28,8 +31,12 @@ MonoBehaviour:
   m_Effects: []
   m_Conditions:
   - m_SearchableConfigurable: 2
-    m_SearchableData: {fileID: 0}
-    m_SearchableComparableName: {fileID: 0}
+    m_SearchableData:
+      m_Key: 
+      m_Asset: {fileID: 0}
+    m_SearchableComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_SearchableGroup:
       Value: 2
     m_IsPresent: 1
@@ -38,8 +45,12 @@ MonoBehaviour:
     m_UseStacks: 0
     m_Stacks: 0
     m_ActionConfigurable: 2
-    m_ActionData: {fileID: 0}
-    m_ActionComparableName: {fileID: 0}
+    m_ActionData:
+      m_Key: 
+      m_Asset: {fileID: 0}
+    m_ActionComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_ActionGroup:
       Value: 2
     m_Timing: 0
@@ -48,7 +59,9 @@ MonoBehaviour:
     m_SearchableData:
       m_Key: 
       m_Asset: {fileID: 11400000}
-    m_SearchableComparableName: {fileID: 0}
+    m_SearchableComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_SearchableGroup:
       Value: 2
     m_IsPresent: 0
@@ -60,7 +73,9 @@ MonoBehaviour:
     m_ActionData:
       m_Key: 
       m_Asset: {fileID: 11400000}
-    m_ActionComparableName: {fileID: 0}
+    m_ActionComparableName:
+      m_Key: 
+      m_Asset: {fileID: 0}
     m_ActionGroup:
       Value: 2
     m_Timing: 0

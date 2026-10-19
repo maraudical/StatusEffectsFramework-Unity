@@ -200,6 +200,7 @@ namespace StatusEffectsFramework
             if (s_Instance == null)
             {
                 s_Instance = CreateInstance<StatusRegistry>();
+                StatusSettings.EnsureFolder(System.IO.Path.GetDirectoryName(RegistryPath));
                 AssetDatabase.CreateAsset(s_Instance, RegistryPath);
                 AssetDatabase.SaveAssets();
             }

@@ -11,3 +11,4 @@ namespace StatusEffectsFramework.Samples
         public float Health;
     }
 }
+
