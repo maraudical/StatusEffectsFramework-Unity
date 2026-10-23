@@ -134,6 +134,8 @@ namespace StatusEffectsFramework.Entities
 
                             if (unmanagedEffect.DynamicEffectInfo.TypeIndex != TypeIndex.Null)
                                 dynamicEffectTypes.Add(unmanagedEffect.DynamicEffectInfo.TypeIndex);
+                            else
+                                UnityEngine.Debug.LogError($"{dynamicEffect.GetType().Name} did not allocate a dynamic effect. Make sure {nameof(IEntityDynamicEffect.CreateDynamicEffectInfo)} calls {nameof(DynamicEffectInfo)}.{nameof(DynamicEffectInfo.AllocateDynamicEffect)}.", dynamicEffect);
                         }
                     }
 
@@ -193,6 +195,8 @@ namespace StatusEffectsFramework.Entities
 
                         if (modules[i].TypeIndex != TypeIndex.Null)
                             moduleTypes.Add(modules[i].TypeIndex);
+                        else
+                            UnityEngine.Debug.LogError($"{moduleContainer.Module.GetType().Name} did not allocate a module. Make sure {nameof(IEntityModule.CreateModuleInfo)} calls {nameof(ModuleInfo)}.{nameof(ModuleInfo.AllocateModule)}.", moduleContainer.Module);
                     }
                 }
 

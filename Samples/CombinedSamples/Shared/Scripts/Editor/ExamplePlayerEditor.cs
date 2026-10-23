@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -94,3 +95,4 @@ namespace StatusEffectsFramework.Samples
         }
     }
 }
+#endif

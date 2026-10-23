@@ -29,6 +29,13 @@ namespace StatusEffectsFramework.Entities
         ///    ModuleInfo.AllocateModule(myModuleStruct, ref info, ref builder);
         ///}
         /// </code>
+        ///
+        /// With Netcode for Entities, the <c>Modules&lt;T&gt;</c> elements on predicted ghosts are not replicated or
+        /// included in the prediction backup. When a snapshot rolls an entity back and its status effects differ
+        /// from the previous frame, its module elements are rebuilt from these default values, so any state your
+        /// systems write into the module struct (such as a counter of times damaged) is reset. Keep state that has
+        /// to survive a rollback in a replicated ghost component, or derive it from replicated ticks such as
+        /// <c>TickAdded</c>.
         /// </remarks>
         /// <param name="moduleInstance">The <paramref name="moduleInstance"/> can be safely cast into 
         /// the attached <see cref="ModuleInstance"/> defined from the 

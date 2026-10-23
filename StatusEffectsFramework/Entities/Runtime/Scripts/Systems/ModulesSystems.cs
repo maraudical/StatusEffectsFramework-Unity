@@ -381,6 +381,8 @@ namespace StatusEffectsFramework.Entities
                 StatusEffectEventsHandle = SystemAPI.GetBufferTypeHandle<StatusEffectEvents>(true),
                 StatusEffectsHandle = SystemAPI.GetBufferTypeHandle<StatusEffects>(true),
                 InterpolatedStatusEffectsHandle = SystemAPI.GetBufferTypeHandle<InterpolatedStatusEffects>(true),
+                PredictedGhostLookup = SystemAPI.GetComponentLookup<PredictedGhost>(true),
+                GhostRootHandle = SystemAPI.GetComponentTypeHandle<StatusEffectsGhostRoot>(true),
                 GlobalSystemVersion = state.GlobalSystemVersion,
             };
             state.Dependency = firstPredictionTickJob.ScheduleParallelByRef(m_EntityQuery, state.Dependency);
@@ -395,11 +397,15 @@ namespace StatusEffectsFramework.Entities
             public BufferTypeHandle<StatusEffectEvents> StatusEffectEventsHandle;
             public BufferTypeHandle<StatusEffects> StatusEffectsHandle;
             public BufferTypeHandle<InterpolatedStatusEffects> InterpolatedStatusEffectsHandle;
+            [ReadOnly] public ComponentLookup<PredictedGhost> PredictedGhostLookup;
+            [ReadOnly] public ComponentTypeHandle<StatusEffectsGhostRoot> GhostRootHandle;
             public uint GlobalSystemVersion;
 
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask, in v128 chunkEnabledMask)
             {
                 NativeArray<Entity> entities = chunk.GetNativeArray(EntityTypeHandle);
+                bool hasGhostRoot = chunk.Has(ref GhostRootHandle);
+                NativeArray<StatusEffectsGhostRoot> ghostRoots = hasGhostRoot ? chunk.GetNativeArray(ref GhostRootHandle) : default;
                 BufferAccessor<StatusEffectEvents> statusEffectEventsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectEventsHandle);
                 BufferAccessor<StatusEffects> statusEffectsAccessor = chunk.GetBufferAccessorRO(ref StatusEffectsHandle);
                 BufferAccessor<InterpolatedStatusEffects> interpolatedStatusEffectsAccessor = chunk.GetBufferAccessorRO(ref InterpolatedStatusEffectsHandle);
@@ -412,6 +418,14 @@ namespace StatusEffectsFramework.Entities
                 var enumerator = new ChunkEntityEnumerator(useEnabledMask, chunkEnabledMask, chunk.Count);
                 while (enumerator.NextEntityIndex(out var i))
                 {
+                    // Only rebuild when a snapshot rolled this entity back. Otherwise PredictedModulesSystem
+                    // applies this tick's changes from the events and the element state is kept. Status managers
+                    // on ghost children read PredictedGhost from the root.
+                    var ghostEntity = hasGhostRoot ? ghostRoots[i].Root : entities[i];
+                    if (!PredictedGhostLookup.TryGetComponent(ghostEntity, out var predictedGhost)
+                        || predictedGhost.PredictionStartTick != predictedGhost.AppliedTick)
+                        continue;
+
                     var statusEffects = statusEffectsAccessor[i];
                     var interpolatedStatusEffects = interpolatedStatusEffectsAccessor[i];
                     var statusEffectEvents = statusEffectEventsAccessor[i].AsNativeArray();

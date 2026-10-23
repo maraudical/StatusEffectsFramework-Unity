@@ -18,15 +18,6 @@ namespace StatusEffectsFramework.Editor
         {
             bool isPlaying = EditorApplication.isPlaying;
 
-            // Remove any loose nested scriptable objects and
-            // iterate in reverse, to match the selected object order.
-            // Also check that the StatusEffect is added to the Database.
-            foreach (var target in targets)
-            {
-                if (target is StatusEffectData data && RemoveLooseSubAssets(data))
-                    AssetDatabase.SaveAssetIfDirty(target);
-            }
-
 #if ADDRESSABLES
             var optionalRegistryDependencyProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.OptionalRegistryDependency)}");
 #endif
@@ -249,7 +240,7 @@ namespace StatusEffectsFramework.Editor
                         moduleContainer.m_ModuleInstance = null;
                     }
 
-                    RemoveLooseSubAssets(data);
+                    RemoveLooseModuleInstances(data);
 
                     EditorUtility.SetDirty(target);
                     AssetDatabase.SaveAssetIfDirty(target);
@@ -279,26 +270,28 @@ namespace StatusEffectsFramework.Editor
         }
 
         /// <summary>
-        /// Removes nested assets that no module references. Returns true if any were removed.
+        /// Removes nested <see cref="ModuleInstance"/> assets that no module references. Other sub assets are
+        /// left alone. Returns the number removed. Also runs whenever the asset is saved, see
+        /// <see cref="ModuleInstanceSaveProcessor"/>.
         /// </summary>
-        private static bool RemoveLooseSubAssets(StatusEffectData data)
+        internal static int RemoveLooseModuleInstances(StatusEffectData data)
         {
             var subAssets = AssetDatabase.LoadAllAssetRepresentationsAtPath(AssetDatabase.GetAssetPath(data));
             if (subAssets.Length == 0)
-                return false;
+                return 0;
 
             var moduleInstances = new HashSet<UnityEngine.Object>();
             foreach (var module in data.Modules)
                 if (module.ModuleInstance != null)
                     moduleInstances.Add(module.ModuleInstance);
 
-            bool removed = false;
+            int removed = 0;
             for (int i = subAssets.Length - 1; i >= 0; i--)
             {
-                var nestedAsset = subAssets[i];
-                // Sub assets whose script can't be loaded come back as null. They can't be removed
-                // here, and the script may only be missing temporarily, such as during a compile error.
-                if (nestedAsset == null)
+                // Sub assets whose script can't be loaded come back as null, so they also fail this check.
+                // They can't be removed here, and the script may only be missing temporarily, such as during
+                // a compile error.
+                if (subAssets[i] is not ModuleInstance nestedAsset)
                     continue;
                 // If there is somehow a loose module we need to clean it up.
                 if (moduleInstances.Contains(nestedAsset))
@@ -306,33 +299,35 @@ namespace StatusEffectsFramework.Editor
 
                 AssetDatabase.RemoveObjectFromAsset(nestedAsset);
                 DestroyImmediate(nestedAsset);
-                removed = true;
+                removed++;
             }
 
-            if (removed)
+            if (removed > 0)
                 EditorUtility.SetDirty(data);
 
             return removed;
         }
 
         /// <summary>
-        /// Removes nested assets whose script can't be loaded. This is a manual action rather than part of
-        /// <see cref="RemoveLooseSubAssets"/> since the script may only be missing temporarily.
+        /// Removes <see cref="ModuleInstance"/> assets no module references and nested assets whose script can't
+        /// be loaded. Missing scripts are only removed here, not in <see cref="RemoveLooseModuleInstances"/>,
+        /// since the script may only be missing temporarily.
         /// </summary>
-        [MenuItem("CONTEXT/StatusEffectData/Remove Missing Script Sub Assets")]
-        private static void RemoveMissingScriptSubAssets(MenuCommand command)
+        [MenuItem("CONTEXT/StatusEffectData/Remove Loose Sub Assets")]
+        private static void RemoveLooseSubAssets(MenuCommand command)
         {
             var path = AssetDatabase.GetAssetPath(command.context);
-            int count = AssetDatabase.RemoveScriptableObjectsWithMissingScript(path);
+            int looseCount = RemoveLooseModuleInstances((StatusEffectData)command.context);
+            int missingCount = AssetDatabase.RemoveScriptableObjectsWithMissingScript(path);
 
-            if (count > 0)
+            if (looseCount + missingCount > 0)
             {
                 AssetDatabase.SaveAssetIfDirty(command.context);
                 // The Project window keeps showing the removed sub assets until the asset is reimported.
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             }
 
-            Debug.Log($"Removed {count} sub asset(s) with missing scripts from {path}.", command.context);
+            Debug.Log($"Removed {looseCount} loose module instance(s) and {missingCount} sub asset(s) with missing scripts from {path}.", command.context);
         }
     }
 }

@@ -26,6 +26,13 @@ namespace StatusEffectsFramework.Entities
         ///    DynamicEffectInfo.AllocateDynamicEffect(myDynamicEffectStruct, valueType, ref info, ref builder);
         ///}
         /// </code>
+        ///
+        /// With Netcode for Entities, dynamic effect elements on predicted ghosts are not replicated or included
+        /// in the prediction backup. When a snapshot rolls an entity back and its status effects differ from the
+        /// previous frame, its dynamic effect elements are rebuilt with a default <c>Value</c> and these default
+        /// struct values, so anything your systems wrote to them is reset. Systems that set <c>Value</c> should
+        /// recompute it every tick rather than only when their inputs change, and state that has to survive a
+        /// rollback belongs in a replicated ghost component.
         /// </remarks>
         public void CreateDynamicEffectInfo(ValueType valueType, ref DynamicEffectInfo info, ref BlobBuilder builder);
     }

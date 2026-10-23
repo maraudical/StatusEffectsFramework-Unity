@@ -10,10 +10,16 @@ namespace StatusEffectsFramework.Entities
             AddComponent<StatusManagerComponent>(entity);
             AddBuffer<StatusEffects>(entity);
 #if NETCODE
-            if (GetComponentInParent<Unity.NetCode.GhostAuthoringComponent>() != null)
+            var ghostAuthoring = GetComponentInParent<Unity.NetCode.GhostAuthoringComponent>();
+            if (ghostAuthoring != null)
             {
                 AddBuffer<InterpolatedStatusEffects>(entity);
                 AddComponent<PredictedStatusEffectsFlag>(entity);
+
+                // Only children need it, the root has PredictedGhost itself.
+                var root = GetEntity(ghostAuthoring, TransformUsageFlags.None);
+                if (root != entity)
+                    AddComponent(entity, new StatusEffectsGhostRoot { Root = root });
             }
 #endif
             AddBuffer<StatusEffectRequests>(entity);
