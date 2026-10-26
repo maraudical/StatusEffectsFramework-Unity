@@ -98,20 +98,20 @@ namespace StatusEffectsFramework
                 if (effect.ValueSource is not ValueSource.DynamicValue)
                     continue;
 
-                // The status name's type decides which kind of value the effect changes.
-                switch (effect.StatusName.Resolve())
+                // The value type decides which kind of value the effect changes.
+                switch (effect.ValueType)
                 {
-                    case StatusNameFloat:
-                        if (effect.DynamicFloatEffect)
-                            dynamicFloatsList.Add(effect.DynamicFloatEffect.ValueEvent(manager, this, effect));
+                    case ValueType.Float:
+                        if (effect.DynamicFloat)
+                            dynamicFloatsList.Add(effect.DynamicFloat.ValueEvent(manager, this, effect));
                         break;
-                    case StatusNameInt:
-                        if (effect.DynamicIntEffect)
-                            dynamicIntsList.Add(effect.DynamicIntEffect.ValueEvent(manager, this, effect));
+                    case ValueType.Int:
+                        if (effect.DynamicInt)
+                            dynamicIntsList.Add(effect.DynamicInt.ValueEvent(manager, this, effect));
                         break;
-                    case StatusNameBool:
-                        if (effect.DynamicBoolEffect)
-                            dynamicBoolsList.Add(effect.DynamicBoolEffect.ValueEvent(manager, this, effect));
+                    case ValueType.Bool:
+                        if (effect.DynamicBool)
+                            dynamicBoolsList.Add(effect.DynamicBool.ValueEvent(manager, this, effect));
                         break;
                 }
             }

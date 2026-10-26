@@ -79,9 +79,11 @@ namespace StatusEffectsFramework.Editor
 
             var optionalTogglesContainer = root.Q("optional-toggles-container");
 
-            var optionalFieldToggles = new ToggleButtonGroup();
-            optionalFieldToggles.allowEmptySelection = true;
-            optionalFieldToggles.isMultipleSelection = true;
+            var optionalFieldToggles = new ToggleButtonGroup
+            {
+                allowEmptySelection = true,
+                isMultipleSelection = true
+            };
             optionalTogglesContainer.Add(optionalFieldToggles);
 
             foreach (var optionalFieldName in new[] { "Icon", "Color", "Name", "Acronym", "Description" })
@@ -313,8 +315,8 @@ namespace StatusEffectsFramework.Editor
         /// be loaded. Missing scripts are only removed here, not in <see cref="RemoveLooseModuleInstances"/>,
         /// since the script may only be missing temporarily.
         /// </summary>
-        [MenuItem("CONTEXT/StatusEffectData/Remove Loose Sub Assets")]
-        private static void RemoveLooseSubAssets(MenuCommand command)
+        [MenuItem("CONTEXT/StatusEffectData/Remove Missing Script Sub Assets")]
+        private static void RemoveMissingScriptSubAssets(MenuCommand command)
         {
             var path = AssetDatabase.GetAssetPath(command.context);
             int looseCount = RemoveLooseModuleInstances((StatusEffectData)command.context);

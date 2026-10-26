@@ -6,14 +6,16 @@ namespace StatusEffectsFramework.Editor
 {
     public class StatusEffectsStyleSheet : ScriptableSingleton<StatusEffectsStyleSheet>
     {
-        public const string ErrorIconClassName = "error-icon";
-        public const string MaskFieldSizeClassName = "mask-field-size";
-        public const string StandardFieldSizeClassName = "standard-field-size";
-        public const string BoxGroupClassName = "box-group";
-        public const string DarkBoxGroupClassName = "dark-box-group";
-        public const string HeaderTextColorClassName = "header-text-color";
-        public const string LineColorClassName = "line-color";
-        public const string BackgroundColorClassName = "background-color";
+        public const string HiddenClassName = "sef-hidden";
+        public const string ErrorIconClassName = "sef-error-icon";
+        public const string MaskFieldSizeClassName = "sef-mask-field-size";
+        public const string StandardFieldSizeClassName = "sef-standard-field-size";
+        public const string BoxGroupClassName = "sef-box-group";
+        public const string DarkBoxGroupClassName = "sef-dark-box-group";
+        public const string HeaderTextColorClassName = "sef-header-text-color";
+        public const string LineColorClassName = "sef-line-color";
+        public const string BackgroundColorClassName = "sef-background-color";
+        public const string EmptyPropertyLabel = " ";
 
         public StyleSheet StyleSheet => m_StyleSheet;
         [SerializeField]

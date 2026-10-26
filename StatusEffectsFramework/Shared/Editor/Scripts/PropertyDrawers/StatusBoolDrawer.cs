@@ -28,14 +28,14 @@ namespace StatusEffectsFramework.Editor
             var foldoutLabel = foldout.Q<Label>(className: Foldout.textUssClassName);
             var unityCheckmark = foldout.Q(className: Foldout.checkmarkUssClassName);
 
-            var headerPropertyObject = new PropertyField(statusNameProperty, " ");
+            var headerPropertyObject = new PropertyField(statusNameProperty, StatusEffectsStyleSheet.EmptyPropertyLabel);
             headerPropertyObject.style.position = Position.Absolute;
             headerPropertyObject.style.left = Length.Percent(30);
             headerPropertyObject.style.right = 0;
             headerPropertyObject.style.top = 0;
             headerPropertyObject.style.bottom = 0;
             headerPropertyObject.SetEnabled(!isPlaying);
-            var headerPropertyValue = new PropertyField(isPlaying ? valueProperty : baseValueProperty, " ");
+            var headerPropertyValue = new PropertyField(isPlaying ? valueProperty : baseValueProperty, StatusEffectsStyleSheet.EmptyPropertyLabel);
             headerPropertyValue.style.position = Position.Absolute;
             headerPropertyValue.style.left = Length.Percent(30);
             headerPropertyValue.style.right = 0;
@@ -73,7 +73,7 @@ namespace StatusEffectsFramework.Editor
             valueLabel.style.paddingLeft = 4;
             valueContainer.Add(valueLabel);
 
-            var value = new PropertyField(isPlaying ? valueProperty : baseValueProperty, " ");
+            var value = new PropertyField(isPlaying ? valueProperty : baseValueProperty, StatusEffectsStyleSheet.EmptyPropertyLabel);
             value.style.flexGrow = 1;
             value.style.flexShrink = 1;
             value.SetEnabled(false);
@@ -260,7 +260,7 @@ namespace StatusEffectsFramework.Editor
             else
             {
                 EditorGUI.BeginDisabledGroup(isPlaying);
-                Rect propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(" "));
+                Rect propertyPosition = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), new GUIContent(StatusEffectsStyleSheet.EmptyPropertyLabel));
                 EditorGUI.PropertyField(propertyPosition, isPlaying ? m_Value : m_BaseValue, GUIContent.none);
                 EditorGUI.EndDisabledGroup();
             }

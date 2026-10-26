@@ -266,6 +266,14 @@ namespace StatusEffectsFramework
                 return x.Order.CompareTo(y.Order);
             });
 
+            // The first entry with a key is the one registered with it, the same as when the ids are assigned below.
+            // Status effect datas are checked against those before any ids are assigned, so leaving one out
+            // doesn't leave a gap in the ids.
+            var keyOwners = new Dictionary<string, Registrant>(StringComparer.Ordinal);
+            foreach (var entry in entries)
+                keyOwners.TryAdd(entry.Item.Key ?? string.Empty, entry.Item);
+            entries.RemoveAll(entry => entry.Type == RegistrantType.StatusEffectData && !EffectsMatchStatusNames((StatusEffectData)entry.Item, keyOwners));
+
             m_KeyToId = new();
             m_StringKeyToId = new(StringComparer.Ordinal);
             m_IdToRegistrant = new();
@@ -332,6 +340,27 @@ namespace StatusEffectsFramework
                 foreach (var item in items)
                     if (item != null)
                         entries.Add(new RegistryEntry(item, type, entries.Count));
+            }
+
+            // An effect whose value type doesn't match its status name would apply the wrong value.
+            static bool EffectsMatchStatusNames(StatusEffectData data, Dictionary<string, Registrant> keyOwners)
+            {
+                foreach (var effect in data.Effects)
+                {
+                    // A key that isn't registered may belong to content that isn't loaded yet, so only keys
+                    // registered to something are checked.
+                    if (effect.StatusName.IsEmpty || !keyOwners.TryGetValue(effect.StatusName.Key, out var owner))
+                        continue;
+
+                    if (owner is StatusName statusName && statusName.ValueType == effect.ValueType)
+                        continue;
+
+                    var registeredAs = owner is StatusName ownerStatusName ? $"a {nameof(StatusName)} with the value type {ownerStatusName.ValueType}" : $"a {owner.GetType().Name}";
+                    Debug.LogError($"{nameof(StatusEffectData)} {data.name} has an effect on the key \"{effect.StatusName.Key}\" with the value type {effect.ValueType}, but the key is registered to {registeredAs}. Skipping registration for this {nameof(StatusEffectData)}.", data);
+                    return false;
+                }
+
+                return true;
             }
         }
 

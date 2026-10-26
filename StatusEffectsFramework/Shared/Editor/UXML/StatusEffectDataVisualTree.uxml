@@ -1,18 +1,18 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Assets/Plugins/StatusEffectsFramework-Unity/StatusEffectsFramework/Shared/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle"/>
+    <Style src="project://database/Assets/StatusEffectsFramework-Unity/StatusEffectsFramework/Shared/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle"/>
     <uie:PropertyField name="optional-registry-dependency"/>
     <uie:PropertyField name="key"/>
-    <ui:VisualElement name="base-fields-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+    <ui:VisualElement name="base-fields-container" class="sef-box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
         <ui:Label text="Base Fields" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px; -unity-text-align: lower-left; overflow: hidden;"/>
-        <ui:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
+        <ui:VisualElement class="sef-line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
         <uie:PropertyField name="group"/>
         <uie:PropertyField name="comparable-name"/>
         <ui:VisualElement name="base-value-error" style="flex-grow: 1;"/>
         <uie:PropertyField name="base-value"/>
     </ui:VisualElement>
-    <ui:VisualElement name="presentation-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+    <ui:VisualElement name="presentation-container" class="sef-box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
         <ui:Label text="Presentation" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px; -unity-text-align: lower-left; overflow: hidden;"/>
-        <ui:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
+        <ui:VisualElement class="sef-line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
         <ui:VisualElement name="optional-toggles-container" style="flex-grow: 1;"/>
         <uie:PropertyField name="icon"/>
         <uie:PropertyField name="color"/>
@@ -20,30 +20,30 @@
         <uie:PropertyField name="acronym"/>
         <uie:PropertyField name="description"/>
     </ui:VisualElement>
-    <ui:VisualElement name="stacking-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+    <ui:VisualElement name="stacking-container" class="sef-box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
         <ui:Label text="Stacking" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px; -unity-text-align: lower-left; overflow: hidden;"/>
-        <ui:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
+        <ui:VisualElement class="sef-line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
         <uie:PropertyField name="allow-effect-stacking"/>
         <uie:PropertyField name="non-stacking-behaviour"/>
         <uie:PropertyField name="max-stacks"/>
     </ui:VisualElement>
-    <ui:VisualElement name="effects-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+    <ui:VisualElement name="effects-container" class="sef-box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
         <ui:Label text="Effects" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px; -unity-text-align: lower-left; overflow: hidden;"/>
-        <ui:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
+        <ui:VisualElement class="sef-line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
         <ui:ListView virtualization-method="DynamicHeight" show-add-remove-footer="true" reorder-mode="Animated" reorderable="true" show-alternating-row-backgrounds="All" show-border="true" show-bound-collection-size="false" name="effects-list" selection-type="Multiple"/>
     </ui:VisualElement>
-    <ui:VisualElement name="conditions-container" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+    <ui:VisualElement name="conditions-container" class="sef-box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
         <ui:VisualElement name="header-container" style="flex-grow: 1; flex-direction: row;">
             <ui:Label text="Conditions" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px; -unity-text-align: lower-left; overflow: hidden;"/>
-            <ui:Label text="(you may need to expand the window)" name="conditions-tip" class="header-text-color" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 10px; -unity-text-align: middle-left; opacity: 0.5; flex-shrink: 1; overflow: hidden;"/>
+            <ui:Label text="(you may need to expand the window)" name="conditions-tip" class="sef-header-text-color" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 10px; -unity-text-align: middle-left; opacity: 0.5; flex-shrink: 1; overflow: hidden;"/>
         </ui:VisualElement>
-        <ui:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
+        <ui:VisualElement class="sef-line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
         <ui:VisualElement name="conditions-warning" style="flex-grow: 1;"/>
         <ui:ListView virtualization-method="DynamicHeight" show-add-remove-footer="true" reorder-mode="Animated" reorderable="true" show-alternating-row-backgrounds="All" show-border="true" show-bound-collection-size="false" name="conditions-list" selection-type="Multiple"/>
     </ui:VisualElement>
-    <ui:VisualElement name="modules-container" enabled="true" class="box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
+    <ui:VisualElement name="modules-container" enabled="true" class="sef-box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">
         <ui:Label text="Modules" style="-unity-font-style: bold; padding-right: 3px; padding-left: 3px; font-size: 13px; -unity-text-align: lower-left; overflow: hidden;"/>
-        <ui:VisualElement class="line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
+        <ui:VisualElement class="sef-line-color" style="border-top-width: 1px; border-right-width: 0; border-bottom-width: 0; border-left-width: 0; margin-top: 5px; margin-bottom: 5px;"/>
         <ui:ListView virtualization-method="DynamicHeight" show-add-remove-footer="true" reorder-mode="Animated" reorderable="true" show-alternating-row-backgrounds="All" show-border="true" show-bound-collection-size="false" name="modules-list" selection-type="Multiple"/>
     </ui:VisualElement>
 </ui:UXML>

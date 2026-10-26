@@ -278,22 +278,20 @@ namespace StatusEffectsFramework.Entities
             if (effect.StatusName.IsEmpty)
                 return false;
 
-            ValueType valueType;
+            // The value type decides which kind of value the effect changes. The registry has already
+            // left out any status effect data whose value types don't match their status names.
+            var valueType = effect.ValueType;
             DynamicEffect dynamicEffect;
-            // The status name's type decides which kind of value the effect changes.
-            switch (effect.StatusName.Resolve())
+            switch (valueType)
             {
-                case StatusNameFloat:
-                    valueType = ValueType.Float;
-                    dynamicEffect = effect.DynamicFloatEffect;
+                case ValueType.Float:
+                    dynamicEffect = effect.DynamicFloat;
                     break;
-                case StatusNameInt:
-                    valueType = ValueType.Int;
-                    dynamicEffect = effect.DynamicIntEffect;
+                case ValueType.Int:
+                    dynamicEffect = effect.DynamicInt;
                     break;
-                case StatusNameBool:
-                    valueType = ValueType.Bool;
-                    dynamicEffect = effect.DynamicBoolEffect;
+                case ValueType.Bool:
+                    dynamicEffect = effect.DynamicBool;
                     break;
                 default:
                     return false;

@@ -145,7 +145,7 @@ namespace StatusEffectsFramework
                         else
                             dynamicFloat.ValueChanged += UpdatePreEvaluationValue;
             // Only update if the status effect actually has any effects that have the same StatusName
-            if (statusEffect.Data.Effects.Any(effect => effect.StatusName.Key == m_StatusName.Key))
+            if (statusEffect.Data.Effects.Any(effect => effect.StatusName.Key == m_StatusName.Key && effect.ValueType is ValueType.Float))
                 UpdatePreEvaluationValue(true);
         }
 
@@ -162,7 +162,8 @@ namespace StatusEffectsFramework
             {
                 foreach (Effect effect in statusEffect.Data.Effects)
                 {
-                    if (effect.StatusName.Key != m_StatusName.Key)
+                    // An effect for another type of value isn't applied even when the key matches. The registry reports it.
+                    if (effect.StatusName.Key != m_StatusName.Key || effect.ValueType is not ValueType.Float)
                         continue;
 
                     switch (effect.ValueSource)

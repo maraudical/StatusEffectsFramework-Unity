@@ -15,7 +15,8 @@ namespace StatusEffectsFramework.Editor
 {
     /// <summary>
     /// Builds only contain a <see cref="RegistrantKey{T}"/>'s key, so before a build the key of each assigned asset is
-    /// baked into it. The editor always reads the key from the asset, so this only changes what builds contain.
+    /// baked into it. An <see cref="Effect"/>'s value type is baked from its status name asset the same way. The editor
+    /// always reads both from the asset, so this only changes what builds contain.
     /// </summary>
     internal static class RegistrantKeyBaker
     {
@@ -64,12 +65,12 @@ namespace StatusEffectsFramework.Editor
             }
 
             if (bakedKeys > 0)
-                Debug.Log($"{nameof(RegistrantKeyBaker)}: Baked {bakedKeys} registrant key(s) into {bakedAssets} asset(s).");
+                Debug.Log($"{nameof(RegistrantKeyBaker)}: Baked {bakedKeys} registrant key(s) and value type(s) into {bakedAssets} asset(s).");
         }
 
         /// <summary>
         /// Bakes the key of the assigned asset into every <see cref="RegistrantKey{T}"/> serialized in
-        /// <paramref name="target"/>. Returns how many keys changed.
+        /// <paramref name="target"/>, and the value type into every <see cref="Effect"/>. Returns how many values changed.
         /// </summary>
         internal static int Bake(Object target)
         {
@@ -85,20 +86,50 @@ namespace StatusEffectsFramework.Editor
                     || property.objectReferenceValue is not Registrant registrant)
                     continue;
 
+                // The path of the RegistrantKey field, without the trailing ".m_Asset".
                 var assetPath = property.propertyPath;
-                var keyPath = assetPath.Substring(0, assetPath.Length - RegistrantKeyDrawer.AssetPropertyName.Length) + RegistrantKeyDrawer.KeyPropertyName;
-                var keyProperty = serializedObject.FindProperty(keyPath);
-                if (keyProperty == null || keyProperty.propertyType != SerializedPropertyType.String || keyProperty.stringValue == registrant.Key)
-                    continue;
+                var fieldPath = assetPath.Substring(0, assetPath.Length - RegistrantKeyDrawer.AssetPropertyName.Length - 1);
 
-                keyProperty.stringValue = registrant.Key;
-                baked++;
+                var keyProperty = serializedObject.FindProperty($"{fieldPath}.{RegistrantKeyDrawer.KeyPropertyName}");
+                if (keyProperty != null && keyProperty.propertyType == SerializedPropertyType.String && keyProperty.stringValue != registrant.Key)
+                {
+                    keyProperty.stringValue = registrant.Key;
+                    baked++;
+                }
+
+                if (registrant is StatusName statusName
+                    && TryFindEffectValueType(serializedObject, fieldPath, out var valueTypeProperty)
+                    && valueTypeProperty.enumValueIndex != (int)statusName.ValueType)
+                {
+                    valueTypeProperty.enumValueIndex = (int)statusName.ValueType;
+                    baked++;
+                }
             }
 
             if (baked > 0)
                 serializedObject.ApplyModifiedPropertiesWithoutUndo();
 
             return baked;
+        }
+
+        /// <summary>
+        /// Finds the value type of the <see cref="Effect"/> that holds the status name at <paramref name="fieldPath"/>,
+        /// if an effect holds it.
+        /// </summary>
+        private static bool TryFindEffectValueType(SerializedObject serializedObject, string fieldPath, out SerializedProperty valueTypeProperty)
+        {
+            valueTypeProperty = null;
+
+            int parentEnd = fieldPath.LastIndexOf('.');
+            if (parentEnd < 0)
+                return false;
+
+            var parent = serializedObject.FindProperty(fieldPath.Substring(0, parentEnd));
+            if (parent == null || parent.type != nameof(Effect))
+                return false;
+
+            valueTypeProperty = parent.FindPropertyRelative($"m_{nameof(Effect.ValueType)}");
+            return valueTypeProperty != null && valueTypeProperty.propertyType == SerializedPropertyType.Enum;
         }
 
         /// <summary>

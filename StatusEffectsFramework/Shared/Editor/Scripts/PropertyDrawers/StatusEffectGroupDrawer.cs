@@ -11,6 +11,16 @@ namespace StatusEffectsFramework.Editor
     [CustomPropertyDrawer(typeof(StatusEffectGroup))]
     internal class StatusEffectGroupDrawer : PropertyDrawer
     {
+        /// <summary>
+        /// Main USS class name of the StatusEffectGroup.
+        /// </summary>
+        public const string ussClassName = "sef-status-effect-group";
+
+        /// <summary>
+        /// USS class name of the StatusEffectGroup's button.
+        /// </summary>
+        public const string buttonUssClassName = ussClassName + "__button";
+
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
             var valueProperty = property.FindPropertyRelative(nameof(StatusEffectGroup.Value));
@@ -18,29 +28,27 @@ namespace StatusEffectsFramework.Editor
             Dictionary<int, string> choices = StatusSettings.Instance.Groups.Select((g, index) => new KeyValuePair<int, string>(index, g))
                                                                                                .Where(kvp => !string.IsNullOrEmpty(kvp.Value))
                                                                                                .ToDictionary(kvp => 1 << kvp.Key, kvp => kvp.Value);
-            
 
-            var maskField = new MaskField() { name = $"unity-input-{property.name}" };
-            maskField.label = property.displayName;
-            maskField.tooltip = this.GetTooltip();
-            maskField.choices = choices.Values.ToList();
-            maskField.choicesMasks = choices.Keys.ToList();
+            var maskField = new MaskField
+            {
+                name = $"{ussClassName}-{property.name}",
+                label = property.displayName,
+                tooltip = this.GetTooltip(),
+                choices = choices.Values.ToList(),
+                choicesMasks = choices.Keys.ToList()
+            };
+            maskField.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
+            maskField.AddToClassList(ussClassName);
             maskField.AddToClassList(BaseField<Enum>.alignedFieldUssClassName);
             maskField.BindProperty(valueProperty);
-            maskField.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
-            maskField.AddToClassList(StatusEffectsStyleSheet.MaskFieldSizeClassName);
 
-            var settingsButton = new Button();
-            settingsButton.style.marginTop = 0;
-            settingsButton.style.marginBottom = 0;
-            settingsButton.style.marginRight = 0;
-            settingsButton.style.marginLeft = 1;
-            settingsButton.style.paddingLeft = 0;
-            settingsButton.style.paddingRight = 0;
-            settingsButton.style.paddingTop = 0;
-            settingsButton.style.paddingBottom = 0;
-            settingsButton.focusable = false;
-            settingsButton.iconImage = new Background { texture = EditorGUIUtility.IconContent("_Popup").image as Texture2D };
+            var settingsButton = new Button
+            {
+                name = buttonUssClassName,
+                focusable = false,
+                iconImage = new Background { texture = EditorGUIUtility.IconContent("_Popup").image as Texture2D }
+            };
+            settingsButton.AddToClassList(buttonUssClassName);
             settingsButton.clicked += Clicked;
             maskField.Add(settingsButton);
 

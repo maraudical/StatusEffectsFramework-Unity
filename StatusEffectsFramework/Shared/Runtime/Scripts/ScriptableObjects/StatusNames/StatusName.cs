@@ -4,5 +4,11 @@ namespace StatusEffectsFramework
     /// Identifies a status that <see cref="Effect"/>s change. A status variable is changed by the effects whose
     /// <see cref="StatusName"/> has the same <see cref="Registrant.Key"/>. The subclasses decide the type of the value.
     /// </summary>
-    public abstract class StatusName : Registrant { }
+    public abstract class StatusName : Registrant
+    {
+        /// <summary>
+        /// The type of value the status holds.
+        /// </summary>
+        public abstract ValueType ValueType { get; }
+    }
 }

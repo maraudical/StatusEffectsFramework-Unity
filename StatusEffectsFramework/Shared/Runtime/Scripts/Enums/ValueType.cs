@@ -1,4 +1,4 @@
-namespace StatusEffectsFramework.Entities
+namespace StatusEffectsFramework
 {
     public enum ValueType : byte
     {
