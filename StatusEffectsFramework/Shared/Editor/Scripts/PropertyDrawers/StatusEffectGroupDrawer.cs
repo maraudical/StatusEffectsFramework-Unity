@@ -31,7 +31,7 @@ namespace StatusEffectsFramework.Editor
 
             var maskField = new MaskField
             {
-                name = $"{ussClassName}-{property.name}",
+                name = ussClassName,
                 label = property.displayName,
                 tooltip = this.GetTooltip(),
                 choices = choices.Values.ToList(),
@@ -39,6 +39,7 @@ namespace StatusEffectsFramework.Editor
             };
             maskField.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
             maskField.AddToClassList(ussClassName);
+            maskField.AddToClassList(StatusEffectsStyleSheet.MaskFieldSizeClassName);
             maskField.AddToClassList(BaseField<Enum>.alignedFieldUssClassName);
             maskField.BindProperty(valueProperty);
 
@@ -52,10 +53,11 @@ namespace StatusEffectsFramework.Editor
             settingsButton.clicked += Clicked;
             maskField.Add(settingsButton);
 
-            var maskLabel = maskField.Q<Label>();
+            var maskLabel = maskField.Q<Label>(className: BaseField<int>.labelUssClassName);
 
             maskField.RegisterCallback<GeometryChangedEvent>(OnGeometryChanged);
 
+            // Packages such as EditorAttributes color the label inline after a delay but skip the button's icon.
             settingsButton.schedule.Execute(() =>
             {
                 var color = maskLabel.style.color;
@@ -64,7 +66,7 @@ namespace StatusEffectsFramework.Editor
                 {
                     settingsButton.Q<Image>(className: Button.imageUSSClassName).tintColor = color.value;
                 }
-            }).StartingIn(50);
+            }).StartingIn(StatusEffectsStyleSheet.ExternalColorDelay);
 
             return maskField;
 
@@ -78,10 +80,12 @@ namespace StatusEffectsFramework.Editor
                 maskField.UnregisterCallback<GeometryChangedEvent>(OnGeometryChanged);
 
                 if (maskField.parent is PropertyField propertyField)
+                {
                     if (propertyField.label == string.Empty)
                         maskLabel.RemoveFromHierarchy();
                     else if (propertyField.label != null)
                         maskField.label = propertyField.label;
+                }
             }
         }
 

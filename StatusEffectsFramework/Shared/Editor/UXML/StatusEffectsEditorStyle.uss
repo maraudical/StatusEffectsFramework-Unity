@@ -67,15 +67,11 @@
     background-color: var(--unity-colors-headerbar-background);
 }
 
-.sef-status-effect-group {
-    height: 21px;
-}
-
 .sef-status-effect-group__button {
     margin-top: 0;
     margin-bottom: 0;
     margin-right: 0;
-    margin-left: 1;
+    margin-left: 1px;
     padding-left: 0;
     padding-right: 0;
     padding-top: 0;
@@ -105,13 +101,13 @@
 
 .sef-effect__value-source {
     position: absolute;
-    margin-left: -3;
-    min-width: 83;
+    margin-left: -3px;
+    min-width: 83px;
 }
 
 /* Keeps the label's text clear of the value type field at the right end of the label. */
 .sef-effect__status-name-label--value-type {
-    padding-right: 52px;
+    padding-right: 45px;
 }
 
 .sef-effect__value-type {
@@ -119,7 +115,7 @@
     top: 0;
     bottom: 0;
     right: 0;
-    width: 50px;
+    padding-bottom: 0;
     opacity: 0.65;
 }
 
@@ -131,44 +127,224 @@
 .sef-effect__value-type .unity-base-field__input {
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
+    min-width: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    justify-content: flex-end;
+}
+
+.sef-effect__value-type .unity-base-popup-field__text {
+    flex-grow: 0;
 }
 
 .sef-effect__value-type .unity-base-field__input:hover {
     background-color: var(--unity-colors-button-background-hover);
 }
 
+.sef-status-numeric__header-status-name,
+.sef-status-numeric__header-value,
+.sef-status-bool__header-status-name,
+.sef-status-bool__header-value {
+    position: absolute;
+    left: 30%;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}
+
+.sef-status-numeric__error-icon,
+.sef-status-bool__error-icon {
+    position: absolute;
+    left: -12px;
+    top: 4px;
+    width: 13px;
+    height: 13px;
+}
+
+.sef-status-numeric__value-container,
+.sef-status-bool__value-container {
+    flex-direction: row;
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.sef-status-numeric__value-label,
+.sef-status-bool__value-label {
+    position: absolute;
+    padding-top: 1px;
+    padding-left: 4px;
+}
+
+.sef-status-numeric__value,
+.sef-status-bool__value {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+/* Leaves room on the left of the value for the sign protected toggle. */
+.sef-status-numeric__value #unity-text-input {
+    margin-right: 18px;
+    translate: 18px 0;
+}
+
+.sef-status-numeric__sign-protected {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-direction: column-reverse;
+}
+
+.sef-status-numeric__sign-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    -unity-text-align: middle-right;
+}
+
+.sef-registrant-key__key-field {
+    flex-grow: 1;
+    flex-shrink: 1;
+    margin: 0;
+}
+
+/* The object field draws the box around the key and the picker, so the key's own box is hidden. */
+.sef-registrant-key__key-field .unity-text-field__input {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.sef-condition {
+    flex-direction: row;
+    margin-right: -3px;
+}
+
+.sef-condition__label {
+    padding-left: 2px;
+    padding-right: 2px;
+    -unity-text-align: middle-center;
+}
+
+.sef-condition__if-label {
+    padding-left: 0;
+    padding-right: 1px;
+}
+
+.sef-condition__dash-label {
+    opacity: 0.5;
+}
+
+.sef-condition__searchable-configurable,
+.sef-condition__action-configurable {
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin-left: -2px;
+    margin-right: 3px;
+}
+
+.sef-condition__searchable-data,
+.sef-condition__searchable-comparable-name,
+.sef-condition__searchable-group,
+.sef-condition__action-data,
+.sef-condition__action-comparable-name,
+.sef-condition__action-group {
+    min-width: 92px;
+    flex-grow: 1;
+    margin-left: -2px;
+    margin-right: 3px;
+}
+
+.sef-condition__stacks,
+.sef-condition__duration,
+.sef-condition__timing {
+    flex-shrink: 0;
+    margin-left: -2px;
+    margin-right: 3px;
+}
+
+.sef-condition__existence,
+.sef-condition__configurability,
+.sef-condition__scale-option,
+.sef-condition__remove-option {
+    margin-left: 1px;
+    margin-right: 1px;
+}
+
 .sef-status-effect {
     flex-grow: 1;
     flex-shrink: 1;
     flex-direction: row;
-    height: 21px;
+    align-items: center;
+    padding-bottom: 1px;
+    padding-top: 1px;
 }
 
 .sef-status-effect__data {
     flex-grow: 1;
     flex-shrink: 1;
-    min-width: 42;
+    min-width: 42px;
 }
 
 .sef-status-effect__duration {
     flex-shrink: 0;
-    width: 42;
+    width: 42px;
 }
 
 .sef-status-effect__duration-label {
-    min-width: 67;
+    min-width: 67px;
     padding-right: 0;
     -unity-text-align: middle-right;
 }
 
 .sef-status-effect__stacks {
     flex-shrink: 0;
-    width: 42;
-    margin-right: 5;
+    width: 42px;
+    margin-right: 5px;
 }
 
 .sef-status-effect__stacks-label {
-    min-width: 50;
+    min-width: 50px;
     padding-right: 0;
     -unity-text-align: middle-right;
+}
+
+.sef-status-effect__remove {
+    background-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+    border-left-color: rgba(0, 0, 0, 0);
+    opacity: 0.65
+    flex-shrink: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    margin-right: 3px;
+    padding: 2px;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    -unity-text-align: middle-center;
+}
+
+/* Only the background shows on hover and press; the border stays hidden. */
+.sef-status-effect__remove:hover:enabled {
+    background-color: var(--unity-colors-button-background-hover);
+}
+
+.sef-status-effect__remove:active:enabled {
+    background-color: var(--unity-colors-button-background-pressed);
+}
+
+.sef-status-effect__remove-icon {
+    flex-shrink: 0;
+    width: 10px;
+    height: 10px;
+    -unity-background-scale-mode: scale-to-fit;
+    -unity-background-image-tint-color: var(--unity-colors-button-text);
 }

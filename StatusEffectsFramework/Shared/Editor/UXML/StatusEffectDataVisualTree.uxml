@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Assets/StatusEffectsFramework-Unity/StatusEffectsFramework/Shared/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle"/>
+    <Style src="StatusEffectsEditorStyle.uss"/>
     <uie:PropertyField name="optional-registry-dependency"/>
     <uie:PropertyField name="key"/>
     <ui:VisualElement name="base-fields-container" class="sef-box-group" style="flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; margin-top: 10px;">

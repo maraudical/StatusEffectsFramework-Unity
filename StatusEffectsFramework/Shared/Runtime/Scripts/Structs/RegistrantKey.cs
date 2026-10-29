@@ -66,7 +66,7 @@ namespace StatusEffectsFramework
         /// <summary>
         /// The assigned asset, or null when the key was typed. Only exists in the editor.
         /// </summary>
-        internal T EditorAsset => m_Asset;
+        internal T Asset => m_Asset;
 #endif
 
         /// <summary>

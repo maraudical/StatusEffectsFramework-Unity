@@ -233,6 +233,22 @@ namespace StatusEffectsFramework.FishNet
 
             return -1;
         }
+
+        // How long ago a duration effect started counting down, measured on its own timer's clock so a timer with
+        // a custom clock still syncs correctly. Other effects have no countdown.
+        private static double GetElapsedTime(StatusEffect statusEffect)
+        {
+            return statusEffect.Timer is DurationStatusTimer durationTimer && durationTimer.HasStarted
+                ? Math.Max(0d, durationTimer.CurrentTime - durationTimer.StartTime)
+                : 0d;
+        }
+
+        // Clients count down on the network clock the server's start time is measured on, so the time left doesn't
+        // drift with time scale or frame hitches. Infinite effects need no timer.
+        private StatusTimer CreateMirroredTimer(StatusEffectTiming timing, double serverTimeAdded)
+        {
+            return timing is StatusEffectTiming.Infinite ? null : new NetworkMirroredStatusTimer(timing, serverTimeAdded, TimeManager);
+        }
         #endregion
 
         #region Server
@@ -264,8 +280,8 @@ namespace StatusEffectsFramework.FishNet
             if (IndexOfInstance(statusEffect.Id) >= 0)
                 return;
 
-            // The elapsed time is measured on this machine, but clients need the time on the network clock.
-            double serverTimeAdded = NetworkTime - (Time.timeAsDouble - statusEffect.TimeAdded);
+            // The elapsed time is measured on the effect's own timer, but clients need the time on the network clock.
+            double serverTimeAdded = NetworkTime - GetElapsedTime(statusEffect);
 
             if (!m_Registry.TryGetId(statusEffect.Data, out var dataId))
             {
@@ -331,9 +347,7 @@ namespace StatusEffectsFramework.FishNet
                 return;
             }
 
-            // Work out when the status effect was added in local time.
-            double elapsedTime = Math.Max(0d, NetworkTime - networkEffect.ServerTimeAdded);
-            StatusManager.ForceAddStatusEffect(networkEffect.InstanceId, statusEffectData, networkEffect.Timing, Time.timeAsDouble - elapsedTime, networkEffect.Duration, networkEffect.Stacks);
+            StatusManager.ForceAddStatusEffect(networkEffect.InstanceId, statusEffectData, CreateMirroredTimer(networkEffect.Timing, networkEffect.ServerTimeAdded), networkEffect.Duration, networkEffect.Stacks);
         }
 
         private void UpdateForClient(NetworkStatusEffect networkEffect)

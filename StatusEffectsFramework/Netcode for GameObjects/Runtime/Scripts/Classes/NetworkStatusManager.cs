@@ -14,9 +14,8 @@ namespace StatusEffectsFramework.Netcode
     /// logic and clients mirror the resulting status effects.
     /// </summary>
     /// <remarks>
-    /// While spawned, status effects are timed on the server tick (<see cref="NetworkTime.FixedTime"/>) instead
-    /// of <see cref="Time.timeAsDouble"/>, so they count down the same on every machine and ignore
-    /// <see cref="Time.timeScale"/>. Use <see cref="StatusManager.CurrentTime"/> with <see cref="StatusEffect.TimeRemaining"/>.
+    /// Status effects are timed on each machine's <see cref="Time.timeAsDouble"/>. The server sends the tick a status
+    /// effect was added on, and clients convert it back to local time, so the time left matches on every machine.
     /// <para/>
     /// Status effects are synced by the ids assigned in the <see cref="StatusRegistry"/>, so the server and
     /// clients must have the same registered assets. A client logs an error when its registry differs.
@@ -68,10 +67,6 @@ namespace StatusEffectsFramework.Netcode
                 return;
             }
 
-            // Every machine times status effects on the server tick so they match.
-            var networkManager = NetworkManager;
-            m_StatusManager.Clock = () => networkManager.ServerTime.FixedTime;
-
             if (IsServer)
             {
                 // Status effects can only exist while spawned. Any that were added to the Status Manager directly
@@ -100,7 +95,6 @@ namespace StatusEffectsFramework.Netcode
             // Status effects can only exist while spawned. The server removes them before unsubscribing so the
             // network list is emptied too, otherwise pooled and in-scene objects would keep it when respawned.
             m_StatusManager.RemoveAllStatusEffects();
-            m_StatusManager.Clock = null;
 
             m_StatusManager.StatusEffectAction -= OnStatusEffectForServer;
             m_NetworkEffects.OnListChanged -= OnListChangedForClient;
@@ -210,6 +204,22 @@ namespace StatusEffectsFramework.Netcode
 
             return -1;
         }
+
+        // How long ago a duration effect started counting down, measured on its own timer's clock so a timer with
+        // a custom clock still syncs correctly. Other effects have no countdown.
+        private static double GetElapsedTime(StatusEffect statusEffect)
+        {
+            return statusEffect.Timer is DurationStatusTimer durationTimer && durationTimer.HasStarted
+                ? Math.Max(0d, durationTimer.CurrentTime - durationTimer.StartTime)
+                : 0d;
+        }
+
+        // Clients count down on the server time the start time is measured on, so the time left doesn't drift
+        // with time scale or frame hitches. Infinite effects need no timer.
+        private StatusTimer CreateMirroredTimer(StatusEffectTiming timing, double serverTimeAdded)
+        {
+            return timing is StatusEffectTiming.Infinite ? null : new NetworkMirroredStatusTimer(timing, serverTimeAdded, NetworkManager);
+        }
         #endregion
 
         #region Server
@@ -244,8 +254,9 @@ namespace StatusEffectsFramework.Netcode
                 return;
             }
 
-            // The time added is on the tick clock, so it converts back to a whole tick.
-            int tickAdded = (int)Math.Round(statusEffect.TimeAdded * NetworkManager.NetworkConfig.TickRate);
+            // The elapsed time is measured on the effect's own timer, but clients need the tick it was added on.
+            double serverTimeAdded = NetworkManager.ServerTime.Time - GetElapsedTime(statusEffect);
+            int tickAdded = (int)Math.Round(serverTimeAdded * NetworkManager.NetworkConfig.TickRate);
             m_NetworkEffects.Add(new NetworkStatusEffect(dataId, statusEffect.Timing, statusEffect.Duration, statusEffect.Stacks, statusEffect.Id, tickAdded));
             // Event timed status effects count down when their event is invoked.
             statusEffect.DurationUpdate += (duration) => OnDurationUpdate(statusEffect.Id, duration);
@@ -318,8 +329,8 @@ namespace StatusEffectsFramework.Netcode
                 return;
             }
 
-            double timeAdded = new NetworkTime(NetworkManager.NetworkConfig.TickRate, networkEffect.TickAdded).FixedTime;
-            m_StatusManager.ForceAddStatusEffect(networkEffect.InstanceId, statusEffectData, networkEffect.Timing, timeAdded, networkEffect.Duration, networkEffect.Stacks);
+            double serverTimeAdded = new NetworkTime(NetworkManager.NetworkConfig.TickRate, networkEffect.TickAdded).FixedTime;
+            m_StatusManager.ForceAddStatusEffect(networkEffect.InstanceId, statusEffectData, CreateMirroredTimer(networkEffect.Timing, serverTimeAdded), networkEffect.Duration, networkEffect.Stacks);
         }
 
         private void UpdateForClient(NetworkStatusEffect networkEffect)

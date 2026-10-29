@@ -1,5 +1,5 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Assets/StatusEffectsFramework-Unity/StatusEffectsFramework/Shared/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle"/>
+    <Style src="StatusEffectsEditorStyle.uss"/>
     <ui:Foldout value="false" name="foldout"/>
     <ui:VisualElement name="foldout-row" style="flex-direction: row;">
         <ui:VisualElement name="info" style="flex-grow: 1; flex-direction: row; justify-content: space-between;">

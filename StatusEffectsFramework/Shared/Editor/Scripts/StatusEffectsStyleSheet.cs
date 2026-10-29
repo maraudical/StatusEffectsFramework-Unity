@@ -17,6 +17,12 @@ namespace StatusEffectsFramework.Editor
         public const string BackgroundColorClassName = "sef-background-color";
         public const string EmptyPropertyLabel = " ";
 
+        /// <summary>
+        /// Milliseconds to wait before reading or overriding inline colors set by other packages, such as
+        /// EditorAttributes' GUIColor, which applies its colors after this same delay.
+        /// </summary>
+        public const int ExternalColorDelay = 50;
+
         public StyleSheet StyleSheet => m_StyleSheet;
         [SerializeField]
         private StyleSheet m_StyleSheet;

@@ -24,7 +24,7 @@ namespace StatusEffectsFramework
             get
             {
 #if UNITY_EDITOR
-                var statusName = m_StatusName.EditorAsset;
+                var statusName = m_StatusName.Asset;
                 if (statusName)
                     return statusName.ValueType;
 #endif
@@ -43,7 +43,6 @@ namespace StatusEffectsFramework
 
         [SerializeField]
         private RegistrantKey<StatusName> m_StatusName;
-        [Tooltip("The type of value the status name holds. It follows the assigned status name, so it only needs to be chosen when the key is typed.")]
         [SerializeField]
         private ValueType m_ValueType;
         [Tooltip("How the value is combined with the other effects on the same status. See the documentation for more information.")]
@@ -52,7 +51,7 @@ namespace StatusEffectsFramework
         [Tooltip("Where the value comes from: a value entered here, the Base Value of the status effect, or a Dynamic Effect that sets it at runtime.")]
         [SerializeField]
         private ValueSource m_ValueSource;
-        [Tooltip("Only used by the Minimum, Maximum and Overwrite modifiers. When several effects use the same one on a status, the highest priority wins.")]
+        [Tooltip("The effect with the highest priority applies its value instead of others in the same value modifier.")]
         [SerializeField]
         [Min(0)] private int m_Priority;
         [SerializeField]
@@ -61,11 +60,11 @@ namespace StatusEffectsFramework
         private int m_IntValue;
         [SerializeField]
         private bool m_BoolValue;
-        [Tooltip("Sets the value at runtime. Only used when the Value Source is Dynamic Value.")]
+        [Tooltip("Sets the value dynamically while playing.")]
         [SerializeField] private DynamicEffectFloat m_DynamicFloat;
-        [Tooltip("Sets the value at runtime. Only used when the Value Source is Dynamic Value.")]
+        [Tooltip("Sets the value dynamically while playing.")]
         [SerializeField] private DynamicEffectInt m_DynamicInt;
-        [Tooltip("Sets the value at runtime. Only used when the Value Source is Dynamic Value.")]
+        [Tooltip("Sets the value dynamically while playing.")]
         [SerializeField] private DynamicEffectBool m_DynamicBool;
     }
 }

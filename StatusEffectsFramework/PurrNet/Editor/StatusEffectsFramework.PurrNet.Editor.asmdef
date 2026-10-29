@@ -17,6 +17,12 @@
     "defineConstraints": [
         "PURRNET"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "dev.purrnet.purrnet",
+            "expression": "",
+            "define": "PURRNET"
+        }
+    ],
     "noEngineReferences": false
 }

@@ -17,20 +17,25 @@ namespace StatusEffectsFramework.Editor
     [CustomPropertyDrawer(typeof(RegistrantKey<>))]
     internal class RegistrantKeyDrawer : PropertyDrawer
     {
-        internal const string KeyPropertyName = "m_Key";
-        internal const string AssetPropertyName = "m_Asset";
+        internal const string KeyPropertyName = "m_" + nameof(RegistrantKey<Registrant>.Key);
+        internal const string AssetPropertyName = "m_" + nameof(RegistrantKey<Registrant>.Asset);
+
+        /// <summary>
+        /// Main USS class name of the RegistrantKey.
+        /// </summary>
+        public const string ussClassName = "sef-registrant-key";
+
+        /// <summary>
+        /// USS class name of the RegistrantKey's object field.
+        /// </summary>
+        public const string objectFieldUssClassName = ussClassName + "__object-field";
+
+        /// <summary>
+        /// USS class name of the RegistrantKey's key field.
+        /// </summary>
+        public const string keyFieldUssClassName = ussClassName + "__key-field";
 
         private const string k_Placeholder = "Unique key";
-        // Same size as the object field's own picker.
-        private const float k_PickerWidth = 19;
-
-        private static readonly int s_PickerHint = "RegistrantKeyPicker".GetHashCode();
-        private static readonly MethodInfo s_ShowObjectPicker = typeof(EditorGUIUtility).GetMethod(nameof(EditorGUIUtility.ShowObjectPicker));
-        private static GUIStyle s_KeyFieldStyle;
-        private static GUIStyle s_PickerStyle;
-
-        private static GUIStyle KeyFieldStyle => s_KeyFieldStyle ??= new GUIStyle(EditorStyles.textField) { padding = { right = EditorStyles.textField.padding.right + (int)k_PickerWidth } };
-        private static GUIStyle PickerStyle => s_PickerStyle ??= GUI.skin.FindStyle("ObjectFieldButton") ?? EditorStyles.miniButton;
 
         /// <summary>
         /// Whether a <see cref="RegistrantKey{T}"/> property has neither an asset nor a key.
@@ -47,25 +52,32 @@ namespace StatusEffectsFramework.Editor
             var assetProperty = property.FindPropertyRelative(AssetPropertyName);
             var registrantType = GetRegistrantType(fieldInfo.FieldType);
 
-            var root = new VisualElement();
-            root.tooltip = this.GetTooltip();
+            var root = new VisualElement
+            {
+                name = ussClassName,
+                tooltip = this.GetTooltip()
+            };
+            root.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
+            root.AddToClassList(ussClassName);
 
-            var objectField = new ObjectField(preferredLabel);
-            objectField.objectType = registrantType;
-            objectField.allowSceneObjects = false;
+            var objectField = new ObjectField(preferredLabel)
+            {
+                name = objectFieldUssClassName,
+                objectType = registrantType,
+                allowSceneObjects = false
+            };
+            objectField.AddToClassList(objectFieldUssClassName);
             objectField.AddToClassList(BaseField<Object>.alignedFieldUssClassName);
             objectField.BindProperty(assetProperty);
             root.Add(objectField);
 
-            var keyField = new TextField();
-            keyField.isDelayed = true;
+            var keyField = new TextField
+            {
+                name = keyFieldUssClassName,
+                isDelayed = true
+            };
             keyField.textEdition.placeholder = k_Placeholder;
-            keyField.style.flexGrow = 1;
-            keyField.style.flexShrink = 1;
-            keyField.style.marginLeft = 0;
-            keyField.style.marginRight = 0;
-            keyField.style.marginTop = 0;
-            keyField.style.marginBottom = 0;
+            keyField.AddToClassList(keyFieldUssClassName);
             keyField.BindProperty(keyProperty);
 
             // Without an asset the object field's display is swapped for the key's text field, so it reads
@@ -75,15 +87,12 @@ namespace StatusEffectsFramework.Editor
             var display = objectField.Q(className: ObjectField.objectUssClassName);
             input.Insert(0, keyField);
 
+            // Packages such as EditorAttributes tint every field input's background inline after a delay, which
+            // would stack the key's tint on top of the object field's and darken it. Inline styles win over the
+            // style sheet, so it is cleared inline again afterwards.
             var keyInput = keyField.Q(className: TextField.inputUssClassName);
-            if (keyInput != null)
-            {
-                keyInput.style.backgroundColor = Color.clear;
-                keyInput.style.borderLeftWidth = 0;
-                keyInput.style.borderRightWidth = 0;
-                keyInput.style.borderTopWidth = 0;
-                keyInput.style.borderBottomWidth = 0;
-            }
+            keyInput?.schedule.Execute(() => keyInput.style.backgroundColor = StyleKeyword.Null)
+                             .StartingIn(StatusEffectsStyleSheet.ExternalColorDelay);
 
             keyField.RegisterValueChangedCallback(changeEvent =>
             {
@@ -125,10 +134,21 @@ namespace StatusEffectsFramework.Editor
             {
                 // Mixed assets keep the object field so the mixed value shows.
                 bool hasAsset = assetProperty.hasMultipleDifferentValues || assetProperty.objectReferenceValue != null;
-                display.style.display = hasAsset ? DisplayStyle.Flex : DisplayStyle.None;
-                keyField.style.display = hasAsset ? DisplayStyle.None : DisplayStyle.Flex;
+                display.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName, !hasAsset);
+                keyField.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName, hasAsset);
             }
         }
+
+        // Same size as the object field's own picker.
+        private const float k_PickerWidth = 19;
+
+        private static readonly int s_PickerHint = "RegistrantKeyPicker".GetHashCode();
+        private static readonly MethodInfo s_ShowObjectPicker = typeof(EditorGUIUtility).GetMethod(nameof(EditorGUIUtility.ShowObjectPicker));
+        private static GUIStyle s_KeyFieldStyle;
+        private static GUIStyle s_PickerStyle;
+
+        private static GUIStyle KeyFieldStyle => s_KeyFieldStyle ??= new GUIStyle(EditorStyles.textField) { padding = { right = EditorStyles.textField.padding.right + (int)k_PickerWidth } };
+        private static GUIStyle PickerStyle => s_PickerStyle ??= GUI.skin.FindStyle("ObjectFieldButton") ?? EditorStyles.miniButton;
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {

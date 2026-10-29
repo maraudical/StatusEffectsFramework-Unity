@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.UIElements;
@@ -39,13 +41,25 @@ namespace StatusEffectsFramework.Editor
         /// </summary>
         public const string stacksLabelUssClassName = ussClassName + "__stacks-label";
 
+        /// <summary>
+        /// USS class name of the Status Effect's remove button.
+        /// </summary>
+        public const string removeUssClassName = ussClassName + "__remove";
+
+        /// <summary>
+        /// USS class name of the icon inside the Status Effect's remove button.
+        /// </summary>
+        public const string removeIconUssClassName = ussClassName + "__remove-icon";
+
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
             var dataProperty = property.FindPropertyRelative(nameof(StatusEffect.Data));
-            var timingProperty = property.FindPropertyRelative(nameof(StatusEffect.Timing));
             var durationProperty = property.FindPropertyRelative($"m_{nameof(StatusEffect.Duration)}");
-            var timeAddedProperty = property.FindPropertyRelative($"m_{nameof(StatusEffect.TimeAdded)}");
             var stacksProperty = property.FindPropertyRelative($"m_{nameof(StatusEffect.Stacks)}");
+            // Timing comes from the timer, which isn't a serialized value, so it's read from the instance.
+            // Different targets can't be shown together.
+            bool multipleTargets = property.serializedObject.isEditingMultipleObjects;
+            var statusEffect = multipleTargets ? null : (StatusEffect)durationProperty.GetParent(property.serializedObject.targetObject);
 
             var root = new VisualElement
             {
@@ -66,7 +80,7 @@ namespace StatusEffectsFramework.Editor
             var durationLabel = new Label
             {
                 name = durationLabelUssClassName,
-                text = $"{(timingProperty.hasMultipleDifferentValues ? "—" : timingProperty.enumDisplayNames[timingProperty.enumValueIndex])}:"
+                text = $"{(statusEffect == null ? "—" : ObjectNames.NicifyVariableName(statusEffect.Timing.ToString()))}:"
             };
             durationLabel.AddToClassList(durationLabelUssClassName);
             root.Add(durationLabel);
@@ -74,23 +88,15 @@ namespace StatusEffectsFramework.Editor
             VisualElement duration = default;
             bool hasDifferentDurationValues = false;
 
-            if (timingProperty.hasMultipleDifferentValues)
+            if (statusEffect == null)
                 hasDifferentDurationValues = true;
             else
-                switch (timingProperty.enumValueIndex)
+                switch (statusEffect.Timing)
                 {
-                    case (int)StatusEffectTiming.Duration:
-                        if (timeAddedProperty.hasMultipleDifferentValues || durationProperty.hasMultipleDifferentValues)
-                        {
-                            hasDifferentDurationValues = true;
-                            break;
-                        }
-
+                    case StatusEffectTiming.Duration:
                         var durationFloat = new FloatField(string.Empty);
                         duration = durationFloat;
-                        StatusEffect statusEffect = (StatusEffect)durationProperty.GetParent(property.serializedObject.targetObject);
-                        var statusManager = property.serializedObject.targetObject as StatusManager;
-                        durationFloat.schedule.Execute(() => { durationFloat.value = Mathf.Round(statusEffect.TimeRemaining(statusManager ? statusManager.CurrentTime : Time.timeAsDouble) * 100f) / 100f; }).Every(0);
+                        durationFloat.schedule.Execute(() => { durationFloat.value = Mathf.Round(statusEffect.TimeRemaining() * 100f) / 100f; }).Every(0);
                         break;
                     default:
                         duration = new PropertyField(durationProperty, string.Empty);
@@ -120,6 +126,62 @@ namespace StatusEffectsFramework.Editor
             stacks.AddToClassList(stacksUssClassName);
             stacks.SetEnabled(false);
             root.Add(stacks);
+
+            // The effect in this row on each selected Status Manager. With several selected, each manager's
+            // effect at this position is removed, which can be a different effect on each one.
+            var removals = new List<(StatusManager statusManager, StatusEffect statusEffect)>();
+
+            foreach (var target in property.serializedObject.targetObjects)
+            {
+                if (target is not StatusManager targetManager)
+                    continue;
+
+                try
+                {
+                    if (durationProperty.GetParent(targetManager) is StatusEffect targetEffect)
+                        removals.Add((targetManager, targetEffect));
+                }
+                catch (InvalidOperationException)
+                {
+                    // This manager has fewer effects than the row's position.
+                }
+            }
+
+            if (removals.Count > 0)
+            {
+                var remove = new Button(() =>
+                {
+                    // Does nothing for an effect that was already removed, such as when this row is out of date.
+                    foreach (var (targetManager, targetEffect) in removals)
+                        if (targetManager)
+                            targetManager.RemoveStatusEffect(targetEffect);
+                })
+                {
+                    name = removeUssClassName,
+                    tooltip = multipleTargets ? "Remove the status effect in this row from each selected Status Manager." : "Remove this status effect."
+                };
+                remove.AddToClassList(removeUssClassName);
+
+                // An icon centers exactly, where a text glyph sits wherever the font's metrics put it.
+                var crossIcon = EditorGUIUtility.FindTexture("CrossIcon");
+
+                if (crossIcon)
+                {
+                    var icon = new VisualElement
+                    {
+                        name = removeIconUssClassName
+                    };
+                    icon.AddToClassList(removeIconUssClassName);
+                    icon.style.backgroundImage = crossIcon;
+                    remove.Add(icon);
+                }
+                else
+                    remove.text = "×";
+
+                // Status effects only run in play mode.
+                remove.SetEnabled(Application.isPlaying);
+                root.Add(remove);
+            }
 
             return root;
         }

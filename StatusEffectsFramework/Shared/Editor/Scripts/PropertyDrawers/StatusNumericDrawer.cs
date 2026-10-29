@@ -9,6 +9,61 @@ namespace StatusEffectsFramework.Editor
     [CustomPropertyDrawer(typeof(StatusInt))]
     internal class StatusNumericDrawer : PropertyDrawer
     {
+        /// <summary>
+        /// Main USS class name of the StatusFloat and StatusInt.
+        /// </summary>
+        public const string ussClassName = "sef-status-numeric";
+
+        /// <summary>
+        /// USS class name of the status name field shown in the header while collapsed.
+        /// </summary>
+        public const string headerStatusNameUssClassName = ussClassName + "__header-status-name";
+
+        /// <summary>
+        /// USS class name of the value field shown in the header while collapsed.
+        /// </summary>
+        public const string headerValueUssClassName = ussClassName + "__header-value";
+
+        /// <summary>
+        /// USS class name of the error icon shown while the status name is empty.
+        /// </summary>
+        public const string errorIconUssClassName = ussClassName + "__error-icon";
+
+        /// <summary>
+        /// USS class name of the status name field.
+        /// </summary>
+        public const string statusNameUssClassName = ussClassName + "__status-name";
+
+        /// <summary>
+        /// USS class name of the base value field.
+        /// </summary>
+        public const string baseValueUssClassName = ussClassName + "__base-value";
+
+        /// <summary>
+        /// USS class name of the value container.
+        /// </summary>
+        public const string valueContainerUssClassName = ussClassName + "__value-container";
+
+        /// <summary>
+        /// USS class name of the value label.
+        /// </summary>
+        public const string valueLabelUssClassName = ussClassName + "__value-label";
+
+        /// <summary>
+        /// USS class name of the value field.
+        /// </summary>
+        public const string valueUssClassName = ussClassName + "__value";
+
+        /// <summary>
+        /// USS class name of the sign protected toggle.
+        /// </summary>
+        public const string signProtectedUssClassName = ussClassName + "__sign-protected";
+
+        /// <summary>
+        /// USS class name of the sign label shown next to the sign protected toggle.
+        /// </summary>
+        public const string signLabelUssClassName = ussClassName + "__sign-label";
+
         private const string k_SignProtectedTooltip =
         "Toggles whether the value of this variable should limit " +
         "itself to being positive or negative. If the base value is " +
@@ -27,87 +82,95 @@ namespace StatusEffectsFramework.Editor
 
             bool isPlaying = EditorApplication.isPlaying;
 
-            var foldout = new Foldout();
-            foldout.text = property.displayName;
-            foldout.value = false;
-            foldout.viewDataKey = property.propertyPath + "-foldout";
+            var foldout = new Foldout
+            {
+                name = ussClassName,
+                text = property.displayName,
+                value = false,
+                viewDataKey = property.propertyPath + "-foldout"
+            };
             foldout.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
-            
+            foldout.AddToClassList(ussClassName);
+
             var foldoutLabel = foldout.Q<Label>(className: Foldout.textUssClassName);
             var unityCheckmark = foldout.Q(className: Foldout.checkmarkUssClassName);
 
-            var headerPropertyObject = new PropertyField(statusNameProperty, StatusEffectsStyleSheet.EmptyPropertyLabel);
-            headerPropertyObject.style.position = Position.Absolute;
-            headerPropertyObject.style.left = Length.Percent(30);
-            headerPropertyObject.style.right = 0;
-            headerPropertyObject.style.top = 0;
-            headerPropertyObject.style.bottom = 0;
-            headerPropertyObject.SetEnabled(!isPlaying);
-            var headerPropertyValue = new PropertyField(isPlaying ? valueProperty : baseValueProperty, StatusEffectsStyleSheet.EmptyPropertyLabel);
-            headerPropertyValue.style.position = Position.Absolute;
-            headerPropertyValue.style.left = Length.Percent(30);
-            headerPropertyValue.style.right = 0;
-            headerPropertyValue.style.top = 0;
-            headerPropertyValue.style.bottom = 0;
-            headerPropertyValue.SetEnabled(!isPlaying);
-            foldout.hierarchy.Add(headerPropertyObject);
-            foldout.hierarchy.Add(headerPropertyValue);
+            var headerStatusName = new PropertyField(statusNameProperty, StatusEffectsStyleSheet.EmptyPropertyLabel)
+            {
+                name = headerStatusNameUssClassName
+            };
+            headerStatusName.AddToClassList(headerStatusNameUssClassName);
+            headerStatusName.SetEnabled(!isPlaying);
+            foldout.hierarchy.Add(headerStatusName);
 
-            var errorIcon = new VisualElement();
+            var headerValue = new PropertyField(isPlaying ? valueProperty : baseValueProperty, StatusEffectsStyleSheet.EmptyPropertyLabel)
+            {
+                name = headerValueUssClassName
+            };
+            headerValue.AddToClassList(headerValueUssClassName);
+            headerValue.SetEnabled(!isPlaying);
+            foldout.hierarchy.Add(headerValue);
+
+            var errorIcon = new VisualElement
+            {
+                name = errorIconUssClassName
+            };
             errorIcon.AddToClassList(StatusEffectsStyleSheet.ErrorIconClassName);
-            errorIcon.style.position = Position.Absolute;
-            errorIcon.style.left = -12;
-            errorIcon.style.top = 4;
-            errorIcon.style.width = 13;
-            errorIcon.style.height = 13;
+            errorIcon.AddToClassList(errorIconUssClassName);
             foldout.Add(errorIcon);
 
-            var statusName = new PropertyField(statusNameProperty);
+            var statusName = new PropertyField(statusNameProperty)
+            {
+                name = statusNameUssClassName
+            };
+            statusName.AddToClassList(statusNameUssClassName);
             statusName.SetEnabled(!isPlaying);
             foldout.Add(statusName);
 
-            var baseValue = new PropertyField(baseValueProperty);
+            var baseValue = new PropertyField(baseValueProperty)
+            {
+                name = baseValueUssClassName
+            };
+            baseValue.AddToClassList(baseValueUssClassName);
             foldout.Add(baseValue);
 
-            var valueContainer = new VisualElement();
-            valueContainer.style.flexDirection = FlexDirection.Row;
-            valueContainer.style.flexGrow = 1;
-            valueContainer.style.flexShrink = 1;
+            var valueContainer = new VisualElement
+            {
+                name = valueContainerUssClassName
+            };
+            valueContainer.AddToClassList(valueContainerUssClassName);
             foldout.Add(valueContainer);
 
-            var valueLabel = new Label("Value");
-            valueLabel.style.position = Position.Absolute;
-            valueLabel.style.paddingTop = 1;
-            valueLabel.style.paddingLeft = 4;
+            var valueLabel = new Label("Value")
+            {
+                name = valueLabelUssClassName
+            };
+            valueLabel.AddToClassList(valueLabelUssClassName);
             valueContainer.Add(valueLabel);
 
-            var value = new PropertyField(isPlaying ? valueProperty : baseValueProperty, StatusEffectsStyleSheet.EmptyPropertyLabel);
-            value.style.flexGrow = 1;
-            value.style.flexShrink = 1;
+            var value = new PropertyField(isPlaying ? valueProperty : baseValueProperty, StatusEffectsStyleSheet.EmptyPropertyLabel)
+            {
+                name = valueUssClassName,
+                tooltip = k_ValueTooltip
+            };
+            value.AddToClassList(valueUssClassName);
             value.SetEnabled(false);
-            value.tooltip = k_ValueTooltip;
             valueContainer.Add(value);
 
-            var signProtected = new PropertyField(signProtectedProperty, StatusEffectsStyleSheet.EmptyPropertyLabel);
-            signProtected.style.position = Position.Absolute;
-            signProtected.style.left = 0;
-            signProtected.style.right = 0;
-            signProtected.style.top = 0;
-            signProtected.style.bottom = 0;
-            signProtected.style.flexGrow = 1;
-            signProtected.style.flexShrink = 1;
-            signProtected.style.flexDirection = FlexDirection.ColumnReverse;
-            signProtected.tooltip = k_SignProtectedTooltip;
+            var signProtected = new PropertyField(signProtectedProperty, StatusEffectsStyleSheet.EmptyPropertyLabel)
+            {
+                name = signProtectedUssClassName,
+                tooltip = k_SignProtectedTooltip
+            };
+            signProtected.AddToClassList(signProtectedUssClassName);
             valueContainer.Add(signProtected);
 
-            var signLabel = new Label();
-            signLabel.style.unityTextAlign = TextAnchor.MiddleRight;
-            signLabel.style.position = Position.Absolute;
-            signLabel.style.left = 0;
-            signLabel.style.right = 0;
-            signLabel.style.top = 0;
-            signLabel.style.bottom = 0;
-            signLabel.pickingMode = PickingMode.Ignore;
+            var signLabel = new Label
+            {
+                name = signLabelUssClassName,
+                pickingMode = PickingMode.Ignore
+            };
+            signLabel.AddToClassList(signLabelUssClassName);
 
             foldout.RegisterValueChangedCallback(FoldoutChanged);
             
@@ -164,7 +227,8 @@ namespace StatusEffectsFramework.Editor
                 @event.menu.AppendSeparator();
             }));
 
-            unityCheckmark.schedule.Execute((state) => EvaluateProperties()).StartingIn(50);
+            // Waits for packages such as EditorAttributes to color the value label, which the checkmark's tint follows.
+            unityCheckmark.schedule.Execute((state) => EvaluateProperties()).StartingIn(StatusEffectsStyleSheet.ExternalColorDelay);
 
             return foldout;
 
@@ -192,17 +256,6 @@ namespace StatusEffectsFramework.Editor
             void ValueGeometryChanged(GeometryChangedEvent changeEvent)
             {
                 value.UnregisterCallback<GeometryChangedEvent>(ValueGeometryChanged);
-
-                var element = value.Q("unity-text-input");
-                if (element != null)
-                {
-                    element.style.marginRight = 18;
-                    var styleTranslate = element.style.translate;
-                    var translate = styleTranslate.value;
-                    translate.x = 18;
-                    styleTranslate.value = translate;
-                    element.style.translate = styleTranslate;
-                }
 
                 EvaluateProperties();
             }
@@ -250,45 +303,18 @@ namespace StatusEffectsFramework.Editor
             void EvaluateProperties()
             {
                 bool isNull = RegistrantKeyDrawer.IsEmpty(statusNameProperty);
-                
-                if (isNull)
-                {
-                    if (foldout.value)
-                    {
-                        unityCheckmark.RemoveFromClassList(StatusEffectsStyleSheet.ErrorIconClassName);
-                        headerPropertyObject.style.display = DisplayStyle.None;
-                        headerPropertyValue.style.display = DisplayStyle.None;
-                        unityCheckmark.style.unityBackgroundImageTintColor = valueLabel.style.color.keyword is not StyleKeyword.Null ? valueLabel.style.color : Color.white;
-                    }
-                    else
-                    {
-                        unityCheckmark.AddToClassList(StatusEffectsStyleSheet.ErrorIconClassName);
-                        headerPropertyObject.style.display = DisplayStyle.Flex;
-                        headerPropertyValue.style.display = DisplayStyle.None;
-                        unityCheckmark.style.unityBackgroundImageTintColor = Color.white;
+                bool isCollapsed = !foldout.value;
 
-                    }
+                headerStatusName.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName, !(isNull && isCollapsed));
+                headerValue.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName, !(!isNull && isCollapsed));
+                errorIcon.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName, !isNull);
 
-                    errorIcon.style.display = DisplayStyle.Flex;
-                }
-                else
-                {
-                    if (foldout.value)
-                    {
-                        headerPropertyObject.style.display = DisplayStyle.None;
-                        headerPropertyValue.style.display = DisplayStyle.None;
-                    }
-                    else
-                    {
-                        headerPropertyObject.style.display = DisplayStyle.None;
-                        headerPropertyValue.style.display = DisplayStyle.Flex;
-                    }  
-
-                    unityCheckmark.RemoveFromClassList(StatusEffectsStyleSheet.ErrorIconClassName);
-                    unityCheckmark.style.unityBackgroundImageTintColor = valueLabel.style.color.keyword is not StyleKeyword.Null ? valueLabel.style.color : Color.white;
-
-                    errorIcon.style.display = DisplayStyle.None;
-                }
+                // The checkmark becomes the error icon while collapsed, which keeps its own colors.
+                bool showErrorCheckmark = isNull && isCollapsed;
+                unityCheckmark.EnableInClassList(StatusEffectsStyleSheet.ErrorIconClassName, showErrorCheckmark);
+                unityCheckmark.style.unityBackgroundImageTintColor = !showErrorCheckmark && valueLabel.style.color.keyword is not StyleKeyword.Null
+                                                                   ? valueLabel.style.color
+                                                                   : Color.white;
             }
         }
 

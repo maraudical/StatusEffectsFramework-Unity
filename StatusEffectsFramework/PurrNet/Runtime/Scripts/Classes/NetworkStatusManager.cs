@@ -14,7 +14,7 @@ namespace StatusEffectsFramework.PurrNet
     /// Status effects are synced by the ids assigned in the <see cref="StatusRegistry"/>, so the server and
     /// clients must have the same registered assets. A client logs an error when its registry differs. The
     /// server sends the full list of status effects to everyone whenever one changes, and clients compare
-    /// it against what they have. Times are sent as seconds elapsed, so a client is off by about the latency.
+    /// it against what they have. Start times are sent on the synced tick, so clients count down with the server.
     /// </remarks>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(StatusManager))]
@@ -58,7 +58,7 @@ namespace StatusEffectsFramework.PurrNet
             }
             else if (!isServer)
             {
-                // Ask the server for the current list, since the ones sent earlier have old elapsed times.
+                // Ask the server for the current list, since lists sent before this client spawned were missed.
                 RequestEffectsRpc();
             }
         }
@@ -166,6 +166,25 @@ namespace StatusEffectsFramework.PurrNet
             }
             return true;
         }
+
+        // How long ago a duration effect started counting down, measured on its own timer's clock so a timer with
+        // a custom clock still syncs correctly. Other effects have no countdown.
+        private static double GetElapsedTime(StatusEffect statusEffect)
+        {
+            return statusEffect.Timer is DurationStatusTimer durationTimer && durationTimer.HasStarted
+                ? Math.Max(0d, durationTimer.CurrentTime - durationTimer.StartTime)
+                : 0d;
+        }
+
+        // Seconds of synced ticks, the clock every machine shares. On the server it is the server's own tick.
+        private double SyncedTime => networkManager.tickModule.syncedPreciseTick * networkManager.tickModule.tickDeltaDouble;
+
+        // Clients count down on the synced tick the server's start time is measured on, so the time left doesn't
+        // drift with time scale or frame hitches. Infinite effects need no timer.
+        private StatusTimer CreateMirroredTimer(StatusEffectTiming timing, double serverTimeAdded)
+        {
+            return timing is StatusEffectTiming.Infinite ? null : new NetworkMirroredStatusTimer(timing, serverTimeAdded, networkManager.tickModule);
+        }
         #endregion
 
         #region RPCs
@@ -202,7 +221,7 @@ namespace StatusEffectsFramework.PurrNet
                 return;
 
             var effects = new List<NetworkStatusEffect>();
-            double now = Time.timeAsDouble;
+            double syncedTime = SyncedTime;
 
             foreach (var statusEffect in StatusManager.StatusEffects)
             {
@@ -212,7 +231,8 @@ namespace StatusEffectsFramework.PurrNet
                     continue;
                 }
 
-                effects.Add(new NetworkStatusEffect(dataId, statusEffect.Timing, statusEffect.Duration, statusEffect.Stacks, statusEffect.Id, (float)(now - statusEffect.TimeAdded)));
+                // The elapsed time is measured on the effect's own timer, but clients need the time on the synced tick.
+                effects.Add(new NetworkStatusEffect(dataId, statusEffect.Timing, statusEffect.Duration, statusEffect.Stacks, statusEffect.Id, syncedTime - GetElapsedTime(statusEffect)));
             }
 
             SyncEffectsRpc(effects.ToArray());
@@ -247,8 +267,7 @@ namespace StatusEffectsFramework.PurrNet
                 return;
             }
 
-            // Work out when the status effect was added in local time.
-            StatusManager.ForceAddStatusEffect(networkEffect.InstanceId, statusEffectData, networkEffect.Timing, Time.timeAsDouble - Math.Max(0f, networkEffect.Elapsed), networkEffect.Duration, networkEffect.Stacks);
+            StatusManager.ForceAddStatusEffect(networkEffect.InstanceId, statusEffectData, CreateMirroredTimer(networkEffect.Timing, networkEffect.ServerTimeAdded), networkEffect.Duration, networkEffect.Stacks);
         }
 
         private void UpdateForClient(NetworkStatusEffect networkEffect)

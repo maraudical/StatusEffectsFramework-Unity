@@ -11,8 +11,8 @@ namespace StatusEffectsFramework.Editor
     [CustomPropertyDrawer(typeof(ModuleContainer))]
     internal class ModuleContainerDrawer : PropertyDrawer
     {
-        private static readonly string k_ModuleName = $"m_{nameof(ModuleContainer.Module)}";
-        private static readonly string k_ModuleInstanceName = $"m_{nameof(ModuleContainer.ModuleInstance)}";
+        private const string k_ModuleName = "m_" + nameof(ModuleContainer.Module);
+        private const string k_ModuleInstanceName = "m_" + nameof(ModuleContainer.ModuleInstance);
 
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {

@@ -12,24 +12,24 @@ namespace StatusEffectsFramework.PurrNet
         public StatusEffectTiming Timing;
         /// <summary>
         /// The <see cref="StatusEffect.Duration"/>. For <see cref="StatusEffectTiming.Duration"/> this is the
-        /// total duration, measured from when the status effect was added.
+        /// total duration, measured from <see cref="ServerTimeAdded"/>.
         /// </summary>
         public float Duration;
         public int Stacks;
         public uint InstanceId;
         /// <summary>
-        /// Seconds that had passed on the server since the status effect was added, when this was sent.
+        /// When the status effect started counting down, in seconds of synced ticks.
         /// </summary>
-        public float Elapsed;
+        public double ServerTimeAdded;
 
-        public NetworkStatusEffect(ushort id, StatusEffectTiming timing, float duration, int stacks, uint instanceId, float elapsed)
+        public NetworkStatusEffect(ushort id, StatusEffectTiming timing, float duration, int stacks, uint instanceId, double serverTimeAdded)
         {
             Id = id;
             Timing = timing;
             Duration = duration;
             Stacks = stacks;
             InstanceId = instanceId;
-            Elapsed = elapsed;
+            ServerTimeAdded = serverTimeAdded;
         }
     }
 }

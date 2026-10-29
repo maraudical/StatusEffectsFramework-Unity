@@ -2,14 +2,126 @@ using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 using System;
 using UnityEditor;
-using UnityEngine;
 
 namespace StatusEffectsFramework.Editor
 {
     [CustomPropertyDrawer(typeof(Condition))]
     internal class ConditionDrawer : PropertyDrawer
     {
-        public VisualTreeAsset VisualTree;
+        /// <summary>
+        /// Main USS class name of the Condition.
+        /// </summary>
+        public const string ussClassName = "sef-condition";
+
+        /// <summary>
+        /// USS class name of the Condition's labels.
+        /// </summary>
+        public const string labelUssClassName = ussClassName + "__label";
+
+        /// <summary>
+        /// USS class name of the Condition's "If" label.
+        /// </summary>
+        public const string ifLabelUssClassName = ussClassName + "__if-label";
+
+        /// <summary>
+        /// USS class name of the Condition's searchable configurable field.
+        /// </summary>
+        public const string searchableConfigurableUssClassName = ussClassName + "__searchable-configurable";
+
+        /// <summary>
+        /// USS class name of the Condition's searchable data field.
+        /// </summary>
+        public const string searchableDataUssClassName = ussClassName + "__searchable-data";
+
+        /// <summary>
+        /// USS class name of the Condition's searchable comparable name field.
+        /// </summary>
+        public const string searchableComparableNameUssClassName = ussClassName + "__searchable-comparable-name";
+
+        /// <summary>
+        /// USS class name of the Condition's searchable group field.
+        /// </summary>
+        public const string searchableGroupUssClassName = ussClassName + "__searchable-group";
+
+        /// <summary>
+        /// USS class name of the Condition's "is" label.
+        /// </summary>
+        public const string isLabelUssClassName = ussClassName + "__is-label";
+
+        /// <summary>
+        /// USS class name of the Condition's existence field.
+        /// </summary>
+        public const string existenceUssClassName = ussClassName + "__existence";
+
+        /// <summary>
+        /// USS class name of the Condition's "then" label.
+        /// </summary>
+        public const string thenLabelUssClassName = ussClassName + "__then-label";
+
+        /// <summary>
+        /// USS class name of the Condition's configurability field.
+        /// </summary>
+        public const string configurabilityUssClassName = ussClassName + "__configurability";
+
+        /// <summary>
+        /// USS class name of the Condition's stacks field.
+        /// </summary>
+        public const string stacksUssClassName = ussClassName + "__stacks";
+
+        /// <summary>
+        /// USS class name of the Condition's scale option field.
+        /// </summary>
+        public const string scaleOptionUssClassName = ussClassName + "__scale-option";
+
+        /// <summary>
+        /// USS class name of the Condition's remove option field.
+        /// </summary>
+        public const string removeOptionUssClassName = ussClassName + "__remove-option";
+
+        /// <summary>
+        /// USS class name of the Condition's "stacks" label.
+        /// </summary>
+        public const string stacksLabelUssClassName = ussClassName + "__stacks-label";
+
+        /// <summary>
+        /// USS class name of the Condition's "of" label.
+        /// </summary>
+        public const string ofLabelUssClassName = ussClassName + "__of-label";
+
+        /// <summary>
+        /// USS class name of the Condition's action configurable field.
+        /// </summary>
+        public const string actionConfigurableUssClassName = ussClassName + "__action-configurable";
+
+        /// <summary>
+        /// USS class name of the Condition's action data field.
+        /// </summary>
+        public const string actionDataUssClassName = ussClassName + "__action-data";
+
+        /// <summary>
+        /// USS class name of the Condition's action comparable name field.
+        /// </summary>
+        public const string actionComparableNameUssClassName = ussClassName + "__action-comparable-name";
+
+        /// <summary>
+        /// USS class name of the Condition's action group field.
+        /// </summary>
+        public const string actionGroupUssClassName = ussClassName + "__action-group";
+
+        /// <summary>
+        /// USS class name of the Condition's duration field.
+        /// </summary>
+        public const string durationUssClassName = ussClassName + "__duration";
+
+        /// <summary>
+        /// USS class name of the Condition's timing field.
+        /// </summary>
+        public const string timingUssClassName = ussClassName + "__timing";
+
+        /// <summary>
+        /// USS class name of the Condition's dash label, shown while there are mixed values.
+        /// </summary>
+        public const string dashLabelUssClassName = ussClassName + "__dash-label";
 
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
@@ -29,145 +141,169 @@ namespace StatusEffectsFramework.Editor
             var durationProperty = property.FindPropertyRelative($"m_{nameof(Condition.Duration)}");
             var timingProperty = property.FindPropertyRelative($"m_{nameof(Condition.Timing)}");
 
-            var root = new VisualElement();
-            root.style.flexDirection = FlexDirection.Row;
-            root.style.marginRight = -3;
+            var root = new VisualElement
+            {
+                name = ussClassName
+            };
             root.styleSheets.Add(StatusEffectsStyleSheet.instance.StyleSheet);
+            root.AddToClassList(ussClassName);
             root.AddToClassList(StatusEffectsStyleSheet.MaskFieldSizeClassName);
 
-            var ifLabel = new Label("If");
-            ifLabel.style.paddingLeft = 0;
-            ifLabel.style.paddingRight = 1;
-            ifLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            var ifLabel = new Label("If")
+            {
+                name = ifLabelUssClassName
+            };
+            ifLabel.AddToClassList(labelUssClassName);
+            ifLabel.AddToClassList(ifLabelUssClassName);
             root.Add(ifLabel);
 
-            var searchableConfigurable = new PropertyField(searchableConfigurableProperty, string.Empty);
-            searchableConfigurable.style.flexGrow = 0;
-            searchableConfigurable.style.flexShrink = 0;
-            searchableConfigurable.style.marginLeft = -2;
-            searchableConfigurable.style.marginRight = 3;
+            var searchableConfigurable = new PropertyField(searchableConfigurableProperty, string.Empty)
+            {
+                name = searchableConfigurableUssClassName
+            };
+            searchableConfigurable.AddToClassList(searchableConfigurableUssClassName);
             root.Add(searchableConfigurable);
 
-            var searchableData = new PropertyField(searchableDataProperty, string.Empty);
-            searchableData.style.minWidth = 92;
-            searchableData.style.flexGrow = 1;
-            searchableData.style.marginLeft = -2;
-            searchableData.style.marginRight = 3;
+            var searchableData = new PropertyField(searchableDataProperty, string.Empty)
+            {
+                name = searchableDataUssClassName
+            };
+            searchableData.AddToClassList(searchableDataUssClassName);
             root.Add(searchableData);
-            
-            var searchableComparableName = new PropertyField(searchableComparableNameProperty, string.Empty);
-            searchableComparableName.style.minWidth = 92;
-            searchableComparableName.style.flexGrow = 1;
-            searchableComparableName.style.marginLeft = -2;
-            searchableComparableName.style.marginRight = 3;
+
+            var searchableComparableName = new PropertyField(searchableComparableNameProperty, string.Empty)
+            {
+                name = searchableComparableNameUssClassName
+            };
+            searchableComparableName.AddToClassList(searchableComparableNameUssClassName);
             root.Add(searchableComparableName);
-            
-            var searchableGroup = new PropertyField(searchableGroupProperty, string.Empty);
-            searchableGroup.style.minWidth = 92;
-            searchableGroup.style.flexGrow = 1;
-            searchableGroup.style.marginLeft = -2;
-            searchableGroup.style.marginRight = 3;
+
+            var searchableGroup = new PropertyField(searchableGroupProperty, string.Empty)
+            {
+                name = searchableGroupUssClassName
+            };
+            searchableGroup.AddToClassList(searchableGroupUssClassName);
             root.Add(searchableGroup);
-            
-            var isLabel = new Label("is");
-            isLabel.style.paddingLeft = 2;
-            isLabel.style.paddingRight = 2;
-            isLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+
+            var isLabel = new Label("is")
+            {
+                name = isLabelUssClassName
+            };
+            isLabel.AddToClassList(labelUssClassName);
+            isLabel.AddToClassList(isLabelUssClassName);
             root.Add(isLabel);
 
-            var existence = new EnumField();
+            var existence = new EnumField
+            {
+                name = existenceUssClassName
+            };
             existence.Init(new Existence());
-            existence.style.marginLeft = 1;
-            existence.style.marginRight = 1;
+            existence.AddToClassList(existenceUssClassName);
             root.Add(existence);
 
-            var thenLabel = new Label("then");
-            thenLabel.style.paddingLeft = 2;
-            thenLabel.style.paddingRight = 2;
-            thenLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            var thenLabel = new Label("then")
+            {
+                name = thenLabelUssClassName
+            };
+            thenLabel.AddToClassList(labelUssClassName);
+            thenLabel.AddToClassList(thenLabelUssClassName);
             root.Add(thenLabel);
 
-            var configurability = new EnumField();
+            var configurability = new EnumField
+            {
+                name = configurabilityUssClassName
+            };
             configurability.Init(new Configurability());
-            configurability.style.marginLeft = 1;
-            configurability.style.marginRight = 1;
+            configurability.AddToClassList(configurabilityUssClassName);
             root.Add(configurability);
-            
-            var stacks = new PropertyField(stacksProperty, string.Empty);
-            stacks.style.flexShrink = 0;
-            stacks.style.marginLeft = -2;
-            stacks.style.marginRight = 3;
+
+            var stacks = new PropertyField(stacksProperty, string.Empty)
+            {
+                name = stacksUssClassName
+            };
+            stacks.AddToClassList(stacksUssClassName);
             root.Add(stacks);
 
-            var scaleOption = new EnumField();
+            var scaleOption = new EnumField
+            {
+                name = scaleOptionUssClassName
+            };
             scaleOption.Init(new ScaleOption());
-            scaleOption.style.marginLeft = 1;
-            scaleOption.style.marginRight = 1;
+            scaleOption.AddToClassList(scaleOptionUssClassName);
             root.Add(scaleOption);
 
-            var removeOption = new EnumField();
+            var removeOption = new EnumField
+            {
+                name = removeOptionUssClassName
+            };
             removeOption.Init(new RemoveOption());
-            removeOption.style.marginLeft = 1;
-            removeOption.style.marginRight = 1;
+            removeOption.AddToClassList(removeOptionUssClassName);
             root.Add(removeOption);
 
-            var stacksLabel = new Label("stacks");
-            stacksLabel.style.paddingLeft = 2;
-            stacksLabel.style.paddingRight = 2;
-            stacksLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            var stacksLabel = new Label("stacks")
+            {
+                name = stacksLabelUssClassName
+            };
+            stacksLabel.AddToClassList(labelUssClassName);
+            stacksLabel.AddToClassList(stacksLabelUssClassName);
             root.Add(stacksLabel);
 
-            var ofLabel = new Label("of");
-            ofLabel.style.paddingLeft = 2;
-            ofLabel.style.paddingRight = 2;
-            ofLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
+            var ofLabel = new Label("of")
+            {
+                name = ofLabelUssClassName
+            };
+            ofLabel.AddToClassList(labelUssClassName);
+            ofLabel.AddToClassList(ofLabelUssClassName);
             root.Add(ofLabel);
 
-            var actionConfigurable = new PropertyField(actionConfigurableProperty, string.Empty);
-            actionConfigurable.style.flexGrow = 0;
-            actionConfigurable.style.flexShrink = 0;
-            actionConfigurable.style.marginLeft = -2;
-            actionConfigurable.style.marginRight = 3;
+            var actionConfigurable = new PropertyField(actionConfigurableProperty, string.Empty)
+            {
+                name = actionConfigurableUssClassName
+            };
+            actionConfigurable.AddToClassList(actionConfigurableUssClassName);
             root.Add(actionConfigurable);
 
-            var actionData = new PropertyField(actionDataProperty, string.Empty);
-            actionData.style.minWidth = 92;
-            actionData.style.flexGrow = 1;
-            actionData.style.marginLeft = -2;
-            actionData.style.marginRight = 3;
+            var actionData = new PropertyField(actionDataProperty, string.Empty)
+            {
+                name = actionDataUssClassName
+            };
+            actionData.AddToClassList(actionDataUssClassName);
             root.Add(actionData);
 
-            var actionComparableName = new PropertyField(actionComparableNameProperty, string.Empty);
-            actionComparableName.style.minWidth = 92;
-            actionComparableName.style.flexGrow = 1;
-            actionComparableName.style.marginLeft = -2;
-            actionComparableName.style.marginRight = 3;
+            var actionComparableName = new PropertyField(actionComparableNameProperty, string.Empty)
+            {
+                name = actionComparableNameUssClassName
+            };
+            actionComparableName.AddToClassList(actionComparableNameUssClassName);
             root.Add(actionComparableName);
 
-            var actionGroup = new PropertyField(actionGroupProperty, string.Empty);
-            actionGroup.style.minWidth = 92;
-            actionGroup.style.flexGrow = 1;
-            actionGroup.style.marginLeft = -2;
-            actionGroup.style.marginRight = 3;
+            var actionGroup = new PropertyField(actionGroupProperty, string.Empty)
+            {
+                name = actionGroupUssClassName
+            };
+            actionGroup.AddToClassList(actionGroupUssClassName);
             root.Add(actionGroup);
-            
-            var duration = new PropertyField(durationProperty, string.Empty);
-            duration.style.flexShrink = 0;
-            duration.style.marginLeft = -2;
-            duration.style.marginRight = 3;
+
+            var duration = new PropertyField(durationProperty, string.Empty)
+            {
+                name = durationUssClassName
+            };
+            duration.AddToClassList(durationUssClassName);
             root.Add(duration);
 
-            var timing = new PropertyField(timingProperty, string.Empty);
-            timing.style.flexShrink = 0;
-            timing.style.marginLeft = -2;
-            timing.style.marginRight = 3;
+            var timing = new PropertyField(timingProperty, string.Empty)
+            {
+                name = timingUssClassName
+            };
+            timing.AddToClassList(timingUssClassName);
             root.Add(timing);
 
-            var dashLabel = new Label("—");
-            dashLabel.style.paddingLeft = 2;
-            dashLabel.style.paddingRight = 2;
-            dashLabel.style.unityTextAlign = TextAnchor.MiddleCenter;
-            dashLabel.style.opacity = 0.5f;
+            var dashLabel = new Label("\u2014")
+            {
+                name = dashLabelUssClassName
+            };
+            dashLabel.AddToClassList(labelUssClassName);
+            dashLabel.AddToClassList(dashLabelUssClassName);
             root.Add(dashLabel);
 
             searchableConfigurable.RegisterValueChangeCallback(SearchableConfigurableValueChanged);
@@ -251,26 +387,40 @@ namespace StatusEffectsFramework.Editor
 
                 bool anyDifference = searchableDifference || addDifference || useStacksDifference || actionDifference;
 
-                searchableData.style.display = !searchableDifference && searchableConfigurableValue is ConditionalConfigurable.Data ? DisplayStyle.Flex : DisplayStyle.None;
-                searchableComparableName.style.display = !searchableDifference && searchableConfigurableValue is ConditionalConfigurable.Name ? DisplayStyle.Flex : DisplayStyle.None;
-                searchableGroup.style.display = !searchableDifference && searchableConfigurableValue is ConditionalConfigurable.AllGroups or ConditionalConfigurable.AnyGroups ? DisplayStyle.Flex : DisplayStyle.None;
-                isLabel.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
+                searchableData.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!searchableDifference && searchableConfigurableValue is ConditionalConfigurable.Data));
+                searchableComparableName.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!searchableDifference && searchableConfigurableValue is ConditionalConfigurable.Name));
+                searchableGroup.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!searchableDifference && searchableConfigurableValue is ConditionalConfigurable.AllGroups or ConditionalConfigurable.AnyGroups));
+                isLabel.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName, searchableDifference);
                 isLabel.text = searchableConfigurableValue is ConditionalConfigurable.AllGroups or ConditionalConfigurable.AnyGroups ? "are" : "is";
-                existence.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
-                thenLabel.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
-                configurability.style.display = !searchableDifference ? DisplayStyle.Flex : DisplayStyle.None;
-                stacks.style.display = !addDifference && !useStacksDifference && (isAddedProperty.boolValue || useStacksProperty.boolValue) ? DisplayStyle.Flex : DisplayStyle.None;
-                scaleOption.style.display = !addDifference && !useStacksDifference && (isAddedProperty.boolValue || useStacksProperty.boolValue) ? DisplayStyle.Flex : DisplayStyle.None;
-                removeOption.style.display = !addDifference && !isAddedProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
-                stacksLabel.style.display = !addDifference && isAddedProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
-                ofLabel.style.display = !addDifference && !useStacksDifference ? DisplayStyle.Flex : DisplayStyle.None;
-                actionConfigurable.style.display = !useStacksDifference && !isAddedProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
-                actionData.style.display = !addDifference && !actionDifference && (isAddedProperty.boolValue || actionConfigurableValue is ConditionalConfigurable.Data) ? DisplayStyle.Flex : DisplayStyle.None;
-                actionComparableName.style.display = !addDifference && !actionDifference && !isAddedProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.Name ? DisplayStyle.Flex : DisplayStyle.None;
-                actionGroup.style.display = !addDifference && !actionDifference && !isAddedProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.AllGroups or ConditionalConfigurable.AnyGroups ? DisplayStyle.Flex : DisplayStyle.None;
-                duration.style.display = !timingDifference && isAddedProperty.boolValue && conditionalTiming is ConditionalTiming.Duration ? DisplayStyle.Flex : DisplayStyle.None;
-                timing.style.display = !addDifference && isAddedProperty.boolValue ? DisplayStyle.Flex : DisplayStyle.None;
-                dashLabel.style.display = anyDifference ? DisplayStyle.Flex : DisplayStyle.None;
+                existence.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName, searchableDifference);
+                thenLabel.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName, searchableDifference);
+                configurability.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName, searchableDifference);
+                stacks.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!addDifference && !useStacksDifference && (isAddedProperty.boolValue || useStacksProperty.boolValue)));
+                scaleOption.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!addDifference && !useStacksDifference && (isAddedProperty.boolValue || useStacksProperty.boolValue)));
+                removeOption.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!addDifference && !isAddedProperty.boolValue));
+                stacksLabel.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!addDifference && isAddedProperty.boolValue));
+                ofLabel.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!addDifference && !useStacksDifference));
+                actionConfigurable.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!useStacksDifference && !isAddedProperty.boolValue));
+                actionData.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!addDifference && !actionDifference && (isAddedProperty.boolValue || actionConfigurableValue is ConditionalConfigurable.Data)));
+                actionComparableName.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!addDifference && !actionDifference && !isAddedProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.Name));
+                actionGroup.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!addDifference && !actionDifference && !isAddedProperty.boolValue && actionConfigurableValue is ConditionalConfigurable.AllGroups or ConditionalConfigurable.AnyGroups));
+                duration.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!timingDifference && isAddedProperty.boolValue && conditionalTiming is ConditionalTiming.Duration));
+                timing.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName,
+                    !(!addDifference && isAddedProperty.boolValue));
+                dashLabel.EnableInClassList(StatusEffectsStyleSheet.HiddenClassName, !anyDifference);
             }
         }
 

@@ -1,6 +1,5 @@
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
-using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -275,14 +274,15 @@ namespace StatusEffectsFramework.Editor
                     UpdateValueTypeVisibility();
                 }
 
-                valueSource.style.maxWidth = Mathf.Max(statusNameLabel.resolvedStyle.width + 3, valueSource.style.minWidth.value.value);
+                // Sized from the label's resolved width, so this stays inline rather than in the style sheet.
+                valueSource.style.maxWidth = Mathf.Max(statusNameLabel.resolvedStyle.width + 3, valueSource.resolvedStyle.minWidth.value);
             }
 
             ValueType? GetAssetValueType()
             {
                 return !statusNameAssetProperty.hasMultipleDifferentValues && statusNameAssetProperty.objectReferenceValue is StatusName asset
                      ? asset.ValueType
-                     : (ValueType?)null;
+                     : null;
             }
 
             // The stored type follows the asset. Builds read it, and it is what shows once the asset is cleared.

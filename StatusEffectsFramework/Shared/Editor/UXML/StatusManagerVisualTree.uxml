@@ -1,5 +1,5 @@
 <engine:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:engine="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Assets/StatusEffectsFramework-Unity/StatusEffectsFramework/Shared/Editor/UXML/StatusEffectsEditorStyle.uss?fileID=7433441132597879392&amp;guid=7befcf8a126874340b67cd3c7b30f8e6&amp;type=3#StatusEffectsEditorStyle"/>
+    <Style src="StatusEffectsEditorStyle.uss"/>
     <engine:VisualElement name="top-spacer" style="flex-grow: 0; min-height: 4px;"/>
     <engine:Label text="Status Effects" name="header" class="sef-dark-box-group sef-header-text-color" style="margin-bottom: -1px; border-bottom-right-radius: 0; border-bottom-left-radius: 0; border-bottom-color: rgba(0, 0, 0, 0); padding-top: 2px; padding-right: 6px; padding-bottom: 2px; padding-left: 6px;"/>
     <engine:VisualElement name="list-container" class="sef-box-group" style="flex-grow: 1; border-top-left-radius: 0; border-top-right-radius: 0;">
