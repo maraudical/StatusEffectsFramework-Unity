@@ -24,7 +24,9 @@ namespace StatusEffectsFramework
             if (statusEvent == null)
                 throw new ArgumentNullException(nameof(statusEvent));
 
-            m_StatusEvent = statusEvent;
+            // Listens to the registered event, so a copy of it, such as one inside a mod's bundle, still counts down.
+            var registry = StatusRegistry.Instance;
+            m_StatusEvent = registry ? registry.GetRegistered(statusEvent) : statusEvent;
         }
 
         /// <inheritdoc/>

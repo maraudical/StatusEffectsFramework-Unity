@@ -275,33 +275,11 @@ namespace StatusEffectsFramework.Editor
 
             Button MakePathButton(SerializedProperty property)
             {
-                var button = new Button(EditorGUIUtility.IconContent("FolderOpened Icon").image as Texture2D, () =>
+                return EditorPathUtility.CreateFolderButton(() => "Assets", relativePath =>
                 {
-                    var selected = EditorUtility.OpenFolderPanel("Select Path", "Assets", string.Empty);
-                    if (string.IsNullOrWhiteSpace(selected))
-                        return;
-                    if (!TryGetPathRelativeToAssets(selected, out var relativePath))
-                    {
-                        EditorUtility.DisplayDialog("Invalid path", "Please select a folder within the Assets directory.\n", "Ok");
-                        return;
-                    }
                     property.stringValue = relativePath;
                     property.serializedObject.ApplyModifiedProperties();
                 });
-                button.style.width = 19;
-                button.style.marginLeft = -2;
-                button.style.marginRight = 3;
-                button.style.marginBottom = 1;
-                button.style.marginTop = 1;
-                button.style.paddingBottom = 0;
-                button.style.paddingLeft = 0;
-                button.style.paddingRight = 2;
-                button.style.paddingTop = 0;
-                var image = button.Q<Image>();
-                image.style.position = Position.Absolute;
-                image.style.width = Length.Percent(100);
-                image.style.height = Length.Percent(100);
-                return button;
             }
 
             var groupList = new ListView();
@@ -402,29 +380,6 @@ namespace StatusEffectsFramework.Editor
             }
 
             folder = string.Join("/", segments);
-            return true;
-        }
-
-        /// <summary>
-        /// Turns a folder on disk into a path relative to the Assets folder, using forward slashes.
-        /// Fails if the folder isn't inside Assets. The Assets folder itself gives an empty path.
-        /// </summary>
-        private static bool TryGetPathRelativeToAssets(string absolutePath, out string relativePath)
-        {
-            relativePath = null;
-            var assets = Application.dataPath.Replace('\\', '/').TrimEnd('/');
-            var path = absolutePath.Replace('\\', '/').TrimEnd('/');
-
-            if (path.Equals(assets, StringComparison.OrdinalIgnoreCase))
-            {
-                relativePath = string.Empty;
-                return true;
-            }
-
-            if (!path.StartsWith(assets + "/", StringComparison.OrdinalIgnoreCase))
-                return false;
-
-            relativePath = path.Substring(assets.Length + 1);
             return true;
         }
 

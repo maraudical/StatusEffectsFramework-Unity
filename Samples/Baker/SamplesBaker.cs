@@ -19,11 +19,13 @@ namespace StatusEffectsFramework.Editor
     {
         private const string SharedFolder = "Shared";
 
-        // Samples built on top of other sample folders. Every other sample only bakes its own folder.
-        private static readonly Dictionary<string, string[]> BaseFolders = new()
+        // Samples built on top of other sample folders, minus the files or folders (relative to the base folder)
+        // they don't inherit. Every other sample only bakes its own folder. A sample listed here doesn't need a
+        // folder of its own, so a sample that only differs by its define (UniTask) can skip having one.
+        private static readonly Dictionary<string, (string Folder, string[] Exclude)[]> BaseFolders = new()
         {
-            ["UniTask"] = new[] { "Default" },
-            ["Netcode for Entities"] = new[] { "Entities" },
+            ["UniTask"] = new[] { ("Default", Array.Empty<string>()) },
+            ["Netcode for Entities"] = new[] { ("Entities", new[] { "Scenes" }) },
         };
 
         private class Script
@@ -70,11 +72,12 @@ namespace StatusEffectsFramework.Editor
                 return;
             }
 
-            var samples = folders.Keys.Where(name => name != SharedFolder).OrderBy(name => name).ToList();
+            var samples = folders.Keys.Union(BaseFolders.Keys).Where(name => name != SharedFolder).OrderBy(name => name).ToList();
             var sampleDefines = samples.Select(ToDefine).ToHashSet();
             var outputs = new Dictionary<string, Dictionary<string, BakedFile>> { [SharedFolder] = new() };
             var scripts = new Dictionary<string, Script>();
             var errors = new HashSet<string>();
+            var unusedExcludes = new List<string>();
 
             foreach (string sample in samples.Where(sample => !Regex.IsMatch(ToDefine(sample), @"^[A-Za-z_]\w*$")))
                 errors.Add($"'{sample}' can't be used as a scripting define. Rename the folder.");
@@ -84,19 +87,37 @@ namespace StatusEffectsFramework.Editor
 
             foreach (string sample in samples)
             {
-                var sources = (BaseFolders.TryGetValue(sample, out var bases) ? bases : Array.Empty<string>()).Append(sample).ToList();
-                var enabled = sources.Select(ToDefine).ToHashSet();
+                var bases = BaseFolders.TryGetValue(sample, out var found) ? found : Array.Empty<(string Folder, string[] Exclude)>();
+                var sources = bases.Append((Folder: sample, Exclude: Array.Empty<string>())).ToList();
+                var enabled = sources.Select(source => ToDefine(source.Folder)).ToHashSet();
                 outputs[sample] = new();
 
-                foreach (string source in sources)
+                foreach (var (source, exclude) in sources)
                 {
                     if (!folders.TryGetValue(source, out string root))
                     {
+                        if (source == sample)
+                            continue;
                         errors.Add($"{sample} is built on {source}, but there is no {source} folder in CombinedSamples.");
                         continue;
                     }
+
+                    var unused = exclude.ToHashSet();
                     foreach (string file in Files(root))
+                    {
+                        string relative = Path.GetRelativePath(root, file);
+                        string excludedBy = exclude.FirstOrDefault(path => IsUnder(relative, path));
+                        if (excludedBy != null)
+                        {
+                            unused.Remove(excludedBy);
+                            continue;
+                        }
                         Add(sample, root, file, enabled, true);
+                    }
+
+                    // A renamed folder would otherwise start shipping again without anyone noticing.
+                    foreach (string path in unused)
+                        unusedExcludes.Add($"{sample} excludes {source}/{path}, but nothing in {source} matches it.");
                 }
 
                 // Shared's folder .meta files are already in Shared, so let Unity generate new ones here.
@@ -111,6 +132,9 @@ namespace StatusEffectsFramework.Editor
                 Debug.LogError("Samples Baker: nothing was written. Fix the errors above and bake again.");
                 return;
             }
+
+            foreach (string warning in unusedExcludes)
+                Debug.LogWarning($"Samples Baker: {warning}");
 
             foreach (var (file, script) in scripts)
             {
@@ -218,5 +242,14 @@ namespace StatusEffectsFramework.Editor
             Directory.GetFiles(root, "*", SearchOption.AllDirectories).Where(file => !file.EndsWith(".meta")).OrderBy(file => file);
 
         private static string ToDefine(string sample) => sample.Replace(' ', '_');
+
+        // True if the relative path is the excluded file or sits inside the excluded folder.
+        private static bool IsUnder(string relative, string excluded)
+        {
+            relative = relative.Replace('\\', '/');
+            excluded = excluded.Replace('\\', '/').Trim('/');
+            return relative.Equals(excluded, StringComparison.OrdinalIgnoreCase)
+                || relative.StartsWith(excluded + "/", StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Ice
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_Key: base:ice
+  m_Key: Base/Ice
   m_Group:
     Value: 2
   m_ComparableName:
@@ -30,7 +30,7 @@ MonoBehaviour:
   m_MaxStacks: -1
   m_Effects:
   - m_StatusName:
-      m_Key: base:speed
+      m_Key: Base/Speed
       m_Asset: {fileID: 11400000, guid: 08774a401d39714429b8691a9aa31282, type: 2}
     m_ValueModifier: 2
     m_ValueSource: 1
@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Conditions:
   - m_SearchableConfigurable: 0
     m_SearchableData:
-      m_Key: base:fire
+      m_Key: Base/Fire
       m_Asset: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
     m_SearchableComparableName:
       m_Key: 
@@ -58,7 +58,7 @@ MonoBehaviour:
     m_Stacks: 1
     m_ActionConfigurable: 0
     m_ActionData:
-      m_Key: base:ice
+      m_Key: Base/Ice
       m_Asset: {fileID: 11400000}
     m_ActionComparableName:
       m_Key: 
@@ -69,7 +69,7 @@ MonoBehaviour:
     m_Duration: 0
   - m_SearchableConfigurable: 0
     m_SearchableData:
-      m_Key: base:fire
+      m_Key: Base/Fire
       m_Asset: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
     m_SearchableComparableName:
       m_Key: 
@@ -83,7 +83,7 @@ MonoBehaviour:
     m_Stacks: 1
     m_ActionConfigurable: 0
     m_ActionData:
-      m_Key: base:fire
+      m_Key: Base/Fire
       m_Asset: {fileID: 11400000, guid: 578af44cd2c054d41a5d07b10c0e6c46, type: 2}
     m_ActionComparableName:
       m_Key: 

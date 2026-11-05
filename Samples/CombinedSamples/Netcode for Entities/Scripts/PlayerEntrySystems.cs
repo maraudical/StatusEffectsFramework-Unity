@@ -18,7 +18,8 @@ namespace StatusEffectsFramework.Samples
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            var builder = new EntityQueryBuilder(Allocator.Temp).WithAll<NetworkId>().WithNone<NetworkStreamInGame>();
+            // Only once the server's registry is applied, so status effects already have the server's ids in game.
+            var builder = new EntityQueryBuilder(Allocator.Temp).WithAll<NetworkId, RegistryPayloadReady>().WithNone<NetworkStreamInGame>();
             m_PendingNetworkIdQuery = state.GetEntityQuery(builder);
             state.RequireForUpdate(m_PendingNetworkIdQuery);
         }

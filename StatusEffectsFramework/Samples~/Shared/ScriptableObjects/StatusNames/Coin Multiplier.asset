@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Coin Multiplier
   m_EditorClassIdentifier: StatusEffectsFramework::StatusEffectsFramework.StatusNameInt
   m_OptionalRegistryDependency: {fileID: 0}
-  m_Key: base:coin-multiplier
+  m_Key: Base/CoinMultiplier

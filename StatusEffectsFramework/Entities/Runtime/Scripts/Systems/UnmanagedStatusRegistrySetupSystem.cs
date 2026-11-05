@@ -16,7 +16,8 @@ namespace StatusEffectsFramework.Entities
 
         protected override void OnCreate()
         {
-            m_RegistryQuery = SystemAPI.QueryBuilder().WithAll<UnmanagedStatusRegistry>().Build();
+            // Read-write, since a rebuild swaps the singleton in place with SetSingleton.
+            m_RegistryQuery = SystemAPI.QueryBuilder().WithAllRW<UnmanagedStatusRegistry>().Build();
             m_RequestQuery = SystemAPI.QueryBuilder().WithAll<UnmanagedStatusRegistrySetupRequest>().Build();
             m_ResolverQuery = SystemAPI.QueryBuilder().WithAllRW<StatusFloats>().WithAllRW<StatusInts>().WithAllRW<StatusBools>().WithOptions(EntityQueryOptions.IncludePrefab | EntityQueryOptions.IncludeDisabledEntities | EntityQueryOptions.IgnoreComponentEnabledState).Build();
 
@@ -32,7 +33,7 @@ namespace StatusEffectsFramework.Entities
                 return;
             }
 
-            m_StatusRegistry.RegistryRebuilt += OnRegistryRebuilt;
+            m_StatusRegistry.Rebuilt += OnRegistryRebuilt;
             OnRegistryRebuilt();
 
             RequireForUpdate(m_RequestQuery);
@@ -44,7 +45,8 @@ namespace StatusEffectsFramework.Entities
             
             commandBuffer.DestroyEntity(m_RequestQuery, EntityQueryCaptureMode.AtPlayback);
 
-            var idToStatusEffectDatas = m_StatusRegistry.IdToStatusEffectData;
+            // Collected first, since the blob's map is sized up front.
+            var statusEffectDatas = new List<(ushort Id, StatusEffectData Data)>(m_StatusRegistry.GetAll<StatusEffectData>());
             var keyToIds = m_StatusRegistry.KeyToId;
 
             // All registry data is built into a single blob so it is created and disposed as one unit.
@@ -56,7 +58,7 @@ namespace StatusEffectsFramework.Entities
             foreach (var kvp in keyToIds)
                 keyToIdMap.Add(kvp.Key, kvp.Value);
 
-            var idToStatusEffectDataMap = builder.AllocateHashMap(ref root.IdToStatusEffectData, idToStatusEffectDatas.Count);
+            var idToStatusEffectDataMap = builder.AllocateHashMap(ref root.IdToStatusEffectData, statusEffectDatas.Count);
 
             // Every dynamic effect and module buffer type used by the registry. Systems that access
             // these buffers through raw pointers register them so job dependencies are tracked.
@@ -66,16 +68,10 @@ namespace StatusEffectsFramework.Entities
             try
             {
                 // Setup status effect datas
-                foreach (var kvp in idToStatusEffectDatas)
+                foreach (var (dataId, statusEffectData) in statusEffectDatas)
                 {
-                    var statusEffectData = kvp.Value;
-
-                    // Case where data is null. This should never happen.
-                    if (!statusEffectData)
-                        continue;
-
-                    ref UnmanagedStatusEffectData unmanagedStatusEffectData = ref idToStatusEffectDataMap.AddByRef(kvp.Key);
-                    unmanagedStatusEffectData.Id = kvp.Key;
+                    ref UnmanagedStatusEffectData unmanagedStatusEffectData = ref idToStatusEffectDataMap.AddByRef(dataId);
+                    unmanagedStatusEffectData.Id = dataId;
                     unmanagedStatusEffectData.Group = statusEffectData.Group;
                     ushort comparableName = StatusRegistry.NullId;
                     if (!statusEffectData.ComparableName.IsEmpty && !keyToIds.TryGetValue(statusEffectData.ComparableName.GetKeyHash(), out comparableName))
@@ -85,17 +81,18 @@ namespace StatusEffectsFramework.Entities
                     unmanagedStatusEffectData.Icon = statusEffectData.Icon;
                     UnityEngine.Color color = statusEffectData.Color;
                     unmanagedStatusEffectData.Color = new(color.r, color.g, color.b, color.a);
+                    // Data made in code, rather than loaded, can leave these null, which the blob builder doesn't accept.
 #if LOCALIZED
-                    builder.AllocateString(ref unmanagedStatusEffectData.StatusEffectNameTable, statusEffectData.StatusEffectName.TableReference.ToString());
-                    builder.AllocateString(ref unmanagedStatusEffectData.StatusEffectNameEntry, statusEffectData.StatusEffectName.TableEntryReference.ToString());
-                    builder.AllocateString(ref unmanagedStatusEffectData.AcronymTable, statusEffectData.Acronym.TableReference.ToString());
-                    builder.AllocateString(ref unmanagedStatusEffectData.AcronymEntry, statusEffectData.Acronym.TableEntryReference.ToString());
-                    builder.AllocateString(ref unmanagedStatusEffectData.DescriptionTable, statusEffectData.Description.TableReference.ToString());
-                    builder.AllocateString(ref unmanagedStatusEffectData.DescriptionEntry, statusEffectData.Description.TableEntryReference.ToString());
+                    builder.AllocateString(ref unmanagedStatusEffectData.StatusEffectNameTable, statusEffectData.StatusEffectName?.TableReference.ToString() ?? string.Empty);
+                    builder.AllocateString(ref unmanagedStatusEffectData.StatusEffectNameEntry, statusEffectData.StatusEffectName?.TableEntryReference.ToString() ?? string.Empty);
+                    builder.AllocateString(ref unmanagedStatusEffectData.AcronymTable, statusEffectData.Acronym?.TableReference.ToString() ?? string.Empty);
+                    builder.AllocateString(ref unmanagedStatusEffectData.AcronymEntry, statusEffectData.Acronym?.TableEntryReference.ToString() ?? string.Empty);
+                    builder.AllocateString(ref unmanagedStatusEffectData.DescriptionTable, statusEffectData.Description?.TableReference.ToString() ?? string.Empty);
+                    builder.AllocateString(ref unmanagedStatusEffectData.DescriptionEntry, statusEffectData.Description?.TableEntryReference.ToString() ?? string.Empty);
 #else
-                    builder.AllocateString(ref unmanagedStatusEffectData.StatusEffectName, statusEffectData.StatusEffectName);
-                    builder.AllocateString(ref unmanagedStatusEffectData.Acronym, statusEffectData.Acronym);
-                    builder.AllocateString(ref unmanagedStatusEffectData.Description, statusEffectData.Description);
+                    builder.AllocateString(ref unmanagedStatusEffectData.StatusEffectName, statusEffectData.StatusEffectName ?? string.Empty);
+                    builder.AllocateString(ref unmanagedStatusEffectData.Acronym, statusEffectData.Acronym ?? string.Empty);
+                    builder.AllocateString(ref unmanagedStatusEffectData.Description, statusEffectData.Description ?? string.Empty);
 #endif
                     unmanagedStatusEffectData.AllowEffectStacking = statusEffectData.AllowEffectStacking;
                     unmanagedStatusEffectData.NonStackingBehaviour = statusEffectData.NonStackingBehaviour;
@@ -247,7 +244,7 @@ namespace StatusEffectsFramework.Entities
         protected override void OnDestroy()
         {
             if (m_StatusRegistry)
-                m_StatusRegistry.RegistryRebuilt -= OnRegistryRebuilt;
+                m_StatusRegistry.Rebuilt -= OnRegistryRebuilt;
 
             if (m_RegistryQuery.TryGetSingleton<UnmanagedStatusRegistry>(out var registry))
             {

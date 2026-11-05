@@ -19,6 +19,15 @@ namespace StatusEffectsFramework
         /// <param name="value">The float value to pass through the event. This will be subtracted from each associated <see cref="StatusEffect.Duration"/>.</param>
         public virtual void Invoke(float value = 1f)
         {
+            // Timers listen to the registered event, so a copy of it, such as one inside a mod's bundle, raises that one.
+            var registry = StatusRegistry.Instance;
+            var registered = registry ? registry.GetRegistered(this) : this;
+            if (registered != this)
+            {
+                registered.Invoke(value);
+                return;
+            }
+
             Invoked?.Invoke(value);
         }
     }

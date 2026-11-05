@@ -145,7 +145,7 @@ namespace StatusEffectsFramework
                         else
                             dynamicInt.ValueChanged += UpdatePreEvaluationValue;
             // Only update if the status effect actually has any effects that have the same StatusName
-            if (statusEffect.Data.Effects.Any(effect => effect.StatusName.Key == m_StatusName.Key && effect.ValueType is ValueType.Int))
+            if (statusEffect.Data.Effects.Any(effect => Registrant.KeysEqual(effect.StatusName.Key, m_StatusName.Key) && effect.ValueType is ValueType.Int))
                 UpdatePreEvaluationValue(true);
         }
 

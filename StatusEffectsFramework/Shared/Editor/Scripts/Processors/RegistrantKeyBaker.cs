@@ -39,9 +39,10 @@ namespace StatusEffectsFramework.Editor
                 if (!IsEditable(path))
                     continue;
 
-                // Assigned assets are still editor dependencies even though builds leave them
-                // out, so only assets that reference a registrant need to be loaded.
-                if (!AssetDatabase.GetDependencies(path, false).Any(registrantPaths.Contains))
+                // Assigned assets are still editor dependencies even though builds leave them out, so only assets that
+                // reference a registrant need to be loaded. A prefab made from another prefab can reference one only through
+                // its source, such as once it reverts its asset override, so prefabs are checked through their sources too.
+                if (!AssetDatabase.GetDependencies(path, path.EndsWith(".prefab")).Any(registrantPaths.Contains))
                     continue;
 
                 int baked = 0;
@@ -78,6 +79,16 @@ namespace StatusEffectsFramework.Editor
             var property = serializedObject.GetIterator();
             int baked = 0;
 
+            // In a prefab asset made from another prefab, the baked values are overridden exactly when the assigned asset is.
+            // One that overrides the asset but inherits the baked values would pick up whatever its source prefab is baked
+            // to later, so those values are written as overrides even when they already match. One that inherits the asset
+            // inherits the values its source prefab is baked to, so overrides left from reverting the asset are reverted.
+            bool isPrefabInstanceAsset = EditorUtility.IsPersistent(target) && PrefabUtility.IsPartOfPrefabInstance(target);
+            // A source prefab in an immutable package isn't baked, so prefabs made from it bake their own values.
+            bool sourceIsBaked = isPrefabInstanceAsset && IsEditable(AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(target)));
+            var inheritedPaths = new List<string>();
+            var leftoverPaths = new List<string>();
+
             // Only containers are entered, so strings aren't walked character by character.
             while (property.Next(property.propertyType is SerializedPropertyType.Generic or SerializedPropertyType.ManagedReference))
             {
@@ -90,26 +101,90 @@ namespace StatusEffectsFramework.Editor
                 var assetPath = property.propertyPath;
                 var fieldPath = assetPath.Substring(0, assetPath.Length - RegistrantKeyDrawer.AssetPropertyName.Length - 1);
 
+                bool overridesAsset = isPrefabInstanceAsset && property.prefabOverride;
+                bool inheritsAsset = sourceIsBaked && !property.prefabOverride;
+
                 var keyProperty = serializedObject.FindProperty($"{fieldPath}.{RegistrantKeyDrawer.KeyPropertyName}");
-                if (keyProperty != null && keyProperty.propertyType == SerializedPropertyType.String && keyProperty.stringValue != registrant.Key)
+                if (keyProperty != null && keyProperty.propertyType == SerializedPropertyType.String)
                 {
-                    keyProperty.stringValue = registrant.Key;
-                    baked++;
+                    if (inheritsAsset)
+                    {
+                        if (keyProperty.prefabOverride)
+                            leftoverPaths.Add(keyProperty.propertyPath);
+                    }
+                    else if (keyProperty.stringValue != registrant.Key)
+                    {
+                        keyProperty.stringValue = registrant.Key;
+                        baked++;
+                    }
+                    else if (overridesAsset && !keyProperty.prefabOverride)
+                    {
+                        inheritedPaths.Add(keyProperty.propertyPath);
+                    }
                 }
 
                 if (registrant is StatusName statusName
-                    && TryFindEffectValueType(serializedObject, fieldPath, out var valueTypeProperty)
-                    && valueTypeProperty.enumValueIndex != (int)statusName.ValueType)
+                    && TryFindEffectValueType(serializedObject, fieldPath, out var valueTypeProperty))
                 {
-                    valueTypeProperty.enumValueIndex = (int)statusName.ValueType;
-                    baked++;
+                    if (inheritsAsset)
+                    {
+                        if (valueTypeProperty.prefabOverride)
+                            leftoverPaths.Add(valueTypeProperty.propertyPath);
+                    }
+                    else if (valueTypeProperty.enumValueIndex != (int)statusName.ValueType)
+                    {
+                        valueTypeProperty.enumValueIndex = (int)statusName.ValueType;
+                        baked++;
+                    }
+                    else if (overridesAsset && !valueTypeProperty.prefabOverride)
+                    {
+                        inheritedPaths.Add(valueTypeProperty.propertyPath);
+                    }
                 }
             }
 
             if (baked > 0)
                 serializedObject.ApplyModifiedPropertiesWithoutUndo();
 
+            if (leftoverPaths.Count > 0)
+            {
+                foreach (var path in leftoverPaths)
+                    PrefabUtility.RevertPropertyOverride(serializedObject.FindProperty(path), InteractionMode.AutomatedAction);
+                serializedObject.Update();
+                baked += leftoverPaths.Count;
+            }
+
+            if (inheritedPaths.Count > 0)
+            {
+                OverrideInheritedValues(target, serializedObject, inheritedPaths);
+                baked += inheritedPaths.Count;
+            }
+
             return baked;
+        }
+
+        /// <summary>
+        /// Adds a prefab override for each property at <paramref name="paths"/>, keeping its current value. Setting a
+        /// property to the value it already has doesn't record an override, so the modifications are added directly.
+        /// </summary>
+        private static void OverrideInheritedValues(Object target, SerializedObject serializedObject, List<string> paths)
+        {
+            var source = PrefabUtility.GetCorrespondingObjectFromSource(target);
+            var modifications = new List<PropertyModification>(PrefabUtility.GetPropertyModifications(target) ?? new PropertyModification[0]);
+
+            foreach (var path in paths)
+            {
+                var property = serializedObject.FindProperty(path);
+                modifications.Add(new PropertyModification
+                {
+                    target = source,
+                    propertyPath = path,
+                    // Enums are stored as their underlying value, not their index.
+                    value = property.propertyType == SerializedPropertyType.String ? property.stringValue : property.intValue.ToString(),
+                });
+            }
+
+            PrefabUtility.SetPropertyModifications(target, modifications.ToArray());
         }
 
         /// <summary>
@@ -185,6 +260,8 @@ namespace StatusEffectsFramework.Editor
             var previousCallback = ContentPipeline.BuildCallbacks.PostScriptsCallbacks;
             ContentPipeline.BuildCallbacks.PostScriptsCallbacks = (parameters, results) =>
             {
+                // The build has already collected its content, so manifests are refreshed but not moved.
+                StatusRegistryManifestGenerator.GenerateAll(automaticOnly: true, allowGroupChanges: false);
                 BakeAssets();
                 return previousCallback?.Invoke(parameters, results) ?? ReturnCode.Success;
             };

@@ -70,11 +70,11 @@ namespace StatusEffectsFramework
 #endif
 
         /// <summary>
-        /// Hashes the key the same way as <see cref="Registrant.GetKeyHash"/>.
+        /// Hashes the key the same way as <see cref="Registrant.GetKeyHash"/>, ignoring case.
         /// </summary>
         public Hash128 GetKeyHash()
         {
-            return UnityEngine.Hash128.Compute(Key);
+            return Registrant.ComputeKeyHash(Key);
         }
 
         /// <summary>
@@ -100,23 +100,23 @@ namespace StatusEffectsFramework
         }
 
         /// <summary>
-        /// Keys are equal when their <see cref="Key"/>s are the same.
+        /// Keys are equal when their <see cref="Key"/>s are the same, ignoring case.
         /// </summary>
-        public bool Equals(RegistrantKey<T> other) => string.Equals(Key, other.Key, StringComparison.Ordinal);
+        public bool Equals(RegistrantKey<T> other) => Registrant.KeysEqual(Key, other.Key);
 
         public override bool Equals(object obj) => obj is RegistrantKey<T> other && Equals(other);
 
-        public override int GetHashCode() => StringComparer.Ordinal.GetHashCode(Key);
+        public override int GetHashCode() => StringComparer.Ordinal.GetHashCode(Registrant.NormalizeKey(Key));
 
         public override string ToString() => Key;
 
         /// <summary>
-        /// Keys are equal when their <see cref="Key"/>s are the same.
+        /// Keys are equal when their <see cref="Key"/>s are the same, ignoring case.
         /// </summary>
         public static bool operator ==(RegistrantKey<T> x, RegistrantKey<T> y) => x.Equals(y);
 
         /// <summary>
-        /// Keys are different when their <see cref="Key"/>s are not the same.
+        /// Keys are different when their <see cref="Key"/>s are not the same, ignoring case.
         /// </summary>
         public static bool operator !=(RegistrantKey<T> x, RegistrantKey<T> y) => !x.Equals(y);
 

@@ -99,6 +99,7 @@ namespace StatusEffectsFramework.Editor
         {
             var statusNameProperty = property.FindPropertyRelative($"m_{nameof(Effect.StatusName)}");
             var statusNameAssetProperty = statusNameProperty.FindPropertyRelative(RegistrantKeyDrawer.AssetPropertyName);
+            var statusNameKeyProperty = statusNameProperty.FindPropertyRelative(RegistrantKeyDrawer.KeyPropertyName);
             var valueTypeProperty = property.FindPropertyRelative($"m_{nameof(Effect.ValueType)}");
             var valueModifierProperty = property.FindPropertyRelative($"m_{nameof(Effect.ValueModifier)}");
             var priorityProperty = property.FindPropertyRelative($"m_{nameof(Effect.Priority)}");
@@ -140,6 +141,7 @@ namespace StatusEffectsFramework.Editor
 
             // The type of the last assigned asset, so clearing the asset to type the key keeps the same type.
             ValueType? assetValueType = GetAssetValueType();
+            var previousStatusNameAsset = statusNameAssetProperty.objectReferenceValue;
 
             var typeDifferenceContainer = new VisualElement
             {
@@ -291,6 +293,19 @@ namespace StatusEffectsFramework.Editor
                 var currentAssetValueType = GetAssetValueType();
                 var syncedValueType = currentAssetValueType ?? assetValueType;
                 assetValueType = currentAssetValueType;
+
+                var previousAsset = previousStatusNameAsset;
+                previousStatusNameAsset = statusNameAssetProperty.objectReferenceValue;
+
+                // A prefab instance that takes the status name from its source prefab takes the type from there too, so a
+                // type left overridden from an asset that was reverted is reverted with it rather than kept.
+                if (previousAsset != previousStatusNameAsset
+                    && RegistrantKeyDrawer.InheritsKey(statusNameKeyProperty, statusNameAssetProperty, previousAsset))
+                {
+                    if (valueTypeProperty.prefabOverride)
+                        PrefabUtility.RevertPropertyOverride(valueTypeProperty, InteractionMode.UserAction);
+                    return;
+                }
 
                 if (syncedValueType is not { } newValueType
                     || (!valueTypeProperty.hasMultipleDifferentValues && valueTypeProperty.enumValueIndex == (int)newValueType))

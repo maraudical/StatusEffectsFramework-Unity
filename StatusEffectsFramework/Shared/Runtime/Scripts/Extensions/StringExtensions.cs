@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+using System.Text;
 
 namespace StatusEffectsFramework
 {
@@ -8,31 +8,30 @@ namespace StatusEffectsFramework
     public static class StringExtensions
     {
         /// <summary>
-        /// Converts text to lowercase words separated by dashes, for example <c>HTTPServer Name</c> becomes <c>http-server-name</c>.
-        /// Null or empty text is returned as is.
+        /// Converts text to PascalCase, for example <c>max health</c> becomes <c>MaxHealth</c> and <c>basic_stun-v2</c>
+        /// becomes <c>BasicStunV2</c>. Anything that isn't a letter or digit separates words and is removed, and the rest
+        /// of each word keeps its case, so <c>HTTPServer</c> stays as it is. Null or empty text is returned as is.
         /// </summary>
-        public static string ToKebabCase(this string input)
+        public static string ToPascalCase(this string input)
         {
             if (string.IsNullOrEmpty(input))
                 return input;
 
-            // Insert a dash between a lowercase/digit and a following uppercase letter
-            // e.g. abcDef -> abc-Def
-            string result = Regex.Replace(input, "(?<=[a-z0-9])(?=[A-Z])", "-");
+            var builder = new StringBuilder(input.Length);
+            bool startOfWord = true;
+            foreach (char c in input)
+            {
+                if (!char.IsLetterOrDigit(c))
+                {
+                    startOfWord = true;
+                    continue;
+                }
 
-            // Insert a dash before the last uppercase letter of a run when it's
-            // followed by a lowercase letter (splits acronyms from the word after them)
-            // e.g. HTTPServer -> HTTP-Server
-            result = Regex.Replace(result, "(?<=[A-Z])(?=[A-Z][a-z])", "-");
+                builder.Append(startOfWord ? char.ToUpperInvariant(c) : c);
+                startOfWord = false;
+            }
 
-            // Collapse any whitespace runs into a single dash
-            result = Regex.Replace(result, @"\s+", "-");
-
-            // Collapse multiple consecutive dashes into one
-            result = Regex.Replace(result, "-+", "-");
-
-            // Trim leading/trailing dashes and lowercase everything
-            return result.Trim('-').ToLowerInvariant();
+            return builder.ToString();
         }
     }
 }

@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Speed
   m_EditorClassIdentifier: StatusEffectsFramework::StatusEffectsFramework.StatusNameFloat
   m_OptionalRegistryDependency: {fileID: 0}
-  m_Key: base:speed
+  m_Key: Base/Speed

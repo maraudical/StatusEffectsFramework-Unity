@@ -323,7 +323,7 @@ namespace StatusEffectsFramework.Netcode
 
         private void AddForClient(NetworkStatusEffect networkEffect)
         {
-            if (!m_Registry.IdToStatusEffectData.TryGetValue(networkEffect.Id, out var statusEffectData))
+            if (!m_Registry.TryGet(networkEffect.Id, out StatusEffectData statusEffectData))
             {
                 Debug.LogError(string.Format(k_SyncError, networkEffect.Id));
                 return;

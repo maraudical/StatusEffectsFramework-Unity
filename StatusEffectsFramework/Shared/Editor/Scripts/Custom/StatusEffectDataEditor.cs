@@ -18,9 +18,6 @@ namespace StatusEffectsFramework.Editor
         {
             bool isPlaying = EditorApplication.isPlaying;
 
-#if ADDRESSABLES
-            var optionalRegistryDependencyProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.OptionalRegistryDependency)}");
-#endif
             var keyProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Key)}");
             var groupProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.Group)}");
             var comparableNameProperty = serializedObject.FindProperty($"m_{nameof(StatusEffectData.ComparableName)}");
@@ -41,11 +38,6 @@ namespace StatusEffectsFramework.Editor
 
             VisualTree.CloneTree(root);
 
-#if ADDRESSABLES
-            var optionalRegistryDependency = root.Q<PropertyField>("optional-registry-dependency");
-            optionalRegistryDependency.BindProperty(optionalRegistryDependencyProperty);
-
-#endif
             var key = root.Q<PropertyField>("key");
             key.BindProperty(keyProperty);
 

@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Stunned
   m_EditorClassIdentifier: StatusEffectsFramework::StatusEffectsFramework.StatusNameBool
   m_OptionalRegistryDependency: {fileID: 0}
-  m_Key: base:stunned
+  m_Key: Base/Stunned

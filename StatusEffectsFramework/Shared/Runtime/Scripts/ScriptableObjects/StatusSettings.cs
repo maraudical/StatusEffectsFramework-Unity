@@ -20,8 +20,8 @@ namespace StatusEffectsFramework
         [NonReorderable]
         public string[] Groups = new string[32];
 
-        [Tooltip("The namespace new keys start with, for example \"base\" gives \"base:poison\".")]
-        public string DefaultKeyNamespace = "base";
+        [Tooltip("The namespace new keys start with, for example \"Base\" gives \"Base/Poison\".")]
+        public string DefaultKeyNamespace = "Base";
         [Tooltip("The folder, relative to Assets, that is opened when creating new Status Effect Data.")]
         public string DefaultStatusDataPath = "ScriptableObjects/StatusEffectData";
         [Tooltip("The folder, relative to Assets, that is opened when creating new Status Names.")]

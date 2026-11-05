@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Basic Health Boost
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_Key: base:basic-health-boost
+  m_Key: Base/BasicHealthBoost
   m_Group:
     Value: 4
   m_ComparableName:
@@ -30,7 +30,7 @@ MonoBehaviour:
   m_MaxStacks: -1
   m_Effects:
   - m_StatusName:
-      m_Key: base:max-health
+      m_Key: Base/MaxHealth
       m_Asset: {fileID: 11400000, guid: 8b68ea2955894134eaecabf3ee66c3c6, type: 2}
     m_ValueModifier: 0
     m_ValueSource: 1

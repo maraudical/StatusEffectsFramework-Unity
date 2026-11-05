@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Basic Stun
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_Key: base:basic-stun
+  m_Key: Base/BasicStun
   m_Group:
     Value: 2
   m_ComparableName:
@@ -30,17 +30,18 @@ MonoBehaviour:
   m_MaxStacks: -1
   m_Effects:
   - m_StatusName:
-      m_Key: base:stunned
+      m_Key: Base/Stunned
       m_Asset: {fileID: 11400000, guid: f7273fbb099977747b3d7284bf74e0c8, type: 2}
+    m_ValueType: 2
     m_ValueModifier: 0
     m_ValueSource: 1
     m_Priority: 0
     m_FloatValue: 0
     m_IntValue: 0
     m_BoolValue: 0
-    m_DynamicFloatEffect: {fileID: 0}
-    m_DynamicIntEffect: {fileID: 0}
-    m_DynamicBoolEffect: {fileID: 0}
+    m_DynamicFloat: {fileID: 0}
+    m_DynamicInt: {fileID: 0}
+    m_DynamicBool: {fileID: 0}
   m_Conditions: []
   m_Modules:
   - m_Module: {fileID: 11400000, guid: 96635a1a05b2ed94ea1f832efe3a402b, type: 2}

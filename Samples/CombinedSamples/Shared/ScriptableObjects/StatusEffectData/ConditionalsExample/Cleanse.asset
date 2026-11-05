@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Cleanse
   m_EditorClassIdentifier: 
   m_OptionalRegistryDependency: {fileID: 0}
-  m_Key: base:cleanse
+  m_Key: Base/Cleanse
   m_Group:
     Value: 4
   m_ComparableName:

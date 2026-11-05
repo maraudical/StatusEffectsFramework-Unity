@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Poison
   m_EditorClassIdentifier: StatusEffectsFramework::StatusEffectsFramework.ComparableName
   m_OptionalRegistryDependency: {fileID: 0}
-  m_Key: base:poison
+  m_Key: Base/Poison

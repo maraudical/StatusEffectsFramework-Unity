@@ -46,6 +46,22 @@ namespace StatusEffectsFramework.Editor
                 && string.IsNullOrEmpty(property.FindPropertyRelative(KeyPropertyName).stringValue);
         }
 
+        /// <summary>
+        /// Whether a prefab instance takes a <see cref="RegistrantKey{T}"/>'s key from its source prefab: it inherits the
+        /// asset, and its key isn't overridden or the override was only baked. A key is baked from the assigned asset, which
+        /// it isn't read from, or from <paramref name="previousAsset"/> when that asset was just reverted. A key typed over
+        /// the source prefab's on purpose differs from the previous asset's, so it is kept.
+        /// </summary>
+        internal static bool InheritsKey(SerializedProperty keyProperty, SerializedProperty assetProperty, Object previousAsset)
+        {
+            if (assetProperty.serializedObject.isEditingMultipleObjects || !assetProperty.isInstantiatedPrefab || assetProperty.prefabOverride)
+                return false;
+
+            return !keyProperty.prefabOverride
+                || assetProperty.objectReferenceValue != null
+                || (previousAsset is Registrant registrant && keyProperty.stringValue == registrant.Key);
+        }
+
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
             var keyProperty = property.FindPropertyRelative(KeyPropertyName);
@@ -125,7 +141,17 @@ namespace StatusEffectsFramework.Editor
                 dragEvent.StopPropagation();
             }, TrickleDown.TrickleDown);
 
-            root.TrackPropertyValue(assetProperty, _ => UpdateMode());
+            // Reverting the asset on its own leaves the key that was baked from it overridden, and with no asset that key
+            // would be used instead of the source prefab's. The IMGUI drawer reverts the whole field, so it needs no check.
+            var previousAsset = assetProperty.objectReferenceValue;
+            root.TrackPropertyValue(assetProperty, _ =>
+            {
+                if (keyProperty.prefabOverride && InheritsKey(keyProperty, assetProperty, previousAsset))
+                    PrefabUtility.RevertPropertyOverride(keyProperty, InteractionMode.UserAction);
+
+                previousAsset = assetProperty.objectReferenceValue;
+                UpdateMode();
+            });
             UpdateMode();
 
             return root;

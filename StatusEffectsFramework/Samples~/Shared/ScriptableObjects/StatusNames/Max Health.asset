@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Max Health
   m_EditorClassIdentifier: StatusEffectsFramework::StatusEffectsFramework.StatusNameFloat
   m_OptionalRegistryDependency: {fileID: 0}
-  m_Key: base:max-health
+  m_Key: Base/MaxHealth
